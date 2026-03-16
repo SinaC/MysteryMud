@@ -13,7 +13,7 @@ public class GetCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.TargetPair;
 
-    public void Execute(Entity actor, CommandContext ctx)
+    public void Execute(World world, Entity actor, CommandContext ctx)
     {
         if (ctx.Secondary.Name.IsEmpty)
         {
@@ -23,7 +23,7 @@ public class GetCommand : ICommand
             foreach (var item in TargetingSystem.SelectTargets(actor, ctx.Primary, roomContents.Items))
             {
                 ItemMovementSystem.GetItemFromRoom(actor, room, item);
-                MessageSystem.SendMessage(actor, $"You get {item.DisplayName}.");
+                MessageSystem.Send(actor, $"You get {item.DisplayName}.");
             }
         }
         else
@@ -31,7 +31,7 @@ public class GetCommand : ICommand
             var container = FindContainer(actor, ctx.Secondary);
             if (container == default)
             {
-                MessageSystem.SendMessage(actor, "You don't see that here.");
+                MessageSystem.Send(actor, "You don't see that here.");
                 return;
             }
 
@@ -39,7 +39,7 @@ public class GetCommand : ICommand
             foreach (var item in TargetingSystem.SelectTargets(actor, ctx.Primary, containerContents.Items))
             {
                 ItemMovementSystem.GetItemFromContainer(actor, container, item);
-                MessageSystem.SendMessage(actor, $"You get {item.DisplayName} from {container.DisplayName}.");
+                MessageSystem.Send(actor, $"You get {item.DisplayName} from {container.DisplayName}.");
             }
         }
     }

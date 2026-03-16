@@ -11,7 +11,7 @@ public class DestroyCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.Target;
 
-    public void Execute(Entity actor, CommandContext ctx)
+    public void Execute(World world, Entity actor, CommandContext ctx)
     {
         // search in inventory (equipped items are also in inventory)
         ref var inventory = ref actor.Get<Inventory>();
@@ -27,7 +27,7 @@ public class DestroyCommand : ICommand
 
             DestroySystem.DestroyItem(item);
 
-            MessageSystem.SendMessage(actor, $"You destroy {item.DisplayName}.");
+            MessageSystem.Send(actor, $"You destroy {item.DisplayName}.");
         }
     }
 }

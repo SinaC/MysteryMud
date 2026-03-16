@@ -18,31 +18,31 @@ public class DisplayRoomSystem
         var roomItems = roomContents.Items;
         var roomCharacters = roomContents.Characters;
 
-        MessageSystem.SendMessage(actor, $"{roomName.Value}");
-        MessageSystem.SendMessage(actor, $"{roomDescription.Value}");
+        MessageSystem.Send(actor, $"{roomName.Value}");
+        MessageSystem.Send(actor, $"{roomDescription.Value}");
         if (roomGraph.Exits.Count == 0)
         {
-            MessageSystem.SendMessage(actor, "No exits.");
+            MessageSystem.Send(actor, "No exits.");
         }
         else
         {
-            MessageSystem.SendMessage(actor, "Exits:");
+            MessageSystem.Send(actor, "Exits:");
             foreach (var exit in roomGraph.Exits)
             {
-                MessageSystem.SendMessage(actor, $"- {exit.Direction} - {exit.TargetRoom.DisplayName}");
+                MessageSystem.Send(actor, $"- {exit.Direction} - {exit.TargetRoom.DisplayName}");
             }
         }
-        MessageSystem.SendMessage(actor, "Characters here:");
+        MessageSystem.Send(actor, "Characters here:");
         foreach (var c in roomCharacters)
         {
             if (c.Equals(actor)) continue; // skip self
-            MessageSystem.SendMessage(actor, $"- {c.DisplayName}");
+            MessageSystem.Send(actor, $"- {c.DisplayName}");
         }
 
-        MessageSystem.SendMessage(actor, "Items here:");
+        MessageSystem.Send(actor, "Items here:");
         foreach (var item in roomItems)
         {
-            MessageSystem.SendMessage(actor, $"- {item.DisplayName}");
+            MessageSystem.Send(actor, $"- {item.DisplayName}");
         }
     }
 }

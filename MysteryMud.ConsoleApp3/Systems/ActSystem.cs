@@ -3,7 +3,7 @@ using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Rooms;
-using MysteryMud.ConsoleApp3.Enums;
+using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Extensions;
 using System.Buffers;
 using System.Text;

@@ -12,26 +12,26 @@ public class KillCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.Target;
 
-    public void Execute(Entity actor, CommandContext ctx)
+    public void Execute(World world, Entity actor, CommandContext ctx)
     {
         var roomContents = actor.Get<Position>().Room.Get<RoomContents>().Characters;
         var target = TargetingSystem.SelectSingleTarget(actor, ctx.Primary, roomContents);
 
         if (target == default)
         {
-            MessageSystem.SendMessage(actor, "You don't see that here.");
+            MessageSystem.Send(actor, "You don't see that here.");
             return;
         }
 
         if (target.Equals(actor))
         {
-            MessageSystem.SendMessage(actor, "You hit yourself. Ouch.");
+            MessageSystem.Send(actor, "You hit yourself. Ouch.");
             return;
         }
 
         // TODO: check if already in combat, if so, maybe switch targets? Or maybe not allow switching targets?
 
-        MessageSystem.SendMessage(actor, $"{actor.DisplayName} attacks {target.DisplayName}");
+        MessageSystem.Send(actor, $"{actor.DisplayName} attacks {target.DisplayName}");
         actor.Add(new CombatState { Target = target, RoundDelay = 0 });
         target.Add(new CombatState { Target = actor, RoundDelay = 1 }); // strikes back
     }

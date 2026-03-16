@@ -10,7 +10,6 @@
   <ItemGroup>
     <Folder Include="ECS\Events\" />
     <Folder Include="Network\" />
-    <Folder Include="Data\" />
     <Folder Include="Persistence\" />
     <Folder Include="World\" />
   </ItemGroup>

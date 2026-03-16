@@ -2,6 +2,7 @@
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
+using MysteryMud.ConsoleApp3.Components.Effects;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Extensions;
 using MysteryMud.ConsoleApp3.Factories;
@@ -13,14 +14,15 @@ public static class DeathSystem
     public static void Die(World world, Entity victim, Entity killer)
     {
         //TODO: log
-        MessageSystem.SendMessage(killer, $"%R{victim.DisplayName} is dead.%x");
-        MessageSystem.SendMessage(victim, $"You are dead.");
+        MessageSystem.Send(killer, $"%R{victim.DisplayName} is dead.%x");
+        MessageSystem.Send(victim, $"You are dead.");
 
         CreateCorpse(world, victim, killer);
 
         AddTags(world, victim);
         RemoveFromRoomContents(world, victim);
         RemoveFromCombat(world, victim);
+        RemoveEffects(world, victim);
     }
 
     private static void AddTags(World world, Entity victim)
@@ -54,6 +56,14 @@ public static class DeathSystem
         });
     }
 
+    private static void RemoveEffects(World world, Entity victim)
+    {
+        // remove all effects on victim
+        ref var characterEffects = ref victim.Get<CharacterEffects>();
+        foreach(var effect in characterEffects.Effects)
+            world.Destroy(effect);
+    }
+
     // TODO: create a corpse entity that can hold the items instead of dropping items on the floor
     private static void CreateCorpse(World world, Entity victim, Entity killer)
     {
@@ -67,7 +77,7 @@ public static class DeathSystem
         {
             //ContainmentSystem.Move(world, item, victim.Get<Position>().Room);
             ItemMovementSystem.DropItem(victim, position.Room, item);
-            MessageSystem.SendMessage(killer, $"{victim.DisplayName} drops {item.DisplayName}.");
+            MessageSystem.Send(killer, $"{victim.DisplayName} drops {item.DisplayName}.");
         }
     }
 }

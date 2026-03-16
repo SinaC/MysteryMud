@@ -11,11 +11,11 @@ public class SayCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.FullText;
 
-    public void Execute(Entity actor, CommandContext ctx)
+    public void Execute(World world, Entity actor, CommandContext ctx)
     {
         if (ctx.Text.IsEmpty)
         {
-            MessageSystem.SendMessage(actor, "Say what?");
+            MessageSystem.Send(actor, "Say what?");
             return;
         }
 
@@ -27,12 +27,12 @@ public class SayCommand : ICommand
         var roomContents = room.Get<RoomContents>();
         var roomCharacters = roomContents.Characters;
 
-        MessageSystem.SendMessage(actor, $"You say: {ctx.Text}");
+        MessageSystem.Send(actor, $"You say: {ctx.Text}");
         foreach (var target in roomCharacters)
         {
             if (!target.Equals(actor))
             {
-                MessageSystem.SendMessage(actor, $"{actor.DisplayName} says: {ctx.Text}");
+                MessageSystem.Send(actor, $"{actor.DisplayName} says: {ctx.Text}");
             }
         }
     }

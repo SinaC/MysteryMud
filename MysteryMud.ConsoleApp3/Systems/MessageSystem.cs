@@ -7,7 +7,7 @@ namespace MysteryMud.ConsoleApp3.Systems;
 
 public static class MessageSystem
 {
-    public static void SendMessage(Entity entity, string message)
+    public static void Send(Entity entity, string message)
     {
         if (entity.Has<Connection>())
         {
@@ -20,7 +20,7 @@ public static class MessageSystem
         }
     }
 
-    // TODO: colors will be handled
+    // TODO: colors will not be handled
     //public static void SendMessage(Entity entity, ReadOnlySpan<byte> message)
     //{
     //    if (entity.Has<Connection>())

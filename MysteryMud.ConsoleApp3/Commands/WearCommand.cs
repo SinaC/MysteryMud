@@ -11,7 +11,7 @@ public class WearCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.Target;
 
-    public void Execute(Entity actor, CommandContext ctx)
+    public void Execute(World world, Entity actor, CommandContext ctx)
     {
         ref var inventory = ref actor.Get<Inventory>();
 
@@ -19,17 +19,17 @@ public class WearCommand : ICommand
         {
             if (!item.Has<Equipable>())
             {
-                MessageSystem.SendMessage(actor, "You can't wear that.");
+                MessageSystem.Send(actor, "You can't wear that.");
                 return;
             }
 
             if (!EquipmentSystem.Equip(actor, item))
             {
-                MessageSystem.SendMessage(actor, "Slot already used.");
+                MessageSystem.Send(actor, "Slot already used.");
                 return;
             }
 
-            MessageSystem.SendMessage(actor, $"You wear {item.DisplayName}.");
+            MessageSystem.Send(actor, $"You wear {item.DisplayName}.");
             return;
         }
     }

@@ -6,5 +6,5 @@ interface ICommand
 {
     CommandParseMode ParseMode { get; }
 
-    void Execute(Entity actor, CommandContext ctx);
+    void Execute(World world, Entity actor, CommandContext ctx);
 }

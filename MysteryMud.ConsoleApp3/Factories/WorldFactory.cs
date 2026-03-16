@@ -4,7 +4,7 @@ using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Items;
 using MysteryMud.ConsoleApp3.Components.Rooms;
-using MysteryMud.ConsoleApp3.Enums;
+using MysteryMud.ConsoleApp3.Data.Enums;
 
 namespace MysteryMud.ConsoleApp3.Factories;
 
@@ -19,16 +19,16 @@ class WorldFactory
             new Room { Id = id },
             new Name { Value = name },
             new Description { Value = description },
-            new RoomGraph { Exits = new List<Exit>() },
+            new RoomGraph { Exits = [] },
             new RoomContents
             {
-                Characters = new List<Entity>(),
-                Items = new List<Entity>()
+                Characters = [],
+                Items = []
             },
             new RoomNeighborhood
             {
-                Distance1 = new List<Entity>(),
-                Distance2 = new List<Entity>()
+                Distance1 = [],
+                Distance2 = []
             }
         );
     }
@@ -45,16 +45,39 @@ class WorldFactory
         return true;
     }
 
-    public static Entity CreatePlayer(World world)
+    public static Entity CreateConnectingPlayer(World world)
     {
         var player = world.Create(
             new PlayerTag(),
-            new CharacterStats { Strength = 15, Dexterity = 12 },
-            new EffectiveStats(),
+            new BaseStats
+            {
+                Values = new Dictionary<StatType, int>
+                {
+                    [StatType.Strength] = 15,
+                    [StatType.Dexterity] = 12,
+                    [StatType.Intelligence] = 10,
+                    [StatType.HitRoll] = 0,
+                    [StatType.DamRoll] = 0,
+                    [StatType.Armor] = 0
+                }
+            },
+            new EffectiveStats
+            {
+                Values = new Dictionary<StatType, int>
+                {
+                    [StatType.Strength] = 0,
+                    [StatType.Dexterity] = 0,
+                    [StatType.Intelligence] = 0,
+                    [StatType.HitRoll] = 0,
+                    [StatType.DamRoll] = 0,
+                    [StatType.Armor] = 0
+                }
+            },
             new Health { Current = 100, Max = 100 },
-            new Inventory { Items = new List<Entity>() },
-            new Equipment { Slots = new Dictionary<EquipmentSlot, Entity>() }
-            // Name, Position, Connection will be set in nanny
+            new Inventory { Items = [] },
+            new Equipment { Slots = [] },
+            new CharacterEffects { Effects = [] }
+            // Name, Position, Connection, ... will be set in nanny
         );
 
         return player;
@@ -65,13 +88,35 @@ class WorldFactory
         var player = world.Create(
             new PlayerTag(),
             new Name { Value = name },
-            new CharacterStats { Strength = 15, Dexterity = 12 },
-            new EffectiveStats(),
+            new BaseStats
+            {
+                Values = new Dictionary<StatType, int>
+                {
+                    [StatType.Strength] = 15,
+                    [StatType.Dexterity] = 12,
+                    [StatType.Intelligence] = 10,
+                    [StatType.HitRoll] = 0,
+                    [StatType.DamRoll] = 0,
+                    [StatType.Armor] = 0
+                }
+            },
+            new EffectiveStats
+            {
+                Values = new Dictionary<StatType, int>
+                {
+                    [StatType.Strength] = 0,
+                    [StatType.Dexterity] = 0,
+                    [StatType.Intelligence] = 0,
+                    [StatType.HitRoll] = 0,
+                    [StatType.DamRoll] = 0,
+                    [StatType.Armor] = 0
+                }
+            },
             new Health { Current = 10, Max = 100 },
-            new Inventory { Items = new List<Entity>() },
-            new Equipment { Slots = new Dictionary<EquipmentSlot, Entity>() },
+            new Inventory { Items = [] },
+            new Equipment { Slots = [] },
+            new CharacterEffects { Effects = [] },
             new Position { Room = room }
-            //new CombatState()
         );
 
         room.Get<RoomContents>().Characters.Add(player);
@@ -85,14 +130,36 @@ class WorldFactory
             new NpcTag(),
             new Name { Value = name },
             new Description { Value = description },
-            new CharacterStats { Strength = 15, Dexterity = 12 },
-            new EffectiveStats(),
+            new BaseStats
+            {
+                Values = new Dictionary<StatType, int>
+                {
+                    [StatType.Strength] = 15,
+                    [StatType.Dexterity] = 12,
+                    [StatType.Intelligence] = 10,
+                    [StatType.HitRoll] = 0,
+                    [StatType.DamRoll] = 0,
+                    [StatType.Armor] = 0
+                }
+            },
+            new EffectiveStats
+            {
+                Values = new Dictionary<StatType, int>
+                {
+                    [StatType.Strength] = 0,
+                    [StatType.Dexterity] = 0,
+                    [StatType.Intelligence] = 0,
+                    [StatType.HitRoll] = 0,
+                    [StatType.DamRoll] = 0,
+                    [StatType.Armor] = 0
+                }
+            },
             new Health { Current = 5, Max = 100 },
-            new Inventory { Items = new List<Entity>() },
-            new Equipment { Slots = new Dictionary<EquipmentSlot, Entity>() },
+            new Inventory { Items = [] },
+            new Equipment { Slots = [] },
+            new CharacterEffects { Effects = [] },
             new Position { Room = room },
-            //new CombatState(),
-            new ThreatTable { Threat = new Dictionary<Entity, int>() }
+            new ThreatTable { Threat = [] }
         );
 
         room.Get<RoomContents>().Characters.Add(player);

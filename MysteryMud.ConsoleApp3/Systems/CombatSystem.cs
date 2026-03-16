@@ -1,7 +1,7 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
-using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
+using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Extensions;
 
 namespace MysteryMud.ConsoleApp3.Systems;
@@ -60,19 +60,19 @@ class CombatSystem
     private static bool ResolveAttack(World world, Entity attacker, Entity target, EffectiveStats stats)
     {
         var targetStats = target.Get<EffectiveStats>();
-        int attackRoll = stats.HitRoll + Random.Shared.Next(1, 20);
-        int defenseRoll = targetStats.Armor + Random.Shared.Next(1, 20);
+        int attackRoll = stats.Values[StatType.HitRoll] + Random.Shared.Next(1, 20);
+        int defenseRoll = targetStats.Values[StatType.Armor] + Random.Shared.Next(1, 20);
 
         if (attackRoll >= defenseRoll)
         {
-            int damage = stats.DamRoll + Random.Shared.Next(1, 6);
+            int damage = stats.Values[StatType.DamRoll] + Random.Shared.Next(1, 6);
 
             return DamageSystem.ApplyDamage(world, target, damage, attacker);
         }
         else
         {
-            MessageSystem.SendMessage(attacker, $"You miss {target.DisplayName}.");
-            MessageSystem.SendMessage(target, $"{attacker.DisplayName} misses you.");
+            MessageSystem.Send(attacker, $"You miss {target.DisplayName}.");
+            MessageSystem.Send(target, $"{attacker.DisplayName} misses you.");
             //TODO: log Console.WriteLine($"{attacker.DisplayName} misses {target.DisplayName}.");
             return true;
         }

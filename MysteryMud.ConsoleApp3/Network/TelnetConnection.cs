@@ -6,7 +6,7 @@ using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Networking;
 using MysteryMud.ConsoleApp3.Components.Rooms;
-using MysteryMud.ConsoleApp3.Enums;
+using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Factories;
 using System.Buffers;
 using System.Buffers.Binary;
@@ -686,11 +686,33 @@ public sealed class TelnetConnection
         Player.Add(new Position { Room = WorldFactory.StartingRoomEntity });
         Player.Add(new Connection { Value = this });
         Player.Add(new PlayerTag());
-        Player.Add(new CharacterStats { Strength = 15, Dexterity = 12 });
-        Player.Add(new EffectiveStats());
+        Player.Add(new BaseStats
+        {
+            Values = new Dictionary<StatType, int>
+            {
+                [StatType.Strength] = 15,
+                [StatType.Dexterity] = 12,
+                [StatType.Intelligence] = 10,
+                [StatType.HitRoll] = 0,
+                [StatType.DamRoll] = 0,
+                [StatType.Armor] = 0
+            }
+        });
+        Player.Add(new EffectiveStats
+        {
+            Values = new Dictionary<StatType, int>
+            {
+                [StatType.Strength] = 0,
+                [StatType.Dexterity] = 0,
+                [StatType.Intelligence] = 0,
+                [StatType.HitRoll] = 0,
+                [StatType.DamRoll] = 0,
+                [StatType.Armor] = 0
+            }
+        });
         Player.Add(new Health { Current = 100, Max = 100 });
-        Player.Add(new Inventory { Items = new List<Entity>() });
-        Player.Add(new Equipment { Slots = new Dictionary<EquipmentSlot, Entity>() });
+        Player.Add(new Inventory { Items = [] });
+        Player.Add(new Equipment { Slots = [] });
         WorldFactory.StartingRoomEntity.Get<RoomContents>().Characters.Add(Player);
 
         Write("Welcome to the game!\r\n> ");

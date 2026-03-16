@@ -3,14 +3,13 @@ using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3;
 using MysteryMud.ConsoleApp3.Commands;
 using MysteryMud.ConsoleApp3.Components;
-using MysteryMud.ConsoleApp3.Components.Buff;
-using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Items;
 using MysteryMud.ConsoleApp3.Components.Rooms;
-using MysteryMud.ConsoleApp3.Enums;
+using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Factories;
 using MysteryMud.ConsoleApp3.Network;
 
+CommandRegistry.Register("test", new TestCommand());
 CommandRegistry.Register("kill", new KillCommand());
 CommandRegistry.Register("get", new GetCommand());
 CommandRegistry.Register("look", new LookCommand());
@@ -27,6 +26,7 @@ CommandRegistry.Register("north", new NorthCommand());
 CommandRegistry.Register("south", new SouthCommand());
 CommandRegistry.Register("destroy", new DestroyCommand());
 CommandRegistry.Register("sacrifice", new SacrificeCommand());
+CommandRegistry.Register("mstat", new MstatCommand());
 
 var world = World.Create();
 
@@ -67,39 +67,36 @@ var telnetServer = new TelnetServer(4000);
 Task.Run(() => telnetServer.Start(world));
 
 //
-CommandDispatcher.Dispatch(player, "look".AsSpan());
-CommandDispatcher.Dispatch(player, "get all.sword".AsSpan());
-CommandDispatcher.Dispatch(player, "look".AsSpan());
-CommandDispatcher.Dispatch(player, "inventory".AsSpan());
-CommandDispatcher.Dispatch(goblin, "say you stole my sword".AsSpan());
-CommandDispatcher.Dispatch(player, "tell goblin you're a liar".AsSpan());
-//CommandDispatcher.Dispatch(sword, "inventory".AsSpan()); will crash because sword is not a character and doesn't have inventory component
-CommandDispatcher.Dispatch(player, "look chest".AsSpan());
-CommandDispatcher.Dispatch(player, "get all from chest".AsSpan());
-CommandDispatcher.Dispatch(player, "inventory".AsSpan());
-CommandDispatcher.Dispatch(player, "wear gem".AsSpan());
-CommandDispatcher.Dispatch(player, "wear sword".AsSpan());
-CommandDispatcher.Dispatch(player, "inventory".AsSpan());
-CommandDispatcher.Dispatch(player, "equipment".AsSpan());
-CommandDispatcher.Dispatch(player, "drop toto".AsSpan());
-CommandDispatcher.Dispatch(player, "drop gem".AsSpan());
-CommandDispatcher.Dispatch(player, "give sword goblin".AsSpan());
-CommandDispatcher.Dispatch(goblin, "wear sword".AsSpan());
-CommandDispatcher.Dispatch(goblin, "remove sword".AsSpan());
-CommandDispatcher.Dispatch(goblin, "wear sword".AsSpan());
-CommandDispatcher.Dispatch(player, "look goblin".AsSpan());
-CommandDispatcher.Dispatch(player, "inventory".AsSpan());
-CommandDispatcher.Dispatch(player, "get gem".AsSpan());
-CommandDispatcher.Dispatch(player, "put gem chest".AsSpan());
-CommandDispatcher.Dispatch(player, "look chest".AsSpan());
-CommandDispatcher.Dispatch(player, "look".AsSpan());
-CommandDispatcher.Dispatch(temple, "look".AsSpan());
-CommandDispatcher.Dispatch(chest, "look".AsSpan());
-CommandDispatcher.Dispatch(gem, "look".AsSpan());
-CommandDispatcher.Dispatch(goblin, "get trash".AsSpan());
-
-CreateStrengthBuff(world, player);
-player.Add<DirtyStats>();
+CommandDispatcher.Dispatch(world, player, "look".AsSpan());
+CommandDispatcher.Dispatch(world, player, "get all.sword".AsSpan());
+CommandDispatcher.Dispatch(world, player, "look".AsSpan());
+CommandDispatcher.Dispatch(world, player, "inventory".AsSpan());
+CommandDispatcher.Dispatch(world, goblin, "say you stole my sword".AsSpan());
+CommandDispatcher.Dispatch(world, player, "tell goblin you're a liar".AsSpan());
+//CommandDispatcher.Dispatcworld, h(sword, "inventory".AsSpan()); will crash because sword is not a character and doesn't have inventory component
+CommandDispatcher.Dispatch(world, player, "look chest".AsSpan());
+CommandDispatcher.Dispatch(world, player, "get all from chest".AsSpan());
+CommandDispatcher.Dispatch(world, player, "inventory".AsSpan());
+CommandDispatcher.Dispatch(world, player, "wear gem".AsSpan());
+CommandDispatcher.Dispatch(world, player, "wear sword".AsSpan());
+CommandDispatcher.Dispatch(world, player, "inventory".AsSpan());
+CommandDispatcher.Dispatch(world, player, "equipment".AsSpan());
+CommandDispatcher.Dispatch(world, player, "drop toto".AsSpan());
+CommandDispatcher.Dispatch(world, player, "drop gem".AsSpan());
+CommandDispatcher.Dispatch(world, player, "give sword goblin".AsSpan());
+CommandDispatcher.Dispatch(world, goblin, "wear sword".AsSpan());
+CommandDispatcher.Dispatch(world, goblin, "remove sword".AsSpan());
+CommandDispatcher.Dispatch(world, goblin, "wear sword".AsSpan());
+CommandDispatcher.Dispatch(world, player, "look goblin".AsSpan());
+CommandDispatcher.Dispatch(world, player, "inventory".AsSpan());
+CommandDispatcher.Dispatch(world, player, "get gem".AsSpan());
+CommandDispatcher.Dispatch(world, player, "put gem chest".AsSpan());
+CommandDispatcher.Dispatch(world, player, "look chest".AsSpan());
+CommandDispatcher.Dispatch(world, player, "look".AsSpan());
+CommandDispatcher.Dispatch(world, temple, "look".AsSpan());
+CommandDispatcher.Dispatch(world, chest, "look".AsSpan());
+CommandDispatcher.Dispatch(world, gem, "look".AsSpan());
+CommandDispatcher.Dispatch(world, goblin, "get trash".AsSpan());
 
 //CommandDispatcher.Dispatch(player, "kill goblin".AsSpan());
 
@@ -120,24 +117,25 @@ while (true)
     Thread.Sleep(100);
 }
 
-static Entity CreateStrengthBuff(World world, Entity target)
-{
-    return world.Create(
-        new BuffTag(),
-        new BuffTarget { Target = target },
-        new Duration { RemainingTicks = 600 },
-        new BuffModifiers
-        {
-            Values = new List<StatModifier>
-            {
-                new StatModifier
-                {
-                    Stat = StatType.Strength,
-                    Type = ModifierType.Add,
-                    Value = 5
-                }
-            }
-        }
-    );
-}
+
+//static Entity CreateStrengthBuff(World world, Entity target)
+//{
+//    return world.Create(
+//        new BuffTag(),
+//        new BuffTarget { Target = target },
+//        new Duration { RemainingTicks = 600 },
+//        new BuffModifiers
+//        {
+//            Values = new List<StatModifier>
+//            {
+//                new StatModifier
+//                {
+//                    Stat = StatType.Strength,
+//                    Type = ModifierType.Add,
+//                    Value = 5
+//                }
+//            }
+//        }
+//    );
+//}
 

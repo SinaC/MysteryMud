@@ -11,21 +11,21 @@ public class TellCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.TargetAndText;
 
-    public void Execute(Entity actor, CommandContext ctx)
+    public void Execute(World world, Entity actor, CommandContext ctx)
     {
         var message = ctx.Text;
 
         if (ctx.Primary.Name.IsEmpty)
         {
-            MessageSystem.SendMessage(actor, "Tell whom?");
+            MessageSystem.Send(actor, "Tell whom?");
             return;
         }
 
         var roomContents = actor.Get<Position>().Room.Get<RoomContents>().Characters;
         foreach (var target in TargetingSystem.SelectTargets(actor, ctx.Primary, roomContents))
         {  
-            MessageSystem.SendMessage(actor, $"You tell {target.DisplayName}: {message}");
-            MessageSystem.SendMessage(target, $"{actor.DisplayName} tells you: {message}");
+            MessageSystem.Send(actor, $"You tell {target.DisplayName}: {message}");
+            MessageSystem.Send(target, $"{actor.DisplayName} tells you: {message}");
         }
     }
 }

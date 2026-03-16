@@ -1,12 +1,19 @@
 effect system
+    character effects -> done
+    item effects
+        affecting item
+        affecting wearer
+    room effects
+        affecting room
+        affecting characters/items in room
 spells/skills
 damage
 combat
 act
 logging
+persistence
 admin
 areas
-persistence
 nanny
 websocket
 commands

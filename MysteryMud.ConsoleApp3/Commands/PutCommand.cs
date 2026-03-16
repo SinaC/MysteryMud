@@ -12,14 +12,14 @@ public class PutCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.TargetPair;
 
-    public void Execute(Entity actor, CommandContext ctx)
+    public void Execute(World world, Entity actor, CommandContext ctx)
     {
         var inventory = actor.Get<Inventory>();
 
         var container = FindContainer(actor, ctx.Secondary);
         if (container == default)
         {
-            MessageSystem.SendMessage(actor, "You don't see that here.");
+            MessageSystem.Send(actor, "You don't see that here.");
             return;
         }
 
@@ -27,7 +27,7 @@ public class PutCommand : ICommand
         {
             ItemMovementSystem.PutItem(actor, container, item);
 
-            MessageSystem.SendMessage(actor, $"You put {item.DisplayName} in {container.DisplayName}.");
+            MessageSystem.Send(actor, $"You put {item.DisplayName} in {container.DisplayName}.");
         }
     }
 

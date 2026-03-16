@@ -1,9 +1,4 @@
-﻿using MysteryMud.ConsoleApp3.Enums;
-using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace MysteryMud.ConsoleApp3.Events;
+﻿namespace MysteryMud.ConsoleApp3.Events;
 
 class EventProcessor
 {

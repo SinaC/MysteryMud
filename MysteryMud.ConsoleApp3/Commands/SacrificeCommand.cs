@@ -11,7 +11,7 @@ public class SacrificeCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.Target;
 
-    public void Execute(Entity actor, CommandContext ctx)
+    public void Execute(World world, Entity actor, CommandContext ctx)
     {
         // search in room
         ref var room = ref actor.Get<Position>().Room;
@@ -21,7 +21,7 @@ public class SacrificeCommand : ICommand
         {
             DestroySystem.DestroyItem(item);
 
-            MessageSystem.SendMessage(actor, $"You sacrifice the {item.DisplayName}.");
+            MessageSystem.Send(actor, $"You sacrifice the {item.DisplayName}.");
         }
     }
 }

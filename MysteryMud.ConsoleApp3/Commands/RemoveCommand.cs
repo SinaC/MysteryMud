@@ -10,7 +10,7 @@ public class RemoveCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.Target;
 
-    public void Execute(Entity actor, CommandContext ctx)
+    public void Execute(World world, Entity actor, CommandContext ctx)
     {
         ref var equipment = ref actor.Get<Equipment>();
 
@@ -23,11 +23,11 @@ public class RemoveCommand : ICommand
             {
                 EquipmentSystem.Unequip(actor, kv.Key);
 
-                MessageSystem.SendMessage(actor, $"You remove {item.DisplayName}.");
+                MessageSystem.Send(actor, $"You remove {item.DisplayName}.");
                 return;
             }
         }
 
-        MessageSystem.SendMessage(actor, "You are not wearing that.");
+        MessageSystem.Send(actor, "You are not wearing that.");
     }
 }

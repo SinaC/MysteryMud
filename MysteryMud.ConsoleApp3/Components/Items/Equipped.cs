@@ -1,5 +1,5 @@
 ﻿using Arch.Core;
-using MysteryMud.ConsoleApp3.Enums;
+using MysteryMud.ConsoleApp3.Data.Enums;
 
 namespace MysteryMud.ConsoleApp3.Components.Items;
 
