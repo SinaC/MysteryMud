@@ -1,0 +1,192 @@
+effect system
+spells/skills
+damage
+combat
+act
+logging
+admin
+areas
+persistence
+nanny
+websocket
+commands
+ai
+scripting
+
+=========
+respawn
+=========
+1. Use a “Dead State” Component for Players
+Instead of marking a player as destroyed, add a DeadComponent with extra info:
+public struct DeadComponent
+{
+    public bool IsPlayer;        // true if this is a player
+    public float TimeOfDeath;    // optional: track respawn timers
+    public Entity RespawnRoom;   // dedicated respawn room entity
+}
+
+Why: This avoids removing the entity from ECS entirely.
+Systems can check for DeadComponent:
+Prevent players from moving, acting, or being targeted.
+Trigger respawn logic after a timer or immediately.
+
+2. Respawn System
+You can have a player respawn system that runs each tick:
+
+foreach (var entity in world.Query<DeadComponent, PositionComponent>())
+{
+    if (entity.Dead.IsPlayer)
+    {
+        // Move player to respawn room
+        entity.Position = entity.Dead.RespawnRoom;
+
+        // Heal or reset stats
+        entity.Health.HP = entity.Health.MaxHP;
+        
+        // Remove DeadComponent so player can act again
+        world.RemoveComponent<DeadComponent>(entity);
+    }
+}
+
+The RespawnRoom can be a special entity for each zone or a global “start room.”
+You could add a delay using TimeOfDeath if you want a respawn timer.
+
+3. Interaction with RoomContents
+When a player “dies”:
+Remove them from the current room’s RoomContents.
+Add them to the RespawnRoom’s RoomContents when respawning.
+For NPCs or monsters:
+Add DeadTag → Cleanup system destroys them later.
+This avoids iterating over the entire world and keeps your room-based ECS queries fast.
+
+4. Optional: Death Effects
+You can store additional info in DeadComponent, e.g.:
+CauseOfDeath (string or enum)
+LootDropped (list of entities)
+Systems can handle corpse creation without destroying the player entity.
+
+✅ Key Takeaways
+Players never get destroyed; NPCs/items can use DestroyedTag.
+DeadComponent marks a player as temporarily inactive.
+Respawn system handles moving players to a respawn room and resetting stats.
+RoomContents integration ensures queries like look or get still work efficiently.
+
+[Player Entity]                           [NPC/Item Entity]
++-----------------+                       +-----------------+
+| Components:     |                       | Components:     |
+| - Position      |                       | - Position      |
+| - Health        |                       | - Health        |
+| - Inventory     |                       | - Loot          |
+| - RoomContents  |                       | - RoomContents  |
+| - DeadComponent | <- added on death     | - DeadTag       | <- added on death
++-----------------+                       +-----------------+
+        |                                         |
+        | Death occurs                             | Death occurs
+        v                                         v
++-----------------+                       +-----------------+
+| PlayerDeathSystem|                       | NPCDeathSystem  |
+| Checks Health <=0|                       | Checks Health <=0
+| Adds DeadComponent|                       | Adds DeadTag
+| Disables actions |                       | Disables actions
++-----------------+                       +-----------------+
+        |                                         |
+        | Respawn timer / respawn logic          | Cleanup timer
+        v                                         v
++-----------------+                       +-----------------+
+| PlayerRespawnSys|                       | CleanupSystem   |
+| Moves to RespawnRoom                     | Checks DeadTag
+| Resets Health/Stats                       | Removes entity
+| Removes DeadComponent                     | Removes DestroyedTag
++-----------------+                       +-----------------+
+        |
+        v
++-----------------+
+| Player Active   |
+| Components ready|
++-----------------+
+
+Tips for Implementation
+
+Use separate systems for clarity:
+PlayerDeathSystem → handles death state, logging, death messages.
+PlayerRespawnSystem → moves and reactivates players.
+NPCDeathSystem → handles corpses, loot drops, and tagging for destruction.
+CleanupSystem → final deletion of NPCs/items marked with DestroyedTag.
+Keep room contents in sync to avoid iterating over the entire world.
+
+public class PlayerRespawnSystem : SystemBase
+{
+    protected override void OnUpdate(World world, float deltaTime)
+    {
+        foreach (var (entity, dead, health, position) in world.Query<DeadComponent, HealthComponent, PositionComponent>())
+        {
+            // Optional: respawn timer check
+            if (Time.time - dead.TimeOfDeath >= RespawnDelay)
+            {
+                // Move player to respawn room
+                position.Room = dead.RespawnRoom;
+                world.SetComponent(entity, position);
+
+                // Add player back to RoomContents
+                var roomContents = world.GetComponent<RoomContents>(dead.RespawnRoom);
+                roomContents.Characters.Add(entity);
+                world.SetComponent(dead.RespawnRoom, roomContents);
+
+                // Reset health
+                health.HP = health.MaxHP;
+                world.SetComponent(entity, health);
+
+                // Remove DeadComponent so player can act again
+                world.RemoveComponent<DeadComponent>(entity);
+
+                SendMessageToRoom(dead.RespawnRoom, $"{GetPlayerName(entity)} has respawned!");
+            }
+        }
+    }
+}
+
+// add WithNone<DeadComponent>() to other systems that should ignore dead players, e.g. movement, combat, etc.
+
+public class PlayerDeathSystem : SystemBase
+{
+    protected override void OnUpdate(World world, float deltaTime)
+    {
+        foreach (var (entity, health, position) in world.Query<HealthComponent, PositionComponent>())
+        {
+            if (health.HP <= 0)
+            {
+                // Skip NPCs (they use DeadTag/DestroyedTag)
+                if (!world.HasComponent<DeadComponent>(entity))
+                {
+                    // Add DeadComponent to mark the player as dead
+                    world.AddComponent(entity, new DeadComponent
+                    {
+                        RespawnRoom = GetRespawnRoom(entity),
+                        TimeOfDeath = Time.time
+                    });
+
+                    // Remove player from current room contents
+                    var roomContents = world.GetComponent<RoomContents>(position.Room);
+                    roomContents.Characters.Remove(entity);
+                    world.SetComponent(position.Room, roomContents);
+
+                    // Disable player actions (optional: by adding a PlayerInactiveTag or checking DeadComponent)
+                    DisablePlayerActions(entity);
+
+                    SendMessageToRoom(position.Room, $"{GetPlayerName(entity)} has died!");
+                }
+            }
+        }
+    }
+
+    private Entity GetRespawnRoom(Entity player)
+    {
+        // Return your designated respawn room entity
+        return RespawnRoomEntity; 
+    }
+
+    private void DisablePlayerActions(Entity player)
+    {
+        // Could add a tag or just check DeadComponent in command systems
+    }
+}

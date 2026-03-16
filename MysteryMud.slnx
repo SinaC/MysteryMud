@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="MysteryMud.ConsoleApp/MysteryMud.ConsoleApp.csproj" />
+  <Project Path="MysteryMud.ConsoleApp2/MysteryMud.ConsoleApp2.csproj" Id="ba849ad7-8d19-4bbd-aaf8-904507495bc7" />
+  <Project Path="MysteryMud.ConsoleApp3/MysteryMud.ConsoleApp3.csproj" Id="6326c02c-3c99-43ae-b966-f1f5177cb829" />
+</Solution>

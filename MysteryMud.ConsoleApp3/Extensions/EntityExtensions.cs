@@ -1,0 +1,31 @@
+﻿using Arch.Core;
+using Arch.Core.Extensions;
+using MysteryMud.ConsoleApp3.Components;
+
+namespace MysteryMud.ConsoleApp3.Extensions;
+
+public static class EntityExtensions
+{
+    extension(Entity entity)
+    {
+        public string Name => entity.Get<Name>().Value;
+
+        public string DisplayName => BuildDisplayName(entity);
+
+        public string DebugName => BuildDebugName(entity);
+
+        private string BuildDisplayName()
+        {
+            ref var description = ref entity.TryGetRef<Description>(out var descriptionExists);
+            if (descriptionExists)
+                return description.Value;
+            return entity.Get<Name>().Value;
+        }
+
+        private string BuildDebugName()
+        {
+            var name = entity.Get<Name>().Value;
+            return $"{name}({entity.Id} {entity.IsAlive()})";
+        }
+    }
+}
