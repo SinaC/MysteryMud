@@ -6,7 +6,7 @@ namespace MysteryMud.ConsoleApp3.Commands;
 
 class CommandDispatcher
 {
-    public static void Dispatch(Entity actor, ReadOnlySpan<char> input)
+    public static void Dispatch(World world, Entity actor, ReadOnlySpan<char> input)
     {
         Console.WriteLine($"*** [{actor.DisplayName}] EXECUTING [{input}]");
 
@@ -16,7 +16,7 @@ class CommandDispatcher
         // search command in registry
         if (!CommandRegistry.TryGet(cmdSpan, out var cmd))
         {
-            MessageSystem.SendMessage(actor, "Unknown command.");
+            MessageSystem.Send(actor, "Unknown command.");
             return;
         }
 
@@ -24,6 +24,6 @@ class CommandDispatcher
         CommandParser.Parse(cmd.ParseMode, cmdSpan, argsSpan, out var ctx);
 
         // execute command
-        cmd.Execute(actor, ctx);
+        cmd.Execute(world, actor, ctx);
     }
 }

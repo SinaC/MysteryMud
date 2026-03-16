@@ -19,7 +19,10 @@ public static class EntityExtensions
             ref var description = ref entity.TryGetRef<Description>(out var descriptionExists);
             if (descriptionExists)
                 return description.Value;
-            return entity.Get<Name>().Value;
+            ref var name = ref entity.TryGetRef<Name>(out var nameExists);
+            if (nameExists)
+                return name.Value;
+            return entity.Id.ToString();
         }
 
         private string BuildDebugName()

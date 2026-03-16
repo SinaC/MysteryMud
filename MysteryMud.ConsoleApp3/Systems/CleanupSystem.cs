@@ -21,10 +21,10 @@ public static class CleanupSystem
                 .WithAll<DeadTag, Position>();
         world.Query(destroyCharactersQuery, (Entity character, ref DeadTag deadTag, ref Position position) =>
         {
+            Console.WriteLine($"Cleaning up character {character.DebugName} from room {position.Room.DebugName}");
+
             var roomContents = position.Room.Get<RoomContents>();
             roomContents.Characters.Remove(character);
-
-            Console.WriteLine($"Cleaning up character {character.DebugName} from room {position.Room.DebugName}");
 
             world.Destroy(character);
         });
@@ -40,10 +40,10 @@ public static class CleanupSystem
             if (item.Has<Position>())
             {
                 ref var position = ref item.Get<Position>();
-                ref var roomContents = ref position.Room.Get<RoomContents>();
-                roomContents.Items.Remove(item);
 
                 Console.WriteLine($"Cleaning up item {item.DebugName} from room {position.Room.DebugName}");
+                ref var roomContents = ref position.Room.Get<RoomContents>();
+                roomContents.Items.Remove(item);
             }
             // check if the item is in a container or inventory
             if (item.Has<ContainedIn>())
@@ -51,17 +51,17 @@ public static class CleanupSystem
                 ref var containedIn = ref item.Get<ContainedIn>();
                 if (containedIn.Character != Entity.Null)
                 {
+                    Console.WriteLine($"Cleaning up item {item.DebugName} from inventory of {containedIn.Character.DebugName}");
+
                     ref var inventory = ref containedIn.Character.Get<Inventory>();
                     inventory.Items.Remove(item);
-
-                    Console.WriteLine($"Cleaning up item {item.DebugName} from inventory of {containedIn.Character.DebugName}");
                 }
                 else if (containedIn.Container != Entity.Null)
                 {
+                    Console.WriteLine($"Cleaning up item {item.DebugName} from container {containedIn.Container.DebugName}");
+
                     ref var containerContents = ref containedIn.Container.Get<ContainerContents>();
                     containerContents.Items.Remove(item);
-
-                    Console.WriteLine($"Cleaning up item {item.DebugName} from container {containedIn.Container.DebugName}");
                 }
             }
             // check if the item is equipped should never happen)
@@ -73,9 +73,9 @@ public static class CleanupSystem
                 {
                     if (equipment.Slots[slot] == item)
                     {
-                        equipment.Slots[slot] = Entity.Null;
-
                         Console.WriteLine($"Cleaning up item {item.DebugName} from equipment of {equipped.Wearer.DebugName} in slot {slot}");
+
+                        equipment.Slots[slot] = Entity.Null;
                     }
                 }
             }

@@ -14,15 +14,17 @@ class GameLoop
     {
         //scheduler.Update(time);
 
+        TimeSystem.NextTick();
+
         ProcessCommands(world);
 
         // AiSystem.Process(world);
 
-        BuffSystem.Update(world);
+        DurationSystem.Update(world);
         StatSystem.Recalculate(world);
 
         CombatSystem.Process(world);
-        DamageSystem.ApplyPendingDamages(world);
+        DotSystem.Update(world);
 
         RespawnSystem.RespawnPlayers(world);
 
@@ -38,7 +40,7 @@ class GameLoop
             var span = cmd.Buffer.AsSpan(0, cmd.Length);
 
             // TODO: check min position
-            CommandDispatcher.Dispatch(cmd.Player, span);
+            CommandDispatcher.Dispatch(world, cmd.Player, span);
 
             ArrayPool<char>.Shared.Return(cmd.Buffer);
         }

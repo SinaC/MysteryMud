@@ -12,7 +12,7 @@ public class DropCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.Target;
 
-    public void Execute(Entity actor, CommandContext ctx)
+    public void Execute(World world, Entity actor, CommandContext ctx)
     {
         ref var inventory = ref actor.Get<Inventory>();
         ref var room = ref actor.Get<Position>().Room;
@@ -27,7 +27,7 @@ public class DropCommand : ICommand
             }
 
             ItemMovementSystem.DropItem(actor, room, item);
-            MessageSystem.SendMessage(actor, $"You drop {item.DisplayName}.");
+            MessageSystem.Send(actor, $"You drop {item.DisplayName}.");
         }
     }
 }

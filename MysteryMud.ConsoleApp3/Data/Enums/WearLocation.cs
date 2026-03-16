@@ -1,4 +1,4 @@
-﻿namespace MysteryMud.ConsoleApp3.Enums;
+﻿namespace MysteryMud.ConsoleApp3.Data.Enums;
 
 public enum WearLocation
 {

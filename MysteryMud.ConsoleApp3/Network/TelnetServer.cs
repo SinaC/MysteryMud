@@ -27,7 +27,7 @@ public class TelnetServer
             var tcpClient = await _listener.AcceptSocketAsync();
 
             // create a new ECS entity for the player
-            var playerEntity = WorldFactory.CreatePlayer(world);
+            var playerEntity = WorldFactory.CreateConnectingPlayer(world);
 
             // create TelnetConnection
             var conn = new TelnetConnection(tcpClient, playerEntity);

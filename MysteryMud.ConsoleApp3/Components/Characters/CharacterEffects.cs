@@ -2,8 +2,7 @@
 
 namespace MysteryMud.ConsoleApp3.Components.Characters;
 
-public struct PendingDamage
+struct CharacterEffects
 {
-    public int Amount;
-    public Entity Source;
+    public List<Entity> Effects;
 }

@@ -13,7 +13,7 @@ public class GiveCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.TargetPair;
 
-    public void Execute(Entity actor, CommandContext ctx)
+    public void Execute(World world, Entity actor, CommandContext ctx)
     {
         var inventory = actor.Get<Inventory>();
         var room = actor.Get<Position>().Room;
@@ -23,7 +23,7 @@ public class GiveCommand : ICommand
         var target = TargetingSystem.SelectSingleTarget(actor, ctx.Secondary, roomContents.Characters);
         if (target == default)
         {
-            MessageSystem.SendMessage(actor, "They are not here.");
+            MessageSystem.Send(actor, "They are not here.");
             return;
         }
 
@@ -38,7 +38,7 @@ public class GiveCommand : ICommand
             }
 
             ItemMovementSystem.GiveItem(actor, target, item);
-            MessageSystem.SendMessage(actor, $"You give {item.DisplayName} to {target.DisplayName}.");
+            MessageSystem.Send(actor, $"You give {item.DisplayName} to {target.DisplayName}.");
         }
     }
 }

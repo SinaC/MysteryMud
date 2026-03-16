@@ -12,20 +12,20 @@ public class InventoryCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.None;
 
-    public void Execute(Entity actor, CommandContext ctx)
+    public void Execute(World world, Entity actor, CommandContext ctx)
     {
         var inventory = actor.Get<Inventory>();
         if (inventory.Items.Count == 0)
         {
-            MessageSystem.SendMessage(actor, "Your inventory is empty.");
+            MessageSystem.Send(actor, "Your inventory is empty.");
         }
         else
         {
-            MessageSystem.SendMessage(actor, "You are carrying:");
+            MessageSystem.Send(actor, "You are carrying:");
             foreach (var item in inventory.Items)
             {
                 if (!item.Has<Equipped>())
-                    MessageSystem.SendMessage(actor, $"- {item.DisplayName}");
+                    MessageSystem.Send(actor, $"- {item.DisplayName}");
             }
         }
     }
