@@ -48,12 +48,12 @@ public static class EffectFactory
         }
 
         // duration ?
-        var duration = effectTemplate.DurationFunc?.Invoke(source, target);
+        var duration = effectTemplate.DurationFunc?.Invoke(world, source, target);
         if (duration is not null)
             effect.Add(new Duration { RemainingTicks = duration.Value });
 
         // stat modifiers ?
-        if (effectTemplate.StatModifiers != null && effectTemplate.StatModifiers.Length > 0)
+        if (effectTemplate.StatModifiers is not null && effectTemplate.StatModifiers.Length > 0)
         {
             var modifiers = new List<StatModifier>();
             foreach (var modifierDefinition in effectTemplate.StatModifiers)
@@ -75,25 +75,26 @@ public static class EffectFactory
                 target.Add<DirtyStats>();
         }
 
+        // TODO: remove
+        ref var casterStats = ref source.Get<EffectiveStats>();
+
         // dot ?
-        var dot = effectTemplate.DotFunc?.Invoke(source, target);
-        if (dot is not null)
+        if (effectTemplate.Dot is not null)
             effect.Add(new DamageOverTime
             {
-                Damage = dot.Value.Damage,
-                DamageType = dot.Value.DamageType,
-                TickRate = dot.Value.Interval,
-                NextTick = TimeSystem.CurrentTick + dot.Value.Interval
+                Damage = effectTemplate.Dot.Value.DamageFunc.Invoke(world, source, target),
+                DamageType = effectTemplate.Dot.Value.DamageType,
+                TickRate = effectTemplate.Dot.Value.TickRate,
+                NextTick = TimeSystem.CurrentTick + effectTemplate.Dot.Value.TickRate
             });
 
         // hot ?
-        var hot = effectTemplate.HotFunc?.Invoke(source, target);
-        if (hot is not null)
+        if (effectTemplate.Hot is not null)
             effect.Add(new HealOverTime
             {
-                Heal = hot.Value.Heal,
-                TickRate = hot.Value.Interval,
-                NextTick = TimeSystem.CurrentTick + hot.Value.Interval
+                Heal = effectTemplate.Hot.Value.HealFunc.Invoke(world, source, target),
+                TickRate = effectTemplate.Hot.Value.TickRate,
+                NextTick = TimeSystem.CurrentTick + effectTemplate.Hot.Value.TickRate
             });
 
         // apply message
@@ -121,13 +122,13 @@ public static class EffectFactory
                 return true; // handled
             case StackingRule.Refresh:
                 if (hasDuration)
-                    duration.RemainingTicks = effectTemplate.DurationFunc?.Invoke(effectInstance.Source, effectInstance.Target) ?? 0;
+                    duration.RemainingTicks = effectTemplate.DurationFunc?.Invoke(world, effectInstance.Source, effectInstance.Target) ?? 0;
                 return true; // handled
             case StackingRule.Stack:
                 if (effectInstance.StackCount < effectTemplate.MaxStacks)
                     effectInstance.StackCount++;
                 if (hasDuration)
-                    duration.RemainingTicks = effectTemplate.DurationFunc?.Invoke(effectInstance.Source, effectInstance.Target) ?? 0;
+                    duration.RemainingTicks = effectTemplate.DurationFunc?.Invoke(world, effectInstance.Source, effectInstance.Target) ?? 0;
                 return true; // handled
         }
 

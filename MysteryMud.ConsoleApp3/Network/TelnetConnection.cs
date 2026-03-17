@@ -610,10 +610,18 @@ public sealed class TelnetConnection
     // TODO: refactor
     private void HandleNanny(ReadOnlySpan<char> input)
     {
+        _tempName = "joel";
+        SendCmd(Telnet.WONT, Telnet.TELOPT_ECHO);
+        NannyState = NannyState.Finished;
+        InitializePlayer();
+        return;
+
+        // TODO
+
         switch (NannyState)
         {
             case NannyState.NewConnection:
-                SendCmd(Telnet.WONT, Telnet.TELOPT_ECHO); // Enable local echo for password input
+                SendCmd(Telnet.WONT, Telnet.TELOPT_ECHO); // Enable local echo
                 Write("Welcome to the MUD!\r\nPlease enter your name: ");
                 Flush();
                 NannyState = NannyState.EnterName;
@@ -629,7 +637,7 @@ public sealed class TelnetConnection
 
                 _tempName = input.ToString().Trim();
                 Write("Enter your password: ");
-                SendCmd(Telnet.WILL, Telnet.TELOPT_ECHO); // Enable local echo for password input
+                SendCmd(Telnet.WILL, Telnet.TELOPT_ECHO); // Disable local echo for password input
                 Flush();
                 NannyState = NannyState.EnterPassword;
                 break;
@@ -652,7 +660,7 @@ public sealed class TelnetConnection
                 else
                 {
                     Write("Character creation complete!\r\n");
-                    SendCmd(Telnet.WONT, Telnet.TELOPT_ECHO); // Enable local echo for password input
+                    SendCmd(Telnet.WONT, Telnet.TELOPT_ECHO); // Enable local echo
                     Flush();
                     NannyState = NannyState.Finished;
 
@@ -681,18 +689,20 @@ public sealed class TelnetConnection
 
     private void InitializePlayer()
     {
-        // Example: set player position, stats, inventory
-        Player.Add(new Name { Value = _tempName });
-        Player.Add(new Position { Room = WorldFactory.StartingRoomEntity });
-        Player.Add(new Connection { Value = this });
+        // TODO: fill in with actual character creation data, load from file, etc
         Player.Add(new PlayerTag());
+        Player.Add(new Name { Value = _tempName });
         Player.Add(new BaseStats
         {
+            Level = 1,
+            Experience = 0,
             Values = new Dictionary<StatType, int>
             {
                 [StatType.Strength] = 15,
-                [StatType.Dexterity] = 12,
                 [StatType.Intelligence] = 10,
+                [StatType.Wisdom] = 15,
+                [StatType.Dexterity] = 12,
+                [StatType.Constitution] = 15,
                 [StatType.HitRoll] = 0,
                 [StatType.DamRoll] = 0,
                 [StatType.Armor] = 0
@@ -703,8 +713,10 @@ public sealed class TelnetConnection
             Values = new Dictionary<StatType, int>
             {
                 [StatType.Strength] = 0,
-                [StatType.Dexterity] = 0,
                 [StatType.Intelligence] = 0,
+                [StatType.Wisdom] = 0,
+                [StatType.Dexterity] = 0,
+                [StatType.Constitution] = 0,
                 [StatType.HitRoll] = 0,
                 [StatType.DamRoll] = 0,
                 [StatType.Armor] = 0
@@ -713,6 +725,13 @@ public sealed class TelnetConnection
         Player.Add(new Health { Current = 100, Max = 100 });
         Player.Add(new Inventory { Items = [] });
         Player.Add(new Equipment { Slots = [] });
+        Player.Add(new CharacterEffects
+        {
+            Effects = [],
+            EffectsByTag = new Entity?[32]
+        });
+        Player.Add(new Position { Room = WorldFactory.StartingRoomEntity });
+        Player.Add<DirtyStats>(); // ensure stats are recomputed
         WorldFactory.StartingRoomEntity.Get<RoomContents>().Characters.Add(Player);
 
         Write("Welcome to the game!\r\n> ");

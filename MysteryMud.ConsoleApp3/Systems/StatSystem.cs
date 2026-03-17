@@ -18,6 +18,10 @@ class StatSystem
                      ref EffectiveStats effectiveStats,
                      ref DirtyStats dirty) =>
         {
+            // no modifiers, so just copy base stats to effective stats
+            effectiveStats.Level = baseStats.Level;
+            effectiveStats.Experience = baseStats.Experience;
+
             // TODO: optimize by only recalculating stats that are dirty, instead of all stats for the character. this would require tracking which stats are dirty, either by having a separate DirtyStats component for each stat, or by having a bitfield in the DirtyStats component that tracks which stats are dirty
             foreach (var stat in Enum.GetValues<StatType>())
             {
