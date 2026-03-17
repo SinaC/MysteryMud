@@ -2,6 +2,7 @@
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
+using MysteryMud.ConsoleApp3.Components.Effects;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Extensions;
@@ -24,6 +25,7 @@ public class MstatCommand : ICommand
             return;
         }
 
+        // TODO: ref ?
         var (name, position, health, baseStats, effectiveStats, inventory, equipment, characterEffects) = target.Get<Name, Position, Health, BaseStats, EffectiveStats, Inventory, Equipment, CharacterEffects>();
         MessageSystem.Send(actor, $"Name: {name.Value}");
         ref var description = ref target.TryGetRef<Description>(out var hasDescription);
@@ -36,7 +38,7 @@ public class MstatCommand : ICommand
             MessageSystem.Send(actor, $"Mana: {mana.Current}/{mana.Max}");
         foreach (var stat in Enum.GetValues<StatType>())
         {
-            MessageSystem.Send(actor, $"{stat}: {baseStats.Values[stat]}/{effectiveStats.Values[stat]}");
+            MessageSystem.Send(actor, $"{stat}: {effectiveStats.Values[stat]}/{baseStats.Values[stat]}");
         }
         ref var combatState = ref target.TryGetRef<CombatState>(out var inCombat);
         if (inCombat)
@@ -52,8 +54,31 @@ public class MstatCommand : ICommand
             else
                 MessageSystem.Send(actor, $"{slot}: nothing");
         }
+        MessageSystem.Send(actor, $"Active tags: {characterEffects.ActiveTags}");
         MessageSystem.Send(actor, $"Effects:");
         foreach (var effect in characterEffects.Effects)
-            MessageSystem.Send(actor, $"- {effect.DisplayName}");
+        {
+            ref var effectInstance = ref effect.Get<EffectInstance>();
+            ref var duration = ref effect.TryGetRef<Duration>(out var hasDuration);
+            ref var statModifiers = ref effect.TryGetRef<StatModifiers>(out var hasStatModifiers);
+            ref var damageOverTime = ref effect.TryGetRef<DamageOverTime>(out var hasDamageOverTime);
+            ref var healOverTime = ref effect.TryGetRef<HealOverTime>(out var hasHealOverTime);
+            var effectName = effectInstance.Template.Name;
+            var stackCount = effectInstance.StackCount;
+            var sourceName = effectInstance.Source.DisplayName;
+            if (hasDuration)
+                MessageSystem.Send(actor, $"- {effectName} Source: {sourceName} Stacks: {stackCount} Remaining ticks: {duration.RemainingTicks}");
+            else
+                MessageSystem.Send(actor, $"- {effectName} Source: {sourceName} Stacks: {stackCount} Permanent");
+            if (hasStatModifiers)
+            {
+                foreach (var modifier in statModifiers.Values)
+                    MessageSystem.Send(actor, $"  - {modifier.Type} {modifier.Value} {modifier.Stat}");
+            }
+            if (hasDamageOverTime)
+                MessageSystem.Send(actor, $"  - Damage over time: {damageOverTime.Damage} every {damageOverTime.TickRate} ticks");
+            if (hasHealOverTime)
+                MessageSystem.Send(actor, $"  - Heal over time: {healOverTime.Heal} every {healOverTime.TickRate} ticks");
+        }
     }
 }

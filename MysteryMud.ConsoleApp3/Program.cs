@@ -3,11 +3,13 @@ using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3;
 using MysteryMud.ConsoleApp3.Commands;
 using MysteryMud.ConsoleApp3.Components;
+using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Items;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Factories;
 using MysteryMud.ConsoleApp3.Network;
+using System.ComponentModel.Design;
 
 CommandRegistry.Register("test", new TestCommand());
 CommandRegistry.Register("kill", new KillCommand());
@@ -45,6 +47,9 @@ WorldFactory.LinkRoom(world, common, market, Direction.North);
 
 var player = WorldFactory.CreatePlayer(world, "sinac", market);
 var goblin = WorldFactory.CreateMob(world, "goblin", "a goblin", market);
+var troll = WorldFactory.CreateMob(world, "troll", "a troll", market);
+troll.Get<Health>().Current = 10000;
+troll.Get<Health>().Max = 10000;
 var sword = WorldFactory.CreateItemInRoom(world, "sword", "a %#FFFFFF>#FFFF00shiny sword%x", market);
 sword.Add(new Equipable { Slot = EquipmentSlot.MainHand });
 var chest = world.Create(
@@ -53,7 +58,7 @@ var chest = world.Create(
             new Description { Value = "a chest" },
             new Position { Room = market },
             new Container { Capacity = 10 },
-            new ContainerContents { Items = new List<Entity>() }
+            new ContainerContents { Items = [] }
         );
 market.Get<RoomContents>().Items.Add(chest);
 var gem = WorldFactory.CreateItemInContainer(world, "gem", "a %#FF0000>#FF00FFsparkling gem%x", chest);
@@ -98,7 +103,16 @@ CommandDispatcher.Dispatch(world, chest, "look".AsSpan());
 CommandDispatcher.Dispatch(world, gem, "look".AsSpan());
 CommandDispatcher.Dispatch(world, goblin, "get trash".AsSpan());
 
+// testing combat
 //CommandDispatcher.Dispatch(player, "kill goblin".AsSpan());
+
+// testing buffs and dots
+CommandDispatcher.Dispatch(world, goblin, "test troll poison".AsSpan());
+CommandDispatcher.Dispatch(world, player, "test troll poison".AsSpan()); // will apply a second stack of poison because StackingRule is Stack
+CommandDispatcher.Dispatch(world, player, "test troll poison".AsSpan()); // will apply a second stack of poison because StackingRule is Stack
+CommandDispatcher.Dispatch(world, player, "test troll bless".AsSpan()); // will not be applied because StackingRule is None
+CommandDispatcher.Dispatch(world, player, "test troll bless".AsSpan());
+// 
 
 var gameLoop = new GameLoop();
 
@@ -106,36 +120,14 @@ var gameLoop = new GameLoop();
 //{
 //    Console.WriteLine("TICK: " + i);
 
-//    gameLoop.Tick(world, i);
+//    gameLoop.Tick(world);
 //    CommandDispatcher.Dispatch(player, "look".AsSpan());
 //}
 
 while (true)
 {
-    gameLoop.Tick(world, 0);
+    gameLoop.Tick(world);
 
     Thread.Sleep(100);
 }
-
-
-//static Entity CreateStrengthBuff(World world, Entity target)
-//{
-//    return world.Create(
-//        new BuffTag(),
-//        new BuffTarget { Target = target },
-//        new Duration { RemainingTicks = 600 },
-//        new BuffModifiers
-//        {
-//            Values = new List<StatModifier>
-//            {
-//                new StatModifier
-//                {
-//                    Stat = StatType.Strength,
-//                    Type = ModifierType.Add,
-//                    Value = 5
-//                }
-//            }
-//        }
-//    );
-//}
 

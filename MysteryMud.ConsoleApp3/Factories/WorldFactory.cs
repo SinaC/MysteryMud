@@ -76,7 +76,12 @@ class WorldFactory
             new Health { Current = 100, Max = 100 },
             new Inventory { Items = [] },
             new Equipment { Slots = [] },
-            new CharacterEffects { Effects = [] }
+            new CharacterEffects
+            {
+                Effects = [],
+                EffectsByTag = new Entity?[32]
+            },
+            new DirtyStats() // dirty by default
             // Name, Position, Connection, ... will be set in nanny
         );
 
@@ -115,8 +120,13 @@ class WorldFactory
             new Health { Current = 10, Max = 100 },
             new Inventory { Items = [] },
             new Equipment { Slots = [] },
-            new CharacterEffects { Effects = [] },
-            new Position { Room = room }
+            new CharacterEffects
+            {
+                Effects = [],
+                EffectsByTag = new Entity?[32]
+            },
+            new Position { Room = room },
+            new DirtyStats() // dirty by default
         );
 
         room.Get<RoomContents>().Characters.Add(player);
@@ -137,8 +147,8 @@ class WorldFactory
                     [StatType.Strength] = 15,
                     [StatType.Dexterity] = 12,
                     [StatType.Intelligence] = 10,
-                    [StatType.HitRoll] = 0,
-                    [StatType.DamRoll] = 0,
+                    [StatType.HitRoll] = 10,
+                    [StatType.DamRoll] = 7,
                     [StatType.Armor] = 0
                 }
             },
@@ -157,9 +167,14 @@ class WorldFactory
             new Health { Current = 5, Max = 100 },
             new Inventory { Items = [] },
             new Equipment { Slots = [] },
-            new CharacterEffects { Effects = [] },
+            new CharacterEffects
+            {
+                Effects = [],
+                EffectsByTag = new Entity?[32]
+            },
             new Position { Room = room },
-            new ThreatTable { Threat = [] }
+            new ThreatTable { Threat = [] },
+            new DirtyStats() // dirty by default
         );
 
         room.Get<RoomContents>().Characters.Add(player);

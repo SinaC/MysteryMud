@@ -32,29 +32,32 @@ class StatSystem
                 var multiply = 1;
                 var overriding = (int?)null;
 
-                ref var effects = ref character.Get<CharacterEffects>();
-                foreach (var effect in effects.Effects)
+                ref var characterEffects = ref character.Get<CharacterEffects>();
+                foreach (var effect in characterEffects.Effects)
                 {
                     ref var statModifiers = ref effect.TryGetRef<StatModifiers>(out var hasStatModifiers);
                     if (hasStatModifiers)
                     {
-                        foreach (var mod in statModifiers.Values)
+                        ref var effectInstance = ref effect.Get<EffectInstance>();
+
+                        foreach (var modifier in statModifiers.Values)
                         {
-                            if (mod.Stat != stat) // TODO: optimize by only iterating modifiers for this stat, instead of all modifiers for all stats -> index modifiers by stat in the StatModifiers component
+                            if (modifier.Stat != stat) // TODO: optimize by only iterating modifiers for this stat, instead of all modifiers for all stats -> index modifiers by stat in the StatModifiers component
                                 continue;
-                            switch (mod.Type)
+                            var modifierValue = modifier.Value * effectInstance.StackCount;
+                            switch (modifier.Type)
                             {
                                 case ModifierType.Flat:
-                                    flat += mod.Value;
+                                    flat += modifierValue;
                                     break;
                                 case ModifierType.AddPercent:
-                                    percent += mod.Value;
+                                    percent += modifierValue;
                                     break;
                                 case ModifierType.Multiply:
-                                    multiply *= mod.Value;
+                                    multiply *= modifierValue;
                                     break;
                                 case ModifierType.Override: // what if multiple overrides? for now, just take the last one, but maybe we should prioritize by source (e.g. gear overrides > buff overrides > debuff overrides) or something like that
-                                    overriding = mod.Value;
+                                    overriding = modifierValue;
                                     break;
                             }
                         }

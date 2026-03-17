@@ -10,7 +10,7 @@ class GameLoop
 {
     //EventScheduler scheduler;
 
-    public void Tick(World world, long time)
+    public void Tick(World world)
     {
         //scheduler.Update(time);
 
@@ -21,10 +21,11 @@ class GameLoop
         // AiSystem.Process(world);
 
         DurationSystem.Update(world);
+        HotSystem.Update(world);
+        DotSystem.Update(world);
         StatSystem.Recalculate(world);
 
         CombatSystem.Process(world);
-        DotSystem.Update(world);
 
         RespawnSystem.RespawnPlayers(world);
 
