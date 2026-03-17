@@ -11,31 +11,43 @@ public static class DurationSystem
     public static void Update(World world)
     {
         var query = new QueryDescription()
-                .WithAll<Effect, Duration>();
-        world.Query(query, (Entity entity,
-            ref Effect effect, ref Duration duration) =>
+                .WithAll<EffectInstance, Duration>();
+        world.Query(query, (Entity effect,
+            ref EffectInstance effectInstance, ref Duration duration) =>
         {
-            Console.WriteLine($"Processing Duration for Effect {entity.DisplayName} on Target {effect.Target.DisplayName} with remaining ticks {duration.RemainingTicks}");
+            Console.WriteLine($"Processing Duration for Effect {effect.DisplayName} on Target {effectInstance.Target.DisplayName} with remaining ticks {duration.RemainingTicks}");
 
             duration.RemainingTicks--;
             if (duration.RemainingTicks > 0)
                 return;
 
-            Console.WriteLine($"Wearing off Duration for Effect {entity.DisplayName} on Target {effect.Target.DisplayName}");
+            Console.WriteLine($"Wearing off Duration for Effect {effect.DisplayName} on Target {effectInstance.Target.DisplayName}");
 
-            ref var characterEffects = ref world.Get<CharacterEffects>(effect.Target);
-            characterEffects.Effects.Remove(entity);
-
-            if (!effect.Target.Has<DirtyStats>())
-                effect.Target.Add<DirtyStats>();
-
-            if (duration.WearOffMessage != null)
+            // remove the effect from the target's CharacterEffects
+            ref var characterEffects = ref effectInstance.Target.Get<CharacterEffects>();
+            characterEffects.Effects.Remove(effect);
+            if (effectInstance.Template.Tag != Data.Enums.EffectTagId.None)
             {
-                // TODO: in room ?
-                MessageSystem.Send(effect.Target, duration.WearOffMessage);
+                int tagIndex = (int)effectInstance.Template.Tag;
+                if (characterEffects.EffectsByTag[tagIndex] == effect)
+                {
+                    characterEffects.EffectsByTag[tagIndex] = null;
+                    characterEffects.ActiveTags &= ~(1UL << tagIndex);
+                }
             }
 
-            world.Destroy(entity);
+            // flag the target's stats as dirty so they will be recalculated without this effect
+            ref var statModifiers = ref effect.TryGetRef<StatModifiers>(out var hasStatModifiers);
+            if (hasStatModifiers && !effectInstance.Target.Has<DirtyStats>())
+                effectInstance.Target.Add<DirtyStats>();
+
+            if (effectInstance.Template.WearOffMessage != null)
+            {
+                // TODO: in room ?
+                MessageSystem.Send(effectInstance.Target, effectInstance.Template.WearOffMessage);
+            }
+
+            world.Destroy(effect);
         });
     }
 }

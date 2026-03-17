@@ -3,5 +3,4 @@
 struct Duration
 {
     public int RemainingTicks;
-    public string WearOffMessage;
 }

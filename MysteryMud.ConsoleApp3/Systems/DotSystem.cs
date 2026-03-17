@@ -1,4 +1,6 @@
 ﻿using Arch.Core;
+using Arch.Core.Extensions;
+using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Effects;
 using MysteryMud.ConsoleApp3.Extensions;
 
@@ -9,20 +11,27 @@ static class DotSystem
     public static void Update(World world)
     { 
         var query = new QueryDescription()
-            .WithAll<DamageOverTime, Effect>();
+            .WithAll<EffectInstance, DamageOverTime>();
         world.Query(in query, (Entity entity,
-            ref DamageOverTime dot, ref Effect effect) =>
+            ref EffectInstance effectInstance, ref DamageOverTime dot) =>
         {
-            Console.WriteLine($"Processing DoT for Effect {entity.DisplayName} on Target {effect.Target.DisplayName} with damage {dot.Damage} and tick rate {dot.TickRate}");
+            //Console.WriteLine($"Processing DoT for Effect {entity.DisplayName} on Target {effectInstance.Target.DisplayName} with damage {dot.Damage} and tick rate {dot.TickRate}");
+
+            if (effectInstance.Target.Has<DeadTag>())
+            {
+                Console.WriteLine($"Processing DoT for Effect {entity.DisplayName} on DEAD Target");
+                return;
+            }
 
             if (TimeSystem.CurrentTick < dot.NextTick)
                 return;
 
-            Console.WriteLine($"Applying DoT damage for Effect {entity.DisplayName} on Target {effect.Target.DisplayName} with damage {dot.Damage} and tick rate {dot.TickRate}");
+            Console.WriteLine($"Applying DoT damage for Effect {entity.DisplayName} on Target {effectInstance.Target.DisplayName} with damage {dot.Damage} and tick rate {dot.TickRate}");
 
             dot.NextTick += dot.TickRate;
 
-            DamageSystem.ApplyDamage(world, effect.Target, dot.Damage, effect.Source);
+            var damage = dot.Damage * effectInstance.StackCount;
+            DamageSystem.ApplyDamage(world, effectInstance.Target, damage, effectInstance.Source);
         });
     }
 }

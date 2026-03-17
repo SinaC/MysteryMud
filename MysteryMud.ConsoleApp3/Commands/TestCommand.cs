@@ -3,7 +3,6 @@ using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Data;
-using MysteryMud.ConsoleApp3.Data.EffectTemplates;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Factories;
 using MysteryMud.ConsoleApp3.Systems;
@@ -27,77 +26,74 @@ public class TestCommand : ICommand
 
         if (MemoryExtensions.Equals(ctx.Text, "poison", StringComparison.OrdinalIgnoreCase))
         {
-            var poisonSpellDefinition = new SpellDefinition
+            var effectTemplate = new EffectTemplate
             {
-                Id = 1,
                 Name = "Poison",
-                Duration = 5,
-                ApplyMessage = "You have been poisoned!",
-                WearOffMessage = "The poison wears off.",
-                EffectTemplates =
+                Tag = EffectTagId.Poison,
+                Stacking = StackingRule.Stack,
+                MaxStacks = 3,
+                StatModifiers =
                 [
-                    new StatModifierTemplate
+                    new StatModifierDefinition
                     {
-                        Modifiers =
-                        [
-                            new StatModifier
-                            {
-                                Stat = StatType.Strength,
-                                Value = -2,
-                                Type = ModifierType.Flat
-                            },
-                            new StatModifier
-                            {
-                                Stat = StatType.HitRoll,
-                                Value = -2,
-                                Type = ModifierType.AddPercent
-                            },
-                        ],
+                        Stat = StatType.Strength,
+                        Value = -2,
+                        Type = ModifierType.Flat
                     },
-                    new DotTemplate
+                    new StatModifierDefinition
                     {
-                        Damage = 2,
-                        TickRate = 2,
-                        DamageType = DamageType.Poison
-                    }
-                ]
+                        Stat = StatType.HitRoll,
+                        Value = -3,
+                        Type = ModifierType.Flat
+                    },
+                ],
+                Flags = AffectFlags.Poison,
+                DurationFunc = (source, target) => 100,
+                DotFunc = (source, target) => new DotDefinition
+                {
+                    Damage = 3,
+                    Interval = 2,
+                    DamageType = DamageType.Poison
+                },
+                HotFunc = null
             };
 
-            EffectFactory.ApplySpell(world, poisonSpellDefinition, actor, target);
+            EffectFactory.ApplyEffect(world, effectTemplate, actor, target);
         }
         else if (MemoryExtensions.Equals(ctx.Text, "bless", StringComparison.OrdinalIgnoreCase))
         {
-            var blessSpellDefinition = new SpellDefinition
+            var effectTemplate = new EffectTemplate
             {
-                Id = 1,
                 Name = "Bless",
-                Duration = 50,
-                ApplyMessage = "You are blessed!",
-                WearOffMessage = "You feel less blessed.",
-                EffectTemplates =
+                Tag = EffectTagId.Bless,
+                Stacking = StackingRule.None,
+                MaxStacks = 1,
+                StatModifiers =
                 [
-                    new StatModifierTemplate
+                    new StatModifierDefinition
                     {
-                        Modifiers =
-                        [
-                            new StatModifier
-                            {
-                                Stat = StatType.Strength,
-                                Value = 2,
-                                Type = ModifierType.Flat
-                            },
-                            new StatModifier
-                            {
-                                Stat = StatType.HitRoll,
-                                Value = 1,
-                                Type = ModifierType.AddPercent
-                            },
-                        ],
-                    }
-                ]
+                        Stat = StatType.Intelligence,
+                        Value = 2,
+                        Type = ModifierType.Flat
+                    },
+                    new StatModifierDefinition
+                    {
+                        Stat = StatType.HitRoll,
+                        Value = 10,
+                        Type = ModifierType.AddPercent
+                    },
+                ],
+                Flags = AffectFlags.Bless,
+                // no duration
+                DotFunc = null,
+                HotFunc = (source, target) => new HotDefinition
+                {
+                    Heal = 2,
+                    Interval = 2
+                },
             };
 
-            EffectFactory.ApplySpell(world, blessSpellDefinition, actor, target);
+            EffectFactory.ApplyEffect(world, effectTemplate, actor, target);
         }
     }
 }
