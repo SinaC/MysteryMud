@@ -3,8 +3,10 @@
 public enum StatType
 {
     Strength,
-    Dexterity,
     Intelligence,
+    Wisdom,
+    Dexterity,
+    Constitution,
     HitRoll,
     DamRoll,
     Armor

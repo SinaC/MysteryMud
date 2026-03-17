@@ -9,8 +9,68 @@ using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Factories;
 using MysteryMud.ConsoleApp3.Network;
-using System.ComponentModel.Design;
+using MysteryMud.ConsoleApp3.Persistance;
+using MysteryMud.ConsoleApp3.Systems;
+using System.Text.Json;
 
+// load spells
+var spellJson = @"
+{
+  ""Effects"": [
+    {
+      ""Name"": ""Poison"",
+      ""Tag"": ""Poison"",
+      ""Stacking"": ""Refresh"",
+      ""MaxStacks"": 1,
+      ""StatModifiers"": [
+        { ""Stat"": ""Strength"", ""Type"": ""Flat"", ""Value"": -3 }
+      ],
+      ""Flags"": [""Poison""],
+      ""DurationFormula"": ""4 * caster.Strength"",
+      ""Dot"": {
+         ""DamageFormula"": ""1"",
+         ""DamageType"": ""Poison"",
+         ""TickRate"": 2
+      }
+    },
+    {
+      ""Name"": ""Bless"",
+      ""Tag"": ""Bless"",
+      ""Stacking"": ""Refresh"",
+      ""MaxStacks"": 1,
+      ""StatModifiers"": [
+        { ""Stat"": ""HitRoll"", ""Type"": ""Flat"", ""Value"": 5 },
+        { ""Stat"": ""Strength"", ""Type"": ""AddPercent"", ""Value"": 10 }
+      ],
+      ""Flags"": [""Bless""],
+      ""DurationFormula"": ""60"",
+      ""Hot"": {
+         ""HealFormula"": ""3 + caster.Level / 2"",
+         ""TickRate"": 2
+      }
+    }
+  ],
+  ""Spells"": [
+    {
+      ""Name"": ""a"",
+      ""Effects"": [""Poison""]
+    },
+    {
+      ""Name"": ""b"",
+      ""Effects"": [""Bless""]
+    }
+  ]
+}
+";
+
+var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+var doc = JsonSerializer.Deserialize<SpellJsonRoot>(spellJson, options);
+
+// convert to spell database
+var spellDatabase = SpellLoader.LoadSpells(doc);
+SpellSystem.SpellDatabase = spellDatabase;
+
+// register commands
 CommandRegistry.Register("test", new TestCommand());
 CommandRegistry.Register("kill", new KillCommand());
 CommandRegistry.Register("get", new GetCommand());
@@ -29,7 +89,9 @@ CommandRegistry.Register("south", new SouthCommand());
 CommandRegistry.Register("destroy", new DestroyCommand());
 CommandRegistry.Register("sacrifice", new SacrificeCommand());
 CommandRegistry.Register("mstat", new MstatCommand());
+CommandRegistry.Register("cast", new CastCommand());
 
+// create world
 var world = World.Create();
 
 //  temple
@@ -107,11 +169,11 @@ CommandDispatcher.Dispatch(world, goblin, "get trash".AsSpan());
 //CommandDispatcher.Dispatch(player, "kill goblin".AsSpan());
 
 // testing buffs and dots
-CommandDispatcher.Dispatch(world, goblin, "test troll poison".AsSpan());
-CommandDispatcher.Dispatch(world, player, "test troll poison".AsSpan()); // will apply a second stack of poison because StackingRule is Stack
-CommandDispatcher.Dispatch(world, player, "test troll poison".AsSpan()); // will apply a second stack of poison because StackingRule is Stack
-CommandDispatcher.Dispatch(world, player, "test troll bless".AsSpan()); // will not be applied because StackingRule is None
-CommandDispatcher.Dispatch(world, player, "test troll bless".AsSpan());
+//CommandDispatcher.Dispatch(world, goblin, "test troll poison".AsSpan());
+//CommandDispatcher.Dispatch(world, player, "test troll poison".AsSpan()); // will apply a second stack of poison because StackingRule is Stack
+//CommandDispatcher.Dispatch(world, player, "test troll poison".AsSpan()); // will apply a second stack of poison because StackingRule is Stack
+//CommandDispatcher.Dispatch(world, player, "test troll bless".AsSpan()); // will not be applied because StackingRule is None
+//CommandDispatcher.Dispatch(world, player, "test troll bless".AsSpan());
 // 
 
 var gameLoop = new GameLoop();

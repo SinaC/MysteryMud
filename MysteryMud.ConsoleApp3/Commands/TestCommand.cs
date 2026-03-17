@@ -48,14 +48,14 @@ public class TestCommand : ICommand
                     },
                 ],
                 Flags = AffectFlags.Poison,
-                DurationFunc = (source, target) => 100,
-                DotFunc = (source, target) => new DotDefinition
+                DurationFunc = (world, source, target) => 100,
+                Dot = new DotDefinition
                 {
-                    Damage = 3,
-                    Interval = 2,
+                    DamageFunc = (world, source, target) => 3,
+                    TickRate = 2,
                     DamageType = DamageType.Poison
                 },
-                HotFunc = null
+                Hot = null // not hot
             };
 
             EffectFactory.ApplyEffect(world, effectTemplate, actor, target);
@@ -84,12 +84,12 @@ public class TestCommand : ICommand
                     },
                 ],
                 Flags = AffectFlags.Bless,
-                // no duration
-                DotFunc = null,
-                HotFunc = (source, target) => new HotDefinition
+                DurationFunc = default, // no duration
+                Dot = null, // no dot
+                Hot = new HotDefinition
                 {
-                    Heal = 2,
-                    Interval = 2
+                    HealFunc = (world, source, target) => 5,
+                    TickRate = 2
                 },
             };
 

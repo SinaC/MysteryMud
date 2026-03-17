@@ -1,7 +1,9 @@
-﻿namespace MysteryMud.ConsoleApp3.Data;
+﻿using Arch.Core;
+
+namespace MysteryMud.ConsoleApp3.Data;
 
 public struct HotDefinition
 {
-    public int Heal;
-    public int Interval;
+    public Func<World, Entity, Entity, int> HealFunc;
+    public int TickRate;
 }

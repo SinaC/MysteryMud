@@ -10,6 +10,7 @@ spells/skills
 damage
 combat
 act
+experience and leveling
 logging
 persistence
 admin
@@ -22,6 +23,16 @@ scripting
 
 ARCH-ECS
     https://arch-ecs.gitbook.io/arch/extensions/page-3/arch.system
+
+unwanted behavior
+DOT/HOT + DURATION
+dot: tick rate 2 and duration 5
+tick evolution
+1       creation
+2
+3       damage
+4
+5       expired damage not done because expired
 
 ===============
 = HOT SYSTEM

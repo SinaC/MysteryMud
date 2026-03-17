@@ -2,7 +2,7 @@ Components
 
 Character
   ├Position: room
-  ├BaseStats: dictionary stat/value
+  ├BaseStats: level, experience, dictionary stat/value
   ├EffectiveStats: dictionary stat/value
   ├CharacterEffects: effect list, effects by tag, active tags
   ├Inventory: list of items

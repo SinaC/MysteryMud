@@ -1,10 +1,11 @@
-﻿using MysteryMud.ConsoleApp3.Data.Enums;
+﻿using Arch.Core;
+using MysteryMud.ConsoleApp3.Data.Enums;
 
 namespace MysteryMud.ConsoleApp3.Data;
 
 public struct DotDefinition
 {
-    public int Damage;
+    public Func<World, Entity, Entity, int> DamageFunc;
     public DamageType DamageType;
-    public int Interval;
+    public int TickRate;
 }

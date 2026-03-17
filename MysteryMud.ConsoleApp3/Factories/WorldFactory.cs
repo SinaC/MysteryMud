@@ -48,40 +48,6 @@ class WorldFactory
     public static Entity CreateConnectingPlayer(World world)
     {
         var player = world.Create(
-            new PlayerTag(),
-            new BaseStats
-            {
-                Values = new Dictionary<StatType, int>
-                {
-                    [StatType.Strength] = 15,
-                    [StatType.Dexterity] = 12,
-                    [StatType.Intelligence] = 10,
-                    [StatType.HitRoll] = 0,
-                    [StatType.DamRoll] = 0,
-                    [StatType.Armor] = 0
-                }
-            },
-            new EffectiveStats
-            {
-                Values = new Dictionary<StatType, int>
-                {
-                    [StatType.Strength] = 0,
-                    [StatType.Dexterity] = 0,
-                    [StatType.Intelligence] = 0,
-                    [StatType.HitRoll] = 0,
-                    [StatType.DamRoll] = 0,
-                    [StatType.Armor] = 0
-                }
-            },
-            new Health { Current = 100, Max = 100 },
-            new Inventory { Items = [] },
-            new Equipment { Slots = [] },
-            new CharacterEffects
-            {
-                Effects = [],
-                EffectsByTag = new Entity?[32]
-            },
-            new DirtyStats() // dirty by default
             // Name, Position, Connection, ... will be set in nanny
         );
 
@@ -95,11 +61,15 @@ class WorldFactory
             new Name { Value = name },
             new BaseStats
             {
+                Level = 1,
+                Experience = 0,
                 Values = new Dictionary<StatType, int>
                 {
                     [StatType.Strength] = 15,
-                    [StatType.Dexterity] = 12,
                     [StatType.Intelligence] = 10,
+                    [StatType.Wisdom] = 15,
+                    [StatType.Dexterity] = 12,
+                    [StatType.Constitution] = 15,
                     [StatType.HitRoll] = 0,
                     [StatType.DamRoll] = 0,
                     [StatType.Armor] = 0
@@ -110,8 +80,10 @@ class WorldFactory
                 Values = new Dictionary<StatType, int>
                 {
                     [StatType.Strength] = 0,
-                    [StatType.Dexterity] = 0,
                     [StatType.Intelligence] = 0,
+                    [StatType.Wisdom] = 0,
+                    [StatType.Dexterity] = 0,
+                    [StatType.Constitution] = 0,
                     [StatType.HitRoll] = 0,
                     [StatType.DamRoll] = 0,
                     [StatType.Armor] = 0
@@ -142,13 +114,17 @@ class WorldFactory
             new Description { Value = description },
             new BaseStats
             {
+                Level = 1,
+                Experience = 0,
                 Values = new Dictionary<StatType, int>
                 {
                     [StatType.Strength] = 15,
-                    [StatType.Dexterity] = 12,
                     [StatType.Intelligence] = 10,
-                    [StatType.HitRoll] = 10,
-                    [StatType.DamRoll] = 7,
+                    [StatType.Wisdom] = 15,
+                    [StatType.Dexterity] = 12,
+                    [StatType.Constitution] = 15,
+                    [StatType.HitRoll] = 0,
+                    [StatType.DamRoll] = 0,
                     [StatType.Armor] = 0
                 }
             },
@@ -157,8 +133,10 @@ class WorldFactory
                 Values = new Dictionary<StatType, int>
                 {
                     [StatType.Strength] = 0,
-                    [StatType.Dexterity] = 0,
                     [StatType.Intelligence] = 0,
+                    [StatType.Wisdom] = 0,
+                    [StatType.Dexterity] = 0,
+                    [StatType.Constitution] = 0,
                     [StatType.HitRoll] = 0,
                     [StatType.DamRoll] = 0,
                     [StatType.Armor] = 0
