@@ -2,7 +2,6 @@
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
-using MysteryMud.ConsoleApp3.Components.Effects;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Extensions;
 using MysteryMud.ConsoleApp3.Factories;
@@ -14,6 +13,8 @@ public static class DeathSystem
     public static void Die(World world, Entity victim, Entity killer)
     {
         //TODO: log
+        LogSystem.Log($"{victim.DisplayName} is dead");
+
         MessageSystem.Send(killer, $"%R{victim.DisplayName} is dead.%x");
         MessageSystem.Send(victim, $"You are dead.");
 

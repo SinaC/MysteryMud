@@ -18,7 +18,7 @@ public static class RespawnSystem
             // Optional: respawn timer check
             //if (Time.time - dead.TimeOfDeath >= RespawnDelay)
             {
-                Console.WriteLine($"Respawn character {player.DebugName} to room {respawnState.RespawnRoom.DebugName}");
+                LogSystem.Log($"Respawn character {player.DebugName} to room {respawnState.RespawnRoom.DebugName}");
 
                 // Move player to respawn room
                 position.Room = respawnState.RespawnRoom;

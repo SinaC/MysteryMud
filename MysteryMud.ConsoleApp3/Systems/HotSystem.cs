@@ -2,36 +2,52 @@
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Effects;
+using MysteryMud.ConsoleApp3.Data.Enums;
+using MysteryMud.ConsoleApp3.Events;
 using MysteryMud.ConsoleApp3.Extensions;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 
 static class HotSystem
 {
-    public static void Update(World world)
+    public static void HandleTick(World world, Entity effect)
     {
-        var query = new QueryDescription()
-            .WithAll<EffectInstance, HealOverTime>();
-        world.Query(in query, (Entity entity,
-            ref EffectInstance effectInstance, ref HealOverTime hot) =>
+        if (!effect.IsAlive())
+            return;
+
+        ref var effectInstance = ref effect.Get<EffectInstance>();
+        if (!effectInstance.Target.IsAlive() || effectInstance.Target.Has<DeadTag>())
         {
-            //Console.WriteLine($"Processing HoT for Effect {entity.DisplayName} on Target {effectInstance.Target.DisplayName} with heal {hot.Heal} and tick rate {hot.TickRate} and stack count {effectInstance.StackCount}");
+            LogSystem.Log($"Applying HoT for Effect {effect.DisplayName} on DEAD Target");
+            return;
+        }
 
-            if (effectInstance.Target.Has<DeadTag>())
-            {
-                Console.WriteLine($"Processing HoT for Effect {entity.DisplayName} on DEAD Target");
-                return;
-            }
+        ref var hot = ref effect.Get<HealOverTime>();
+        ref var duration = ref effect.Get<Duration>();
 
-            if (TimeSystem.CurrentTick < hot.NextTick)
-                return;
+        // too late
+        if (hot.NextTick >= duration.ExpirationTick)
+        {
+            LogSystem.Log($"Applying HoT damage for Effect {effect.DisplayName} on Target {effectInstance.Target.DisplayName} with heal {hot.Heal} and tick rate {hot.TickRate} on EXPIRED effect");
+            return;
+        }
 
-            Console.WriteLine($"Applying HoT heal for Effect {entity.DisplayName} on Target {effectInstance.Target.DisplayName} with heal {hot.Heal} and tick rate {hot.TickRate} and stack count {effectInstance.StackCount}");
+        LogSystem.Log($"Applying HoT damage for Effect {effect.DisplayName} on Target {effectInstance.Target.DisplayName} with heal {hot.Heal} and tick rate {hot.TickRate}");
 
-            hot.NextTick += hot.TickRate;
+        // calcule next tick
+        hot.NextTick = TimeSystem.CurrentTick + hot.TickRate;
 
-            var heal = hot.Heal * effectInstance.StackCount;
-            HealSystem.ApplyHeal(world, effectInstance.Target, heal, effectInstance.Source);
+        // perform damage
+        var heal = hot.Heal * effectInstance.StackCount;
+        HealSystem.ApplyHeal(world, effectInstance.Target, heal, effectInstance.Source);
+
+        // queue next tick even if after expiration tick to handle effect refresh
+        LogSystem.Log($"Scheduling next HoT tick for Effect {effect.DisplayName} on Target {effectInstance.Target.DisplayName} at tick {hot.NextTick}");
+        EventScheduler.Schedule(new TimedEvent
+        {
+            ExecuteAt = hot.NextTick,
+            Target = effect,
+            Type = EventType.HotTick
         });
     }
 }

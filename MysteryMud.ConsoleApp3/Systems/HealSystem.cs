@@ -15,14 +15,14 @@ static class HealSystem
             if (health.Current < health.Max)
             {
                 health.Current = Math.Min(health.Current + healAmount, health.Max);
-                Console.WriteLine($"{target.DisplayName} healed for {healAmount} points. Current health: {health.Current}/{health.Max}");
+                LogSystem.Log($"{target.DisplayName} healed for {healAmount} points. Current health: {health.Current}/{health.Max}");
                 MessageSystem.Send(source, $"%GYou heal %g{target.DisplayName} for %g{healAmount}%g health.%x");
                 MessageSystem.Send(target, $"%G{source.DisplayName} heals you for %g{healAmount}%g health.%x");
             }
         }
         else
         {
-            Console.WriteLine($"{target.DisplayName} cannot be healed because it does not have a HealthComponent.");
+            LogSystem.Log($"{target.DisplayName} cannot be healed because it does not have a HealthComponent.");
         }
     }
 }

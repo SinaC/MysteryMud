@@ -28,7 +28,7 @@ public class TestCommand : ICommand
         {
             var effectTemplate = new EffectTemplate
             {
-                Name = "Poison",
+                Name = "Poison2",
                 Tag = EffectTagId.Poison,
                 Stacking = StackingRule.Stack,
                 MaxStacks = 3,
@@ -48,7 +48,7 @@ public class TestCommand : ICommand
                     },
                 ],
                 Flags = AffectFlags.Poison,
-                DurationFunc = (world, source, target) => 100,
+                DurationFunc = (world, source, target) => 5,
                 Dot = new DotDefinition
                 {
                     DamageFunc = (world, source, target) => 3,
@@ -64,7 +64,7 @@ public class TestCommand : ICommand
         {
             var effectTemplate = new EffectTemplate
             {
-                Name = "Bless",
+                Name = "Bless2",
                 Tag = EffectTagId.Bless,
                 Stacking = StackingRule.None,
                 MaxStacks = 1,

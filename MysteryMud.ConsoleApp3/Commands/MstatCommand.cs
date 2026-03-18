@@ -67,7 +67,10 @@ public class MstatCommand : ICommand
             var stackCount = effectInstance.StackCount;
             var sourceName = effectInstance.Source.DisplayName;
             if (hasDuration)
-                MessageSystem.Send(actor, $"- {effectName} Source: {sourceName} Stacks: {stackCount} Remaining ticks: {duration.RemainingTicks}");
+            {
+                var remainingTicks = duration.ExpirationTick - (duration.LastRefreshTick ?? duration.StartTick);
+                MessageSystem.Send(actor, $"- {effectName} Source: {sourceName} Stacks: {stackCount} Remaining ticks: {remainingTicks}");
+            }
             else
                 MessageSystem.Send(actor, $"- {effectName} Source: {sourceName} Stacks: {stackCount} Permanent");
             if (hasStatModifiers)
