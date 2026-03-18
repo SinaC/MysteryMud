@@ -21,7 +21,7 @@ public static class CleanupSystem
                 .WithAll<DeadTag, Position>();
         world.Query(destroyCharactersQuery, (Entity character, ref DeadTag deadTag, ref Position position) =>
         {
-            Console.WriteLine($"Cleaning up character {character.DebugName} from room {position.Room.DebugName}");
+            LogSystem.Log($"Cleaning up character {character.DebugName} from room {position.Room.DebugName}");
 
             var roomContents = position.Room.Get<RoomContents>();
             roomContents.Characters.Remove(character);
@@ -41,7 +41,7 @@ public static class CleanupSystem
             {
                 ref var position = ref item.Get<Position>();
 
-                Console.WriteLine($"Cleaning up item {item.DebugName} from room {position.Room.DebugName}");
+                LogSystem.Log($"Cleaning up item {item.DebugName} from room {position.Room.DebugName}");
                 ref var roomContents = ref position.Room.Get<RoomContents>();
                 roomContents.Items.Remove(item);
             }
@@ -51,14 +51,14 @@ public static class CleanupSystem
                 ref var containedIn = ref item.Get<ContainedIn>();
                 if (containedIn.Character != Entity.Null)
                 {
-                    Console.WriteLine($"Cleaning up item {item.DebugName} from inventory of {containedIn.Character.DebugName}");
+                    LogSystem.Log($"Cleaning up item {item.DebugName} from inventory of {containedIn.Character.DebugName}");
 
                     ref var inventory = ref containedIn.Character.Get<Inventory>();
                     inventory.Items.Remove(item);
                 }
                 else if (containedIn.Container != Entity.Null)
                 {
-                    Console.WriteLine($"Cleaning up item {item.DebugName} from container {containedIn.Container.DebugName}");
+                    LogSystem.Log($"Cleaning up item {item.DebugName} from container {containedIn.Container.DebugName}");
 
                     ref var containerContents = ref containedIn.Container.Get<ContainerContents>();
                     containerContents.Items.Remove(item);
@@ -73,7 +73,7 @@ public static class CleanupSystem
                 {
                     if (equipment.Slots[slot] == item)
                     {
-                        Console.WriteLine($"Cleaning up item {item.DebugName} from equipment of {equipped.Wearer.DebugName} in slot {slot}");
+                        LogSystem.Log($"Cleaning up item {item.DebugName} from equipment of {equipped.Wearer.DebugName} in slot {slot}");
 
                         equipment.Slots[slot] = Entity.Null;
                     }

@@ -1,20 +1,25 @@
-﻿namespace MysteryMud.ConsoleApp3.Events;
+﻿using Arch.Core;
+using MysteryMud.ConsoleApp3.Data.Enums;
 
-class EventScheduler
+namespace MysteryMud.ConsoleApp3.Events;
+
+static class EventScheduler
 {
-    PriorityQueue<TimedEvent, long> queue = new();
+    static readonly PriorityQueue<TimedEvent, (long time, EventType eventType)> queue = new();
 
-    public void Schedule(TimedEvent ev)
+    public static void Schedule(TimedEvent ev)
     {
-        queue.Enqueue(ev, ev.ExecuteAt);
+        queue.Enqueue(ev, (ev.ExecuteAt, ev.Type));
     }
 
-    public void Update(long now)
+    public static void ProcessEvents(World world, long now)
     {
-        while (queue.TryPeek(out var ev, out var time) && time <= now)
+        // Process all events that are due to execute at or before the current time
+        // priority is determined first by execution time, then by event type (to ensure consistent ordering of events scheduled for the same time)
+        while (queue.TryPeek(out var ev, out var priority) && priority.time <= now)
         {
             queue.Dequeue();
-            EventProcessor.Execute(ev);
+            EventProcessor.Execute(world, ref ev);
         }
     }
 }

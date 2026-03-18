@@ -20,7 +20,7 @@ public static class DamageSystem
     private static bool ApplyDamage(World world, Entity target, ref Health health, int amount, Entity source)
     {
         health.Current -= amount;
-        //TODO: log MessageSystem.SendMessage(actor, $"{target.GDisplayName} takes {amount} damage! (HP: {health.Current})");
+        LogSystem.Log($"{target.DisplayName} takes {amount} damage! (HP: {health.Current})");
         MessageSystem.Send(source, $"%GYou deal %r{amount}%g damage to {target.DisplayName}.%x");
         MessageSystem.Send(target, $"{source.DisplayName} deals {amount} damage to you.");
 

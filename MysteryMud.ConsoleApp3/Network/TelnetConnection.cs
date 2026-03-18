@@ -8,6 +8,7 @@ using MysteryMud.ConsoleApp3.Components.Networking;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Factories;
+using MysteryMud.ConsoleApp3.Systems;
 using System.Buffers;
 using System.Buffers.Binary;
 using System.IO.Compression;
@@ -199,7 +200,7 @@ public sealed class TelnetConnection
         if (NannyState != NannyState.Finished)
             HandleNanny(span);
         else
-            CommandQueue.Enqueue(Player, span);
+            CommandSystem.Enqueue(Player, span);
 
         ArrayPool<char>.Shared.Return(buffer);
     }

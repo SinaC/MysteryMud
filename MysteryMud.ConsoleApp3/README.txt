@@ -34,7 +34,7 @@ Zone
 
 Effect (not stacking if difference source)
  ├ EffectInstance: Source, Target, Template, StackCount
- ├ Duration: RemainingTicks
+ ├ Duration: StartTick, ExpiredTick
  ├ EffectTag: EffectTagId
  ├ StatModifiers: StatModifier list
  ├ DamageOverTime: Damage, DamageType, TickRate, NextTick;

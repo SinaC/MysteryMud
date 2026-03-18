@@ -2,8 +2,7 @@
 
 public static class TimeSystem
 {
-    // TODO
-    public static int CurrentTick { get; private set; }
+    public static long CurrentTick { get; private set; }
 
     public static void NextTick()
     {

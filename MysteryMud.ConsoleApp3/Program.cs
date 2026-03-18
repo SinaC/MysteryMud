@@ -20,8 +20,8 @@ var spellJson = @"
     {
       ""Name"": ""Poison"",
       ""Tag"": ""Poison"",
-      ""Stacking"": ""Refresh"",
-      ""MaxStacks"": 1,
+      ""Stacking"": ""Stack"",
+      ""MaxStacks"": 3,
       ""StatModifiers"": [
         { ""Stat"": ""Strength"", ""Type"": ""Flat"", ""Value"": -3 }
       ],
@@ -46,7 +46,7 @@ var spellJson = @"
       ""DurationFormula"": ""60"",
       ""Hot"": {
          ""HealFormula"": ""3 + caster.Level / 2"",
-         ""TickRate"": 2
+         ""TickRate"": 3
       }
     }
   ],
@@ -169,26 +169,36 @@ CommandDispatcher.Dispatch(world, goblin, "get trash".AsSpan());
 //CommandDispatcher.Dispatch(player, "kill goblin".AsSpan());
 
 // testing buffs and dots
-//CommandDispatcher.Dispatch(world, goblin, "test troll poison".AsSpan());
+CommandDispatcher.Dispatch(world, goblin, "test troll poison".AsSpan());
 //CommandDispatcher.Dispatch(world, player, "test troll poison".AsSpan()); // will apply a second stack of poison because StackingRule is Stack
 //CommandDispatcher.Dispatch(world, player, "test troll poison".AsSpan()); // will apply a second stack of poison because StackingRule is Stack
 //CommandDispatcher.Dispatch(world, player, "test troll bless".AsSpan()); // will not be applied because StackingRule is None
 //CommandDispatcher.Dispatch(world, player, "test troll bless".AsSpan());
-// 
+//
+//CommandDispatcher.Dispatch(world, goblin, "test troll poison".AsSpan());
+//CommandDispatcher.Dispatch(world, player, "test troll poison".AsSpan());
+//CommandDispatcher.Dispatch(world, goblin, "test troll poison".AsSpan());
 
-var gameLoop = new GameLoop();
-
-//for (int i = 0; i < 8; i++)
-//{
-//    Console.WriteLine("TICK: " + i);
-
-//    gameLoop.Tick(world);
-//    CommandDispatcher.Dispatch(player, "look".AsSpan());
-//}
+//// tick 1
+//GameLoop.Tick(world);
+//// tick 2
+//GameLoop.Tick(world);
+//// tick 3
+//GameLoop.Tick(world);
+//// tick 4
+//GameLoop.Tick(world);
+//// tick 5
+//GameLoop.Tick(world);
+//// tick 6
+//GameLoop.Tick(world);
+//// tick 7
+//GameLoop.Tick(world);
+//Console.WriteLine("Press any key to exit...");
+//Console.ReadLine();
 
 while (true)
 {
-    gameLoop.Tick(world);
+    GameLoop.Tick(world);
 
     Thread.Sleep(100);
 }
