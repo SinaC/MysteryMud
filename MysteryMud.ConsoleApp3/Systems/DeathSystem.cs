@@ -10,14 +10,19 @@ namespace MysteryMud.ConsoleApp3.Systems;
 
 public static class DeathSystem
 {
-    public static void Die(World world, Entity victim, Entity killer)
+    public static void Process(World world)
+    {
+        var query = new QueryDescription()
+          .WithAll<Dead>();
+        world.Query(query, (Entity entity, ref Dead dead) =>
+        {
+            HandleDeath(world, entity, dead.Killer); // TODO: pass killer
+        });
+    }
+
+    public static void HandleDeath(World world, Entity victim, Entity killer)
     {
         //TODO: log
-        LogSystem.Log($"{victim.DisplayName} is dead");
-
-        MessageSystem.Send(killer, $"%R{victim.DisplayName} is dead.%x");
-        MessageSystem.Send(victim, $"You are dead.");
-
         CreateCorpse(world, victim, killer);
 
         AddTags(world, victim);
@@ -28,7 +33,7 @@ public static class DeathSystem
 
     private static void AddTags(World world, Entity victim)
     {
-        victim.Add<DeadTag>(); // mark as dead
+        victim.Add<Dead>(); // mark as dead
         // player will respawn, NPCs will be cleaned up by CleanupSystem
         if (victim.Has<PlayerTag>())
             victim.Add(new RespawnState { RespawnRoom = WorldFactory.RespawnRoomEntity });

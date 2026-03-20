@@ -12,7 +12,7 @@ class StatSystem
     {
         var query = new QueryDescription()
                 .WithAll<BaseStats, EffectiveStats, DirtyStats>()
-                .WithNone<DeadTag>();
+                .WithNone<Dead>();
         world.Query(query, (Entity character,
                      ref BaseStats baseStats,
                      ref EffectiveStats effectiveStats,

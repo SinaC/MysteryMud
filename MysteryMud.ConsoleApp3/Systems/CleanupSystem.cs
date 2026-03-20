@@ -4,7 +4,6 @@ using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Items;
 using MysteryMud.ConsoleApp3.Components.Rooms;
-using MysteryMud.ConsoleApp3.Extensions;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 
@@ -18,10 +17,10 @@ public static class CleanupSystem
     {
         // destroy characters
         var destroyCharactersQuery = new QueryDescription()
-                .WithAll<DeadTag, Position>();
-        world.Query(destroyCharactersQuery, (Entity character, ref DeadTag deadTag, ref Position position) =>
+                .WithAll<Dead, Position>();
+        world.Query(destroyCharactersQuery, (Entity character, ref Dead deadTag, ref Position position) =>
         {
-            LogSystem.Log($"Cleaning up character {character.DebugName} from room {position.Room.DebugName}");
+            Logger.Logger.Cleanup.CleanupCharacterFromRoom(character, position.Room);
 
             var roomContents = position.Room.Get<RoomContents>();
             roomContents.Characters.Remove(character);
@@ -41,7 +40,8 @@ public static class CleanupSystem
             {
                 ref var position = ref item.Get<Position>();
 
-                LogSystem.Log($"Cleaning up item {item.DebugName} from room {position.Room.DebugName}");
+                Logger.Logger.Cleanup.CleanupItemFromRoom(item, position.Room);
+
                 ref var roomContents = ref position.Room.Get<RoomContents>();
                 roomContents.Items.Remove(item);
             }
@@ -51,14 +51,14 @@ public static class CleanupSystem
                 ref var containedIn = ref item.Get<ContainedIn>();
                 if (containedIn.Character != Entity.Null)
                 {
-                    LogSystem.Log($"Cleaning up item {item.DebugName} from inventory of {containedIn.Character.DebugName}");
+                    Logger.Logger.Cleanup.CleanupItemFromInventory(item, containedIn.Character);
 
                     ref var inventory = ref containedIn.Character.Get<Inventory>();
                     inventory.Items.Remove(item);
                 }
                 else if (containedIn.Container != Entity.Null)
                 {
-                    LogSystem.Log($"Cleaning up item {item.DebugName} from container {containedIn.Container.DebugName}");
+                    Logger.Logger.Cleanup.CleanupItemFromContainer(item, containedIn.Container);
 
                     ref var containerContents = ref containedIn.Container.Get<ContainerContents>();
                     containerContents.Items.Remove(item);
@@ -73,7 +73,7 @@ public static class CleanupSystem
                 {
                     if (equipment.Slots[slot] == item)
                     {
-                        LogSystem.Log($"Cleaning up item {item.DebugName} from equipment of {equipped.Wearer.DebugName} in slot {slot}");
+                        Logger.Logger.Cleanup.CleanupItemFromEquipment(item, equipped.Wearer, slot);
 
                         equipment.Slots[slot] = Entity.Null;
                     }
@@ -88,7 +88,7 @@ public static class CleanupSystem
     {
         // destroy all entities with DeadTag or DestroyedTag in a single query
         var destroyQuery = new QueryDescription()
-                .WithAny<DeadTag, DestroyedTag>();
+                .WithAny<Dead, DestroyedTag>();
         world.Query(destroyQuery, world.Destroy);
 
         // now remove all references to destroyed entities from inventories, rooms, and containers

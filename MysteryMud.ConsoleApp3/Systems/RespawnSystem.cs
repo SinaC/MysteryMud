@@ -18,7 +18,7 @@ public static class RespawnSystem
             // Optional: respawn timer check
             //if (Time.time - dead.TimeOfDeath >= RespawnDelay)
             {
-                LogSystem.Log($"Respawn character {player.DebugName} to room {respawnState.RespawnRoom.DebugName}");
+                Logger.Logger.Respawn(player, respawnState.RespawnRoom);
 
                 // Move player to respawn room
                 position.Room = respawnState.RespawnRoom;
@@ -32,7 +32,11 @@ public static class RespawnSystem
                 // TODO: other reset logic like status effects, inventory, etc.
 
                 // Remove RespawnState and DeadTag so player can act again
-                player.Remove<RespawnState, DeadTag>();
+                player.Remove<RespawnState, Dead>();
+
+                // Add dirty stats to force stats update
+                if (!player.Has<DirtyStats>())
+                    player.Add<DirtyStats>();
 
                 RoomBroadcastSystem.Broadcast(world, respawnState.RespawnRoom, $"{player.DisplayName} has respawned!"); // TODO: don't display for player
             }

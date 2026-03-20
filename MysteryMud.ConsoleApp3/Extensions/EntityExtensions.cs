@@ -27,8 +27,10 @@ public static class EntityExtensions
 
         private string BuildDebugName()
         {
-            var name = entity.Get<Name>().Value;
-            return $"{name}({entity.Id} {entity.IsAlive()})";
+            ref var name = ref entity.TryGetRef<Name>(out var nameExists);
+            if (nameExists)
+                return $"{name.Value}({entity.Id} {entity.IsAlive()})";
+            return $"({entity.Id} {entity.IsAlive()})";
         }
     }
 }

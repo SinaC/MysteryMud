@@ -17,23 +17,21 @@ static class GameLoop
 
         // process scheduled events
         EventScheduler.ProcessEvents(world, TimeSystem.CurrentTick);
+        // handle state transitions for effects
+        //StateMachineSystem.Update(world); TODO: implement state machine system and handle with scheduled events
 
         // AiSystem.Process(world);
         // handle combat rounds
         CombatSystem.Process(world);
 
-        // apply damage over time and healing over time effects
-        //--handle with events HotSystem.Update(world);
-        //--handle with events DotSystem.Update(world);
-        // handle state transitions for effects
-        //StateMachineSystem.Update(world); TODO: implement state machine system
-        // update durations for effects and cooldowns
-        //--handle with events rationSystem.Update(world);
-        // recalculate stats for entities
-        StatSystem.Recalculate(world);
+        // handle deaths and related consequences
+        DeathSystem.Process(world);
 
         // handle player deaths and respawns
         RespawnSystem.RespawnPlayers(world);
+
+        // recalculate stats for entities
+        StatSystem.Recalculate(world);
 
         // perform cleanup tasks like removing characters, items, ...
         CleanupSystem.Cleanup(world);
