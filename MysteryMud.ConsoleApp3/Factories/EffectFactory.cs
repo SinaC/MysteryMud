@@ -38,7 +38,7 @@ public static class EffectFactory
         // add effect to target effect cache
         targetEffects.Effects.Add(effect);
 
-        LogSystem.Log($"Creating Effect from Template {effectTemplate.Name} Source {source.DisplayName} Target {target.DisplayName}");
+        Logger.Logger.Factory.CreateEffect(source, target, effectTemplate);
 
         // add tag if applicable
         if (effectTemplate.Tag != EffectTagId.None)
@@ -51,7 +51,7 @@ public static class EffectFactory
             targetEffects.EffectsByTag[tagIndex] = effect;
             targetEffects.ActiveTags |= 1UL << tagIndex;
 
-            LogSystem.Log(" - add tag " + effectTemplate.Tag);
+            Logger.Logger.Factory.AddTagToEffect(effectTemplate.Tag);
         }
 
         // duration ?
@@ -73,7 +73,7 @@ public static class EffectFactory
                 Target = effect
             });
 
-            LogSystem.Log($" - add duration {duration.Value} ticks (expires at {expirationTick})");
+            Logger.Logger.Factory.AddDurationToEffect(duration.Value, expirationTick);
         }
 
         // stat modifiers ?
@@ -99,7 +99,7 @@ public static class EffectFactory
             if (!target.Has<DirtyStats>())
                 target.Add<DirtyStats>();
 
-            LogSystem.Log($" - add stat modifiers {string.Join(",", effectTemplate.StatModifiers.Select(x => $"{x.Stat} {x.Type} {x.Value}"))}");
+            Logger.Logger.Factory.AddStatModifiersToEffect(modifiers);
         }
 
         // TODO: remove
@@ -110,9 +110,10 @@ public static class EffectFactory
         {
             // add DamageOverTime component to effect
             var nextTick = TimeSystem.CurrentTick + effectTemplate.Dot.Value.TickRate;
+            var damage = effectTemplate.Dot.Value.DamageFunc.Invoke(world, source, target);
             effect.Add(new DamageOverTime
             {
-                Damage = effectTemplate.Dot.Value.DamageFunc.Invoke(world, source, target),
+                Damage = damage,
                 DamageType = effectTemplate.Dot.Value.DamageType,
                 TickRate = effectTemplate.Dot.Value.TickRate,
                 NextTick = nextTick
@@ -125,7 +126,7 @@ public static class EffectFactory
                 Target = effect
             });
 
-            LogSystem.Log($" - add dot every {effectTemplate.Dot.Value.TickRate} ticks next tick {nextTick}");
+            Logger.Logger.Factory.AddDotToEffect(damage, effectTemplate.Dot.Value.DamageType, effectTemplate.Dot.Value.TickRate, nextTick);
         }
 
         // hot ?
@@ -133,9 +134,10 @@ public static class EffectFactory
         {
             // add HealOverTime component to effect
             var nextTick = TimeSystem.CurrentTick + effectTemplate.Hot.Value.TickRate;
+            var heal = effectTemplate.Hot.Value.HealFunc.Invoke(world, source, target);
             effect.Add(new HealOverTime
             {
-                Heal = effectTemplate.Hot.Value.HealFunc.Invoke(world, source, target),
+                Heal = heal,
                 TickRate = effectTemplate.Hot.Value.TickRate,
                 NextTick = nextTick
             });
@@ -147,7 +149,7 @@ public static class EffectFactory
                 Target = effect
             });
 
-            LogSystem.Log($" - add hot every {effectTemplate.Hot.Value.TickRate} ticks next tick {nextTick}");
+            Logger.Logger.Factory.AddHotToEffect(heal, effectTemplate.Hot.Value.TickRate, nextTick);
         }
 
         // apply message
@@ -189,7 +191,7 @@ public static class EffectFactory
                         Target = effect
                     });
 
-                    LogSystem.Log($"Refreshing Effect from Template {effectTemplate.Name} Source {source.DisplayName} Target {effectInstance.Target.DisplayName} Duration {durationValue} Expiration {expirationTick}");
+                    Logger.Logger.Factory.RefreshEffect(source, effectInstance.Target, effectTemplate, durationValue, expirationTick);
                 }
                 return true; // handled
             case StackingRule.Stack:
@@ -210,7 +212,7 @@ public static class EffectFactory
                         Target = effect
                     });
 
-                    LogSystem.Log($"Stacking/Refreshing Effect from Template {effectTemplate.Name} Source {source.DisplayName} Target {effectInstance.Target.DisplayName} Duration {durationValue} Expiration {expirationTick}");
+                    Logger.Logger.Factory.StackEffect(source, effectInstance.Target, effectTemplate, durationValue, expirationTick, effectInstance.StackCount);
                 }
                 return true; // handled
         }

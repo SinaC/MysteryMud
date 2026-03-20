@@ -1,5 +1,8 @@
-﻿namespace MysteryMud.ConsoleApp3.Components.Characters;
+﻿using Arch.Core;
 
-struct DeadTag
+namespace MysteryMud.ConsoleApp3.Components.Characters;
+
+struct Dead
 {
+    public Entity Killer;
 }

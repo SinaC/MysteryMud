@@ -1,5 +1,6 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using Microsoft.Extensions.Configuration;
 using MysteryMud.ConsoleApp3;
 using MysteryMud.ConsoleApp3.Commands;
 using MysteryMud.ConsoleApp3.Components;
@@ -8,10 +9,20 @@ using MysteryMud.ConsoleApp3.Components.Items;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Factories;
+using MysteryMud.ConsoleApp3.Logger;
 using MysteryMud.ConsoleApp3.Network;
 using MysteryMud.ConsoleApp3.Persistance;
 using MysteryMud.ConsoleApp3.Systems;
 using System.Text.Json;
+
+// build configuration
+var configuration = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json")
+    .Build();
+
+// initialize logger
+Logger.Initialize(configuration);
 
 // load spells
 var spellJson = @"

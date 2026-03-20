@@ -1,5 +1,6 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.ConsoleApp3.Calculators;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Extensions;
@@ -12,24 +13,24 @@ class CombatSystem
     {
         var query = new QueryDescription()
             .WithAll<CombatState, EffectiveStats>()
-            .WithNone<DeadTag>();
+            .WithNone<Dead>();
         world.Query(query, (Entity actor, ref CombatState combat, ref EffectiveStats stats) =>
         {
             // TODO: if NPC, SelectTarget with highest threat
 
-            if (combat.RoundDelay > 0)
-            {
-                combat.RoundDelay--;
-                return;
-            }
-
             var target = combat.Target;
-            if (target.Has<DeadTag>())
+            if (target.Has<Dead>())
             {
                 // Target is gone, exit combat
                 actor.Remove<CombatState>();
                 return;
                 // TODO: Alternatively, could try to select new target here instead of exiting combat
+            }
+
+            if (combat.RoundDelay > 0)
+            {
+                combat.RoundDelay--;
+                return;
             }
 
             // Determine number of attacks (multi-hit)
@@ -38,7 +39,7 @@ class CombatSystem
             for (int i = 0; i < hits; i++)
             {
                 // Stop if target was killed by previous hit
-                if (target.Has<DeadTag>())
+                if (target.Has<Dead>())
                     break;
 
                 bool targetAlive = ResolveAttack(world, actor, target, stats);
@@ -65,15 +66,16 @@ class CombatSystem
 
         if (attackRoll >= defenseRoll)
         {
-            int damage = stats.Values[StatType.DamRoll] + Random.Shared.Next(1, 6);
+            var damage = stats.Values[StatType.DamRoll] + Random.Shared.Next(1, 6); // TODO: calculate damage based on weapon, skills, etc.
+            var damageType = DamageType.Physical; // TODO: determine damage type based on weapon, skills, etc.
 
-            return DamageSystem.ApplyDamage(world, target, damage, attacker);
+            return DamageCalculator.ApplyDamage(target, damage, damageType, attacker) == DamageCalculator.ApplyDamageResult.Damaged;
         }
         else
         {
             MessageSystem.Send(attacker, $"You miss {target.DisplayName}.");
             MessageSystem.Send(target, $"{attacker.DisplayName} misses you.");
-            //TODO: log Console.WriteLine($"{attacker.DisplayName} misses {target.DisplayName}.");
+
             return true;
         }
     }
