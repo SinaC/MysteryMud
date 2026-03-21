@@ -77,13 +77,15 @@ class WorldFactory
             },
             new EffectiveStats
             {
+                Level = 1,
+                Experience = 0,
                 Values = new Dictionary<StatType, int>
                 {
-                    [StatType.Strength] = 0,
-                    [StatType.Intelligence] = 0,
-                    [StatType.Wisdom] = 0,
-                    [StatType.Dexterity] = 0,
-                    [StatType.Constitution] = 0,
+                    [StatType.Strength] = 15,
+                    [StatType.Intelligence] = 10,
+                    [StatType.Wisdom] = 15,
+                    [StatType.Dexterity] = 12,
+                    [StatType.Constitution] = 15,
                     [StatType.HitRoll] = 0,
                     [StatType.DamRoll] = 0,
                     [StatType.Armor] = 0
@@ -130,13 +132,15 @@ class WorldFactory
             },
             new EffectiveStats
             {
+                Level = 1,
+                Experience = 0,
                 Values = new Dictionary<StatType, int>
                 {
-                    [StatType.Strength] = 0,
-                    [StatType.Intelligence] = 0,
-                    [StatType.Wisdom] = 0,
-                    [StatType.Dexterity] = 0,
-                    [StatType.Constitution] = 0,
+                    [StatType.Strength] = 15,
+                    [StatType.Intelligence] = 10,
+                    [StatType.Wisdom] = 15,
+                    [StatType.Dexterity] = 12,
+                    [StatType.Constitution] = 15,
                     [StatType.HitRoll] = 0,
                     [StatType.DamRoll] = 0,
                     [StatType.Armor] = 0
