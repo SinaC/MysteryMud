@@ -9,6 +9,7 @@ using MysteryMud.ConsoleApp3.Components.Items;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Factories;
+using MysteryMud.ConsoleApp3.Formulas;
 using MysteryMud.ConsoleApp3.Logger;
 using MysteryMud.ConsoleApp3.Network;
 using MysteryMud.ConsoleApp3.Persistance;
@@ -139,6 +140,15 @@ var trash = WorldFactory.CreateItemInRoom(world, "trash", "some trash", market);
 
 WorldFactory.StartingRoomEntity = market;
 WorldFactory.RespawnRoomEntity = temple;
+
+var compiler = new FormulaCompiler();
+//var formula = "range(1, range( 5, 10)) + 5 * (caster.level + target.level)";
+//var formula = "max(1, 2, range(1,5), caster.level, if(caster.strength>caster.level && caster.level != target.level, caster.strength, caster.level))";
+var formula = "max(1, 2, range(1,5), caster.level, if(caster.level >= target.level && sum(1,2,3) < 10 || dice(2,6) == 12, -caster.strength, caster.level))";
+//caster.level > target.level && sum(1,2,3) < 10 || dice(2,6) == 12
+var func = compiler.Compile(formula);
+int result = func(null!, troll, player); // result is random between 6 and 55
+Console.WriteLine(result);
 
 var telnetServer = new TelnetServer(4000);
 //_ = telnetServer.Start(world);
