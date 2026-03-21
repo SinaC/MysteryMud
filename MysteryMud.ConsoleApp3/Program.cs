@@ -3,13 +3,14 @@ using Arch.Core.Extensions;
 using Microsoft.Extensions.Configuration;
 using MysteryMud.ConsoleApp3;
 using MysteryMud.ConsoleApp3.Commands;
+using MysteryMud.ConsoleApp3.Commands.v2;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Items;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Data.Enums;
+using MysteryMud.ConsoleApp3.Extensions;
 using MysteryMud.ConsoleApp3.Factories;
-using MysteryMud.ConsoleApp3.Formulas;
 using MysteryMud.ConsoleApp3.Logger;
 using MysteryMud.ConsoleApp3.Network;
 using MysteryMud.ConsoleApp3.Persistance;
@@ -141,14 +142,162 @@ var trash = WorldFactory.CreateItemInRoom(world, "trash", "some trash", market);
 WorldFactory.StartingRoomEntity = market;
 WorldFactory.RespawnRoomEntity = temple;
 
-var compiler = new FormulaCompiler();
-//var formula = "range(1, range( 5, 10)) + 5 * (caster.level + target.level)";
-//var formula = "max(1, 2, range(1,5), caster.level, if(caster.strength>caster.level && caster.level != target.level, caster.strength, caster.level))";
-var formula = "max(1, 2, range(1,5), caster.level, if(caster.level >= target.level && sum(1,2,3) < 10 || dice(2,6) == 12, -caster.strength, caster.level))";
-//caster.level > target.level && sum(1,2,3) < 10 || dice(2,6) == 12
-var func = compiler.Compile(formula);
-int result = func(null!, troll, player); // result is random between 6 and 55
-Console.WriteLine(result);
+//var compiler = new FormulaCompiler();
+////var formula = "range(1, range( 5, 10)) + 5 * (caster.level + target.level)";
+////var formula = "max(1, 2, range(1,5), caster.level, if(caster.strength>caster.level && caster.level != target.level, caster.strength, caster.level))";
+//var formula = "max(1, 2, range(1,5), caster.level, if(caster.level >= target.level && sum(1,2,3) < 10 || dice(2,6) == 12, -caster.strength, caster.level))";
+////caster.level > target.level && sum(1,2,3) < 10 || dice(2,6) == 12
+//var func = compiler.Compile(formula);
+//int result = func(null!, troll, player); // result is random between 6 and 55
+//Console.WriteLine(result);
+
+Action<MysteryMud.ConsoleApp3.Commands.v2.CommandContext> GenericExecute = ctx =>
+{
+    CommandResolver.ResolveArguments(ctx, world);
+
+    Console.WriteLine($"Executing {ctx.RawInput}");
+    foreach (var kv in ctx.Arguments)
+        Console.WriteLine($"{kv.Key} = {kv.Value}");
+};
+
+// Define the 'get' command
+var getCommand = new Command
+{
+    Name = "get",
+    Syntaxes =
+    [
+                "get [item]",
+                "get all",
+                "get all.[item]",
+                "get [item] from [container]",
+                "get all.[item] from [container]"
+            ],
+    Execute = GenericExecute
+};
+
+var spellsCommand = new Command
+{
+    Name = "spells",
+    Syntaxes =
+    [
+        "spells",
+        "spells [max]",
+        "spells [min] [max]"
+    ],
+    Execute = GenericExecute
+};
+
+var buyCommand = new Command
+{
+    Name = "buy",
+    Syntaxes =
+    [
+        "buy [item]",         // 1 item
+        "buy [count] [item]", // multiple items
+        "buy [pet] [name]"    // buy pet with name
+    ],
+    Execute = GenericExecute
+};
+
+var tellCommand = new Command
+{
+    Name = "tell",
+    Syntaxes =
+    [
+        "tell [player] [message*]", // tell goblin hello
+    ],
+    Execute = GenericExecute
+};
+
+var oloadCommand = new Command
+{
+    Name = "oload",
+    Syntaxes = ["oload [id]"],
+    Execute = GenericExecute
+};
+
+var xpbonusCommand = new Command
+{
+    Name = "xpbonus",
+    Syntaxes = ["xpbonus [player] [amount]"],
+    Execute = GenericExecute
+};
+
+var infoCommand = new Command
+{
+    Name = "info",
+    Syntaxes = ["info [race]", "info [class]", "info [spell]"],
+    Execute = GenericExecute
+};
+
+var compareCommand = new Command
+{
+    Name = "compare",
+    Syntaxes = ["compare [item1] [item2]"],
+    Execute = GenericExecute
+};
+
+var dropCommand = new Command
+{
+    Name = "drop",
+    Syntaxes =
+    [
+        "drop all",
+        "drop [item]",
+        "drop all.[item]",
+        "drop [amount] silver",
+        "drop [amount] gold"
+    ],
+    Execute = GenericExecute
+};
+
+var pourCommand = new Command
+{
+    Name = "pour",
+    Syntaxes =
+        [
+            "pour [container] out",
+            "pour [container1] [container2]",
+            "pour [container] [character]"
+        ],
+    Execute = GenericExecute
+};
+
+var giveCommand = new Command
+{
+    Name = "give",
+    Syntaxes = new[]
+    {
+        "give [item] [character]",      // give a single item
+        "give all.[item] [character]"   // give all matching items of that type
+    },
+    Execute = GenericExecute
+};
+
+var parser = new MysteryMud.ConsoleApp3.Commands.v2.CommandParser([getCommand, spellsCommand, buyCommand, tellCommand, oloadCommand, xpbonusCommand, infoCommand, compareCommand, dropCommand, pourCommand, giveCommand]);
+parser.TryExecute(player, "get all.gem from chest");
+parser.TryExecute(player, "get 5.sword");
+parser.TryExecute(player, "get all.gold from 'treasure chest'");
+parser.TryExecute(player, "get");
+parser.TryExecute(player, "get all.gold from all'treasure chest'"); // invalid because we don't support multiple containers in the same command yet
+parser.TryExecute(player, "spells 5 15");
+parser.TryExecute(player, "spells");
+parser.TryExecute(player, "buy pet toto");
+parser.TryExecute(player, "buy pet");
+parser.TryExecute(player, "buy 5 item");
+parser.TryExecute(player, "buy item");
+parser.TryExecute(player, "buy");
+parser.TryExecute(player, "tell toto my very long message");
+parser.TryExecute(player, "tell toto 'my very long message'");
+parser.TryExecute(player, "tell"); // invalid becaise missing arguments
+parser.TryExecute(player, "xpbonus joel 5");
+parser.TryExecute(player, "compare 'mysterious sword' 2.dagger");
+parser.TryExecute(player, "drop all.sword");
+parser.TryExecute(player, "drop 5 silver");
+parser.TryExecute(player, "drop 5 toto"); // invalid because toto is not a valid currency
+parser.TryExecute(player, "pour flask out");
+parser.TryExecute(player, "pour flask fountain");
+parser.TryExecute(player, "pour flask player");
 
 var telnetServer = new TelnetServer(4000);
 //_ = telnetServer.Start(world);
