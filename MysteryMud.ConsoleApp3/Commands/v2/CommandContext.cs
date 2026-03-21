@@ -4,7 +4,7 @@ namespace MysteryMud.ConsoleApp3.Commands.v2;
 
 public class CommandContext
 {
-    public Dictionary<string, object> Arguments { get; } = new(); // read-only reference
+    public Dictionary<string, object> Arguments { get; set; }
     public string RawInput { get; set; }
     public string CommandName { get; set; }
 

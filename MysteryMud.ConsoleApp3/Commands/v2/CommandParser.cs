@@ -1,5 +1,6 @@
 ﻿using Arch.Core;
 using System.Text.RegularExpressions;
+using System.Windows.Input;
 
 namespace MysteryMud.ConsoleApp3.Commands.v2;
 
@@ -12,44 +13,73 @@ public class CommandParser
         Commands = commands.ToList();
     }
 
-    // Pass in player entity ID
-    public bool TryExecute(Entity actor, string input)
+    //// Pass in player entity ID
+    //public bool TryExecute(Entity actor, string input)
+    //{
+    //    var tokens = Tokenize(input);
+    //    if (tokens.Length == 0) return false;
+
+    //    string cmdName = tokens[0];
+    //    var command = Commands.FirstOrDefault(c => c.Name.Equals(cmdName, StringComparison.OrdinalIgnoreCase));
+    //    if (command == null) return false;
+
+    //    foreach (var syn in command.Syntaxes.Select(s => new Syntax(s)))
+    //    {
+    //        if (syn.TryMatch(tokens, out var args))
+    //        {
+    //            var ctx = new CommandContext
+    //            {
+    //                CommandName = cmdName,
+    //                RawInput = input,
+    //                // arguments will be populated by the syntax matcher
+    //                Actor = actor,
+    //                MatchedSyntax = syn.Pattern
+    //            };
+
+    //            foreach (var kv in args)
+    //                ctx.Arguments[kv.Key] = kv.Value;
+
+    //            command.Execute(ctx);
+    //            return true;
+    //        }
+    //    }
+
+    //    Console.WriteLine("invalid command syntax:" + input);
+    //    return false;
+    //}
+    public bool TryExecute(Entity actor, string inputStr)
     {
-        var tokens = Tokenize(input);
-        if (tokens.Length == 0) return false;
+        var input = inputStr.AsSpan();
+        Span<Token> tokens = stackalloc Token[16]; // max 16 tokens, adjust if needed
+        int tokenCount = Tokenizer.Tokenize(input, tokens);
 
-        string cmdName = tokens[0];
-        var command = Commands.FirstOrDefault(c => c.Name.Equals(cmdName, StringComparison.OrdinalIgnoreCase));
-        if (command == null) return false;
-
-        foreach (var syn in command.Syntaxes.Select(s => new Syntax(s)))
+        foreach (var cmd in Commands)
         {
-            if (syn.TryMatch(tokens, out var args))
+            foreach (var syntax in cmd.Syntaxes.Select(s => new Syntax(s)))
             {
-                var ctx = new CommandContext
+                if (syntax.TryMatch(input, tokens, tokenCount, out var args))
                 {
-                    CommandName = cmdName,
-                    RawInput = input,
-                    // arguments will be populated by the syntax matcher
-                    Actor = actor,
-                    MatchedSyntax = syn.Pattern
-                };
+                    // CommandContext
+                    var ctx = new CommandContext
+                    {
+                        CommandName = cmd.Name,
+                        Actor = actor,
+                        Arguments = args,
+                        RawInput = inputStr,
+                        MatchedSyntax = syntax.Pattern,
+                    };
 
-                foreach (var kv in args)
-                    ctx.Arguments[kv.Key] = kv.Value;
-
-                command.Execute(ctx);
-                return true;
+                    // Execute the command
+                    cmd.Execute(ctx);
+                    return true;
+                }
             }
         }
 
-        Console.WriteLine("invalid command syntax:" + input);
+        // No command matched
+        Console.WriteLine("Unknown command: " + inputStr);
         return false;
     }
 
-    private string[] Tokenize(string input)
-    {
-        var matches = Regex.Matches(input, @"'([^']*)'|(\S+)");
-        return matches.Select(m => m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value).ToArray();
-    }
+   
 }

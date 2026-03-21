@@ -2,8 +2,15 @@
 
 public class WordToken : ISyntaxToken
 {
-    private readonly string Word;
-    public WordToken(string word) => Word = word;
-    public bool Match(string token, Dictionary<string, object> args)
-        => token.Equals(Word, StringComparison.OrdinalIgnoreCase);
+    private readonly string _word;
+
+    public WordToken(string word)
+    {
+        _word = word;
+    }
+
+    public bool Match(ReadOnlySpan<char> input, Dictionary<string, object> args)
+    {
+        return input.Equals(_word.AsSpan(), StringComparison.OrdinalIgnoreCase);
+    }
 }
