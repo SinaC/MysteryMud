@@ -1,8 +1,6 @@
-﻿using MysteryMud.ConsoleApp3.Network;
-
-namespace MysteryMud.ConsoleApp3.Components.Characters.Players;
+﻿namespace MysteryMud.ConsoleApp3.Components.Characters.Players;
 
 struct Connection
 {
-    public TelnetSession Value;
+    public int ConnectionId;
 }

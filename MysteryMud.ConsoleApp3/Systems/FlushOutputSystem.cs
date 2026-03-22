@@ -3,7 +3,7 @@ using MysteryMud.ConsoleApp3.Components.Characters.Players;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 
-static class FlushOutpusSystem
+static class FlushOutputSystem
 {
     public static void FlushOutputs(World world)
     {
@@ -12,7 +12,7 @@ static class FlushOutpusSystem
         world.Query(query, (Entity player,
                      ref Connection conn) =>
         {
-            conn.Value.Flush();  // signals SendLoop to send batched output
+            Services.Services.Messages.Flush(player);
         });
     }
 }

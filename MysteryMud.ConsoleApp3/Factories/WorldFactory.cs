@@ -47,11 +47,14 @@ class WorldFactory
         return true;
     }
 
-    public static Entity CreateConnectingPlayer(World world)
+    public static Entity CreateConnectingPlayer(World world, int connectionId)
     {
-        var player = world.Create(
-            // Name, Position, Connection, ... will be set in nanny
-        );
+        var player = world.Create(new Connection
+        {
+            ConnectionId = connectionId
+        });
+
+        // Name, Position, ... will be set in nanny
 
         return player;
     }

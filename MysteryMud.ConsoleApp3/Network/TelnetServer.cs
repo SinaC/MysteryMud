@@ -1,8 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.ConsoleApp3.Components.Characters.Players;
-using MysteryMud.ConsoleApp3.Factories;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
 
 namespace MysteryMud.ConsoleApp3.Network;
@@ -10,14 +6,20 @@ namespace MysteryMud.ConsoleApp3.Network;
 public class TelnetServer
 {
     private readonly TcpListener _listener;
-    private readonly Dictionary<Entity, TelnetSession> _connectionsByEntity = new();
+    private readonly Dictionary<int, TelnetSession> _sessions = new(); // TODO: needed ?
+    private readonly Action<int, ReadOnlySpan<char>> OnCommand;
+    private readonly Action<int, ReadOnlySpan<char>> OnLogin;
 
-    public TelnetServer(int port)
+    private int _nextConnectionId;
+
+    public TelnetServer(int port, Action<int, ReadOnlySpan<char>> onCommand, Action<int, ReadOnlySpan<char>> onLogin)
     {
         _listener = new TcpListener(IPAddress.Any, port);
+        OnCommand = onCommand;
+        OnLogin = onLogin;
     }
 
-    public async Task Start(World world)
+    public async Task Start()
     {
         _listener.Start();
         Console.WriteLine("Server listening...");
@@ -26,22 +28,42 @@ public class TelnetServer
         {
             var tcpClient = await _listener.AcceptSocketAsync();
 
-            // create a new ECS entity for the player
-            var playerEntity = WorldFactory.CreateConnectingPlayer(world);
+            var connectionId = _nextConnectionId;
+            _nextConnectionId++;
 
             // create TelnetConnection
-            var conn = new TelnetSession(tcpClient, playerEntity);
+            var conn = new TelnetSession(tcpClient, connectionId, OnCommand, OnLogin);
 
-            // Attach connection component
-            playerEntity.Add(new Connection { Value = conn });
-
-            //_connections.Add(conn);
-            _connectionsByEntity[playerEntity] = conn;
+            _sessions[connectionId] = conn;
 
             // start processing the player connection
             _ = conn.Start();
 
             Console.WriteLine("New player connected.");
         }
+    }
+
+    public void SendGMCP(int connectionId, string package, object payload)
+    {
+        // TODO: handle case where connectionId is not found (e.g. player disconnected)
+        _sessions[connectionId].SendGMCP(package, payload);
+    }
+
+    public void Flush(int connectionId)
+    {
+        // TODO: handle case where connectionId is not found (e.g. player disconnected)
+        _sessions[connectionId].Flush();
+    }
+
+    public void Write(int connectionId, string text)
+    {
+        // TODO: handle case where connectionId is not found (e.g. player disconnected)
+        _sessions[connectionId].Write(text);
+    }
+
+    public void Write(int connectionId, ReadOnlySpan<char> span)
+    {
+        // TODO: handle case where connectionId is not found (e.g. player disconnected)
+        _sessions[connectionId].Write(span);
     }
 }

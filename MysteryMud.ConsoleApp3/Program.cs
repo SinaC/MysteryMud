@@ -9,10 +9,9 @@ using MysteryMud.ConsoleApp3.Components.Items;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Factories;
-using MysteryMud.ConsoleApp3.Simulation.Compilers;
 using MysteryMud.ConsoleApp3.Logger;
-using MysteryMud.ConsoleApp3.Network;
 using MysteryMud.ConsoleApp3.Persistance;
+using MysteryMud.ConsoleApp3.Simulation.Compilers;
 using MysteryMud.ConsoleApp3.Systems;
 using System.Text.Json;
 
@@ -150,10 +149,6 @@ var func = compiler.Compile(formula);
 int result = func(null!, troll, player); // result is random between 6 and 55
 Console.WriteLine(result);
 
-var telnetServer = new TelnetServer(4000);
-//_ = telnetServer.Start(world);
-Task.Run(() => telnetServer.Start(world));
-
 //
 CommandDispatcher.Dispatch(world, player, "look".AsSpan());
 CommandDispatcher.Dispatch(world, player, "get all.sword".AsSpan());
@@ -217,10 +212,5 @@ CommandDispatcher.Dispatch(world, goblin, "test troll poison".AsSpan());
 //Console.WriteLine("Press any key to exit...");
 //Console.ReadLine();
 
-while (true)
-{
-    GameLoop.Tick(world);
-
-    Thread.Sleep(100);
-}
-
+var gameServer = new GameServer(world);
+gameServer.Start();

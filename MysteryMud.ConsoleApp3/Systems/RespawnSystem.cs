@@ -39,7 +39,7 @@ public static class RespawnSystem
                 if (!player.Has<DirtyStats>())
                     player.Add<DirtyStats>();
 
-                RoomBroadcastSystem.Broadcast(world, respawnState.RespawnRoom, $"{player.DisplayName} has respawned!"); // TODO: don't display for player
+                MessageSystem.Broadcast(respawnState.RespawnRoom, $"{player.DisplayName} has respawned!"); // TODO: don't display for player
             }
         });
     }

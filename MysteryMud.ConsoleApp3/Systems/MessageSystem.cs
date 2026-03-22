@@ -1,7 +1,7 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
-using MysteryMud.ConsoleApp3.Components.Characters.Players;
-using MysteryMud.ConsoleApp3.Extensions;
+using MysteryMud.ConsoleApp3.Components.Characters;
+using MysteryMud.ConsoleApp3.Components.Rooms;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 
@@ -9,28 +9,30 @@ public static class MessageSystem
 {
     public static void Send(Entity entity, string message)
     {
-        if (entity.Has<Connection>())
+        if (Services.Services.Messages == null)
         {
-            var conn = entity.Get<Connection>();
-            conn.Value.Write(message + "\r\n");
+            Console.WriteLine($"[MessageSystem] No message service available to send message: {message}");
+            return;
         }
-        else
-        {
-            Console.WriteLine($"[{entity.DisplayName}]: {message}");
-        }
+        Services.Services.Messages.Send(entity, message);
     }
 
-    // TODO: colors will not be handled
-    //public static void SendMessage(Entity entity, ReadOnlySpan<byte> message)
-    //{
-    //    if (entity.Has<Connection>())
-    //    {
-    //        var conn = entity.Get<Connection>();
-    //        conn.Value.WriteBytes(message);
-    //    }
-    //    else
-    //    {
-    //        Console.Write($"[{entity.Get<Name>().Value}]: {System.Text.Encoding.UTF8.GetString(message)}");
-    //    }
-    //}
+    public static void Broadcast(Entity room, string message)
+    {
+        if (Services.Services.Messages == null)
+        {
+            Console.WriteLine($"[MessageSystem] No message service available to broadcast message: {message}");
+            return;
+        }
+
+        ref var roomContents = ref room.TryGetRef<RoomContents>(out var hasRoomContents);
+        if (hasRoomContents)
+        {
+            foreach (var character in roomContents.Characters.Where(x => !x.Has<Dead>()))
+            {
+                // Append message to character's output buffer
+                Services.Services.Messages?.Send(character, message);
+            }
+        }
+    }
 }

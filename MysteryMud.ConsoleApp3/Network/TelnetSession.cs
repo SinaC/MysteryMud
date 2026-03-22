@@ -1,13 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using CommunityToolkit.HighPerformance;
-using MysteryMud.ConsoleApp3.Components;
-using MysteryMud.ConsoleApp3.Components.Characters;
-using MysteryMud.ConsoleApp3.Components.Characters.Players;
-using MysteryMud.ConsoleApp3.Components.Rooms;
-using MysteryMud.ConsoleApp3.Data.Enums;
-using MysteryMud.ConsoleApp3.Factories;
-using MysteryMud.ConsoleApp3.Systems;
+﻿using CommunityToolkit.HighPerformance;
 using System.Buffers;
 using System.Buffers.Binary;
 using System.IO.Compression;
@@ -29,22 +20,27 @@ public sealed class TelnetSession
 
     private readonly OutputBuffer _output = new();
 
+    private readonly int ConnectionId;
+
     private ZLibStream _compressor = default!;
 
-    public TelnetState TelnetState;
-    public Entity Player;
+    internal TelnetState TelnetState;
 
     private int ttypeRequests = 0;
 
-    public NannyState NannyState = NannyState.NewConnection;
-    private string _tempName = default!;
-    private string _tempPassword = default!;
+    private NannyState NannyState = NannyState.NewConnection; // TODO: move this to a separate class to clean up TelnetSession
 
-    public TelnetSession(Socket socket, Entity player)
+    private readonly Action<int, ReadOnlySpan<char>> OnCommand;
+    private readonly Action<int, ReadOnlySpan<char>> OnLogin; // TODO: rename in OnNewConnection or something, since login is handled in the nanny for now and may not be separate from command processing later
+
+    public TelnetSession(Socket socket, int connectionId, Action<int, ReadOnlySpan<char>> onCommand, Action<int, ReadOnlySpan<char>> onLogin)
     {
         _socket = socket;
+        ConnectionId = connectionId;
         TelnetState = new TelnetState();
-        Player = player;
+
+        OnCommand = onCommand;
+        OnLogin = onLogin;
     }
 
     public async Task Start()
@@ -199,7 +195,7 @@ public sealed class TelnetSession
         if (NannyState != NannyState.Finished)
             HandleNanny(span);
         else
-            CommandSystem.Enqueue(Player, span);
+            OnCommand.Invoke(ConnectionId, span);
 
         ArrayPool<char>.Shared.Return(buffer);
     }
@@ -210,25 +206,25 @@ public sealed class TelnetSession
 
     public void Write(string text)
     {
-        if (!text.AsSpan().ContainsAny('%', '{'))
+        Write(text.AsSpan());
+    }
+
+    public void Write(ReadOnlySpan<char> span)
+    {
+        if (!span.ContainsAny('%', '{'))
         {
-            WriteRaw(text);
+            Span<byte> temp = stackalloc byte[1024];
+
+            int bytes = Encoding.ASCII.GetBytes(span, temp);
+
+            WriteBytes(temp[..bytes]);
             return;
         }
 
-        MudColorPipeline.Render(this, text.AsSpan());
+        MudColorPipeline.Render(this, span);
     }
 
-    public void WriteRaw(string text)
-    {
-        Span<byte> temp = stackalloc byte[1024];
-
-        int bytes = Encoding.ASCII.GetBytes(text, temp);
-
-        WriteBytes(temp[..bytes]);
-    }
-
-    public void WriteChar(char c)
+    internal void WriteChar(char c)
     {
         Span<char> cbuf = stackalloc char[1];
         Span<byte> bbuf = stackalloc byte[4];
@@ -240,7 +236,7 @@ public sealed class TelnetSession
         WriteBytes(bbuf[..bytes]);
     }
 
-    public void WriteAnsi(ReadOnlySpan<char> text)
+    internal void WriteAnsi(ReadOnlySpan<char> text)
     {
         Span<byte> buf = stackalloc byte[64];
 
@@ -249,7 +245,7 @@ public sealed class TelnetSession
         WriteBytes(buf[..bytes]);
     }
 
-    public void WriteBytes(ReadOnlySpan<byte> bytes)
+    private void WriteBytes(ReadOnlySpan<byte> bytes)
     {
         foreach (byte b in bytes)
         {
@@ -396,7 +392,7 @@ public sealed class TelnetSession
         _output.Write(b); // directly write to output buffer to ensure proper escaping of IAC bytes
     }
 
-    void SendInitialNegotiation()
+    private void SendInitialNegotiation()
     {
         SendCmd(Telnet.WILL, Telnet.TELOPT_SGA);
         SendCmd(Telnet.WILL, Telnet.TELOPT_ECHO);
@@ -407,7 +403,7 @@ public sealed class TelnetSession
         SendCmd(Telnet.DO, Telnet.TELOPT_NAWS);
     }
 
-    bool TryConsume(ref SequenceReader<byte> reader)
+    private bool TryConsume(ref SequenceReader<byte> reader)
     {
         if (!reader.TryPeek(out byte b) || b != Telnet.IAC)
             return false;
@@ -434,7 +430,7 @@ public sealed class TelnetSession
         return true;
     }
 
-    void HandleNegotiation(byte cmd, byte opt)
+    private void HandleNegotiation(byte cmd, byte opt)
     {
         // DEBUG
         Console.WriteLine($"CMD: 0x{cmd:X2} 0x{opt:X2}");
@@ -488,7 +484,7 @@ public sealed class TelnetSession
         return true;
     }
 
-    void RequestSendTerminalType()
+    private void RequestSendTerminalType()
     {
         Span<byte> b = stackalloc byte[]
         {
@@ -499,7 +495,7 @@ public sealed class TelnetSession
         _output.Write(b); // directly write to output buffer to ensure proper escaping of IAC bytes
     }
 
-    void RequestSendNaw()
+    private void RequestSendNaw()
     {
         Span<byte> b = stackalloc byte[]
         {
@@ -564,7 +560,7 @@ public sealed class TelnetSession
         return true;
     }
 
-    void ParseMTTS(string value)
+    private void ParseMTTS(string value)
     {
         var parts = value.Split(' ');
         if (parts.Length != 2)
@@ -603,73 +599,81 @@ public sealed class TelnetSession
         }
     }
 
-
-    // ----------------------------------------------------
-    // NANNY
-    // ----------------------------------------------------
-    // TODO: refactor
     private void HandleNanny(ReadOnlySpan<char> input)
     {
-        _tempName = "joel";
         SendCmd(Telnet.WONT, Telnet.TELOPT_ECHO);
         NannyState = NannyState.Finished;
-        InitializePlayer();
-        return;
 
-        // TODO
-
-        switch (NannyState)
-        {
-            case NannyState.NewConnection:
-                SendCmd(Telnet.WONT, Telnet.TELOPT_ECHO); // Enable local echo
-                Write("Welcome to the MUD!\r\nPlease enter your name: ");
-                Flush();
-                NannyState = NannyState.EnterName;
-                break;
-
-            case NannyState.EnterName:
-                // COLOR TESTING
-                //ColorTest(ColorMode.TrueColor);
-                //ColorTest(ColorMode.ANSI256);
-                //ColorTest(ColorMode.ANSI16);
-                //ColorTest(ColorMode.None);
-                //ColorTest();
-
-                _tempName = input.ToString().Trim();
-                Write("Enter your password: ");
-                SendCmd(Telnet.WILL, Telnet.TELOPT_ECHO); // Disable local echo for password input
-                Flush();
-                NannyState = NannyState.EnterPassword;
-                break;
-
-            case NannyState.EnterPassword:
-                _tempPassword = input.ToString();
-                // Here you could verify password from a database or file
-                Write("Confirm password: ");
-                Flush();
-                NannyState = NannyState.ConfirmPassword;
-                break;
-
-            case NannyState.ConfirmPassword:
-                if (_tempPassword != input.ToString())
-                {
-                    Write("Passwords do not match. Enter password: ");
-                    Flush();
-                    NannyState = NannyState.EnterPassword;
-                }
-                else
-                {
-                    Write("Character creation complete!\r\n");
-                    SendCmd(Telnet.WONT, Telnet.TELOPT_ECHO); // Enable local echo
-                    Flush();
-                    NannyState = NannyState.Finished;
-
-                    // Attach default ECS components
-                    InitializePlayer();
-                }
-                break;
-        }
+        OnLogin.Invoke(ConnectionId, input);
     }
+
+
+    //// ----------------------------------------------------
+    //// NANNY
+    //// ----------------------------------------------------
+    //// TODO: refactor
+    //private void HandleNanny(ReadOnlySpan<char> input)
+    //{
+    //    _tempName = "joel";
+    //    SendCmd(Telnet.WONT, Telnet.TELOPT_ECHO);
+    //    NannyState = NannyState.Finished;
+    //    InitializePlayer();
+    //    return;
+
+    //    // TODO
+
+    //    switch (NannyState)
+    //    {
+    //        case NannyState.NewConnection:
+    //            SendCmd(Telnet.WONT, Telnet.TELOPT_ECHO); // Enable local echo
+    //            Write("Welcome to the MUD!\r\nPlease enter your name: ");
+    //            Flush();
+    //            NannyState = NannyState.EnterName;
+    //            break;
+
+    //        case NannyState.EnterName:
+    //            // COLOR TESTING
+    //            //ColorTest(ColorMode.TrueColor);
+    //            //ColorTest(ColorMode.ANSI256);
+    //            //ColorTest(ColorMode.ANSI16);
+    //            //ColorTest(ColorMode.None);
+    //            //ColorTest();
+
+    //            _tempName = input.ToString().Trim();
+    //            Write("Enter your password: ");
+    //            SendCmd(Telnet.WILL, Telnet.TELOPT_ECHO); // Disable local echo for password input
+    //            Flush();
+    //            NannyState = NannyState.EnterPassword;
+    //            break;
+
+    //        case NannyState.EnterPassword:
+    //            _tempPassword = input.ToString();
+    //            // Here you could verify password from a database or file
+    //            Write("Confirm password: ");
+    //            Flush();
+    //            NannyState = NannyState.ConfirmPassword;
+    //            break;
+
+    //        case NannyState.ConfirmPassword:
+    //            if (_tempPassword != input.ToString())
+    //            {
+    //                Write("Passwords do not match. Enter password: ");
+    //                Flush();
+    //                NannyState = NannyState.EnterPassword;
+    //            }
+    //            else
+    //            {
+    //                Write("Character creation complete!\r\n");
+    //                SendCmd(Telnet.WONT, Telnet.TELOPT_ECHO); // Enable local echo
+    //                Flush();
+    //                NannyState = NannyState.Finished;
+
+    //                // Attach default ECS components
+    //                InitializePlayer();
+    //            }
+    //            break;
+    //    }
+    //}
 
     //private void ColorTest(ColorMode colorMode)
     //{
@@ -686,57 +690,4 @@ public sealed class TelnetSession
     //    Write("RGB: %#FFA500orange%xnocolor\r\n");
     //    Write("GRADIENT: %#FFA500>#00FFA5orange-2-cyan%xnocolor\r\n");
     //}
-
-    private void InitializePlayer()
-    {
-        // TODO: fill in with actual character creation data, load from file, etc
-        Player.Add(new PlayerTag());
-        Player.Add(new Name { Value = _tempName });
-        Player.Add(new BaseStats
-        {
-            Level = 1,
-            Experience = 0,
-            Values = new Dictionary<StatType, int>
-            {
-                [StatType.Strength] = 15,
-                [StatType.Intelligence] = 10,
-                [StatType.Wisdom] = 15,
-                [StatType.Dexterity] = 12,
-                [StatType.Constitution] = 15,
-                [StatType.HitRoll] = 0,
-                [StatType.DamRoll] = 0,
-                [StatType.Armor] = 0
-            }
-        });
-        Player.Add(new EffectiveStats
-        {
-            Level = 1,
-            Experience = 0,
-            Values = new Dictionary<StatType, int>
-            {
-                [StatType.Strength] = 15,
-                [StatType.Intelligence] = 10,
-                [StatType.Wisdom] = 15,
-                [StatType.Dexterity] = 12,
-                [StatType.Constitution] = 15,
-                [StatType.HitRoll] = 0,
-                [StatType.DamRoll] = 0,
-                [StatType.Armor] = 0
-            }
-        });
-        Player.Add(new Health { Current = 100, Max = 100 });
-        Player.Add(new Inventory { Items = [] });
-        Player.Add(new Equipment { Slots = [] });
-        Player.Add(new CharacterEffects
-        {
-            Effects = [],
-            EffectsByTag = new Entity?[32]
-        });
-        Player.Add(new Position { Room = WorldFactory.StartingRoomEntity });
-        Player.Add<DirtyStats>(); // ensure stats are recomputed
-        WorldFactory.StartingRoomEntity.Get<RoomContents>().Characters.Add(Player);
-
-        Write("Welcome to the game!\r\n> ");
-        Flush();
-    }
 }

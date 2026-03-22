@@ -1,4 +1,4 @@
-﻿namespace MysteryMud.ConsoleApp3.Data.Enums;
+﻿namespace MysteryMud.ConsoleApp3.Network;
 
 public enum NannyState
 {
