@@ -11,9 +11,9 @@ namespace MysteryMud.ConsoleApp3.Systems;
 
 public static class CleanupSystem
 {
-    // TODO check disconnected players and remove them from the world
-    // check Position for characters
-    // check Position for items
+    // check disconnected players and remove them from the world
+    // check Location for characters
+    // check Location for items
     // check ContainedIn for items
     // check Equipped for items
     public static void Cleanup(World world)
@@ -25,10 +25,10 @@ public static class CleanupSystem
         {
             Logger.Logger.Cleanup.CleanupPlayer(player);
 
-            ref var position = ref player.TryGetRef<Position>(out var hasPosition);
-            if (hasPosition)
+            ref var location = ref player.TryGetRef<Location>(out var hasLocation);
+            if (hasLocation)
             {
-                ref var roomContents = ref position.Room.Get<RoomContents>();
+                ref var roomContents = ref location.Room.Get<RoomContents>();
                 roomContents.Characters.Remove(player);
             }
 
@@ -41,12 +41,12 @@ public static class CleanupSystem
 
         // destroy NPCs
         var destroyCharactersQuery = new QueryDescription()
-                .WithAll<Dead, Position, NpcTag>();
-        world.Query(destroyCharactersQuery, (Entity character, ref Dead deadTag, ref Position position, ref NpcTag npcTag) =>
+                .WithAll<Dead, Location, NpcTag>();
+        world.Query(destroyCharactersQuery, (Entity character, ref Dead deadTag, ref Location location, ref NpcTag npcTag) =>
         {
-            Logger.Logger.Cleanup.CleanupCharacterFromRoom(character, position.Room);
+            Logger.Logger.Cleanup.CleanupCharacterFromRoom(character, location.Room);
 
-            ref var roomContents = ref position.Room.Get<RoomContents>();
+            ref var roomContents = ref location.Room.Get<RoomContents>();
             roomContents.Characters.Remove(character);
 
             // TODO: destroy any items the character is carrying or equipped with
@@ -59,24 +59,23 @@ public static class CleanupSystem
         // destroy items
         var destroyItemsQuery = new QueryDescription()
                 .WithAll<DestroyedTag>()
-                .WithAny<Position, ContainedIn, Equipped>();
-        //world.Query(destroyItemsQuery, (Entity item, ref DestroyedTag destroyedTag, ref Position position, ref ContainedIn containedIn, ref Equipped equipped) => // doesn't work
+                .WithAny<Location, ContainedIn, Equipped>();
+        //world.Query(destroyItemsQuery, (Entity item, ref DestroyedTag destroyedTag, ref Location location, ref ContainedIn containedIn, ref Equipped equipped) => // doesn't work
         world.Query(destroyItemsQuery, (Entity item, ref DestroyedTag destroyedTag) =>
         {
             // check if the item is on the ground
-            if (item.Has<Position>())
+            ref var location = ref item.TryGetRef<Location>(out var hasLocation);
+            if (hasLocation)
             {
-                ref var position = ref item.Get<Position>();
+                Logger.Logger.Cleanup.CleanupItemFromRoom(item, location.Room);
 
-                Logger.Logger.Cleanup.CleanupItemFromRoom(item, position.Room);
-
-                ref var roomContents = ref position.Room.Get<RoomContents>();
+                ref var roomContents = ref location.Room.Get<RoomContents>();
                 roomContents.Items.Remove(item);
             }
             // check if the item is in a container or inventory
-            if (item.Has<ContainedIn>())
+            ref var containedIn = ref item.TryGetRef<ContainedIn>(out var hasContainedIn);
+            if (hasContainedIn)
             {
-                ref var containedIn = ref item.Get<ContainedIn>();
                 if (containedIn.Character != Entity.Null)
                 {
                     Logger.Logger.Cleanup.CleanupItemFromInventory(item, containedIn.Character);
@@ -93,9 +92,9 @@ public static class CleanupSystem
                 }
             }
             // check if the item is equipped should never happen)
-            if (item.Has<Equipped>())
+            ref var equipped = ref item.TryGetRef<Equipped>(out var isEquipped);
+            if (isEquipped)
             {
-                ref var equipped = ref item.Get<Equipped>();
                 ref var equipment = ref equipped.Wearer.Get<Equipment>();
                 foreach (var slot in equipment.Slots.Keys.ToList())
                 {

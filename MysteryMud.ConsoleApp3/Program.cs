@@ -3,6 +3,8 @@ using Arch.Core.Extensions;
 using Microsoft.Extensions.Configuration;
 using MysteryMud.ConsoleApp3;
 using MysteryMud.ConsoleApp3.Commands;
+using MysteryMud.ConsoleApp3.Commands.Dispatcher;
+using MysteryMud.ConsoleApp3.Commands.Registry;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Items;
@@ -129,7 +131,7 @@ var chest = world.Create(
             new Item(),
             new Name { Value = "chest" },
             new Description { Value = "a chest" },
-            new Position { Room = market },
+            new Location { Room = market },
             new Container { Capacity = 10 },
             new ContainerContents { Items = [] }
         );

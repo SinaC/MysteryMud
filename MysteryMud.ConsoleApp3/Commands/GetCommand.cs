@@ -1,5 +1,6 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Items;
@@ -18,7 +19,7 @@ public class GetCommand : ICommand
         if (ctx.Secondary.Name.IsEmpty)
         {
             // default: room
-            var room = actor.Get<Position>().Room;
+            var room = actor.Get<Location>().Room;
             var roomContents = room.Get<RoomContents>();
             foreach (var item in TargetingSystem.SelectTargets(actor, ctx.Primary, roomContents.Items))
             {
@@ -47,7 +48,7 @@ public class GetCommand : ICommand
     private Entity FindContainer(Entity actor, TargetSpec containerArg)
     {
         // Search in room first
-        var room = actor.Get<Position>().Room;
+        var room = actor.Get<Location>().Room;
         var roomContents = room.Get<RoomContents>();
 
         var container = TargetingSystem.SelectSingleTarget(actor, containerArg, roomContents.Items);

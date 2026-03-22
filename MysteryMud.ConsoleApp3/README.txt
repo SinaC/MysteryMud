@@ -1,7 +1,7 @@
-Components
+Entity/Components
 
 Character
-  ├Position: room
+  ├Location: room
   ├BaseStats: level, experience, dictionary stat/value
   ├EffectiveStats: dictionary stat/value
   ├CharacterEffects: effect list, effects by tag, active tags
@@ -24,6 +24,7 @@ Player(character+)
   └Connection
   optional
     RespawnState: respawn timer and location when a player dies
+    DisconnectedTag: is disconnected
 
 Item
     todo
@@ -55,7 +56,7 @@ EffectTemplate:
     WearOffMessage: message to show when the effect wears off
 
 ******************************************************************
-** replace Position, RoomContents, Inventory, ContainerContents **
+** replace Location, RoomContents, Inventory, ContainerContents **
 ** with uniformied ContainerContents and ContainedIn component  **
 ******************************************************************
 
@@ -168,7 +169,7 @@ Players are containers (inventory).
 
 var player = world.Create(
     new Character(),
-    new Position { Room = room },
+    new Location { Room = room },
     new Container(),
     new ContainerContents { Entities = new List<Entity>() });
 7. Chest Setup
@@ -193,7 +194,7 @@ public class GetCommand : ICommand
 
         if (ctx.Secondary.Name.IsEmpty)
         {
-            source = actor.Get<Position>().Room;
+            source = actor.Get<Location>().Room;
         }
         else
         {
@@ -353,7 +354,7 @@ public class GiveCommand : ICommand
     public void Execute(World world, Entity actor, CommandContext ctx)
     {
         var inventory = world.Get<ContainerContents>(actor);
-        var room = actor.Get<Position>().Room;
+        var room = actor.Get<Location>().Room;
 
         // Find target character in room
         var characters = Spatial.GetCharactersInRoom(world, room);
@@ -387,7 +388,7 @@ public class DropCommand : ICommand
     public void Execute(World world, Entity actor, CommandContext ctx)
     {
         var inventory = world.Get<ContainerContents>(actor);
-        var room = actor.Get<Position>().Room;
+        var room = actor.Get<Location>().Room;
 
         foreach (var item in TargetResolver.Resolve(actor, ctx.Primary, inventory.Entities))
         {
@@ -415,7 +416,7 @@ public class GetCommand : ICommand
         if (ctx.Secondary.Name.IsEmpty)
         {
             // default: room
-            source = actor.Get<Position>().Room;
+            source = actor.Get<Location>().Room;
         }
         else
         {
@@ -440,7 +441,7 @@ public class GetCommand : ICommand
     private Entity FindContainer(World world, Entity actor, TargetArg containerArg)
     {
         // Search in room first
-        var room = actor.Get<Position>().Room;
+        var room = actor.Get<Location>().Room;
         var roomContents = world.Get<ContainerContents>(room);
 
         foreach (var e in TargetResolver.Resolve(actor, containerArg, roomContents.Entities))

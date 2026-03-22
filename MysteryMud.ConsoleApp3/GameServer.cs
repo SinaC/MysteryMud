@@ -214,7 +214,8 @@ public class GameServer
             Effects = [],
             EffectsByTag = new Entity?[32]
         });
-        player.Add(new Position { Room = WorldFactory.StartingRoomEntity });
+        player.Add(new Location { Room = WorldFactory.StartingRoomEntity });
+        player.Add(new PositionComponent { Position = Position.Standing });
         player.Add<DirtyStats>(); // ensure stats are recomputed
         WorldFactory.StartingRoomEntity.Get<RoomContents>().Characters.Add(player); // move to starting room
 

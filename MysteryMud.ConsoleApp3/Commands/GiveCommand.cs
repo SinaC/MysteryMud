@@ -1,5 +1,6 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Items;
@@ -16,7 +17,7 @@ public class GiveCommand : ICommand
     public void Execute(World world, Entity actor, CommandContext ctx)
     {
         var inventory = actor.Get<Inventory>();
-        var room = actor.Get<Position>().Room;
+        var room = actor.Get<Location>().Room;
         var roomContents = room.Get<RoomContents>();
 
         // Find target character in room

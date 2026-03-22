@@ -1,5 +1,6 @@
 ﻿using Arch.Core;
-using MysteryMud.ConsoleApp3.Commands;
+using MysteryMud.ConsoleApp3.Commands.Dispatcher;
+using MysteryMud.ConsoleApp3.Events;
 using System.Buffers;
 using System.Collections.Concurrent;
 
@@ -11,7 +12,9 @@ public static class CommandSystem
 
     public static void ProcessCommands(World world)
     {
-        while (TryDequeue(out var cmd))
+        // TOOD: we should process commands received since the last tick,
+        // but with this loop, we will continue processing commands until the queue is empty, which could lead to starvation of other systems if a lot of commands are received.
+        while (TryDequeue(out var cmd)) // TODO: consider processing a batch of commands instead of one at a time
         {
             var span = cmd.Buffer.AsSpan(0, cmd.Length);
 
@@ -21,7 +24,6 @@ public static class CommandSystem
             ArrayPool<char>.Shared.Return(cmd.Buffer);
         }
     }
-
 
     public static void Enqueue(Entity player, ReadOnlySpan<char> span)
     {

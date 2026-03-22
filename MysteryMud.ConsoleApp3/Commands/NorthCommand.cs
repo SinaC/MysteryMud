@@ -1,5 +1,6 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Data.Enums;
@@ -14,11 +15,10 @@ public class NorthCommand : ICommand
     public void Execute(World world, Entity actor, CommandContext ctx)
     {
         // Get room
-        var position = actor.Get<Position>();
-        var room = position.Room;
+        ref var room = ref actor.Get<Location>().Room;
 
         // Get North exit
-        var roomGraph = room.Get<RoomGraph>();
+        ref var roomGraph = ref room.Get<RoomGraph>();
         var northExit = roomGraph.Exits.SingleOrDefault(e => e.Direction == Direction.North);
         if (northExit.Equals(default(Exit)) || northExit.TargetRoom == Entity.Null)
         {

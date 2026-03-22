@@ -16,7 +16,7 @@ class ItemMovementSystem
 
         roomContents.Items.Remove(item);
         inventory.Items.Add(item);
-        item.Remove<Position>();
+        item.Remove<Location>();
         item.Add(new ContainedIn { Character = getter });
     }
 
@@ -39,7 +39,7 @@ class ItemMovementSystem
 
         roomContents.Items.Add(item);
         inventory.Items.Remove(item);
-        item.Add(new Position { Room = room });
+        item.Add(new Location { Room = room });
         item.Remove<ContainedIn>();
     }
 

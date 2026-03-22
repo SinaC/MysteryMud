@@ -1,5 +1,6 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Effects;
@@ -16,7 +17,7 @@ public class MstatCommand : ICommand
 
     public void Execute(World world, Entity actor, CommandContext ctx)
     {
-        var people = actor.Get<Position>().Room.Get<RoomContents>().Characters;
+        var people = actor.Get<Location>().Room.Get<RoomContents>().Characters;
 
         var target = TargetingSystem.SelectSingleTarget(actor, ctx.Primary, people);
         if (target == default)
@@ -26,12 +27,12 @@ public class MstatCommand : ICommand
         }
 
         // TODO: ref ?
-        var (name, position, health, baseStats, effectiveStats, inventory, equipment, characterEffects) = target.Get<Name, Position, Health, BaseStats, EffectiveStats, Inventory, Equipment, CharacterEffects>();
+        var (name, location, health, baseStats, effectiveStats, inventory, equipment, characterEffects) = target.Get<Name, Location, Health, BaseStats, EffectiveStats, Inventory, Equipment, CharacterEffects>();
         MessageSystem.Send(actor, $"Name: {name.Value}");
         ref var description = ref target.TryGetRef<Description>(out var hasDescription);
         if (hasDescription)
             MessageSystem.Send(actor, $"Description: {description.Value}");
-        MessageSystem.Send(actor, $"Position: {position.Room.DisplayName}");
+        MessageSystem.Send(actor, $"Location: {location.Room.DisplayName}");
         MessageSystem.Send(actor, $"Health: {health.Current}/{health.Max}");
         ref var mana = ref target.TryGetRef<Mana>(out var hasMana);
         if (hasMana)

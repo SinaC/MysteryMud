@@ -1,8 +1,10 @@
 ﻿using Arch.Core;
+using MysteryMud.ConsoleApp3.Commands.Parser;
+using MysteryMud.ConsoleApp3.Commands.Registry;
 using MysteryMud.ConsoleApp3.Extensions;
 using MysteryMud.ConsoleApp3.Systems;
 
-namespace MysteryMud.ConsoleApp3.Commands;
+namespace MysteryMud.ConsoleApp3.Commands.Dispatcher;
 
 class CommandDispatcher
 {

@@ -1,5 +1,6 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Items;
@@ -15,7 +16,7 @@ public class DropCommand : ICommand
     public void Execute(World world, Entity actor, CommandContext ctx)
     {
         ref var inventory = ref actor.Get<Inventory>();
-        ref var room = ref actor.Get<Position>().Room;
+        ref var room = ref actor.Get<Location>().Room;
 
         foreach (var item in TargetingSystem.SelectTargets(actor, ctx.Primary, inventory.Items))
         {

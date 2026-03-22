@@ -1,5 +1,6 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Systems;
@@ -21,7 +22,7 @@ public class CastCommand : ICommand
         }
 
         // search target
-        var roomContents = actor.Get<Position>().Room.Get<RoomContents>().Characters;
+        var roomContents = actor.Get<Location>().Room.Get<RoomContents>().Characters;
         var target = TargetingSystem.SelectSingleTarget(actor, ctx.Secondary, roomContents);
         if (target == default)
         {

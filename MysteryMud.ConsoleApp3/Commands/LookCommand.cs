@@ -1,5 +1,6 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Items;
@@ -31,11 +32,10 @@ public class LookCommand : ICommand
         }
 
         // Get room
-        var position = actor.Get<Position>();
-        var room = position.Room;
+        ref var room = ref actor.Get<Location>().Room;
 
         // Get room contents and graph
-        var roomContents = room.Get<RoomContents>();
+        ref var roomContents = ref room.Get<RoomContents>();
         var roomItems = roomContents.Items;
         var roomCharacters = roomContents.Characters;
 
@@ -63,10 +63,10 @@ public class LookCommand : ICommand
         }
 
         // 3️) Try items in actor inventory
-        if (actor.Has<Inventory>())
+        ref var inventory = ref actor.TryGetRef<Inventory>(out var hasInventory);
+        if (hasInventory)
         {
-            var inv = actor.Get<Inventory>();
-            foreach (var item in inv.Items)
+            foreach (var item in inventory.Items)
             {
                 if (TargetingSystem.Matches(item, targetName))
                 {
@@ -83,10 +83,10 @@ public class LookCommand : ICommand
 
     private void LookAround(Entity actor)
     {
-        ref var position = ref actor.TryGetRef<Position>(out var hasPosition);
-        if (hasPosition)
+        ref var location = ref actor.TryGetRef<Location>(out var hasLocation);
+        if (hasLocation)
         {
-            DisplayRoomSystem.DisplayRoom(actor, position.Room);
+            DisplayRoomSystem.DisplayRoom(actor, location.Room);
             return;
         }
 

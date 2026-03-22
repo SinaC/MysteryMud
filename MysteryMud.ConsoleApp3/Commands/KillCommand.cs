@@ -1,5 +1,6 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Rooms;
@@ -14,7 +15,7 @@ public class KillCommand : ICommand
 
     public void Execute(World world, Entity actor, CommandContext ctx)
     {
-        var roomContents = actor.Get<Position>().Room.Get<RoomContents>().Characters;
+        var roomContents = actor.Get<Location>().Room.Get<RoomContents>().Characters;
         var target = TargetingSystem.SelectSingleTarget(actor, ctx.Primary, roomContents);
 
         if (target == default)

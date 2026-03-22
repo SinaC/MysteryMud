@@ -1,5 +1,6 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Data.Enums;
@@ -14,8 +15,7 @@ public class SouthCommand : ICommand
     public void Execute(World world, Entity actor, CommandContext ctx)
     {
         // Get room
-        var position = actor.Get<Position>();
-        var room = position.Room;
+        ref var room = ref actor.Get<Location>().Room;
 
         // Get south exit
         var roomGraph = room.Get<RoomGraph>();

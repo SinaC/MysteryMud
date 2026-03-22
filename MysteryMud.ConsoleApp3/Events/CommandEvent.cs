@@ -1,6 +1,6 @@
 ﻿using Arch.Core;
 
-namespace MysteryMud.ConsoleApp3.Commands;
+namespace MysteryMud.ConsoleApp3.Events;
 
 public struct CommandEvent
 {

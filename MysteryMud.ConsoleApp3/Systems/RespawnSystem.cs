@@ -13,8 +13,8 @@ public static class RespawnSystem
     public static void RespawnPlayers(World world)
     {
         var query = new QueryDescription()
-            .WithAll<PlayerTag, RespawnState, Position, Health>();
-        world.Query(query, (Entity player, ref RespawnState respawnState, ref Position position, ref Health health) =>
+            .WithAll<PlayerTag, RespawnState, Location, Health>();
+        world.Query(query, (Entity player, ref RespawnState respawnState, ref Location location, ref Health health) =>
         {
             // Optional: respawn timer check
             //if (Time.time - dead.TimeOfDeath >= RespawnDelay)
@@ -22,7 +22,7 @@ public static class RespawnSystem
                 Logger.Logger.Respawn(player, respawnState.RespawnRoom);
 
                 // Move player to respawn room
-                position.Room = respawnState.RespawnRoom;
+                location.Room = respawnState.RespawnRoom;
 
                 // Add player back to RoomContents
                 var roomContents = respawnState.RespawnRoom.Get<RoomContents>();

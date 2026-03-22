@@ -43,10 +43,10 @@ public static class DeathSystem
 
     private static void RemoveFromRoomContents(World world, Entity victim)
     {
-        if (!victim.Has<Position>())
+        ref var location = ref victim.TryGetRef<Location>(out var hasLocation);
+        if (!hasLocation)
             return; // can't remove from room contents if we don't know where the victim is
-        ref var position = ref victim.Get<Position>();
-        ref var roomContents = ref position.Room.Get<RoomContents>();
+        ref var roomContents = ref location.Room.Get<RoomContents>();
         roomContents.Characters.Remove(victim);
     }
 
@@ -75,23 +75,23 @@ public static class DeathSystem
     // TODO: create a corpse entity that can hold the items instead of dropping items on the floor
     private static void CreateCorpse(World world, Entity victim, Entity killer)
     {
-        if (!victim.Has<Position, Inventory>())
+        if (!victim.Has<Location, Inventory>())
             return; // can't create a corpse if we don't know where the victim is
         // TODO: don't do for player ?
-        ref var position = ref victim.Get<Position>();
+        ref var location = ref victim.Get<Location>();
         ref var inventory = ref victim.Get<Inventory>();
         // for the moment, drop items on the floor
         foreach (var item in inventory.Items.ToArray())
         {
             // Unequip if necessary
-            if (item.Has<Equipped>())
+            ref var equipped = ref item.TryGetRef<Equipped>(out var isEquipped);
+            if (isEquipped)
             {
-                ref var equipped = ref item.Get<Equipped>();
                 EquipmentSystem.Unequip(victim, equipped.Slot);
             }
 
-            //ContainmentSystem.Move(world, item, victim.Get<Position>().Room);
-            ItemMovementSystem.DropItem(victim, position.Room, item);
+            //ContainmentSystem.Move(world, item, victim.Get<Location>().Room);
+            ItemMovementSystem.DropItem(victim, location.Room, item);
             MessageSystem.Send(killer, $"{victim.DisplayName} drops {item.DisplayName}.");
         }
     }

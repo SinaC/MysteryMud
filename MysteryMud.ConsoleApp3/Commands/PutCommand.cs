@@ -1,5 +1,6 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Rooms;
@@ -34,7 +35,7 @@ public class PutCommand : ICommand
     private Entity FindContainer(Entity actor, TargetSpec containerArg)
     {
         // Search in room first
-        var room = actor.Get<Position>().Room;
+        var room = actor.Get<Location>().Room;
         var roomContents = room.Get<RoomContents>();
 
         var container = TargetingSystem.SelectSingleTarget(actor, containerArg, roomContents.Items);

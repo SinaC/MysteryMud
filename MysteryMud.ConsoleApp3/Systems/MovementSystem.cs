@@ -10,11 +10,10 @@ namespace MysteryMud.ConsoleApp3.Systems
     {
         public static void Move(Entity entity, Entity newRoom)
         {
-            if (entity.Has<Position>()) // entity can be an item in an inventory, so check if it has a position before trying to move it
+            ref var location = ref entity.TryGetRef<Location>(out var hasLocation);
+            if (hasLocation) // entity can be an item in an inventory, so check if it has a location before trying to move it
             {
-                ref var pos = ref entity.Get<Position>();
-
-                var oldRoom = pos.Room;
+                var oldRoom = location.Room;
 
                 if (entity.Has<Item>()) // moving an item, so update room contents
                 {
@@ -27,7 +26,7 @@ namespace MysteryMud.ConsoleApp3.Systems
                     newRoom.Get<RoomContents>().Characters.Add(entity);
                 }
 
-                pos.Room = newRoom;
+                location.Room = newRoom;
             }
         }
     }

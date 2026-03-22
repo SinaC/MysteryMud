@@ -54,7 +54,7 @@ class WorldFactory
             ConnectionId = connectionId
         });
 
-        // Name, Position, ... will be set in nanny
+        // Name, Location, ... will be set in nanny
 
         return player;
     }
@@ -104,7 +104,8 @@ class WorldFactory
                 Effects = [],
                 EffectsByTag = new Entity?[32]
             },
-            new Position { Room = room },
+            new PositionComponent { Position = Position.Standing },
+            new Location { Room = room },
             new DirtyStats() // dirty by default
         );
 
@@ -159,7 +160,8 @@ class WorldFactory
                 Effects = [],
                 EffectsByTag = new Entity?[32]
             },
-            new Position { Room = room },
+            new Location { Room = room },
+            new PositionComponent { Position = Position.Standing },
             new ThreatTable { Threat = [] },
             new DirtyStats() // dirty by default
         );
@@ -175,7 +177,7 @@ class WorldFactory
             new Item(),
             new Name { Value = name },
             new Description { Value = description },
-            new Position { Room = room }
+            new Location { Room = room }
         );
         // TODO: check that room has RoomContents component
         room.Get<RoomContents>().Items.Add(item);

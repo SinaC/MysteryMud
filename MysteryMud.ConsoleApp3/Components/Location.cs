@@ -2,7 +2,7 @@
 
 namespace MysteryMud.ConsoleApp3.Components;
 
-struct Position
+struct Location
 {
     public Entity Room;
 }

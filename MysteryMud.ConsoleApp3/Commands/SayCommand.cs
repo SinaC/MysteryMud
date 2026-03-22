@@ -1,5 +1,6 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Extensions;
@@ -20,8 +21,7 @@ public class SayCommand : ICommand
         }
 
         // Get room
-        var position = actor.Get<Position>();
-        var room = position.Room;
+        var room = actor.Get<Location>().Room;
 
         // Get room contents
         var roomContents = room.Get<RoomContents>();

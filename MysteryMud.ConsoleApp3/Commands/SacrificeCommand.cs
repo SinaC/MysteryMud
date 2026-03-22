@@ -1,5 +1,6 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Extensions;
@@ -14,7 +15,7 @@ public class SacrificeCommand : ICommand
     public void Execute(World world, Entity actor, CommandContext ctx)
     {
         // search in room
-        ref var room = ref actor.Get<Position>().Room;
+        ref var room = ref actor.Get<Location>().Room;
         ref var roomContents = ref room.Get<RoomContents>();
 
         foreach (var item in TargetingSystem.SelectTargets(actor, ctx.Primary, roomContents.Items))

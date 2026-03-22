@@ -15,7 +15,7 @@ namespace MysteryMud.ConsoleApp3.Systems
             if (!npc.Has<NpcTag>())
                 return;
 
-            var room = npc.Get<Position>().Room;
+            var room = npc.Get<Location>().Room;
             var contents = room.Get<RoomContents>();
 
             foreach (var e in contents.Characters)
