@@ -2,9 +2,9 @@
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 
-namespace MysteryMud.ConsoleApp3.RoomGraphing;
+namespace MysteryMud.ConsoleApp3.Factories;
 
-public static class RoomGraphBuilder
+public static class RoomGraphFactory
 {
     public static void BuildNeighborhood(Entity room)
     {

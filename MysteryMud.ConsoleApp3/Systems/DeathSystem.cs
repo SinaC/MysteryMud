@@ -2,6 +2,7 @@
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
+using MysteryMud.ConsoleApp3.Components.Characters.Players;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Extensions;
 using MysteryMud.ConsoleApp3.Factories;

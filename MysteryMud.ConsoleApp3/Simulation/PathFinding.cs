@@ -2,7 +2,7 @@
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 
-namespace MysteryMud.ConsoleApp3.RoomGraphing;
+namespace MysteryMud.ConsoleApp3.Simulation;
 
 class Pathfinding
 {

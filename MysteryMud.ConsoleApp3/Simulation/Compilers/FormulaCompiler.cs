@@ -3,7 +3,7 @@ using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Data.Enums;
 
-namespace MysteryMud.ConsoleApp3.Formulas;
+namespace MysteryMud.ConsoleApp3.Simulation.Compilers;
 
 // can evaluate formulas like:
 // 3 + caster.Level / 2 - range(1, 4)

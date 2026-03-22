@@ -1,10 +1,9 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using CommunityToolkit.HighPerformance;
-using MysteryMud.ConsoleApp3.Commands;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
-using MysteryMud.ConsoleApp3.Components.Networking;
+using MysteryMud.ConsoleApp3.Components.Characters.Players;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Factories;
@@ -20,7 +19,7 @@ using System.Threading.Channels;
 
 namespace MysteryMud.ConsoleApp3.Network;
 
-public sealed class TelnetConnection
+public sealed class TelnetSession
 {
     private const int MAX_TTYPE_REQUESTS = 5;
 
@@ -41,7 +40,7 @@ public sealed class TelnetConnection
     private string _tempName = default!;
     private string _tempPassword = default!;
 
-    public TelnetConnection(Socket socket, Entity player)
+    public TelnetSession(Socket socket, Entity player)
     {
         _socket = socket;
         TelnetState = new TelnetState();

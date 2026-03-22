@@ -23,7 +23,7 @@ public static class MudColorPipeline
         CreateDecimalTable();
     }
 
-    public static void Render(TelnetConnection conn, ReadOnlySpan<char> text)
+    public static void Render(TelnetSession conn, ReadOnlySpan<char> text)
     {
         for (int i = 0; i < text.Length; i++)
         {
@@ -98,14 +98,14 @@ public static class MudColorPipeline
     private static string Fg256(int c) => $"\x1b[38;5;{c}m";
     private static string FgRgb(byte r, byte g, byte b) => $"\x1b[38;2;{r};{g};{b}m";
 
-    static void Write16(TelnetConnection conn, int colorCode)
+    static void Write16(TelnetSession conn, int colorCode)
     {
         if (conn.TelnetState.ColorMode == ColorMode.None)
             return;
         conn.WriteAnsi(Fg16(colorCode));
     }
 
-    static void Write256(TelnetConnection conn, int paletteIndex)
+    static void Write256(TelnetSession conn, int paletteIndex)
     {
         switch (conn.TelnetState.ColorMode)
         {
@@ -121,7 +121,7 @@ public static class MudColorPipeline
         }
     }
 
-    static void WriteColor(TelnetConnection conn, MudColorDef c)
+    static void WriteColor(TelnetSession conn, MudColorDef c)
     {
         switch (conn.TelnetState.ColorMode)
         {
@@ -142,7 +142,7 @@ public static class MudColorPipeline
         }
     }
 
-    static void WriteGradient(TelnetConnection conn, ReadOnlySpan<char> text, MudColorDef a, MudColorDef b)
+    static void WriteGradient(TelnetSession conn, ReadOnlySpan<char> text, MudColorDef a, MudColorDef b)
     {
         int len = text.Length;
 

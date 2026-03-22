@@ -1,6 +1,6 @@
 ﻿using Arch.Core;
 using MysteryMud.ConsoleApp3.Components;
-using MysteryMud.ConsoleApp3.Components.Networking;
+using MysteryMud.ConsoleApp3.Components.Characters.Players;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 

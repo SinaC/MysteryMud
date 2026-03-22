@@ -1,8 +1,8 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
-using MysteryMud.ConsoleApp3.Components.Characters;
+using MysteryMud.ConsoleApp3.Components.Characters.Mobiles;
 
-namespace MysteryMud.ConsoleApp3.Calculators;
+namespace MysteryMud.ConsoleApp3.Simulation.Calculators;
 
 public static class AggroCalculator
 {

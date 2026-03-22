@@ -1,10 +1,10 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
-using MysteryMud.ConsoleApp3.Calculators;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Effects;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Events;
+using MysteryMud.ConsoleApp3.Simulation.Calculators;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 

@@ -1,6 +1,6 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
-using MysteryMud.ConsoleApp3.Components.Networking;
+using MysteryMud.ConsoleApp3.Components.Characters.Players;
 using MysteryMud.ConsoleApp3.Factories;
 using System.Net;
 using System.Net.Sockets;
@@ -10,7 +10,7 @@ namespace MysteryMud.ConsoleApp3.Network;
 public class TelnetServer
 {
     private readonly TcpListener _listener;
-    private readonly Dictionary<Entity, TelnetConnection> _connectionsByEntity = new();
+    private readonly Dictionary<Entity, TelnetSession> _connectionsByEntity = new();
 
     public TelnetServer(int port)
     {
@@ -30,7 +30,7 @@ public class TelnetServer
             var playerEntity = WorldFactory.CreateConnectingPlayer(world);
 
             // create TelnetConnection
-            var conn = new TelnetConnection(tcpClient, playerEntity);
+            var conn = new TelnetSession(tcpClient, playerEntity);
 
             // Attach connection component
             playerEntity.Add(new Connection { Value = conn });

@@ -1,12 +1,13 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Components.Characters;
+using MysteryMud.ConsoleApp3.Components.Characters.Players;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Extensions;
 using MysteryMud.ConsoleApp3.Factories;
 using MysteryMud.ConsoleApp3.Systems;
 
-namespace MysteryMud.ConsoleApp3.Calculators;
+namespace MysteryMud.ConsoleApp3.Simulation.Calculators;
 
 public static class DamageCalculator
 {

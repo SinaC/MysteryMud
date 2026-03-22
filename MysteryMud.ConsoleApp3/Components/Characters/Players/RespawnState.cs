@@ -1,6 +1,6 @@
 ﻿using Arch.Core;
 
-namespace MysteryMud.ConsoleApp3.Components.Characters;
+namespace MysteryMud.ConsoleApp3.Components.Characters.Players;
 
 struct RespawnState
 {
