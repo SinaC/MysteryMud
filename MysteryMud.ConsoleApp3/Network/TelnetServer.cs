@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Collections.Concurrent;
+using System.Net;
 using System.Net.Sockets;
 
 namespace MysteryMud.ConsoleApp3.Network;
@@ -6,23 +7,26 @@ namespace MysteryMud.ConsoleApp3.Network;
 public class TelnetServer
 {
     private readonly TcpListener _listener;
-    private readonly Dictionary<int, TelnetSession> _sessions = new(); // TODO: needed ?
-    private readonly Action<int, ReadOnlySpan<char>> OnCommand;
-    private readonly Action<int, ReadOnlySpan<char>> OnLogin;
+    private readonly ConcurrentDictionary<int, TelnetSession> _sessions = new(); // TODO: needed ?
+    private readonly Action<int, ReadOnlySpan<char>> OnInputReceived;
+    private readonly Action<int> OnConnected;
+    private readonly Action<int> OnDisconnected;
 
     private int _nextConnectionId;
 
-    public TelnetServer(int port, Action<int, ReadOnlySpan<char>> onCommand, Action<int, ReadOnlySpan<char>> onLogin)
+    public TelnetServer(int port, Action<int, ReadOnlySpan<char>> onInputReceived, Action<int> onConnected, Action<int> onDisconnected)
     {
         _listener = new TcpListener(IPAddress.Any, port);
-        OnCommand = onCommand;
-        OnLogin = onLogin;
+
+        OnInputReceived = onInputReceived;
+        OnConnected = onConnected;
+        OnDisconnected = onDisconnected;
     }
 
     public async Task Start()
     {
         _listener.Start();
-        Console.WriteLine("Server listening...");
+        //Console.WriteLine("Server listening...");
 
         while (true)
         {
@@ -32,38 +36,67 @@ public class TelnetServer
             _nextConnectionId++;
 
             // create TelnetConnection
-            var conn = new TelnetSession(tcpClient, connectionId, OnCommand, OnLogin);
+            var conn = new TelnetSession(tcpClient, connectionId, OnInputReceived, OnConnected, HandleDisconnected);
 
             _sessions[connectionId] = conn;
 
             // start processing the player connection
             _ = conn.Start();
 
-            Console.WriteLine("New player connected.");
+            //Console.WriteLine("New player connected.");
         }
+    }
+
+    private void HandleDisconnected(int connectionId)
+    {
+        // 1. remove from sessions
+        // Try to remove the session in a thread-safe way
+        if (_sessions.TryRemove(connectionId, out var session))
+        {
+            try
+            {
+                session.Dispose();  // safely release all resources
+            }
+            catch { }
+        }
+
+        // 2. notify GameServer
+        OnDisconnected?.Invoke(connectionId);
+    }
+
+    public void EchoOn(int connectionId)
+    {
+        if (_sessions.TryGetValue(connectionId, out var session))
+           session.EchoOn();
+    }
+
+    public void EchoOff(int connectionId)
+    {
+        if (_sessions.TryGetValue(connectionId, out var session))
+           session.EchoOff();
     }
 
     public void SendGMCP(int connectionId, string package, object payload)
     {
-        // TODO: handle case where connectionId is not found (e.g. player disconnected)
-        _sessions[connectionId].SendGMCP(package, payload);
+        if (_sessions.TryGetValue(connectionId, out var session))
+           session.SendGMCP(package, payload);
     }
 
     public void Flush(int connectionId)
     {
-        // TODO: handle case where connectionId is not found (e.g. player disconnected)
-        _sessions[connectionId].Flush();
+        if (_sessions.TryGetValue(connectionId, out var session))
+           session.Flush();
     }
 
     public void Write(int connectionId, string text)
     {
-        // TODO: handle case where connectionId is not found (e.g. player disconnected)
-        _sessions[connectionId].Write(text);
+        if (_sessions.TryGetValue(connectionId, out var session))
+           session.Write(text);
     }
 
     public void Write(int connectionId, ReadOnlySpan<char> span)
     {
-        // TODO: handle case where connectionId is not found (e.g. player disconnected)
-        _sessions[connectionId].Write(span);
+        if (_sessions.TryGetValue(connectionId, out var session))
+           session.Write(span);
     }
 }

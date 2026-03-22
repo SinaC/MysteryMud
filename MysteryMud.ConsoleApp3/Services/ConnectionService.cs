@@ -25,9 +25,18 @@ public class ConnectionService
         return player;
     }
 
-    public Entity GetEntity(int connectionId)
-        => _connToEntity[connectionId];
+    public bool TryGetEntity(int connectionId, out Entity entity)
+        => _connToEntity.TryGetValue(connectionId, out entity);
 
-    public int GetConnection(Entity entity)
-        => _entityToConn[entity];
+    public bool TryGetConnection(Entity entity, out int connectionId)
+        => _entityToConn.TryGetValue(entity, out connectionId);
+
+    public bool Remove(int connectionId)
+    {
+        if (!_connToEntity.TryGetValue(connectionId, out var entity))
+            return false;
+        _connToEntity.Remove(connectionId);
+        _entityToConn.Remove(entity);
+        return true;
+    }
 }

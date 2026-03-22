@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MysteryMud.ConsoleApp3.Components.Characters;
+using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Data;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Extensions;
@@ -110,6 +111,12 @@ public static class Logger
 
     public static class Cleanup
     {
+        public static void CleanupPlayer(Entity player)
+        {
+            if (Instance.IsEnabled(LogLevel.Information))
+                Instance.LogInformation(CleanupEvent, "Cleaning up disconnected player {characterName}", player.DebugName);
+        }
+
         public static void CleanupCharacterFromRoom(Entity character, Entity room)
         {
             if (Instance.IsEnabled(LogLevel.Information))

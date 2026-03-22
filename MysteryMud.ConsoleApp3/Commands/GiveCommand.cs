@@ -33,7 +33,7 @@ public class GiveCommand : ICommand
             // Unequip if necessary
             if (item.Has<Equipped>())
             {
-                var equipped = item.Get<Equipped>();
+                ref var equipped = ref item.Get<Equipped>();
                 EquipmentSystem.Unequip(actor, equipped.Slot);
             }
 

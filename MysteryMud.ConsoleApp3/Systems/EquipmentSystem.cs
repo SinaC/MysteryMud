@@ -6,7 +6,7 @@ using MysteryMud.ConsoleApp3.Data.Enums;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 
-// important note: even when worn item stays in inventory
+// important note: even when worn, item stays in inventory
 public static class EquipmentSystem
 {
     // TODO: auto replace

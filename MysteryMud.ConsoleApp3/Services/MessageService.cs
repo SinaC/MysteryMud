@@ -1,6 +1,7 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Components.Characters.Players;
+using MysteryMud.ConsoleApp3.Extensions;
 using MysteryMud.ConsoleApp3.Network;
 
 namespace MysteryMud.ConsoleApp3.Services;
@@ -19,7 +20,7 @@ public class MessageService : IMessageService
         ref var connection = ref entity.TryGetRef<Connection>(out var hasConnection);
         if (!hasConnection)
         {
-            Console.WriteLine($"[{entity}]: {message}");
+            Console.WriteLine($"[{entity.DebugName}]: {message}");
             return;
         }
 

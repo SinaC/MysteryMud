@@ -10,50 +10,64 @@ using System.Threading.Channels;
 
 namespace MysteryMud.ConsoleApp3.Network;
 
-public sealed class TelnetSession
+public sealed class TelnetSession : IDisposable
 {
     private const int MAX_TTYPE_REQUESTS = 5;
 
     private readonly Socket _socket;
     private readonly Pipe _pipe = new();
     private readonly Channel<bool> _sendSignal = Channel.CreateUnbounded<bool>();
-
     private readonly OutputBuffer _output = new();
+
+    private ZLibStream? _compressor;
+
 
     private readonly int ConnectionId;
 
-    private ZLibStream _compressor = default!;
-
     internal TelnetState TelnetState;
+    private int _ttypeRequests = 0;
+    private int _disconnected = 0;
+    private bool _disposed;
 
-    private int ttypeRequests = 0;
+    private readonly Action<int, ReadOnlySpan<char>> OnInputReceived;
+    private readonly Action<int> OnConnected;
+    private readonly Action<int> OnDisconnected;
 
-    private NannyState NannyState = NannyState.NewConnection; // TODO: move this to a separate class to clean up TelnetSession
-
-    private readonly Action<int, ReadOnlySpan<char>> OnCommand;
-    private readonly Action<int, ReadOnlySpan<char>> OnLogin; // TODO: rename in OnNewConnection or something, since login is handled in the nanny for now and may not be separate from command processing later
-
-    public TelnetSession(Socket socket, int connectionId, Action<int, ReadOnlySpan<char>> onCommand, Action<int, ReadOnlySpan<char>> onLogin)
+    public TelnetSession(Socket socket, int connectionId, Action<int, ReadOnlySpan<char>> onInputReceived, Action<int> onConnected, Action<int> onDisconnected)
     {
         _socket = socket;
         ConnectionId = connectionId;
-        TelnetState = new TelnetState();
+        OnInputReceived = onInputReceived;
+        OnConnected = onConnected;
+        OnDisconnected = onDisconnected;
 
-        OnCommand = onCommand;
-        OnLogin = onLogin;
+        TelnetState = new TelnetState();
     }
 
     public async Task Start()
     {
-        SendInitialNegotiation();
+        try
+        {
+            SendInitialNegotiation();
 
-        HandleNanny(null);
+            EchoOn();
 
-        var receive = ReceiveLoop();
-        var parse = ParseLoop();
-        var send = SendLoop();
+            OnConnected(ConnectionId);
 
-        await Task.WhenAny(receive, parse, send);
+            var receive = ReceiveLoop();
+            var parse = ParseLoop();
+            var send = SendLoop();
+
+            await Task.WhenAny(receive, parse, send);
+        }
+        finally
+        {
+            // Ensure proper cleanup
+            Dispose();
+
+            // Notify TelnetServer/GameServer
+            OnDisconnected?.Invoke(ConnectionId);
+        }
     }
 
     // ----------------------------------------------------
@@ -66,7 +80,7 @@ public sealed class TelnetSession
 
         try
         {
-            while (true)
+            while (!_disposed)
             {
                 Memory<byte> memory = writer.GetMemory(4096);
 
@@ -81,14 +95,14 @@ public sealed class TelnetSession
 
                 if (result.IsCompleted)
                 {
-                    Console.WriteLine("Output stream completed.");
+                    //Console.WriteLine("Output stream completed.");
                     break;
                 }
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in ReceiveLoop: {ex}");
+            //Console.WriteLine($"Error in ReceiveLoop: {ex}");
         }
         finally
         {
@@ -106,7 +120,7 @@ public sealed class TelnetSession
 
         try
         {
-            while (true)
+            while (!_disposed)
             {
                 var result = await reader.ReadAsync();
                 var buffer = result.Buffer;
@@ -128,14 +142,14 @@ public sealed class TelnetSession
 
                 if (result.IsCompleted)
                 {
-                    Console.WriteLine("Input stream completed.");
+                    //Console.WriteLine("Input stream completed.");
                     break;
                 }
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in ParseLoop: {ex}");
+            //Console.WriteLine($"Error in ParseLoop: {ex}");
         }
         finally
         {
@@ -192,10 +206,8 @@ public sealed class TelnetSession
 
         var span = buffer.AsSpan(0, written);
 
-        if (NannyState != NannyState.Finished)
-            HandleNanny(span);
-        else
-            OnCommand.Invoke(ConnectionId, span);
+        //
+        OnInputReceived?.Invoke(ConnectionId, span);
 
         ArrayPool<char>.Shared.Return(buffer);
     }
@@ -206,11 +218,17 @@ public sealed class TelnetSession
 
     public void Write(string text)
     {
+        if (_disposed)
+            return;
+
         Write(text.AsSpan());
     }
 
     public void Write(ReadOnlySpan<char> span)
     {
+        if (_disposed)
+            return;
+
         if (!span.ContainsAny('%', '{'))
         {
             Span<byte> temp = stackalloc byte[1024];
@@ -226,6 +244,9 @@ public sealed class TelnetSession
 
     internal void WriteChar(char c)
     {
+        if (_disposed)
+            return;
+
         Span<char> cbuf = stackalloc char[1];
         Span<byte> bbuf = stackalloc byte[4];
 
@@ -238,6 +259,9 @@ public sealed class TelnetSession
 
     internal void WriteAnsi(ReadOnlySpan<char> text)
     {
+        if (_disposed)
+            return;
+
         Span<byte> buf = stackalloc byte[64];
 
         int bytes = Encoding.ASCII.GetBytes(text, buf);
@@ -247,6 +271,9 @@ public sealed class TelnetSession
 
     private void WriteBytes(ReadOnlySpan<byte> bytes)
     {
+        if (_disposed)
+            return;
+
         foreach (byte b in bytes)
         {
             if (b == Telnet.IAC)
@@ -263,6 +290,9 @@ public sealed class TelnetSession
 
     public void Flush()
     {
+        if (_disposed)
+            return;
+
         _sendSignal.Writer.TryWrite(true);
     }
 
@@ -274,6 +304,9 @@ public sealed class TelnetSession
     {
         await foreach (var _ in _sendSignal.Reader.ReadAllAsync())
         {
+            if (_disposed)
+                break;
+
             var data = _output.Data;
 
             if (data.Length == 0)
@@ -311,6 +344,19 @@ public sealed class TelnetSession
             sent += bytes;
         }
     }
+    
+    // =====================================================
+    // ECHO
+    // =====================================================
+    public void EchoOn()
+    {
+        SendCmd(Telnet.WONT, Telnet.TELOPT_ECHO); // Enable local echo
+    }
+
+    public void EchoOff()
+    {
+        SendCmd(Telnet.WILL, Telnet.TELOPT_ECHO); // Disable local echo for password input
+    }
 
     // =====================================================
     // GMCP
@@ -318,7 +364,7 @@ public sealed class TelnetSession
 
     public void SendGMCP(string package, object payload)
     {
-        if (!TelnetState.Gmcp)
+        if (_disposed || !TelnetState.Gmcp)
             return;
 
         string json = JsonSerializer.Serialize(payload);
@@ -433,7 +479,7 @@ public sealed class TelnetSession
     private void HandleNegotiation(byte cmd, byte opt)
     {
         // DEBUG
-        Console.WriteLine($"CMD: 0x{cmd:X2} 0x{opt:X2}");
+        //Console.WriteLine($"CMD: 0x{cmd:X2} 0x{opt:X2}");
 
         switch (cmd)
         {
@@ -469,7 +515,7 @@ public sealed class TelnetSession
         if (!reader.TryRead(out byte option))
             return false;
 
-        Console.WriteLine($"SB: 0x{option:X2}");
+        //Console.WriteLine($"SB: 0x{option:X2}");
 
         switch (option)
         {
@@ -553,8 +599,8 @@ public sealed class TelnetSession
             TelnetState.Terminals.Add(terminal);
 
         // request terminal type again to get more info (some clients only send generic "xterm" first, then more specific on subsequent requests)
-        ttypeRequests++;
-        if (ttypeRequests < MAX_TTYPE_REQUESTS)
+        _ttypeRequests++;
+        if (_ttypeRequests < MAX_TTYPE_REQUESTS)
             RequestSendTerminalType();
 
         return true;
@@ -599,82 +645,6 @@ public sealed class TelnetSession
         }
     }
 
-    private void HandleNanny(ReadOnlySpan<char> input)
-    {
-        SendCmd(Telnet.WONT, Telnet.TELOPT_ECHO);
-        NannyState = NannyState.Finished;
-
-        OnLogin.Invoke(ConnectionId, input);
-    }
-
-
-    //// ----------------------------------------------------
-    //// NANNY
-    //// ----------------------------------------------------
-    //// TODO: refactor
-    //private void HandleNanny(ReadOnlySpan<char> input)
-    //{
-    //    _tempName = "joel";
-    //    SendCmd(Telnet.WONT, Telnet.TELOPT_ECHO);
-    //    NannyState = NannyState.Finished;
-    //    InitializePlayer();
-    //    return;
-
-    //    // TODO
-
-    //    switch (NannyState)
-    //    {
-    //        case NannyState.NewConnection:
-    //            SendCmd(Telnet.WONT, Telnet.TELOPT_ECHO); // Enable local echo
-    //            Write("Welcome to the MUD!\r\nPlease enter your name: ");
-    //            Flush();
-    //            NannyState = NannyState.EnterName;
-    //            break;
-
-    //        case NannyState.EnterName:
-    //            // COLOR TESTING
-    //            //ColorTest(ColorMode.TrueColor);
-    //            //ColorTest(ColorMode.ANSI256);
-    //            //ColorTest(ColorMode.ANSI16);
-    //            //ColorTest(ColorMode.None);
-    //            //ColorTest();
-
-    //            _tempName = input.ToString().Trim();
-    //            Write("Enter your password: ");
-    //            SendCmd(Telnet.WILL, Telnet.TELOPT_ECHO); // Disable local echo for password input
-    //            Flush();
-    //            NannyState = NannyState.EnterPassword;
-    //            break;
-
-    //        case NannyState.EnterPassword:
-    //            _tempPassword = input.ToString();
-    //            // Here you could verify password from a database or file
-    //            Write("Confirm password: ");
-    //            Flush();
-    //            NannyState = NannyState.ConfirmPassword;
-    //            break;
-
-    //        case NannyState.ConfirmPassword:
-    //            if (_tempPassword != input.ToString())
-    //            {
-    //                Write("Passwords do not match. Enter password: ");
-    //                Flush();
-    //                NannyState = NannyState.EnterPassword;
-    //            }
-    //            else
-    //            {
-    //                Write("Character creation complete!\r\n");
-    //                SendCmd(Telnet.WONT, Telnet.TELOPT_ECHO); // Enable local echo
-    //                Flush();
-    //                NannyState = NannyState.Finished;
-
-    //                // Attach default ECS components
-    //                InitializePlayer();
-    //            }
-    //            break;
-    //    }
-    //}
-
     //private void ColorTest(ColorMode colorMode)
     //{
     //    TelnetState.ColorMode = colorMode;
@@ -690,4 +660,32 @@ public sealed class TelnetSession
     //    Write("RGB: %#FFA500orange%xnocolor\r\n");
     //    Write("GRADIENT: %#FFA500>#00FFA5orange-2-cyan%xnocolor\r\n");
     //}
+
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+        _disposed = true;
+
+        try
+        {
+            _compressor?.Dispose();
+        }
+        catch { }
+
+        try
+        {
+            _socket?.Shutdown(SocketShutdown.Both);
+            _socket?.Close();
+            _socket?.Dispose();
+        }
+        catch { }
+
+        _pipe.Writer.Complete();
+        _pipe.Reader.Complete();
+        _sendSignal.Writer.Complete();
+
+        // null out references to help GC
+        _compressor = null!;
+    }
 }

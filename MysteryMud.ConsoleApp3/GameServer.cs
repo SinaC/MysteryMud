@@ -6,6 +6,7 @@ using MysteryMud.ConsoleApp3.Components.Characters.Players;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Events;
+using MysteryMud.ConsoleApp3.Extensions;
 using MysteryMud.ConsoleApp3.Factories;
 using MysteryMud.ConsoleApp3.Network;
 using MysteryMud.ConsoleApp3.Services;
@@ -20,7 +21,8 @@ public class GameServer
     private readonly TelnetServer _telnet;
     private readonly IMessageService _messageService;
 
-    public GameServer() : this(World.Create())
+    public GameServer()
+        : this(World.Create())
     {
     }
 
@@ -30,8 +32,9 @@ public class GameServer
         _connections = new ConnectionService(_world);
         _telnet = new TelnetServer(
             port: 4000,
-            onCommand: HandleCommand,
-            onLogin: HandleLogin
+            onInputReceived: HandleInputReceived,
+            onConnected: HandleConnected,
+            onDisconnected: HandleDisconnected
         );
 
         _messageService = new MessageService(_telnet);
@@ -49,10 +52,41 @@ public class GameServer
     {
         while (true)
         {
+            CheckConsoleInput();
+
             Tick();
 
             Thread.Sleep(100); // tick rate
         }
+    }
+
+    private void CheckConsoleInput()
+    {
+        if (Console.KeyAvailable)
+        {
+            var line = Console.ReadLine();
+            if (line != null)
+            {
+                switch (line)
+                {
+                    case "dump": DumpWorld(); break;
+                    //TODO: case "shutdown": Shutdown(); break;
+                    //world.Dispose();             // Clearing the world like God in the First Testament
+                    //World.Destroy(world);        // Doomsday
+                }
+            }
+        }
+    }
+
+    private void DumpWorld()
+    {
+        Console.WriteLine("Dumping world state:");
+        var query = new QueryDescription();
+        _world.Query(query, (Entity entity) =>
+        {
+            Console.WriteLine($"Entity Id: {entity.Id} Alive: {entity.IsAlive()} DebugName: {entity.DebugName}");
+            Console.WriteLine($"  Components: {string.Join(", ", entity.GetAllComponents().Select(c => c?.GetType().Name))}");
+        });
     }
 
     private void Tick()
@@ -89,22 +123,51 @@ public class GameServer
         FlushOutputSystem.FlushOutputs(_world);
     }
 
-    private void HandleCommand(int connectionId, ReadOnlySpan<char> command)
+    private void HandleInputReceived(int connectionId, ReadOnlySpan<char> input)
     {
-        var entity = _connections.GetEntity(connectionId);
+        // TODO: check player state (login, character creation, playing, disconnected, ...)
+        // for now we just handle everything as a command, but eventually we will want to handle login and character creation separately
 
-        // TODO: detect if the command is a login command and handle that separately, for now we just enqueue everything to the command system and it can handle it from there
-        CommandSystem.Enqueue(entity, command);
+        if (_connections.TryGetEntity(connectionId, out var entity))
+        {
+            // TODO: detect if the command is a login command and handle that separately, for now we just enqueue everything to the command system and it can handle it from there
+            CommandSystem.Enqueue(entity, input);
+        }
     }
 
-    private void HandleLogin(int connectionId, ReadOnlySpan<char> command) // TODO: rename HandleNewConnection
+    private void HandleConnected(int connectionId) // TODO: rename HandleNewConnection
     {
+        Logger.Logger.System("Handling new connection with id {ConnectionId}", connectionId);
+
         var entity = _connections.CreatePlayer(connectionId);
 
         // TODO
         InitializePlayer(entity, connectionId);
     }
 
+    private void HandleDisconnected(int connectionId)
+    {
+        Logger.Logger.System("Handling disconnection for connection id {ConnectionId}", connectionId);
+
+        if (!_connections.TryGetEntity(connectionId, out var entity))
+            return;
+
+        //// Optional: announce to room
+        //var room = entity.Get<Position>().Room;
+
+        //ActSystem.ToOthers(_world, room, entity,
+        //    $"{entity.Get<Name>().Value} has disconnected.");
+
+        //// Remove from room
+        //room.Get<RoomContents>().Characters.Remove(entity);
+
+        // mark as disconnected and let the cleanup system handle the actual destruction and cleanup of the entity, this allows us to still show the character in the room for a short time after disconnecting, and also allows us to handle any necessary cleanup in a more controlled way
+        if (!entity.Has<DisconnectedTag>())
+            entity.Add<DisconnectedTag>();
+
+        // remove from connection service
+        _connections.Remove(connectionId);
+    }
 
     private void InitializePlayer(Entity player, int connectionId)
     {
@@ -158,4 +221,82 @@ public class GameServer
         _telnet.Write(connectionId, "Welcome to the game!\r\n> ");
         _telnet.Flush(connectionId);
     }
+
+    //private class LoginState
+    //{
+    //    public string Name { get; set; }
+    //    public string Password { get; set; } // TODO: encryption
+    //}
+
+    //private class CharacterCreationState
+    //{
+    //    // TODO
+    //}
+
+    //// ----------------------------------------------------
+    //// NANNY
+    //// ----------------------------------------------------
+    //// TODO: refactor
+    //private void HandleNanny(ReadOnlySpan<char> input)
+    //{
+    //    _tempName = "joel";
+    //    SendCmd(Telnet.WONT, Telnet.TELOPT_ECHO);
+    //    NannyState = NannyState.Finished;
+    //    InitializePlayer();
+    //    return;
+
+    //    // TODO
+
+    //    switch (NannyState)
+    //    {
+    //        case NannyState.NewConnection:
+    //            SendCmd(Telnet.WONT, Telnet.TELOPT_ECHO); // Enable local echo
+    //            Write("Welcome to the MUD!\r\nPlease enter your name: ");
+    //            Flush();
+    //            NannyState = NannyState.EnterName;
+    //            break;
+
+    //        case NannyState.EnterName:
+    //            // COLOR TESTING
+    //            //ColorTest(ColorMode.TrueColor);
+    //            //ColorTest(ColorMode.ANSI256);
+    //            //ColorTest(ColorMode.ANSI16);
+    //            //ColorTest(ColorMode.None);
+    //            //ColorTest();
+
+    //            _tempName = input.ToString().Trim();
+    //            Write("Enter your password: ");
+    //            SendCmd(Telnet.WILL, Telnet.TELOPT_ECHO); // Disable local echo for password input
+    //            Flush();
+    //            NannyState = NannyState.EnterPassword;
+    //            break;
+
+    //        case NannyState.EnterPassword:
+    //            _tempPassword = input.ToString();
+    //            // Here you could verify password from a database or file
+    //            Write("Confirm password: ");
+    //            Flush();
+    //            NannyState = NannyState.ConfirmPassword;
+    //            break;
+
+    //        case NannyState.ConfirmPassword:
+    //            if (_tempPassword != input.ToString())
+    //            {
+    //                Write("Passwords do not match. Enter password: ");
+    //                Flush();
+    //                NannyState = NannyState.EnterPassword;
+    //            }
+    //            else
+    //            {
+    //                Write("Character creation complete!\r\n");
+    //                SendCmd(Telnet.WONT, Telnet.TELOPT_ECHO); // Enable local echo
+    //                Flush();
+    //                NannyState = NannyState.Finished;
+
+    //                // Attach default ECS components
+    //                InitializePlayer();
+    //            }
+    //            break;
+    //    }
+    //}
 }

@@ -3,6 +3,7 @@ using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Characters.Players;
+using MysteryMud.ConsoleApp3.Components.Items;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Extensions;
 using MysteryMud.ConsoleApp3.Factories;
@@ -82,6 +83,13 @@ public static class DeathSystem
         // for the moment, drop items on the floor
         foreach (var item in inventory.Items.ToArray())
         {
+            // Unequip if necessary
+            if (item.Has<Equipped>())
+            {
+                ref var equipped = ref item.Get<Equipped>();
+                EquipmentSystem.Unequip(victim, equipped.Slot);
+            }
+
             //ContainmentSystem.Move(world, item, victim.Get<Position>().Room);
             ItemMovementSystem.DropItem(victim, position.Room, item);
             MessageSystem.Send(killer, $"{victim.DisplayName} drops {item.DisplayName}.");

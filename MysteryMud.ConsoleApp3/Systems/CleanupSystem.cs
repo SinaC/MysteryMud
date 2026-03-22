@@ -2,6 +2,8 @@
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
+using MysteryMud.ConsoleApp3.Components.Characters.Mobiles;
+using MysteryMud.ConsoleApp3.Components.Characters.Players;
 using MysteryMud.ConsoleApp3.Components.Items;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 
@@ -9,21 +11,47 @@ namespace MysteryMud.ConsoleApp3.Systems;
 
 public static class CleanupSystem
 {
+    // TODO check disconnected players and remove them from the world
     // check Position for characters
     // check Position for items
     // check ContainedIn for items
     // check Equipped for items
     public static void Cleanup(World world)
     {
-        // destroy characters
+        // destroy disconnected players
+        var disconnectedPlayersQuery = new QueryDescription()
+                .WithAll<DisconnectedTag>();
+        world.Query(disconnectedPlayersQuery, (Entity player, ref DisconnectedTag disconnectedTag) =>
+        {
+            Logger.Logger.Cleanup.CleanupPlayer(player);
+
+            ref var position = ref player.TryGetRef<Position>(out var hasPosition);
+            if (hasPosition)
+            {
+                ref var roomContents = ref position.Room.Get<RoomContents>();
+                roomContents.Characters.Remove(player);
+            }
+
+            // TODO: destroy any items the character is carrying or equipped with
+            // TODO: if the character is a pet, remove it from its owner's pet list
+            // TODO: if the character is a follower, remove it from its leader's follower list
+
+            world.Destroy(player);
+        });
+
+        // destroy NPCs
         var destroyCharactersQuery = new QueryDescription()
-                .WithAll<Dead, Position>();
-        world.Query(destroyCharactersQuery, (Entity character, ref Dead deadTag, ref Position position) =>
+                .WithAll<Dead, Position, NpcTag>();
+        world.Query(destroyCharactersQuery, (Entity character, ref Dead deadTag, ref Position position, ref NpcTag npcTag) =>
         {
             Logger.Logger.Cleanup.CleanupCharacterFromRoom(character, position.Room);
 
-            var roomContents = position.Room.Get<RoomContents>();
+            ref var roomContents = ref position.Room.Get<RoomContents>();
             roomContents.Characters.Remove(character);
+
+            // TODO: destroy any items the character is carrying or equipped with
+            // TODO: if the character is a pet, remove it from its owner's pet list
+            // TODO: if the character is a follower, remove it from its leader's follower list
 
             world.Destroy(character);
         });
