@@ -3,19 +3,19 @@ using Arch.Core.Extensions;
 using Microsoft.Extensions.Configuration;
 using MysteryMud.ConsoleApp3;
 using MysteryMud.ConsoleApp3.Commands;
-using MysteryMud.ConsoleApp3.Commands.v2;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Items;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Data.Enums;
-using MysteryMud.ConsoleApp3.Extensions;
 using MysteryMud.ConsoleApp3.Factories;
 using MysteryMud.ConsoleApp3.Logger;
 using MysteryMud.ConsoleApp3.Network;
 using MysteryMud.ConsoleApp3.Persistance;
 using MysteryMud.ConsoleApp3.Systems;
 using System.Text.Json;
+//using CommandNewVersion = MysteryMud.ConsoleApp3.Commands.v2;
+using CommandNewVersion = MysteryMud.ConsoleApp3.Commands.ContextBasedParser;
 
 // build configuration
 var configuration = new ConfigurationBuilder()
@@ -151,153 +151,191 @@ WorldFactory.RespawnRoomEntity = temple;
 //int result = func(null!, troll, player); // result is random between 6 and 55
 //Console.WriteLine(result);
 
-Action<MysteryMud.ConsoleApp3.Commands.v2.CommandContext> GenericExecute = ctx =>
+Action<CommandNewVersion.CommandContext> GenericExecute = ctx =>
 {
-    CommandResolver.ResolveArguments(ctx, world);
+    //CommandResolver.ResolveArguments(ctx, world);
 
-    Console.WriteLine($"Executing {ctx.RawInput}");
+    Console.WriteLine($"Executing '{ctx.Command.Name}' matching syntax '{ctx.MatchedSyntax.Pattern}'");
     foreach (var kv in ctx.Arguments)
         Console.WriteLine($"{kv.Key} = {kv.Value}");
 };
 
 // Define the 'get' command
-var getCommand = new Command
+var getCommand = new CommandNewVersion.Command
 {
     Name = "get",
     Syntaxes =
     [
-                "get [item]",
-                "get all",
-                "get all.[item]",
-                "get [item] from [container]",
-                "get all.[item] from [container]"
-            ],
+        "all",
+        "all.[room.item]",
+        "[room.item]",
+        "all from [container]",
+        "[container.item] from [container]",
+        "all.[container.item] from [container]"
+    ],
     Execute = GenericExecute
 };
 
-var spellsCommand = new Command
+var spellsCommand = new CommandNewVersion.Command
 {
     Name = "spells",
     Syntaxes =
     [
-        "spells",
-        "spells [max]",
-        "spells [min] [max]"
+        "",
+        "[max]",
+        "[min] [max]"
     ],
     Execute = GenericExecute
 };
 
-var buyCommand = new Command
+var buyCommand = new CommandNewVersion.Command
 {
     Name = "buy",
     Syntaxes =
     [
-        "buy [item]",         // 1 item
-        "buy [count] [item]", // multiple items
-        "buy [pet] [name]"    // buy pet with name
+        "[item]",         // 1 item
+        "[count] [item]", // multiple items
+        "[pet] [name]"    // buy pet with name
     ],
     Execute = GenericExecute
 };
 
-var tellCommand = new Command
+var tellCommand = new CommandNewVersion.Command
 {
     Name = "tell",
     Syntaxes =
     [
-        "tell [player] [message*]", // tell goblin hello
+        "[player] [message*]", // tell goblin hello
     ],
     Execute = GenericExecute
 };
 
-var oloadCommand = new Command
+var oloadCommand = new CommandNewVersion.Command
 {
     Name = "oload",
-    Syntaxes = ["oload [id]"],
+    Syntaxes = ["[id]"],
     Execute = GenericExecute
 };
 
-var xpbonusCommand = new Command
+var xpbonusCommand = new CommandNewVersion.Command
 {
     Name = "xpbonus",
-    Syntaxes = ["xpbonus [player] [amount]"],
+    Syntaxes = ["[player] [amount]"],
     Execute = GenericExecute
 };
 
-var infoCommand = new Command
+var infoCommand = new CommandNewVersion.Command
 {
     Name = "info",
-    Syntaxes = ["info [race]", "info [class]", "info [spell]"],
+    Syntaxes = ["[race]", "[class]", "[spell]"],
     Execute = GenericExecute
 };
 
-var compareCommand = new Command
+var compareCommand = new CommandNewVersion.Command
 {
     Name = "compare",
-    Syntaxes = ["compare [item1] [item2]"],
+    Syntaxes = ["[inventory.item1] [inventory.item2]"],
     Execute = GenericExecute
 };
 
-var dropCommand = new Command
+var dropCommand = new CommandNewVersion.Command
 {
     Name = "drop",
+    //Priority = 100, // high priority
     Syntaxes =
     [
-        "drop all",
-        "drop [item]",
-        "drop all.[item]",
-        "drop [amount] silver",
-        "drop [amount] gold"
+        "all",
+        "[inventory.item]",
+        "all.[inventory.item]",
+        "[amount] silver",
+        "[amount] gold"
     ],
     Execute = GenericExecute
 };
 
-var pourCommand = new Command
+var pourCommand = new CommandNewVersion.Command
 {
     Name = "pour",
     Syntaxes =
         [
-            "pour [container] out",
-            "pour [container1] [container2]",
-            "pour [container] [character]"
+            "[inventory.container] out",
+            "[inventory.container1] [inventory.container2]",
+            "[inventory.container1] [room.container2]",
+            "[inventory.container] [character]"
         ],
     Execute = GenericExecute
 };
 
-var giveCommand = new Command
+var giveCommand = new CommandNewVersion.Command
 {
     Name = "give",
-    Syntaxes = new[]
-    {
-        "give [item] [character]",      // give a single item
-        "give all.[item] [character]"   // give all matching items of that type
-    },
+    Syntaxes =
+    [
+        "[inventory.item] [character]",      // give a single item
+        "all.[inventory.item] [character]"   // give all matching items of that type
+    ],
     Execute = GenericExecute
 };
 
-var parser = new MysteryMud.ConsoleApp3.Commands.v2.CommandParser([getCommand, spellsCommand, buyCommand, tellCommand, oloadCommand, xpbonusCommand, infoCommand, compareCommand, dropCommand, pourCommand, giveCommand]);
-parser.TryExecute(player, "get all.gem from chest");
-parser.TryExecute(player, "get 5.sword");
-parser.TryExecute(player, "get all.gold from 'treasure chest'");
-parser.TryExecute(player, "get");
-parser.TryExecute(player, "get all.gold from all'treasure chest'"); // invalid because we don't support multiple containers in the same command yet
-parser.TryExecute(player, "spells 5 15");
-parser.TryExecute(player, "spells");
-parser.TryExecute(player, "buy pet toto");
-parser.TryExecute(player, "buy pet");
-parser.TryExecute(player, "buy 5 item");
-parser.TryExecute(player, "buy item");
-parser.TryExecute(player, "buy");
-parser.TryExecute(player, "tell toto my very long message");
-parser.TryExecute(player, "tell toto 'my very long message'");
-parser.TryExecute(player, "tell"); // invalid becaise missing arguments
-parser.TryExecute(player, "xpbonus joel 5");
-parser.TryExecute(player, "compare 'mysterious sword' 2.dagger");
-parser.TryExecute(player, "drop all.sword");
-parser.TryExecute(player, "drop 5 silver");
-parser.TryExecute(player, "drop 5 toto"); // invalid because toto is not a valid currency
-parser.TryExecute(player, "pour flask out");
-parser.TryExecute(player, "pour flask fountain");
-parser.TryExecute(player, "pour flask player");
+var drinkCommand = new CommandNewVersion.Command
+{
+    Name = "drink",
+    //Priority = 20, // low priority
+    Syntaxes =
+    [
+        "",                            // drink from environment (e.g. fountain)
+        "[inventory.drinkcontainer]",  // drink from a container in inventory
+        "[room.drinkcontainer]",       // drink from a container in inventory
+    ],
+    Execute = GenericExecute
+};
+
+var parser = new CommandNewVersion.CommandParser([getCommand, spellsCommand, buyCommand, tellCommand, oloadCommand, xpbonusCommand, infoCommand, compareCommand, dropCommand, pourCommand, giveCommand, drinkCommand]);
+//parser.TryExecute(world, player, "get all.gem from chest");
+//parser.TryExecute(world, player, "get 5.sword");
+//parser.TryExecute(world, player, "get all.gold from 'treasure chest'");
+//parser.TryExecute(world, player, "get");
+//parser.TryExecute(world, player, "get all.gold from all.'treasure chest'"); // invalid because we don't support multiple containers in the same command yet
+//parser.TryExecute(world, player, "spells 5 15");
+//parser.TryExecute(world, player, "spells");
+//parser.TryExecute(world, player, "buy pet toto");
+//parser.TryExecute(world, player, "buy pet");
+//parser.TryExecute(world, player, "buy 5 item");
+//parser.TryExecute(world, player, "buy item");
+//parser.TryExecute(world, player, "buy");
+//parser.TryExecute(world, player, "tell toto my very long message");
+//parser.TryExecute(world, player, "tell toto 'my very long message'");
+//parser.TryExecute(world, player, "tell"); // invalid becaise missing arguments
+//parser.TryExecute(world, player, "xpbonus joel 5");
+//parser.TryExecute(world, player, "compare 'mysterious sword' 2.dagger");
+//parser.TryExecute(world, player, "drop all.sword");
+//parser.TryExecute(world, player, "drop 5 silver");
+//parser.TryExecute(world, player, "drop 5 toto"); // invalid because toto is not a valid currency
+//parser.TryExecute(world, player, "pour flask out");
+//parser.TryExecute(world, player, "pour flask fountain");
+//parser.TryExecute(world, player, "pour flask player");
+//parser.TryExecute(world, player, "drink");
+//parser.TryExecute(world, player, "drink flask");
+//parser.TryExecute(world, player, "dr");
+//parser.TryExecute(world, player, "dr flask");
+
+//parser.TryExecute(world, player, "get all.gem from chest");
+//parser.TryExecute(world, player, "drop all.sword");
+//parser.TryExecute(world, player, "get all.sword");
+//parser.TryExecute(world, player, "get gem from chest");
+//parser.TryExecute(world, player, "drop 5 gold");
+//parser.TryExecute(world, player, "dr chest");
+//parser.TryExecute(world, player, "tell goblin this is a beautiful chest");
+
+//parser.TryExecute(world, player, "get 1.sword");
+//parser.TryExecute(world, player, "get all.sword");
+//parser.TryExecute(world, player, "get all");
+parser.TryExecute(world, player, "get all chest"); // FAILS: get all from room instead of chest
+//parser.TryExecute(world, player, "get all from chest"); // FAILS: get all from room instead of chest
+//parser.TryExecute(world, player, "get gem from chest");
+//parser.TryExecute(world, player, "get all.gem from chest");
+//parser.TryExecute(world, player, "get 5.sword"); // invalid: no 5. sword
+//parser.TryExecute(world, player, "get all.sword from chest");  // FAILS: get all.sword from room instead of chest
 
 var telnetServer = new TelnetServer(4000);
 //_ = telnetServer.Start(world);
