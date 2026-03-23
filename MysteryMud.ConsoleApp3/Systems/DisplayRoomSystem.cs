@@ -9,7 +9,7 @@ namespace MysteryMud.ConsoleApp3.Systems;
 
 public class DisplayRoomSystem
 {
-    public static void DisplayRoom(SystemContext systemContext, Entity actor, Entity room)
+    public static void DisplayRoom(SystemContext ctx, Entity actor, Entity room)
     {
         // Get room name, description and contents and graph
         ref var roomName = ref room.Get<Name>();
@@ -19,31 +19,31 @@ public class DisplayRoomSystem
         var roomItems = roomContents.Items;
         var roomCharacters = roomContents.Characters;
 
-        systemContext.MessageBus.Publish(actor, $"{roomName.Value}");
-        systemContext.MessageBus.Publish(actor, $"{roomDescription.Value}");
+        ctx.MessageBus.Publish(actor, $"{roomName.Value}");
+        ctx.MessageBus.Publish(actor, $"{roomDescription.Value}");
         if (roomGraph.Exits.Count == 0)
         {
-            systemContext.MessageBus.Publish(actor, "No exits.");
+            ctx.MessageBus.Publish(actor, "No exits.");
         }
         else
         {
-            systemContext.MessageBus.Publish(actor, "Exits:");
+            ctx.MessageBus.Publish(actor, "Exits:");
             foreach (var exit in roomGraph.Exits)
             {
-                systemContext.MessageBus.Publish(actor, $"- {exit.Direction} - {exit.TargetRoom.DisplayName}");
+                ctx.MessageBus.Publish(actor, $"- {exit.Direction} - {exit.TargetRoom.DisplayName}");
             }
         }
-        systemContext.MessageBus.Publish(actor, "Characters here:");
+        ctx.MessageBus.Publish(actor, "Characters here:");
         foreach (var c in roomCharacters)
         {
             if (c.Equals(actor)) continue; // skip self
-            systemContext.MessageBus.Publish(actor, $"- {c.DisplayName}");
+            ctx.MessageBus.Publish(actor, $"- {c.DisplayName}");
         }
 
-        systemContext.MessageBus.Publish(actor, "Items here:");
+        ctx.MessageBus.Publish(actor, "Items here:");
         foreach (var item in roomItems)
         {
-            systemContext.MessageBus.Publish(actor, $"- {item.DisplayName}");
+            ctx.MessageBus.Publish(actor, $"- {item.DisplayName}");
         }
     }
 }

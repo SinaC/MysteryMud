@@ -1,15 +1,16 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Core;
-using MysteryMud.ConsoleApp3.Core.Eventing;
+using MysteryMud.ConsoleApp3.Core.Scheduler;
 using MysteryMud.ConsoleApp3.Domain.Components.Characters;
 using MysteryMud.ConsoleApp3.Domain.Components.Effects;
+using MysteryMud.ConsoleApp3.Domain.Components.Extensions;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 
 static class DotSystem
 {
-    public static void HandleTick(SystemContext systemContext, GameState state, Entity effect)
+    public static void HandleTick(SystemContext ctx, GameState state, Entity effect)
     {
         if (!effect.IsAlive())
             return;
@@ -17,7 +18,7 @@ static class DotSystem
         ref var effectInstance = ref effect.Get<EffectInstance>();
         if (!effectInstance.Target.IsAlive() || effectInstance.Target.Has<Dead>())
         {
-            Logger.Logger.Dot.TickOnDeadTarget(effect, effectInstance.Target);
+            ctx.Log.Dot("Ticking DoT for Effect {effectName} on DEAD Target {targetName}", effect.DebugName, effectInstance.Target.DebugName);
             return;
         }
 
@@ -27,19 +28,19 @@ static class DotSystem
         // too late
         if (dot.NextTick >= duration.ExpirationTick)
         {
-            Logger.Logger.Dot.TickAfterExpirationTime(effect, effectInstance.Target, dot.TickRate);
+            ctx.Log.Dot("Ticking DoT for Effect {effectName} on Target {targetName} and tick rate {tickRate} on EXPIRED effect", effect.DebugName, effectInstance.Target.DebugName, dot.TickRate);
             return;
         }
 
         // perform damage
         var damage = dot.Damage * effectInstance.StackCount;
-        Logger.Logger.Dot.ApplyDamage(effect, effectInstance.Target, damage, dot.DamageType, dot.TickRate);
-        DamageSystem.ApplyDamage(systemContext, effectInstance.Target, damage, dot.DamageType, effectInstance.Source);
+        ctx.Log.Dot("Applying DoT damage for Effect {effectName} on Target {targetName} with damage {damage} type {damageType} and tick rate {tickRate}", effect.DebugName, effectInstance.Target.DebugName, damage, dot.DamageType, dot.TickRate);
+        DamageSystem.ApplyDamage(ctx, effectInstance.Target, damage, dot.DamageType, effectInstance.Source);
 
         // killed ?
         if (effectInstance.Target.Has<Dead>())
         {
-            Logger.Logger.Dot.TargetKilled(effect, effectInstance.Target);
+            ctx.Log.Dot("Target {targetName} died from DoT damage of Effect {effectName}", effectInstance.Target.DebugName, effect.DebugName);
             return;
         }
 
@@ -47,7 +48,7 @@ static class DotSystem
         dot.NextTick = TimeSystem.CurrentTick + dot.TickRate;
 
         // queue next tick even if after expiration tick to handle effect refresh
-        Logger.Logger.Dot.ScheduleNextTick(effect, effectInstance.Target, dot.NextTick);
-        systemContext.Scheduler.Publish(effect, ScheduledEventType.DotTick, dot.NextTick);
+        ctx.Log.Dot("Scheduling next DoT tick for Effect {effectName} on Target {targetName} at tick {nextTick}", effect.DebugName, effectInstance.Target.DebugName, dot.NextTick);
+        ctx.Scheduler.Publish(effect, ScheduledEventType.DotTick, dot.NextTick);
     }
 }

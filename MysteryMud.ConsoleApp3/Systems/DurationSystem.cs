@@ -3,12 +3,13 @@ using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Core;
 using MysteryMud.ConsoleApp3.Domain.Components.Characters;
 using MysteryMud.ConsoleApp3.Domain.Components.Effects;
+using MysteryMud.ConsoleApp3.Domain.Components.Extensions;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 
 public static class DurationSystem
 {
-    public static void HandleExpiration(SystemContext systemContext, GameState state, Entity effect)
+    public static void HandleExpiration(SystemContext ctx, GameState state, Entity effect)
     {
         if (!effect.IsAlive())
             return;
@@ -25,11 +26,11 @@ public static class DurationSystem
 
         if (duration.ExpirationTick != TimeSystem.CurrentTick)
         {
-            Logger.Logger.Duration.Reschedule(effect, effectInstance.Target, duration.ExpirationTick);
+            ctx.Log.Duration("Rescheduled Duration for Effect {effectName} on Target {targetName} with Expiration Tick {expirationTick}", effect.DebugName, effectInstance.Target.DebugName, duration.ExpirationTick);
             return;
         }
 
-        Logger.Logger.Duration.Expire(effect, effectInstance.Target);
+        ctx.Log.Duration("Expiring Duration for Effect {effectName} on Target {targetName}", effect.DebugName, effectInstance.Target.DebugName);
 
         // remove the effect from the target's CharacterEffects
         ref var characterEffects = ref effectInstance.Target.Get<CharacterEffects>();
@@ -52,7 +53,7 @@ public static class DurationSystem
         if (effectInstance.Template.WearOffMessage != null)
         {
             // TODO: in room ?
-            systemContext.MessageBus.Publish(effectInstance.Target, effectInstance.Template.WearOffMessage);
+            ctx.MessageBus.Publish(effectInstance.Target, effectInstance.Template.WearOffMessage);
         }
 
         state.World.Destroy(effect);

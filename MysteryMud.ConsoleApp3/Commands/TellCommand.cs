@@ -2,10 +2,10 @@
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Core;
-using MysteryMud.ConsoleApp3.Domain.Components.Extensions;
-using MysteryMud.ConsoleApp3.Systems;
 using MysteryMud.ConsoleApp3.Domain.Components;
+using MysteryMud.ConsoleApp3.Domain.Components.Extensions;
 using MysteryMud.ConsoleApp3.Domain.Components.Rooms;
+using MysteryMud.ConsoleApp3.Systems;
 
 namespace MysteryMud.ConsoleApp3.Commands;
 
@@ -25,7 +25,7 @@ public class TellCommand : ICommand
 
         var roomContents = actor.Get<Location>().Room.Get<RoomContents>().Characters;
         foreach (var target in TargetingSystem.SelectTargets(actor, ctx.Primary, roomContents))
-        {  
+        {
             systemContext.MessageBus.Publish(actor, $"You tell {target.DisplayName}: {message}");
             systemContext.MessageBus.Publish(target, $"{actor.DisplayName} tells you: {message}");
         }

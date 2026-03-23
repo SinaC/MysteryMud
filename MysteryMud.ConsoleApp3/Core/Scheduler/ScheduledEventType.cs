@@ -1,4 +1,4 @@
-﻿namespace MysteryMud.ConsoleApp3.Core.Eventing;
+﻿namespace MysteryMud.ConsoleApp3.Core.Scheduler;
 
 public enum ScheduledEventType // order is important, when multiple events are scheduled for the same tick, they will be executed in the order of their type value
 {

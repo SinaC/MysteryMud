@@ -3,7 +3,6 @@ using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Core;
 using MysteryMud.ConsoleApp3.Core.Eventing;
 using MysteryMud.ConsoleApp3.Core.Scheduler;
-using MysteryMud.ConsoleApp3.Domain.Components.Characters.Players;
 using MysteryMud.ConsoleApp3.Domain.Components.Extensions;
 using MysteryMud.ConsoleApp3.Infrastructure.Services;
 using MysteryMud.ConsoleApp3.Systems;
@@ -12,14 +11,16 @@ namespace MysteryMud.ConsoleApp3;
 
 internal class GameLoop
 {
+    private readonly IGameLogger _gameLogger;
     private readonly IMessageService _messageService;
     private readonly ICommandBus _commandBus;
     private readonly IMessageBus _messageBus;
     private readonly IScheduler _scheduler;
     private readonly World _world;
 
-    public GameLoop(IMessageService messageService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, World world)
+    public GameLoop(IGameLogger gameLogger, IMessageService messageService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, World world)
     {
+        _gameLogger = gameLogger;
         _messageService = messageService;
         _commandBus = commandBus;
         _messageBus = messageBus;
@@ -29,6 +30,8 @@ internal class GameLoop
 
     public void Run()
     {
+        _gameLogger.Info("Starting game loop");
+
         while (true)
         {
             CheckConsoleInput();
@@ -41,6 +44,8 @@ internal class GameLoop
 
     private void Tick()
     {
+        _gameLogger.Debug("Processing tick {currentTick}", TimeSystem.CurrentTick);
+
         TimeSystem.NextTick();
 
         var state = new GameState
@@ -51,6 +56,7 @@ internal class GameLoop
 
         var systemContext = new SystemContext
         {
+            Log = _gameLogger,
             CommandBus = _commandBus,
             MessageBus = _messageBus,
             Scheduler = _scheduler
@@ -79,7 +85,7 @@ internal class GameLoop
         StatSystem.Process(state);
 
         // perform cleanup tasks like removing characters, items, ...
-        CleanupSystem.Process(state);
+        CleanupSystem.Process(systemContext, state);
 
         // process messages to be sent to players
         _messageBus.Process(systemContext, state);

@@ -2,15 +2,15 @@
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Core;
 using MysteryMud.ConsoleApp3.Data.Enums;
-using MysteryMud.ConsoleApp3.Domain.Components.Extensions;
 using MysteryMud.ConsoleApp3.Domain.Components.Characters;
 using MysteryMud.ConsoleApp3.Domain.Components.Characters.Mobiles;
+using MysteryMud.ConsoleApp3.Domain.Components.Extensions;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 
 class CombatSystem
 {
-    public static void Process(SystemContext systemContext, GameState state)
+    public static void Process(SystemContext ctx, GameState state)
     {
         var query = new QueryDescription()
             .WithAll<CombatState, EffectiveStats>()
@@ -43,7 +43,7 @@ class CombatSystem
                 if (target.Has<Dead>())
                     break;
 
-                bool targetAlive = ResolveAttack(systemContext, state.World, actor, target, stats);
+                bool targetAlive = ResolveAttack(ctx, state.World, actor, target, stats);
 
                 //// Trigger weapon proc (only if target still alive)
                 //if (targetAlive)
@@ -59,7 +59,7 @@ class CombatSystem
     }
 
     // Resolve a single attack and immediately apply damage
-    private static bool ResolveAttack(SystemContext systemContext, World world, Entity attacker, Entity target, EffectiveStats stats)
+    private static bool ResolveAttack(SystemContext ctx, World world, Entity attacker, Entity target, EffectiveStats stats)
     {
         var targetStats = target.Get<EffectiveStats>();
         int attackRoll = stats.Values[StatType.HitRoll] + Random.Shared.Next(1, 20);
@@ -70,14 +70,14 @@ class CombatSystem
             var damage = stats.Values[StatType.DamRoll] + Random.Shared.Next(1, 6); // TODO: calculate damage based on weapon, skills, etc.
             var damageType = DamageType.Physical; // TODO: determine damage type based on weapon, skills, etc.
 
-            var result = DamageSystem.ApplyDamage(systemContext, target, damage, damageType, attacker);
+            var result = DamageSystem.ApplyDamage(ctx, target, damage, damageType, attacker);
 
             return result != DamageSystem.ApplyDamageResult.Killed && result != DamageSystem.ApplyDamageResult.Dead;
         }
         else
         {
-            systemContext.MessageBus.Publish(attacker, $"You miss {target.DisplayName}.");
-            systemContext.MessageBus.Publish(target, $"{attacker.DisplayName} misses you.");
+            ctx.MessageBus.Publish(attacker, $"You miss {target.DisplayName}.");
+            ctx.MessageBus.Publish(target, $"{attacker.DisplayName} misses you.");
 
             return true;
         }

@@ -1,6 +1,5 @@
 ﻿using Arch.Core;
 using MysteryMud.ConsoleApp3.Core;
-using MysteryMud.ConsoleApp3.Core.Eventing;
 using MysteryMud.ConsoleApp3.Core.Scheduler;
 using MysteryMud.ConsoleApp3.Systems;
 

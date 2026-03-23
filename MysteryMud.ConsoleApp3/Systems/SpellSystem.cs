@@ -9,10 +9,10 @@ public static class SpellSystem
 {
     public static SpellDatabase SpellDatabase;
 
-    public static void CastSpell(SystemContext systemContext, GameState gameState, Entity caster, Entity target, SpellDefinition spell)
+    public static void CastSpell(SystemContext ctx, GameState gameState, Entity caster, Entity target, SpellDefinition spell)
     {
         // TODO: direct damage/heal
         foreach (var effect in spell.Effects)
-            EffectFactory.ApplyEffect(systemContext, gameState, effect, caster, target);
+            EffectFactory.ApplyEffect(ctx, gameState, effect, caster, target);
     }
 }

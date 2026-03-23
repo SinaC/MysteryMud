@@ -12,7 +12,7 @@ namespace MysteryMud.ConsoleApp3.Systems;
 
 public static class DamageSystem
 {
-    public static ApplyDamageResult ApplyDamage(SystemContext systemContext, Entity target, int damageAmount, DamageType damageType, Entity source)
+    public static ApplyDamageResult ApplyDamage(SystemContext ctx, Entity target, int damageAmount, DamageType damageType, Entity source)
     {
         if (target.Has<Dead>())
             return ApplyDamageResult.Dead; // can't damage something that's already dead
@@ -21,29 +21,28 @@ public static class DamageSystem
         if (!hasHealth)
             return ApplyDamageResult.CannotBeDamaged; // can't damage something without health
 
-        // TODO: apply damage type modifiers, resistances, vulnerabilities, etc.
+        // apply damage type modifiers, resistances, vulnerabilities, etc.
         var modifiedDamage = DamageCalculator.ModifyDamage(target, damageAmount, damageType, source);
 
-        //ref var health = ref target.Get<Health>();
-        return ApplyDamage(systemContext, target, ref health, modifiedDamage, damageType, source);
+        return ApplyDamage(ctx, target, ref health, modifiedDamage, damageType, source);
     }
 
-    private static ApplyDamageResult ApplyDamage(SystemContext systemContext, Entity target, ref Health health, int damageAmount, DamageType damageType, Entity source) // TODO: optional source
+    private static ApplyDamageResult ApplyDamage(SystemContext ctx, Entity target, ref Health health, int damageAmount, DamageType damageType, Entity source) // TODO: optional source
     {
         // apply damage and check if killed
         health.Current -= damageAmount;
 
-        Logger.Logger.Damage.Apply(source, target, damageAmount, ref health);
+        ctx.Log.Damage("Applying damage from {sourceName} to {targetName} with amount {damage}. Current health: {health.Current}/{health.Max}", source.DebugName, target.DebugName, damageAmount, health.Current, health.Max);
 
-        systemContext.MessageBus.Publish(source, $"%GYou deal %r{damageAmount}%g damage to {target.DisplayName}.%x");
-        systemContext.MessageBus.Publish(target, $"{source.DisplayName} deals {damageAmount} damage to you.");
+        ctx.MessageBus.Publish(source, $"%GYou deal %r{damageAmount}%g damage to {target.DisplayName}.%x");
+        ctx.MessageBus.Publish(target, $"{source.DisplayName} deals {damageAmount} damage to you.");
 
         if (health.Current <= 0)
         {
-            Logger.Logger.Damage.TargetKilled(source, target);
+            ctx.Log.Damage("Target {targetName} killed by {sourceName}", target.DebugName, source.DebugName);
 
-            systemContext.MessageBus.Publish(source, $"%R{target.DisplayName} is dead.%x");
-            systemContext.MessageBus.Publish(target, $"You are dead.");
+            ctx.MessageBus.Publish(source, $"%R{target.DisplayName} is dead.%x");
+            ctx.MessageBus.Publish(target, $"You are dead.");
 
             AddKilledTags(target, source);
             return ApplyDamageResult.Killed;

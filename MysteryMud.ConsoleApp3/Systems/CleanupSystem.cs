@@ -5,8 +5,10 @@ using MysteryMud.ConsoleApp3.Domain.Components;
 using MysteryMud.ConsoleApp3.Domain.Components.Characters;
 using MysteryMud.ConsoleApp3.Domain.Components.Characters.Mobiles;
 using MysteryMud.ConsoleApp3.Domain.Components.Characters.Players;
+using MysteryMud.ConsoleApp3.Domain.Components.Extensions;
 using MysteryMud.ConsoleApp3.Domain.Components.Items;
 using MysteryMud.ConsoleApp3.Domain.Components.Rooms;
+using System.ComponentModel;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 
@@ -17,14 +19,14 @@ public static class CleanupSystem
     // check Location for items
     // check ContainedIn for items
     // check Equipped for items
-    public static void Process(GameState state)
+    public static void Process(SystemContext ctx, GameState state)
     {
         // destroy disconnected players
         var disconnectedPlayersQuery = new QueryDescription()
                 .WithAll<DisconnectedTag>();
         state.World.Query(disconnectedPlayersQuery, (Entity player, ref DisconnectedTag disconnectedTag) =>
         {
-            Logger.Logger.Cleanup.CleanupPlayer(player);
+            ctx.Log.Cleanup("Cleaning up disconnected player {characterName}", player.DebugName);
 
             ref var location = ref player.TryGetRef<Location>(out var hasLocation);
             if (hasLocation)
@@ -45,7 +47,7 @@ public static class CleanupSystem
                 .WithAll<Dead, Location, NpcTag>();
         state.World.Query(destroyCharactersQuery, (Entity character, ref Dead deadTag, ref Location location, ref NpcTag npcTag) =>
         {
-            Logger.Logger.Cleanup.CleanupCharacterFromRoom(character, location.Room);
+            ctx.Log.Cleanup("Cleaning up character {characterName} from room {roomName}", character.DebugName, location.Room.DebugName);
 
             ref var roomContents = ref location.Room.Get<RoomContents>();
             roomContents.Characters.Remove(character);
@@ -68,7 +70,7 @@ public static class CleanupSystem
             ref var location = ref item.TryGetRef<Location>(out var hasLocation);
             if (hasLocation)
             {
-                Logger.Logger.Cleanup.CleanupItemFromRoom(item, location.Room);
+                ctx.Log.Cleanup("Cleaning up item {itemName} from location {locationName}", item.DebugName, location.Room.DebugName);
 
                 ref var roomContents = ref location.Room.Get<RoomContents>();
                 roomContents.Items.Remove(item);
@@ -79,14 +81,14 @@ public static class CleanupSystem
             {
                 if (containedIn.Character != Entity.Null)
                 {
-                    Logger.Logger.Cleanup.CleanupItemFromInventory(item, containedIn.Character);
+                    ctx.Log.Cleanup("Cleaning up item {itemName} from inventory of {inventoryOwnerName}", item.DebugName, containedIn.Character.DebugName);
 
                     ref var inventory = ref containedIn.Character.Get<Inventory>();
                     inventory.Items.Remove(item);
                 }
                 else if (containedIn.Container != Entity.Null)
                 {
-                    Logger.Logger.Cleanup.CleanupItemFromContainer(item, containedIn.Container);
+                    ctx.Log.Cleanup("Cleaning up item {itemName} from container {containerName}", item.DebugName, containedIn.Container.DebugName);
 
                     ref var containerContents = ref containedIn.Container.Get<ContainerContents>();
                     containerContents.Items.Remove(item);
@@ -101,7 +103,7 @@ public static class CleanupSystem
                 {
                     if (equipment.Slots[slot] == item)
                     {
-                        Logger.Logger.Cleanup.CleanupItemFromEquipment(item, equipped.Wearer, slot);
+                        ctx.Log.Cleanup("Cleaning up item {itemName} from equipment of {wearerName} in slot {slot}", item.DebugName, equipped.Wearer.DebugName, slot);
 
                         equipment.Slots[slot] = Entity.Null;
                     }

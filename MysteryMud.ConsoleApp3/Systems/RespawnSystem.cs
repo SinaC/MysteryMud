@@ -4,13 +4,14 @@ using MysteryMud.ConsoleApp3.Core;
 using MysteryMud.ConsoleApp3.Domain.Components;
 using MysteryMud.ConsoleApp3.Domain.Components.Characters;
 using MysteryMud.ConsoleApp3.Domain.Components.Characters.Players;
+using MysteryMud.ConsoleApp3.Domain.Components.Extensions;
 using MysteryMud.ConsoleApp3.Domain.Components.Rooms;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 
 public static class RespawnSystem
 {
-    public static void Process(SystemContext systemContext, GameState state)
+    public static void Process(SystemContext ctx, GameState state)
     {
         var query = new QueryDescription()
             .WithAll<PlayerTag, RespawnState, Location, Health>();
@@ -19,7 +20,7 @@ public static class RespawnSystem
             // Optional: respawn timer check
             //if (Time.time - dead.TimeOfDeath >= RespawnDelay)
             {
-                Logger.Logger.Respawn(player, respawnState.RespawnRoom);
+                ctx.Log.Info("Respawning character {playerName} to room {roomName}", player.DebugName, respawnState.RespawnRoom.DebugName);
 
                 // Move player to respawn room
                 location.Room = respawnState.RespawnRoom;
@@ -40,7 +41,7 @@ public static class RespawnSystem
                     player.Add<DirtyStats>();
 
                 // TODO: send to room
-                systemContext.MessageBus.Publish(player, "You have respawned!");
+                ctx.MessageBus.Publish(player, "You have respawned!");
             }
         });
     }

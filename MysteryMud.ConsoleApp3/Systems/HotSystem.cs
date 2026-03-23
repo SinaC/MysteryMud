@@ -1,15 +1,16 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Core;
-using MysteryMud.ConsoleApp3.Core.Eventing;
+using MysteryMud.ConsoleApp3.Core.Scheduler;
 using MysteryMud.ConsoleApp3.Domain.Components.Characters;
 using MysteryMud.ConsoleApp3.Domain.Components.Effects;
+using MysteryMud.ConsoleApp3.Domain.Components.Extensions;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 
 static class HotSystem
 {
-    public static void HandleTick(SystemContext systemContext, GameState state, Entity effect)
+    public static void HandleTick(SystemContext ctx, GameState state, Entity effect)
     {
         if (!effect.IsAlive())
             return;
@@ -17,7 +18,7 @@ static class HotSystem
         ref var effectInstance = ref effect.Get<EffectInstance>();
         if (!effectInstance.Target.IsAlive() || effectInstance.Target.Has<Dead>())
         {
-            Logger.Logger.Hot.TickOnDeadTarget(effect, effectInstance.Target);
+            ctx.Log.Hot("Ticking HoT for Effect {effectName} on DEAD Target {targetName}", effect.DebugName, effectInstance.Target.DebugName);
             return;
         }
 
@@ -27,20 +28,20 @@ static class HotSystem
         // too late
         if (hot.NextTick >= duration.ExpirationTick)
         {
-            Logger.Logger.Hot.TickAfterExpirationTime(effect, effectInstance.Target, hot.TickRate);
+            ctx.Log.Hot("Ticking HoT for Effect {effectName} on Target {targetName} and tick rate {tickRate} on EXPIRED effect", effect.DebugName, effectInstance.Target.DebugName, hot.TickRate);
             return;
         }
 
         // perform heal
         var heal = hot.Heal * effectInstance.StackCount;
-        Logger.Logger.Hot.ApplyHeal(effect, effectInstance.Target, heal, hot.TickRate);
-        HealSystem.ApplyHeal(systemContext, effectInstance.Target, heal, effectInstance.Source);
+        ctx.Log.Hot("Applying HoT heal for Effect {effectName} on Target {targetName} with heal {heal} and tick rate {tickRate}", effect.DebugName, effectInstance.Target.DebugName, heal, hot.TickRate);
+        HealSystem.ApplyHeal(ctx, effectInstance.Target, heal, effectInstance.Source);
 
         // calcule next tick
         hot.NextTick = TimeSystem.CurrentTick + hot.TickRate;
 
         // queue next tick even if after expiration tick to handle effect refresh
-        Logger.Logger.Hot.ScheduleNextTick(effect, effectInstance.Target, hot.NextTick);
-        systemContext.Scheduler.Publish(effect, ScheduledEventType.HotTick, hot.NextTick);
+        ctx.Log.Hot("Scheduling next HoT tick for Effect {effectName} on Target {targetName} at tick {nextTick}", effect.DebugName, effectInstance.Target.DebugName, hot.NextTick);
+        ctx.Scheduler.Publish(effect, ScheduledEventType.HotTick, hot.NextTick);
     }
 }

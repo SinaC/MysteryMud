@@ -1,11 +1,12 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Core;
-using MysteryMud.ConsoleApp3.Core.Eventing;
+using MysteryMud.ConsoleApp3.Core.Scheduler;
 using MysteryMud.ConsoleApp3.Data.Definitions;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Domain.Components.Characters;
 using MysteryMud.ConsoleApp3.Domain.Components.Effects;
+using MysteryMud.ConsoleApp3.Domain.Components.Extensions;
 
 namespace MysteryMud.ConsoleApp3.Domain.Factories;
 
@@ -37,7 +38,7 @@ public static class EffectFactory
         // add effect to target effect cache
         targetEffects.Effects.Add(effect);
 
-        Logger.Logger.Factory.CreateEffect(source, target, effectTemplate);
+        systemContext.Log.Factory("Creating Effect from Template {effectTemplateName} Source {sourceName} Target {targetName}", effectTemplate.Name, source.DebugName, target.DebugName);
 
         // add tag if applicable
         if (effectTemplate.Tag != EffectTagId.None)
@@ -50,7 +51,7 @@ public static class EffectFactory
             targetEffects.EffectsByTag[tagIndex] = effect;
             targetEffects.ActiveTags |= 1UL << tagIndex;
 
-            Logger.Logger.Factory.AddTagToEffect(effectTemplate.Tag);
+            systemContext.Log.Factory(" - add tag {tag}", effectTemplate.Tag);
         }
 
         // duration ?
@@ -66,7 +67,7 @@ public static class EffectFactory
             });
 
             // queue expiration event
-            Logger.Logger.Factory.AddDurationToEffect(duration.Value, expirationTick);
+            systemContext.Log.Factory(" - add duration {duration} ticks (expires at {expirationTick})", duration, expirationTick);
             systemContext.Scheduler.Publish(effect, ScheduledEventType.EffectExpired, expirationTick);
         }
 
@@ -84,6 +85,8 @@ public static class EffectFactory
                     Value = modifierDefinition.Value,
                 };
                 modifiers.Add(modifier);
+
+                systemContext.Log.Factory(" - add stat modifier {stat} {value} ({type})", modifierDefinition.Stat, modifierDefinition.Value, modifierDefinition.Type);
             }
             effect.Add(new StatModifiers
             {
@@ -93,7 +96,6 @@ public static class EffectFactory
             if (!target.Has<DirtyStats>())
                 target.Add<DirtyStats>();
 
-            Logger.Logger.Factory.AddStatModifiersToEffect(modifiers);
         }
 
         // TODO: remove
@@ -114,7 +116,7 @@ public static class EffectFactory
             });
 
             // queue first tick event
-            Logger.Logger.Factory.AddDotToEffect(damage, effectTemplate.Dot.Value.DamageType, effectTemplate.Dot.Value.TickRate, nextTick);
+            systemContext.Log.Factory(" - add DoT {damage} damage of type {damageType} with tick rate {tickRate} and next tick {nextTick}", damage, effectTemplate.Dot.Value.DamageType, effectTemplate.Dot.Value.TickRate, nextTick);
             systemContext.Scheduler.Publish(effect, ScheduledEventType.DotTick, nextTick);
         }
 
@@ -131,7 +133,7 @@ public static class EffectFactory
                 NextTick = nextTick
             });
             // queue first tick event
-            Logger.Logger.Factory.AddHotToEffect(heal, effectTemplate.Hot.Value.TickRate, nextTick);
+            systemContext.Log.Factory(" - add HoT {heal} heal with tick rate {tickRate} and next tick {nextTick}", heal, effectTemplate.Hot.Value.TickRate, nextTick);
             systemContext.Scheduler.Publish(effect, ScheduledEventType.HotTick, nextTick);
         }
 
@@ -168,7 +170,7 @@ public static class EffectFactory
                     duration.ExpirationTick = expirationTick;
 
                     // schedule a new expiration event (don't remove the old one, just add a new one with the new expiration tick - when the old one executes it will check the current expiration tick and do nothing if it's different)
-                    Logger.Logger.Factory.RefreshEffect(source, effectInstance.Target, effectTemplate, durationValue, expirationTick);
+                    systemContext.Log.Factory("Refreshing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration} Expiration {expirationTick}", effectTemplate.Name, source.DebugName, effectInstance.Target.DebugName, duration, expirationTick);
                     systemContext.Scheduler.Publish(effect, ScheduledEventType.EffectExpired, expirationTick);
                 }
                 return true; // handled
@@ -184,7 +186,7 @@ public static class EffectFactory
                     duration.ExpirationTick = expirationTick;
 
                     // schedule a new expiration event (don't remove the old one, just add a new one with the new expiration tick - when the old one executes it will check the current expiration tick and do nothing if it's different)
-                    Logger.Logger.Factory.StackEffect(source, effectInstance.Target, effectTemplate, durationValue, expirationTick, effectInstance.StackCount);
+                    systemContext.Log.Factory("Stacking/Refreshing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration} Expiration {expirationTick} New Stack Count {newStackCount}", effectTemplate.Name, source.DebugName, effectInstance.Target.DebugName, duration, expirationTick, effectInstance.StackCount);
                     systemContext.Scheduler.Publish(effect, ScheduledEventType.EffectExpired, expirationTick);
                 }
                 return true; // handled

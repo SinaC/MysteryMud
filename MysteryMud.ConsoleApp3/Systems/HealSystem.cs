@@ -1,15 +1,15 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Core;
+using MysteryMud.ConsoleApp3.Domain.Components.Characters;
 using MysteryMud.ConsoleApp3.Domain.Components.Extensions;
 using MysteryMud.ConsoleApp3.Simulation.Calculators;
-using MysteryMud.ConsoleApp3.Domain.Components.Characters;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 
 public static class HealSystem
 {
-    public static ApplyHealResult ApplyHeal(SystemContext systemContext, Entity target, int healAmount, Entity source)
+    public static ApplyHealResult ApplyHeal(SystemContext ctx, Entity target, int healAmount, Entity source)
     {
         if (target.Has<Dead>())
             return ApplyHealResult.Dead; // can't heal something that's already dead
@@ -22,21 +22,27 @@ public static class HealSystem
         if (health.Current >= health.Max)
             return ApplyHealResult.FullHealth;
 
-        // TODO: apply any healing modifiers here (buffs, debuffs, etc.)
+        // apply heal modifiers
+        var modifiedHeal = HealCalculator.ModifyDamage(target, healAmount, source);
 
+        return ApplyHeal(ctx, target, ref health, modifiedHeal, source);
+    }
+
+    private static ApplyHealResult ApplyHeal(SystemContext ctx, Entity target, ref Health health, int healAmount, Entity source)
+    {
+        // apply heal and cap at max health
         health.Current = Math.Min(health.Current + healAmount, health.Max);
 
-        Logger.Logger.Heal.Apply(source, target, healAmount, ref health);
+        ctx.Log.Heal("Applying heal from {sourceName} to {targetName} with amount {heal}. Current health: {health.Current}/{health.Max}", source.DebugName, target.DebugName, healAmount, health.Current, health.Max);
 
-        systemContext.MessageBus.Publish(source, $"%GYou heal %g{target.DisplayName} for %g{healAmount}%g health.%x");
-        systemContext.MessageBus.Publish(target, $"%G{source.DisplayName} heals you for %g{healAmount}%g health.%x");
+        ctx.MessageBus.Publish(source, $"%GYou heal %g{target.DisplayName} for %g{healAmount}%g health.%x");
+        ctx.MessageBus.Publish(target, $"%G{source.DisplayName} heals you for %g{healAmount}%g health.%x");
 
         var aggro = AggroCalculator.CalculateHealAggro(target, source, healAmount);
         AggroSystem.AddAggro(target, source, aggro);
 
         return ApplyHealResult.Healed;
     }
-
 
     public enum ApplyHealResult
     {

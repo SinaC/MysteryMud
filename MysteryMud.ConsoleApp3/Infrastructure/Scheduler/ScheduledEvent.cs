@@ -1,5 +1,5 @@
 ﻿using Arch.Core;
-using MysteryMud.ConsoleApp3.Core.Eventing;
+using MysteryMud.ConsoleApp3.Core.Scheduler;
 
 namespace MysteryMud.ConsoleApp3.Infrastructure.Scheduler;
 

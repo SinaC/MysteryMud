@@ -13,20 +13,20 @@ namespace MysteryMud.ConsoleApp3.Systems;
 
 public static class DeathSystem
 {
-    public static void Process(SystemContext systemContext, GameState state)
+    public static void Process(SystemContext ctx, GameState state)
     {
         var query = new QueryDescription()
           .WithAll<Dead>();
         state.World.Query(query, (Entity entity, ref Dead dead) =>
         {
-            HandleDeath(systemContext, state.World, entity, dead.Killer); // TODO: pass killer
+            HandleDeath(ctx, state.World, entity, dead.Killer); // TODO: pass killer
         });
     }
 
-    private static void HandleDeath(SystemContext systemContext, World world, Entity victim, Entity killer)
+    private static void HandleDeath(SystemContext ctx, World world, Entity victim, Entity killer)
     {
         //TODO: log
-        CreateCorpse(systemContext, world, victim, killer);
+        CreateCorpse(ctx, world, victim, killer);
 
         AddTags(world, victim);
         RemoveFromRoomContents(world, victim);
@@ -74,7 +74,7 @@ public static class DeathSystem
     }
 
     // TODO: create a corpse entity that can hold the items instead of dropping items on the floor
-    private static void CreateCorpse(SystemContext systemContext, World world, Entity victim, Entity killer)
+    private static void CreateCorpse(SystemContext ctx, World world, Entity victim, Entity killer)
     {
         if (!victim.Has<Location, Inventory>())
             return; // can't create a corpse if we don't know where the victim is
@@ -93,7 +93,7 @@ public static class DeathSystem
 
             //ContainmentSystem.Move(world, item, victim.Get<Location>().Room);
             ItemMovementSystem.DropItem(victim, location.Room, item);
-            systemContext.MessageBus.Publish(killer, $"{victim.DisplayName} drops {item.DisplayName}.");
+            ctx.MessageBus.Publish(killer, $"{victim.DisplayName} drops {item.DisplayName}.");
         }
     }
 }

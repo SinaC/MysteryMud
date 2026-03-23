@@ -1,6 +1,7 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using MysteryMud.ConsoleApp3;
 using MysteryMud.ConsoleApp3.Commands;
 using MysteryMud.ConsoleApp3.Commands.Registry;
@@ -13,8 +14,8 @@ using MysteryMud.ConsoleApp3.Domain.Components.Rooms;
 using MysteryMud.ConsoleApp3.Domain.Factories;
 using MysteryMud.ConsoleApp3.Infrastructure.Persistence;
 using MysteryMud.ConsoleApp3.Infrastructure.Persistence.Dto;
-using MysteryMud.ConsoleApp3.Logger;
 using MysteryMud.ConsoleApp3.Systems;
+using Serilog;
 using System.Text.Json;
 
 // build configuration
@@ -24,7 +25,17 @@ var configuration = new ConfigurationBuilder()
     .Build();
 
 // initialize logger
-Logger.Initialize(configuration);
+Log.Logger = new LoggerConfiguration()
+  .MinimumLevel.Debug() // Set the minimum level
+  .ReadFrom.Configuration(configuration)
+  .CreateLogger();
+var factory = LoggerFactory.Create(builder =>
+{
+    builder.AddSerilog(); // Use Serilog as provider
+});
+
+var logger = factory.CreateLogger("MysteryMud");
+logger.LogInformation("Log initialized");
 
 // load spells
 var spellJson = @"
@@ -198,5 +209,5 @@ RoomFactory.RespawnRoomEntity = temple;
 //CommandDispatcher.Dispatch(gameState, player, "test troll poison".AsSpan());
 //CommandDispatcher.Dispatch(gameState, goblin, "test troll poison".AsSpan());
 
-var gameServer = new GameServer(world);
+var gameServer = new GameServer(logger, world);
 gameServer.Start();
