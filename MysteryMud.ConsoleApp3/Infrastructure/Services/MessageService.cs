@@ -1,7 +1,7 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
-using MysteryMud.ConsoleApp3.Components.Characters.Players;
-using MysteryMud.ConsoleApp3.Components.Extensions;
+using MysteryMud.ConsoleApp3.Domain.Components.Characters.Players;
+using MysteryMud.ConsoleApp3.Domain.Components.Extensions;
 using MysteryMud.ConsoleApp3.Infrastructure.Network;
 
 namespace MysteryMud.ConsoleApp3.Infrastructure.Services;
@@ -31,12 +31,8 @@ public class MessageService : IMessageService
         _telnet.Write(connection.ConnectionId, "\r\n");
     }
 
-    public void Flush(Entity entity)
+    public void FlushAll()
     {
-        ref var connection = ref entity.TryGetRef<Connection>(out var hasConnection);
-        if (!hasConnection)
-            return;
-
-        _telnet.Flush(connection.ConnectionId);
+        _telnet.FlushAll();
     }
 }

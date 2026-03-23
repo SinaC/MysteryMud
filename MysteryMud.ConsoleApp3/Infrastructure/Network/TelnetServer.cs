@@ -82,12 +82,6 @@ public class TelnetServer
            session.SendGMCP(package, payload);
     }
 
-    public void Flush(int connectionId)
-    {
-        if (_sessions.TryGetValue(connectionId, out var session))
-           session.Flush();
-    }
-
     public void Write(int connectionId, string text)
     {
         if (_sessions.TryGetValue(connectionId, out var session))
@@ -98,5 +92,23 @@ public class TelnetServer
     {
         if (_sessions.TryGetValue(connectionId, out var session))
            session.Write(span);
+    }
+
+    public void Flush(int connectionId)
+    {
+        if (_sessions.TryGetValue(connectionId, out var session))
+           session.Flush();
+    }
+
+    public void FlushAll()
+    {
+        foreach (var session in _sessions.Values)
+        {
+            try
+            {
+                session.Flush();
+            }
+            catch { }
+        }
     }
 }

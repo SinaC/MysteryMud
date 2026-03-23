@@ -1,8 +1,8 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
-using MysteryMud.ConsoleApp3.Components.Characters;
-using MysteryMud.ConsoleApp3.Components.Items;
 using MysteryMud.ConsoleApp3.Data.Enums;
+using MysteryMud.ConsoleApp3.Domain.Components.Characters;
+using MysteryMud.ConsoleApp3.Domain.Components.Items;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 

@@ -1,5 +1,5 @@
 ﻿using Arch.Core;
-using MysteryMud.ConsoleApp3.Factories;
+using MysteryMud.ConsoleApp3.Domain.Factories;
 
 namespace MysteryMud.ConsoleApp3.Infrastructure.Services;
 

@@ -1,9 +1,9 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
-using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Core;
-using MysteryMud.ConsoleApp3.Components.Extensions;
+using MysteryMud.ConsoleApp3.Domain.Components.Extensions;
 using MysteryMud.ConsoleApp3.Simulation.Calculators;
+using MysteryMud.ConsoleApp3.Domain.Components.Characters;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 

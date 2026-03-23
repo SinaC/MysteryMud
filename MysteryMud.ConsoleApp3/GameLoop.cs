@@ -2,7 +2,9 @@
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Core;
 using MysteryMud.ConsoleApp3.Core.Eventing;
-using MysteryMud.ConsoleApp3.Components.Extensions;
+using MysteryMud.ConsoleApp3.Core.Scheduler;
+using MysteryMud.ConsoleApp3.Domain.Components.Characters.Players;
+using MysteryMud.ConsoleApp3.Domain.Components.Extensions;
 using MysteryMud.ConsoleApp3.Infrastructure.Services;
 using MysteryMud.ConsoleApp3.Systems;
 
@@ -83,7 +85,7 @@ internal class GameLoop
         _messageBus.Process(systemContext, state);
 
         // send output to players
-        FlushOutputSystem.Process(_messageService, state);
+        _messageService.FlushAll();
     }
 
     private void CheckConsoleInput()

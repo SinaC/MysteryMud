@@ -1,4 +1,5 @@
 ﻿using MysteryMud.ConsoleApp3.Core.Eventing;
+using MysteryMud.ConsoleApp3.Core.Scheduler;
 
 namespace MysteryMud.ConsoleApp3.Core;
 

@@ -1,11 +1,11 @@
 ﻿using Arch.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Data.Definitions;
 using MysteryMud.ConsoleApp3.Data.Enums;
-using MysteryMud.ConsoleApp3.Components.Extensions;
+using MysteryMud.ConsoleApp3.Domain.Components.Extensions;
 using Serilog;
+using MysteryMud.ConsoleApp3.Domain.Components.Characters;
 
 namespace MysteryMud.ConsoleApp3.Logger;
 
