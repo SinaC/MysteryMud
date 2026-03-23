@@ -4,7 +4,6 @@ using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Effects;
 using MysteryMud.ConsoleApp3.Core;
 using MysteryMud.ConsoleApp3.Core.Eventing;
-using MysteryMud.ConsoleApp3.Simulation.Calculators;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 
@@ -35,7 +34,7 @@ static class DotSystem
         // perform damage
         var damage = dot.Damage * effectInstance.StackCount;
         Logger.Logger.Dot.ApplyDamage(effect, effectInstance.Target, damage, dot.DamageType, dot.TickRate);
-        DamageCalculator.ApplyDamage(effectInstance.Target, damage, dot.DamageType, effectInstance.Source);
+        DamageSystem.ApplyDamage(effectInstance.Target, damage, dot.DamageType, effectInstance.Source);
 
         // killed ?
         if (effectInstance.Target.Has<Dead>())

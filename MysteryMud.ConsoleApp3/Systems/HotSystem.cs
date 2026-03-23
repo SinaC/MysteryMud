@@ -4,7 +4,6 @@ using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Effects;
 using MysteryMud.ConsoleApp3.Core;
 using MysteryMud.ConsoleApp3.Core.Eventing;
-using MysteryMud.ConsoleApp3.Simulation.Calculators;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 
@@ -32,10 +31,10 @@ static class HotSystem
             return;
         }
 
-        // perform damage
+        // perform heal
         var heal = hot.Heal * effectInstance.StackCount;
         Logger.Logger.Hot.ApplyHeal(effect, effectInstance.Target, heal, hot.TickRate);
-        HealCalculator.ApplyHeal(effectInstance.Target, heal, effectInstance.Source);
+        HealSystem.ApplyHeal(effectInstance.Target, heal, effectInstance.Source);
 
         // calcule next tick
         hot.NextTick = TimeSystem.CurrentTick + hot.TickRate;

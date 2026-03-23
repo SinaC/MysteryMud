@@ -6,7 +6,6 @@ using MysteryMud.ConsoleApp3.Core;
 using MysteryMud.ConsoleApp3.Core.Eventing;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Extensions;
-using MysteryMud.ConsoleApp3.Simulation.Calculators;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 
@@ -72,7 +71,9 @@ class CombatSystem
             var damage = stats.Values[StatType.DamRoll] + Random.Shared.Next(1, 6); // TODO: calculate damage based on weapon, skills, etc.
             var damageType = DamageType.Physical; // TODO: determine damage type based on weapon, skills, etc.
 
-            return DamageCalculator.ApplyDamage(target, damage, damageType, attacker) == DamageCalculator.ApplyDamageResult.Damaged;
+            var result = DamageSystem.ApplyDamage(target, damage, damageType, attacker);
+
+            return result != DamageSystem.ApplyDamageResult.Killed && result != DamageSystem.ApplyDamageResult.Dead;
         }
         else
         {

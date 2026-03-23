@@ -1,20 +1,17 @@
 ﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.ConsoleApp3.Components.Characters.Mobiles;
+using MysteryMud.ConsoleApp3.Data.Enums;
 
 namespace MysteryMud.ConsoleApp3.Simulation.Calculators;
 
 public static class AggroCalculator
 {
-    public static void AddAggro(Entity target, Entity source, int amount)
+    public static int CalculateDamageAggro(Entity target, Entity source, int damageAmount, DamageType damageType)
     {
-        if (!source.IsAlive())
-            return;
-        ref var threatTable = ref target.TryGetRef<ThreatTable>(out var hasThreat);
-        if (!hasThreat)
-            return;
-        if (!threatTable.Threat.TryAdd(source, amount))
-            threatTable.Threat[source] += amount;
+        return damageAmount; // TODO
     }
 
+    public static int CalculateHealAggro(Entity target, Entity source, int healAmount)
+    {
+        return healAmount / 2; // TODO
+    }
 }
