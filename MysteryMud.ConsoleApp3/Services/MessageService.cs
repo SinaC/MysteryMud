@@ -17,6 +17,9 @@ public class MessageService : IMessageService
 
     public void Send(Entity entity, string message)
     {
+        if (!entity.IsAlive())
+            return;
+
         ref var connection = ref entity.TryGetRef<Connection>(out var hasConnection);
         if (!hasConnection)
         {

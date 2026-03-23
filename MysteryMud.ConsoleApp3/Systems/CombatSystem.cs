@@ -2,6 +2,8 @@
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Characters.Mobiles;
+using MysteryMud.ConsoleApp3.Core;
+using MysteryMud.ConsoleApp3.Core.Eventing;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Extensions;
 using MysteryMud.ConsoleApp3.Simulation.Calculators;
@@ -10,12 +12,12 @@ namespace MysteryMud.ConsoleApp3.Systems;
 
 class CombatSystem
 {
-    public static void Process(World world)
+    public static void Process(GameState state)
     {
         var query = new QueryDescription()
             .WithAll<CombatState, EffectiveStats>()
             .WithNone<Dead>();
-        world.Query(query, (Entity actor, ref CombatState combat, ref EffectiveStats stats) =>
+        state.World.Query(query, (Entity actor, ref CombatState combat, ref EffectiveStats stats) =>
         {
             // TODO: if NPC, SelectTarget with highest threat
 
@@ -43,7 +45,7 @@ class CombatSystem
                 if (target.Has<Dead>())
                     break;
 
-                bool targetAlive = ResolveAttack(world, actor, target, stats);
+                bool targetAlive = ResolveAttack(state.World, actor, target, stats);
 
                 //// Trigger weapon proc (only if target still alive)
                 //if (targetAlive)
@@ -74,8 +76,8 @@ class CombatSystem
         }
         else
         {
-            MessageSystem.Send(attacker, $"You miss {target.DisplayName}.");
-            MessageSystem.Send(target, $"{attacker.DisplayName} misses you.");
+            MessageBus.Publish(attacker, $"You miss {target.DisplayName}.");
+            MessageBus.Publish(target, $"{attacker.DisplayName} misses you.");
 
             return true;
         }

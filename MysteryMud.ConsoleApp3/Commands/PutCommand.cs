@@ -4,6 +4,8 @@ using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Rooms;
+using MysteryMud.ConsoleApp3.Core;
+using MysteryMud.ConsoleApp3.Core.Eventing;
 using MysteryMud.ConsoleApp3.Extensions;
 using MysteryMud.ConsoleApp3.Systems;
 
@@ -13,14 +15,14 @@ public class PutCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.TargetPair;
 
-    public void Execute(World world, Entity actor, CommandContext ctx)
+    public void Execute(GameState gameState, Entity actor, CommandContext ctx)
     {
         var inventory = actor.Get<Inventory>();
 
         var container = FindContainer(actor, ctx.Secondary);
         if (container == default)
         {
-            MessageSystem.Send(actor, "You don't see that here.");
+            MessageBus.Publish(actor, "You don't see that here.");
             return;
         }
 
@@ -28,7 +30,7 @@ public class PutCommand : ICommand
         {
             ItemMovementSystem.PutItem(actor, container, item);
 
-            MessageSystem.Send(actor, $"You put {item.DisplayName} in {container.DisplayName}.");
+            MessageBus.Publish(actor, $"You put {item.DisplayName} in {container.DisplayName}.");
         }
     }
 

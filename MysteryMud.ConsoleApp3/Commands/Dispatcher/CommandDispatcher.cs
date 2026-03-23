@@ -1,14 +1,15 @@
 ﻿using Arch.Core;
 using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Commands.Registry;
+using MysteryMud.ConsoleApp3.Core;
+using MysteryMud.ConsoleApp3.Core.Eventing;
 using MysteryMud.ConsoleApp3.Extensions;
-using MysteryMud.ConsoleApp3.Systems;
 
 namespace MysteryMud.ConsoleApp3.Commands.Dispatcher;
 
 class CommandDispatcher
 {
-    public static void Dispatch(World world, Entity actor, ReadOnlySpan<char> input)
+    public static void Dispatch(GameState gameState, Entity actor, ReadOnlySpan<char> input)
     {
         Console.WriteLine($"*** [{actor.DisplayName}] EXECUTING [{input}]");
 
@@ -18,7 +19,7 @@ class CommandDispatcher
         // search command in registry
         if (!CommandRegistry.TryGet(cmdSpan, out var cmd))
         {
-            MessageSystem.Send(actor, "Unknown command.");
+            MessageBus.Publish(actor, "Unknown command.");
             return;
         }
 
@@ -26,6 +27,6 @@ class CommandDispatcher
         CommandParser.Parse(cmd.ParseMode, cmdSpan, argsSpan, out var ctx);
 
         // execute command
-        cmd.Execute(world, actor, ctx);
+        cmd.Execute(gameState, actor, ctx);
     }
 }

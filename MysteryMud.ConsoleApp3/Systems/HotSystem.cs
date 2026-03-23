@@ -2,15 +2,15 @@
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Effects;
-using MysteryMud.ConsoleApp3.Data.Enums;
-using MysteryMud.ConsoleApp3.Events;
+using MysteryMud.ConsoleApp3.Core;
+using MysteryMud.ConsoleApp3.Core.Eventing;
 using MysteryMud.ConsoleApp3.Simulation.Calculators;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 
 static class HotSystem
 {
-    public static void HandleTick(World world, Entity effect)
+    public static void HandleTick(GameState state, Entity effect)
     {
         if (!effect.IsAlive())
             return;
@@ -42,11 +42,11 @@ static class HotSystem
 
         // queue next tick even if after expiration tick to handle effect refresh
         Logger.Logger.Hot.ScheduleNextTick(effect, effectInstance.Target, hot.NextTick);
-        EventScheduler.Schedule(new TimedEvent
+        Scheduler.Publish(new ScheduledEvent
         {
             ExecuteAt = hot.NextTick,
             Target = effect,
-            Type = EventType.HotTick
+            Type = ScheduledEventType.HotTick
         });
     }
 }

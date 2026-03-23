@@ -2,6 +2,8 @@
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Components.Characters;
+using MysteryMud.ConsoleApp3.Core;
+using MysteryMud.ConsoleApp3.Core.Eventing;
 using MysteryMud.ConsoleApp3.Extensions;
 using MysteryMud.ConsoleApp3.Systems;
 
@@ -11,7 +13,7 @@ public class RemoveCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.Target;
 
-    public void Execute(World world, Entity actor, CommandContext ctx)
+    public void Execute(GameState gameState, Entity actor, CommandContext ctx)
     {
         ref var equipment = ref actor.Get<Equipment>();
 
@@ -24,11 +26,11 @@ public class RemoveCommand : ICommand
             {
                 EquipmentSystem.Unequip(actor, kv.Key);
 
-                MessageSystem.Send(actor, $"You remove {item.DisplayName}.");
+                MessageBus.Publish(actor, $"You remove {item.DisplayName}.");
                 return;
             }
         }
 
-        MessageSystem.Send(actor, "You are not wearing that.");
+        MessageBus.Publish(actor, "You are not wearing that.");
     }
 }

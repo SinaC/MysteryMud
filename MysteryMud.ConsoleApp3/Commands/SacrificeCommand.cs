@@ -3,6 +3,8 @@ using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Rooms;
+using MysteryMud.ConsoleApp3.Core;
+using MysteryMud.ConsoleApp3.Core.Eventing;
 using MysteryMud.ConsoleApp3.Extensions;
 using MysteryMud.ConsoleApp3.Systems;
 
@@ -12,7 +14,7 @@ public class SacrificeCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.Target;
 
-    public void Execute(World world, Entity actor, CommandContext ctx)
+    public void Execute(GameState gameState, Entity actor, CommandContext ctx)
     {
         // search in room
         ref var room = ref actor.Get<Location>().Room;
@@ -22,7 +24,7 @@ public class SacrificeCommand : ICommand
         {
             DestroySystem.DestroyItem(item);
 
-            MessageSystem.Send(actor, $"You sacrifice the {item.DisplayName}.");
+            MessageBus.Publish(actor, $"You sacrifice the {item.DisplayName}.");
         }
     }
 }

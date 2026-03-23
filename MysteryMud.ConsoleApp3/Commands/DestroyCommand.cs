@@ -3,6 +3,8 @@ using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Items;
+using MysteryMud.ConsoleApp3.Core;
+using MysteryMud.ConsoleApp3.Core.Eventing;
 using MysteryMud.ConsoleApp3.Extensions;
 using MysteryMud.ConsoleApp3.Systems;
 
@@ -12,7 +14,7 @@ public class DestroyCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.Target;
 
-    public void Execute(World world, Entity actor, CommandContext ctx)
+    public void Execute(GameState gameState, Entity actor, CommandContext ctx)
     {
         // search in inventory (equipped items are also in inventory)
         ref var inventory = ref actor.Get<Inventory>();
@@ -28,7 +30,7 @@ public class DestroyCommand : ICommand
 
             DestroySystem.DestroyItem(item);
 
-            MessageSystem.Send(actor, $"You destroy {item.DisplayName}.");
+            MessageBus.Publish(actor, $"You destroy {item.DisplayName}.");
         }
     }
 }

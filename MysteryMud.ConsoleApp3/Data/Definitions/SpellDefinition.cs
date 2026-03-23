@@ -1,4 +1,4 @@
-﻿namespace MysteryMud.ConsoleApp3.Data;
+﻿namespace MysteryMud.ConsoleApp3.Data.Definitions;
 
 public class SpellDefinition
 {

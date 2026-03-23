@@ -1,6 +1,6 @@
 ﻿using Arch.Core;
 
-namespace MysteryMud.ConsoleApp3.Data;
+namespace MysteryMud.ConsoleApp3.Data.Definitions;
 
 public struct HotDefinition
 {

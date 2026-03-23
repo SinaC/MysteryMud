@@ -1,16 +1,15 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using Microsoft.Extensions.Logging;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Characters.Players;
 using MysteryMud.ConsoleApp3.Components.Rooms;
+using MysteryMud.ConsoleApp3.Core.Eventing;
 using MysteryMud.ConsoleApp3.Data.Enums;
-using MysteryMud.ConsoleApp3.Events;
-using MysteryMud.ConsoleApp3.Extensions;
 using MysteryMud.ConsoleApp3.Factories;
 using MysteryMud.ConsoleApp3.Network;
 using MysteryMud.ConsoleApp3.Services;
-using MysteryMud.ConsoleApp3.Systems;
 
 namespace MysteryMud.ConsoleApp3;
 
@@ -20,6 +19,7 @@ public class GameServer
     private readonly ConnectionService _connections;
     private readonly TelnetServer _telnet;
     private readonly IMessageService _messageService;
+    private readonly GameLoop _gameLoop;
 
     public GameServer()
         : this(World.Create())
@@ -39,88 +39,15 @@ public class GameServer
 
         _messageService = new MessageService(_telnet);
         Services.Services.Messages = _messageService; // static service locator for now, can refactor to proper dependency injection later
+
+        _gameLoop = new GameLoop(_world);
     }
 
     public void Start()
     {
         Task.Run(() => _telnet.Start());
 
-        RunGameLoop();
-    }
-
-    private void RunGameLoop()
-    {
-        while (true)
-        {
-            CheckConsoleInput();
-
-            Tick();
-
-            Thread.Sleep(100); // tick rate
-        }
-    }
-
-    private void CheckConsoleInput()
-    {
-        if (Console.KeyAvailable)
-        {
-            var line = Console.ReadLine();
-            if (line != null)
-            {
-                switch (line)
-                {
-                    case "dump": DumpWorld(); break;
-                    //TODO: case "shutdown": Shutdown(); break;
-                    //world.Dispose();             // Clearing the world like God in the First Testament
-                    //World.Destroy(world);        // Doomsday
-                }
-            }
-        }
-    }
-
-    private void DumpWorld()
-    {
-        Console.WriteLine("Dumping world state:");
-        var query = new QueryDescription();
-        _world.Query(query, (Entity entity) =>
-        {
-            Console.WriteLine($"Entity Id: {entity.Id} Alive: {entity.IsAlive()} DebugName: {entity.DebugName}");
-            Console.WriteLine($"  Components: {string.Join(", ", entity.GetAllComponents().Select(c => c?.GetType().Name))}");
-        });
-    }
-
-    private void Tick()
-    {
-        TimeSystem.NextTick();
-
-        //Console.WriteLine($"Tick: {TimeSystem.CurrentTick}");
-
-        // process player commands
-        CommandSystem.ProcessCommands(_world);
-
-        // process scheduled events
-        EventScheduler.ProcessEvents(_world, TimeSystem.CurrentTick);
-        // handle state transitions for effects
-        //StateMachineSystem.Update(world); TODO: implement state machine system and handle with scheduled events
-
-        // AiSystem.Process(world);
-        // handle combat rounds
-        CombatSystem.Process(_world);
-
-        // handle deaths and related consequences
-        DeathSystem.Process(_world);
-
-        // handle player deaths and respawns
-        RespawnSystem.RespawnPlayers(_world);
-
-        // recalculate stats for entities
-        StatSystem.Recalculate(_world);
-
-        // perform cleanup tasks like removing characters, items, ...
-        CleanupSystem.Cleanup(_world);
-
-        // send output to players
-        FlushOutputSystem.FlushOutputs(_world);
+        _gameLoop.Run();
     }
 
     private void HandleInputReceived(int connectionId, ReadOnlySpan<char> input)
@@ -131,13 +58,13 @@ public class GameServer
         if (_connections.TryGetEntity(connectionId, out var entity))
         {
             // TODO: detect if the command is a login command and handle that separately, for now we just enqueue everything to the command system and it can handle it from there
-            CommandSystem.Enqueue(entity, input);
+            CommandBus.Publish(entity, input);
         }
     }
 
     private void HandleConnected(int connectionId) // TODO: rename HandleNewConnection
     {
-        Logger.Logger.System("Handling new connection with id {ConnectionId}", connectionId);
+        Logger.Logger.System(LogLevel.Information, "Handling new connection with id {ConnectionId}", connectionId);
 
         var entity = _connections.CreatePlayer(connectionId);
 
@@ -147,7 +74,7 @@ public class GameServer
 
     private void HandleDisconnected(int connectionId)
     {
-        Logger.Logger.System("Handling disconnection for connection id {ConnectionId}", connectionId);
+        Logger.Logger.System(LogLevel.Information, "Handling disconnection for connection id {ConnectionId}", connectionId);
 
         if (!_connections.TryGetEntity(connectionId, out var entity))
             return;

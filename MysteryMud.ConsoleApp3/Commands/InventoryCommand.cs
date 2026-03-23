@@ -3,6 +3,8 @@ using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Items;
+using MysteryMud.ConsoleApp3.Core;
+using MysteryMud.ConsoleApp3.Core.Eventing;
 using MysteryMud.ConsoleApp3.Extensions;
 using MysteryMud.ConsoleApp3.Systems;
 
@@ -13,20 +15,20 @@ public class InventoryCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.None;
 
-    public void Execute(World world, Entity actor, CommandContext ctx)
+    public void Execute(GameState gameState, Entity actor, CommandContext ctx)
     {
         var inventory = actor.Get<Inventory>();
         if (inventory.Items.Count == 0)
         {
-            MessageSystem.Send(actor, "Your inventory is empty.");
+            MessageBus.Publish(actor, "Your inventory is empty.");
         }
         else
         {
-            MessageSystem.Send(actor, "You are carrying:");
+            MessageBus.Publish(actor, "You are carrying:");
             foreach (var item in inventory.Items)
             {
                 if (!item.Has<Equipped>())
-                    MessageSystem.Send(actor, $"- {item.DisplayName}");
+                    MessageBus.Publish(actor, $"- {item.DisplayName}");
             }
         }
     }

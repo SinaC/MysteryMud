@@ -5,6 +5,8 @@ using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Characters.Players;
 using MysteryMud.ConsoleApp3.Components.Items;
 using MysteryMud.ConsoleApp3.Components.Rooms;
+using MysteryMud.ConsoleApp3.Core;
+using MysteryMud.ConsoleApp3.Core.Eventing;
 using MysteryMud.ConsoleApp3.Extensions;
 using MysteryMud.ConsoleApp3.Factories;
 
@@ -12,13 +14,13 @@ namespace MysteryMud.ConsoleApp3.Systems;
 
 public static class DeathSystem
 {
-    public static void Process(World world)
+    public static void Process(GameState state)
     {
         var query = new QueryDescription()
           .WithAll<Dead>();
-        world.Query(query, (Entity entity, ref Dead dead) =>
+        state.World.Query(query, (Entity entity, ref Dead dead) =>
         {
-            HandleDeath(world, entity, dead.Killer); // TODO: pass killer
+            HandleDeath(state.World, entity, dead.Killer); // TODO: pass killer
         });
     }
 
@@ -92,7 +94,7 @@ public static class DeathSystem
 
             //ContainmentSystem.Move(world, item, victim.Get<Location>().Room);
             ItemMovementSystem.DropItem(victim, location.Room, item);
-            MessageSystem.Send(killer, $"{victim.DisplayName} drops {item.DisplayName}.");
+            MessageBus.Publish(killer, $"{victim.DisplayName} drops {item.DisplayName}.");
         }
     }
 }

@@ -5,6 +5,8 @@ using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Items;
 using MysteryMud.ConsoleApp3.Components.Rooms;
+using MysteryMud.ConsoleApp3.Core;
+using MysteryMud.ConsoleApp3.Core.Eventing;
 using MysteryMud.ConsoleApp3.Extensions;
 using MysteryMud.ConsoleApp3.Systems;
 
@@ -14,7 +16,7 @@ public class GiveCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.TargetPair;
 
-    public void Execute(World world, Entity actor, CommandContext ctx)
+    public void Execute(GameState gameState, Entity actor, CommandContext ctx)
     {
         var inventory = actor.Get<Inventory>();
         var room = actor.Get<Location>().Room;
@@ -24,7 +26,7 @@ public class GiveCommand : ICommand
         var target = TargetingSystem.SelectSingleTarget(actor, ctx.Secondary, roomContents.Characters);
         if (target == default)
         {
-            MessageSystem.Send(actor, "They are not here.");
+            MessageBus.Publish(actor, "They are not here.");
             return;
         }
 
@@ -39,7 +41,7 @@ public class GiveCommand : ICommand
             }
 
             ItemMovementSystem.GiveItem(actor, target, item);
-            MessageSystem.Send(actor, $"You give {item.DisplayName} to {target.DisplayName}.");
+            MessageBus.Publish(actor, $"You give {item.DisplayName} to {target.DisplayName}.");
         }
     }
 }

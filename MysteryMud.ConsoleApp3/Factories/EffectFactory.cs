@@ -2,17 +2,16 @@
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Effects;
-using MysteryMud.ConsoleApp3.Data;
+using MysteryMud.ConsoleApp3.Core;
+using MysteryMud.ConsoleApp3.Core.Eventing;
+using MysteryMud.ConsoleApp3.Data.Definitions;
 using MysteryMud.ConsoleApp3.Data.Enums;
-using MysteryMud.ConsoleApp3.Events;
-using MysteryMud.ConsoleApp3.Extensions;
-using MysteryMud.ConsoleApp3.Systems;
 
 namespace MysteryMud.ConsoleApp3.Factories;
 
 public static class EffectFactory
 {
-    public static void ApplyEffect(World world, EffectTemplate effectTemplate, Entity source, Entity target)
+    public static void ApplyEffect(GameState gameState, EffectTemplate effectTemplate, Entity source, Entity target)
     {
         ref var targetEffects = ref target.Get<CharacterEffects>();
 
@@ -20,14 +19,14 @@ public static class EffectFactory
         int tagIndex = (int)effectTemplate.Tag;
         if (effectTemplate.Tag != EffectTagId.None && targetEffects.EffectsByTag[tagIndex] is Entity existing)
         {
-            var handled = HandleStacking(world, effectTemplate, existing, source);
+            var handled = HandleStacking(gameState, effectTemplate, existing, source);
             if (handled)
                 return;
             // not handled: apply new effect
         }
 
         // no tag or no existing effect with the same tag, create a new one
-        var effect = world.Create(new EffectInstance
+        var effect = gameState.World.Create(new EffectInstance
         {
             Source = source,
             Target = target,
@@ -55,21 +54,21 @@ public static class EffectFactory
         }
 
         // duration ?
-        var duration = effectTemplate.DurationFunc?.Invoke(world, source, target);
+        var duration = effectTemplate.DurationFunc?.Invoke(gameState.World, source, target);
         if (duration is not null)
         {
             // add Duration component to effect
-            var expirationTick = TimeSystem.CurrentTick + duration.Value;
+            var expirationTick = gameState.CurrentTick + duration.Value;
             effect.Add(new Duration
             {
-                StartTick = TimeSystem.CurrentTick,
+                StartTick = gameState.CurrentTick,
                 ExpirationTick = expirationTick
             });
             // queue expiration event
-            EventScheduler.Schedule(new TimedEvent
+            Scheduler.Publish(new ScheduledEvent
             {
                 ExecuteAt = expirationTick,
-                Type = EventType.EffectExpired,
+                Type = ScheduledEventType.EffectExpired,
                 Target = effect
             });
 
@@ -109,8 +108,8 @@ public static class EffectFactory
         if (effectTemplate.Dot is not null)
         {
             // add DamageOverTime component to effect
-            var nextTick = TimeSystem.CurrentTick + effectTemplate.Dot.Value.TickRate;
-            var damage = effectTemplate.Dot.Value.DamageFunc.Invoke(world, source, target);
+            var nextTick = gameState.CurrentTick + effectTemplate.Dot.Value.TickRate;
+            var damage = effectTemplate.Dot.Value.DamageFunc.Invoke(gameState.World, source, target);
             effect.Add(new DamageOverTime
             {
                 Damage = damage,
@@ -119,10 +118,10 @@ public static class EffectFactory
                 NextTick = nextTick
             });
             // queue first tick event
-            EventScheduler.Schedule(new TimedEvent
+            Scheduler.Publish(new ScheduledEvent
             {
                 ExecuteAt = nextTick,
-                Type = EventType.DotTick,
+                Type = ScheduledEventType.DotTick,
                 Target = effect
             });
 
@@ -133,8 +132,8 @@ public static class EffectFactory
         if (effectTemplate.Hot is not null)
         {
             // add HealOverTime component to effect
-            var nextTick = TimeSystem.CurrentTick + effectTemplate.Hot.Value.TickRate;
-            var heal = effectTemplate.Hot.Value.HealFunc.Invoke(world, source, target);
+            var nextTick = gameState.CurrentTick + effectTemplate.Hot.Value.TickRate;
+            var heal = effectTemplate.Hot.Value.HealFunc.Invoke(gameState.World, source, target);
             effect.Add(new HealOverTime
             {
                 Heal = heal,
@@ -142,10 +141,10 @@ public static class EffectFactory
                 NextTick = nextTick
             });
             // queue first tick event
-            EventScheduler.Schedule(new TimedEvent
+            Scheduler.Publish(new ScheduledEvent
             {
                 ExecuteAt = nextTick,
-                Type = EventType.HotTick,
+                Type = ScheduledEventType.HotTick,
                 Target = effect
             });
 
@@ -154,12 +153,12 @@ public static class EffectFactory
 
         // apply message
         if (effectTemplate.ApplyMessage != null)
-            MessageSystem.Send(source, effectTemplate.ApplyMessage);
+            MessageBus.Publish(source, effectTemplate.ApplyMessage);
     }
 
-    private static bool HandleStacking(World world, EffectTemplate effectTemplate, Entity effect, Entity source)
+    private static bool HandleStacking(GameState gameState, EffectTemplate effectTemplate, Entity effect, Entity source)
     {
-        ref var effectInstance = ref world.Get<EffectInstance>(effect);
+        ref var effectInstance = ref gameState.World.Get<EffectInstance>(effect);
 
         if (source != effectInstance.Source)
         {
@@ -179,15 +178,15 @@ public static class EffectFactory
                 if (hasDuration)
                 {
                     // update Duration
-                    var durationValue = effectTemplate.DurationFunc?.Invoke(world, effectInstance.Source, effectInstance.Target) ?? 0;
-                    var expirationTick = TimeSystem.CurrentTick + durationValue;
-                    duration.LastRefreshTick = TimeSystem.CurrentTick;
+                    var durationValue = effectTemplate.DurationFunc?.Invoke(gameState.World, effectInstance.Source, effectInstance.Target) ?? 0;
+                    var expirationTick = gameState.CurrentTick + durationValue;
+                    duration.LastRefreshTick = gameState.CurrentTick;
                     duration.ExpirationTick = expirationTick;
                     // schedule a new expiration event (don't remove the old one, just add a new one with the new expiration tick - when the old one executes it will check the current expiration tick and do nothing if it's different)
-                    EventScheduler.Schedule(new TimedEvent
+                    Scheduler.Publish(new ScheduledEvent
                     {
                         ExecuteAt = expirationTick,
-                        Type = EventType.EffectExpired,
+                        Type = ScheduledEventType.EffectExpired,
                         Target = effect
                     });
 
@@ -200,15 +199,15 @@ public static class EffectFactory
                 if (hasDuration)
                 {
                     // update Duration
-                    var durationValue = effectTemplate.DurationFunc?.Invoke(world, effectInstance.Source, effectInstance.Target) ?? 0;
-                    var expirationTick = TimeSystem.CurrentTick + durationValue;
-                    duration.LastRefreshTick = TimeSystem.CurrentTick;
+                    var durationValue = effectTemplate.DurationFunc?.Invoke(gameState.World, effectInstance.Source, effectInstance.Target) ?? 0;
+                    var expirationTick = gameState.CurrentTick + durationValue;
+                    duration.LastRefreshTick = gameState.CurrentTick;
                     duration.ExpirationTick = expirationTick;
                     // schedule a new expiration event (don't remove the old one, just add a new one with the new expiration tick - when the old one executes it will check the current expiration tick and do nothing if it's different)
-                    EventScheduler.Schedule(new TimedEvent
+                    Scheduler.Publish(new ScheduledEvent
                     {
                         ExecuteAt = expirationTick,
-                        Type = EventType.EffectExpired,
+                        Type = ScheduledEventType.EffectExpired,
                         Target = effect
                     });
 

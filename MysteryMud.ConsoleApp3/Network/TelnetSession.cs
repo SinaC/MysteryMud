@@ -26,7 +26,6 @@ public sealed class TelnetSession : IDisposable
 
     internal TelnetState TelnetState;
     private int _ttypeRequests = 0;
-    private int _disconnected = 0;
     private bool _disposed;
 
     private readonly Action<int, ReadOnlySpan<char>> OnInputReceived;

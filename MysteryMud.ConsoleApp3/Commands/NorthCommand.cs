@@ -3,6 +3,8 @@ using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Rooms;
+using MysteryMud.ConsoleApp3.Core;
+using MysteryMud.ConsoleApp3.Core.Eventing;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Systems;
 
@@ -12,7 +14,7 @@ public class NorthCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.None;
 
-    public void Execute(World world, Entity actor, CommandContext ctx)
+    public void Execute(GameState gameState, Entity actor, CommandContext ctx)
     {
         // Get room
         ref var room = ref actor.Get<Location>().Room;
@@ -22,11 +24,11 @@ public class NorthCommand : ICommand
         var northExit = roomGraph.Exits.SingleOrDefault(e => e.Direction == Direction.North);
         if (northExit.Equals(default(Exit)) || northExit.TargetRoom == Entity.Null)
         {
-            MessageSystem.Send(actor, "Alas, you cannot go that way.");
+            MessageBus.Publish(actor, "Alas, you cannot go that way.");
             return;
         }
 
-        MessageSystem.Send(actor, $"You leaves north."); // TODO send message to current room: "{actor} leaves North."
+        MessageBus.Publish(actor, $"You leaves north."); // TODO send message to current room: "{actor} leaves North."
         MovementSystem.Move(actor, northExit.TargetRoom);
         DisplayRoomSystem.DisplayRoom(actor, northExit.TargetRoom);
         // TODO: send message to target room: "{actor} has arrived."

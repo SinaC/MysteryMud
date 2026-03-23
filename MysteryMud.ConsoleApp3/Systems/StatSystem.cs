@@ -2,18 +2,19 @@
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Effects;
+using MysteryMud.ConsoleApp3.Core;
 using MysteryMud.ConsoleApp3.Data.Enums;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 
 class StatSystem
 {
-    public static void Recalculate(World world)
+    public static void Process(GameState state)
     {
         var query = new QueryDescription()
                 .WithAll<BaseStats, EffectiveStats, DirtyStats>()
                 .WithNone<Dead>();
-        world.Query(query, (Entity character,
+        state.World.Query(query, (Entity character,
                      ref BaseStats baseStats,
                      ref EffectiveStats effectiveStats,
                      ref DirtyStats dirty) =>

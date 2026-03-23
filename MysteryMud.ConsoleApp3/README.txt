@@ -188,7 +188,7 @@ public class GetCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.TargetPair;
 
-    public void Execute(World world, Entity actor, CommandContext ctx)
+    public void Execute(GameState gameState, Entity actor, CommandContext ctx)
     {
         Entity source;
 
@@ -216,7 +216,7 @@ public class PutCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.TargetPair;
 
-    public void Execute(World world, Entity actor, CommandContext ctx)
+    public void Execute(GameState gameState, Entity actor, CommandContext ctx)
     {
         var inventory = world.Get<ContainerContents>(actor);
 
@@ -235,7 +235,7 @@ public class LookInCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.Target;
 
-    public void Execute(World world, Entity actor, CommandContext ctx)
+    public void Execute(GameState gameState, Entity actor, CommandContext ctx)
     {
         var container = FindContainer(world, actor, ctx.Primary);
 
@@ -351,7 +351,7 @@ public class GiveCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.TargetPair;
 
-    public void Execute(World world, Entity actor, CommandContext ctx)
+    public void Execute(GameState gameState, Entity actor, CommandContext ctx)
     {
         var inventory = world.Get<ContainerContents>(actor);
         var room = actor.Get<Location>().Room;
@@ -385,7 +385,7 @@ public class DropCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.Target;
 
-    public void Execute(World world, Entity actor, CommandContext ctx)
+    public void Execute(GameState gameState, Entity actor, CommandContext ctx)
     {
         var inventory = world.Get<ContainerContents>(actor);
         var room = actor.Get<Location>().Room;
@@ -409,7 +409,7 @@ public class GetCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.TargetPair;
 
-    public void Execute(World world, Entity actor, CommandContext ctx)
+    public void Execute(GameState gameState, Entity actor, CommandContext ctx)
     {
         // Determine source container
         Entity source;
@@ -460,7 +460,7 @@ public class PutCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.TargetPair;
 
-    public void Execute(World world, Entity actor, CommandContext ctx)
+    public void Execute(GameState gameState, Entity actor, CommandContext ctx)
     {
         var inventory = world.Get<ContainerContents>(actor);
 
@@ -479,7 +479,7 @@ public class LookInCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.Target;
 
-    public void Execute(World world, Entity actor, CommandContext ctx)
+    public void Execute(GameState gameState, Entity actor, CommandContext ctx)
     {
         var container = FindContainer(world, actor, ctx.Primary);
 

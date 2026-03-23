@@ -1,7 +1,7 @@
 ﻿using Arch.Core;
 using MysteryMud.ConsoleApp3.Data.Enums;
 
-namespace MysteryMud.ConsoleApp3.Data;
+namespace MysteryMud.ConsoleApp3.Data.Definitions;
 
 public struct DotDefinition
 {

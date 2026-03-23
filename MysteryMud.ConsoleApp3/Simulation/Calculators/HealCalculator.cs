@@ -1,6 +1,7 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Components.Characters;
+using MysteryMud.ConsoleApp3.Core.Eventing;
 using MysteryMud.ConsoleApp3.Extensions;
 using MysteryMud.ConsoleApp3.Systems;
 
@@ -27,8 +28,8 @@ public static class HealCalculator
 
         Logger.Logger.Heal.Apply(source, target, healAmount, ref health);
 
-        MessageSystem.Send(source, $"%GYou heal %g{target.DisplayName} for %g{healAmount}%g health.%x");
-        MessageSystem.Send(target, $"%G{source.DisplayName} heals you for %g{healAmount}%g health.%x");
+        MessageBus.Publish(source, $"%GYou heal %g{target.DisplayName} for %g{healAmount}%g health.%x");
+        MessageBus.Publish(target, $"%G{source.DisplayName} heals you for %g{healAmount}%g health.%x");
 
         AggroCalculator.AddAggro(target, source, healAmount / 2); // healing generates some aggro, but less than damage
 

@@ -5,6 +5,8 @@ using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Items;
 using MysteryMud.ConsoleApp3.Components.Rooms;
+using MysteryMud.ConsoleApp3.Core;
+using MysteryMud.ConsoleApp3.Core.Eventing;
 using MysteryMud.ConsoleApp3.Extensions;
 using MysteryMud.ConsoleApp3.Systems;
 
@@ -14,7 +16,7 @@ public class GetCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.TargetPair;
 
-    public void Execute(World world, Entity actor, CommandContext ctx)
+    public void Execute(GameState gameState, Entity actor, CommandContext ctx)
     {
         if (ctx.Secondary.Name.IsEmpty)
         {
@@ -24,7 +26,7 @@ public class GetCommand : ICommand
             foreach (var item in TargetingSystem.SelectTargets(actor, ctx.Primary, roomContents.Items))
             {
                 ItemMovementSystem.GetItemFromRoom(actor, room, item);
-                MessageSystem.Send(actor, $"You get {item.DisplayName}.");
+                MessageBus.Publish(actor, $"You get {item.DisplayName}.");
             }
         }
         else
@@ -32,7 +34,7 @@ public class GetCommand : ICommand
             var container = FindContainer(actor, ctx.Secondary);
             if (container == default)
             {
-                MessageSystem.Send(actor, "You don't see that here.");
+                MessageBus.Publish(actor, "You don't see that here.");
                 return;
             }
 
@@ -40,7 +42,7 @@ public class GetCommand : ICommand
             foreach (var item in TargetingSystem.SelectTargets(actor, ctx.Primary, containerContents.Items))
             {
                 ItemMovementSystem.GetItemFromContainer(actor, container, item);
-                MessageSystem.Send(actor, $"You get {item.DisplayName} from {container.DisplayName}.");
+                MessageBus.Publish(actor, $"You get {item.DisplayName} from {container.DisplayName}.");
             }
         }
     }

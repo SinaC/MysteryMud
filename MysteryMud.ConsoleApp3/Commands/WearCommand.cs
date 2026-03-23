@@ -3,6 +3,8 @@ using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Items;
+using MysteryMud.ConsoleApp3.Core;
+using MysteryMud.ConsoleApp3.Core.Eventing;
 using MysteryMud.ConsoleApp3.Extensions;
 using MysteryMud.ConsoleApp3.Systems;
 
@@ -12,7 +14,7 @@ public class WearCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.Target;
 
-    public void Execute(World world, Entity actor, CommandContext ctx)
+    public void Execute(GameState gameState, Entity actor, CommandContext ctx)
     {
         ref var inventory = ref actor.Get<Inventory>();
 
@@ -20,17 +22,17 @@ public class WearCommand : ICommand
         {
             if (!item.Has<Equipable>())
             {
-                MessageSystem.Send(actor, "You can't wear that.");
+                MessageBus.Publish(actor, "You can't wear that.");
                 return;
             }
 
             if (!EquipmentSystem.Equip(actor, item))
             {
-                MessageSystem.Send(actor, "Slot already used.");
+                MessageBus.Publish(actor, "Slot already used.");
                 return;
             }
 
-            MessageSystem.Send(actor, $"You wear {item.DisplayName}.");
+            MessageBus.Publish(actor, $"You wear {item.DisplayName}.");
             return;
         }
     }

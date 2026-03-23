@@ -3,6 +3,8 @@ using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Rooms;
+using MysteryMud.ConsoleApp3.Core;
+using MysteryMud.ConsoleApp3.Core.Eventing;
 using MysteryMud.ConsoleApp3.Extensions;
 using MysteryMud.ConsoleApp3.Systems;
 
@@ -12,11 +14,11 @@ public class SayCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.FullText;
 
-    public void Execute(World world, Entity actor, CommandContext ctx)
+    public void Execute(GameState gameState, Entity actor, CommandContext ctx)
     {
         if (ctx.Text.IsEmpty)
         {
-            MessageSystem.Send(actor, "Say what?");
+            MessageBus.Publish(actor, "Say what?");
             return;
         }
 
@@ -27,12 +29,12 @@ public class SayCommand : ICommand
         var roomContents = room.Get<RoomContents>();
         var roomCharacters = roomContents.Characters;
 
-        MessageSystem.Send(actor, $"You say: {ctx.Text}");
+        MessageBus.Publish(actor, $"You say: {ctx.Text}");
         foreach (var target in roomCharacters)
         {
             if (!target.Equals(actor))
             {
-                MessageSystem.Send(actor, $"{actor.DisplayName} says: {ctx.Text}");
+                MessageBus.Publish(actor, $"{actor.DisplayName} says: {ctx.Text}");
             }
         }
     }

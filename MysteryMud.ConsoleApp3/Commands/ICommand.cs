@@ -1,6 +1,6 @@
 ﻿using Arch.Core;
 using MysteryMud.ConsoleApp3.Commands.Parser;
-using MysteryMud.ConsoleApp3.Data.Enums;
+using MysteryMud.ConsoleApp3.Core;
 
 namespace MysteryMud.ConsoleApp3.Commands;
 
@@ -17,5 +17,5 @@ interface ICommand
     //int Priority { get; }
     //bool AllowAbbreviation { get; }
 
-    void Execute(World world, Entity actor, CommandContext ctx);
+    void Execute(GameState gameState, Entity actor, CommandContext ctx);
 }

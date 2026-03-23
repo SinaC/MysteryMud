@@ -3,6 +3,8 @@ using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Rooms;
+using MysteryMud.ConsoleApp3.Core;
+using MysteryMud.ConsoleApp3.Core.Eventing;
 using MysteryMud.ConsoleApp3.Extensions;
 using MysteryMud.ConsoleApp3.Systems;
 
@@ -12,21 +14,21 @@ public class TellCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.TargetAndText;
 
-    public void Execute(World world, Entity actor, CommandContext ctx)
+    public void Execute(GameState gameState, Entity actor, CommandContext ctx)
     {
         var message = ctx.Text;
 
         if (ctx.Primary.Name.IsEmpty)
         {
-            MessageSystem.Send(actor, "Tell whom?");
+            MessageBus.Publish(actor, "Tell whom?");
             return;
         }
 
         var roomContents = actor.Get<Location>().Room.Get<RoomContents>().Characters;
         foreach (var target in TargetingSystem.SelectTargets(actor, ctx.Primary, roomContents))
         {  
-            MessageSystem.Send(actor, $"You tell {target.DisplayName}: {message}");
-            MessageSystem.Send(target, $"{actor.DisplayName} tells you: {message}");
+            MessageBus.Publish(actor, $"You tell {target.DisplayName}: {message}");
+            MessageBus.Publish(target, $"{actor.DisplayName} tells you: {message}");
         }
     }
 }

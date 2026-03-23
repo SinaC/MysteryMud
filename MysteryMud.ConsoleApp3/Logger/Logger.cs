@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Rooms;
-using MysteryMud.ConsoleApp3.Data;
+using MysteryMud.ConsoleApp3.Data.Definitions;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Extensions;
 using Serilog;
@@ -42,9 +42,9 @@ public static class Logger
         Instance.LogInformation(SystemEvent, "Log initialized");
     }
 
-    public static void System(string? message, params object?[] args)
+    public static void System(LogLevel logLevel, string? message, params object?[] args)
     {
-        if (Instance.IsEnabled(LogLevel.Information))
+        if (Instance.IsEnabled(logLevel))
             Instance.LogInformation(SystemEvent, message, args);
     }
 

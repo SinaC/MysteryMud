@@ -6,6 +6,7 @@ using MysteryMud.ConsoleApp3.Components.Characters.Mobiles;
 using MysteryMud.ConsoleApp3.Components.Characters.Players;
 using MysteryMud.ConsoleApp3.Components.Items;
 using MysteryMud.ConsoleApp3.Components.Rooms;
+using MysteryMud.ConsoleApp3.Core;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 
@@ -16,12 +17,12 @@ public static class CleanupSystem
     // check Location for items
     // check ContainedIn for items
     // check Equipped for items
-    public static void Cleanup(World world)
+    public static void Process(GameState state)
     {
         // destroy disconnected players
         var disconnectedPlayersQuery = new QueryDescription()
                 .WithAll<DisconnectedTag>();
-        world.Query(disconnectedPlayersQuery, (Entity player, ref DisconnectedTag disconnectedTag) =>
+        state.World.Query(disconnectedPlayersQuery, (Entity player, ref DisconnectedTag disconnectedTag) =>
         {
             Logger.Logger.Cleanup.CleanupPlayer(player);
 
@@ -36,13 +37,13 @@ public static class CleanupSystem
             // TODO: if the character is a pet, remove it from its owner's pet list
             // TODO: if the character is a follower, remove it from its leader's follower list
 
-            world.Destroy(player);
+            state.World.Destroy(player);
         });
 
         // destroy NPCs
         var destroyCharactersQuery = new QueryDescription()
                 .WithAll<Dead, Location, NpcTag>();
-        world.Query(destroyCharactersQuery, (Entity character, ref Dead deadTag, ref Location location, ref NpcTag npcTag) =>
+        state.World.Query(destroyCharactersQuery, (Entity character, ref Dead deadTag, ref Location location, ref NpcTag npcTag) =>
         {
             Logger.Logger.Cleanup.CleanupCharacterFromRoom(character, location.Room);
 
@@ -53,7 +54,7 @@ public static class CleanupSystem
             // TODO: if the character is a pet, remove it from its owner's pet list
             // TODO: if the character is a follower, remove it from its leader's follower list
 
-            world.Destroy(character);
+            state.World.Destroy(character);
         });
 
         // destroy items
@@ -61,7 +62,7 @@ public static class CleanupSystem
                 .WithAll<DestroyedTag>()
                 .WithAny<Location, ContainedIn, Equipped>();
         //world.Query(destroyItemsQuery, (Entity item, ref DestroyedTag destroyedTag, ref Location location, ref ContainedIn containedIn, ref Equipped equipped) => // doesn't work
-        world.Query(destroyItemsQuery, (Entity item, ref DestroyedTag destroyedTag) =>
+        state.World.Query(destroyItemsQuery, (Entity item, ref DestroyedTag destroyedTag) =>
         {
             // check if the item is on the ground
             ref var location = ref item.TryGetRef<Location>(out var hasLocation);
@@ -107,7 +108,7 @@ public static class CleanupSystem
                 }
             }
             // finally, destroy the item
-            world.Destroy(item);
+            state.World.Destroy(item);
         });
     }
 

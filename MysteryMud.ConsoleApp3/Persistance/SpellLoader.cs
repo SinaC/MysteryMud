@@ -1,4 +1,5 @@
 ﻿using MysteryMud.ConsoleApp3.Data;
+using MysteryMud.ConsoleApp3.Data.Definitions;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Simulation.Compilers;
 

@@ -1,6 +1,4 @@
-﻿using MysteryMud.ConsoleApp3.Data.Enums;
-
-namespace MysteryMud.ConsoleApp3.Commands.Registry;
+﻿namespace MysteryMud.ConsoleApp3.Commands.Registry;
 
 class CommandRegistry
 {

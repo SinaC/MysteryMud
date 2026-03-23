@@ -4,6 +4,8 @@ using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Items;
+using MysteryMud.ConsoleApp3.Core;
+using MysteryMud.ConsoleApp3.Core.Eventing;
 using MysteryMud.ConsoleApp3.Extensions;
 using MysteryMud.ConsoleApp3.Systems;
 
@@ -13,7 +15,7 @@ public class DropCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.Target;
 
-    public void Execute(World world, Entity actor, CommandContext ctx)
+    public void Execute(GameState gameState, Entity actor, CommandContext ctx)
     {
         ref var inventory = ref actor.Get<Inventory>();
         ref var room = ref actor.Get<Location>().Room;
@@ -28,7 +30,7 @@ public class DropCommand : ICommand
             }
 
             ItemMovementSystem.DropItem(actor, room, item);
-            MessageSystem.Send(actor, $"You drop {item.DisplayName}.");
+            MessageBus.Publish(actor, $"You drop {item.DisplayName}.");
         }
     }
 }

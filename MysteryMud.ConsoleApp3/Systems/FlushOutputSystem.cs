@@ -1,15 +1,16 @@
 ﻿using Arch.Core;
 using MysteryMud.ConsoleApp3.Components.Characters.Players;
+using MysteryMud.ConsoleApp3.Core;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 
 static class FlushOutputSystem
 {
-    public static void FlushOutputs(World world)
+    public static void Process(GameState state)
     {
         var query = new QueryDescription()
                 .WithAll<Connection>();
-        world.Query(query, (Entity player,
+        state.World.Query(query, (Entity player,
                      ref Connection conn) =>
         {
             Services.Services.Messages.Flush(player);

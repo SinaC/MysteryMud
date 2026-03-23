@@ -2,10 +2,10 @@
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Characters.Players;
+using MysteryMud.ConsoleApp3.Core.Eventing;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Extensions;
 using MysteryMud.ConsoleApp3.Factories;
-using MysteryMud.ConsoleApp3.Systems;
 
 namespace MysteryMud.ConsoleApp3.Simulation.Calculators;
 
@@ -32,15 +32,15 @@ public static class DamageCalculator
 
         Logger.Logger.Damage.Apply(source, target, damageAmount, ref health);
 
-        MessageSystem.Send(source, $"%GYou deal %r{damageAmount}%g damage to {target.DisplayName}.%x");
-        MessageSystem.Send(target, $"{source.DisplayName} deals {damageAmount} damage to you.");
+        MessageBus.Publish(source, $"%GYou deal %r{damageAmount}%g damage to {target.DisplayName}.%x");
+        MessageBus.Publish(target, $"{source.DisplayName} deals {damageAmount} damage to you.");
 
         if (health.Current <= 0)
         {
             Logger.Logger.Damage.TargetKilled(source, target);
 
-            MessageSystem.Send(source, $"%R{target.DisplayName} is dead.%x");
-            MessageSystem.Send(source, $"You are dead.");
+            MessageBus.Publish(source, $"%R{target.DisplayName} is dead.%x");
+            MessageBus.Publish(target, $"You are dead.");
 
             AddTags(target, source);
             return ApplyDamageResult.Killed;

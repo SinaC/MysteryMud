@@ -9,6 +9,7 @@ using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Items;
 using MysteryMud.ConsoleApp3.Components.Rooms;
+using MysteryMud.ConsoleApp3.Core;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Factories;
 using MysteryMud.ConsoleApp3.Logger;
@@ -106,6 +107,7 @@ CommandRegistry.Register("cast", new CastCommand());
 
 // create world
 var world = World.Create();
+var gameState = new GameState { World = world, CurrentTick = 0 };
 
 //  temple
 //    |
@@ -152,67 +154,50 @@ int result = func(null!, troll, player); // result is random between 6 and 55
 Console.WriteLine(result);
 
 //
-CommandDispatcher.Dispatch(world, player, "look".AsSpan());
-CommandDispatcher.Dispatch(world, player, "get all.sword".AsSpan());
-CommandDispatcher.Dispatch(world, player, "look".AsSpan());
-CommandDispatcher.Dispatch(world, player, "inventory".AsSpan());
-CommandDispatcher.Dispatch(world, goblin, "say you stole my sword".AsSpan());
-CommandDispatcher.Dispatch(world, player, "tell goblin you're a liar".AsSpan());
-//CommandDispatcher.Dispatcworld, h(sword, "inventory".AsSpan()); will crash because sword is not a character and doesn't have inventory component
-CommandDispatcher.Dispatch(world, player, "look chest".AsSpan());
-CommandDispatcher.Dispatch(world, player, "get all from chest".AsSpan());
-CommandDispatcher.Dispatch(world, player, "inventory".AsSpan());
-CommandDispatcher.Dispatch(world, player, "wear gem".AsSpan());
-CommandDispatcher.Dispatch(world, player, "wear sword".AsSpan());
-CommandDispatcher.Dispatch(world, player, "inventory".AsSpan());
-CommandDispatcher.Dispatch(world, player, "equipment".AsSpan());
-CommandDispatcher.Dispatch(world, player, "drop toto".AsSpan());
-CommandDispatcher.Dispatch(world, player, "drop gem".AsSpan());
-CommandDispatcher.Dispatch(world, player, "give sword goblin".AsSpan());
-CommandDispatcher.Dispatch(world, goblin, "wear sword".AsSpan());
-CommandDispatcher.Dispatch(world, goblin, "remove sword".AsSpan());
-CommandDispatcher.Dispatch(world, goblin, "wear sword".AsSpan());
-CommandDispatcher.Dispatch(world, player, "look goblin".AsSpan());
-CommandDispatcher.Dispatch(world, player, "inventory".AsSpan());
-CommandDispatcher.Dispatch(world, player, "get gem".AsSpan());
-CommandDispatcher.Dispatch(world, player, "put gem chest".AsSpan());
-CommandDispatcher.Dispatch(world, player, "look chest".AsSpan());
-CommandDispatcher.Dispatch(world, player, "look".AsSpan());
-CommandDispatcher.Dispatch(world, temple, "look".AsSpan());
-CommandDispatcher.Dispatch(world, chest, "look".AsSpan());
-CommandDispatcher.Dispatch(world, gem, "look".AsSpan());
-CommandDispatcher.Dispatch(world, goblin, "get trash".AsSpan());
+CommandDispatcher.Dispatch(gameState, player, "look".AsSpan());
+CommandDispatcher.Dispatch(gameState, player, "get all.sword".AsSpan());
+CommandDispatcher.Dispatch(gameState, player, "look".AsSpan());
+CommandDispatcher.Dispatch(gameState, player, "inventory".AsSpan());
+CommandDispatcher.Dispatch(gameState, goblin, "say you stole my sword".AsSpan());
+CommandDispatcher.Dispatch(gameState, player, "tell goblin you're a liar".AsSpan());
+//CommandDispatcher.DispatcgameState, h(sword, "inventory".AsSpan()); will crash because sword is not a character and doesn't have inventory component
+CommandDispatcher.Dispatch(gameState, player, "look chest".AsSpan());
+CommandDispatcher.Dispatch(gameState, player, "get all from chest".AsSpan());
+CommandDispatcher.Dispatch(gameState, player, "inventory".AsSpan());
+CommandDispatcher.Dispatch(gameState, player, "wear gem".AsSpan());
+CommandDispatcher.Dispatch(gameState, player, "wear sword".AsSpan());
+CommandDispatcher.Dispatch(gameState, player, "inventory".AsSpan());
+CommandDispatcher.Dispatch(gameState, player, "equipment".AsSpan());
+CommandDispatcher.Dispatch(gameState, player, "drop toto".AsSpan());
+CommandDispatcher.Dispatch(gameState, player, "drop gem".AsSpan());
+CommandDispatcher.Dispatch(gameState, player, "give sword goblin".AsSpan());
+CommandDispatcher.Dispatch(gameState, goblin, "wear sword".AsSpan());
+CommandDispatcher.Dispatch(gameState, goblin, "remove sword".AsSpan());
+CommandDispatcher.Dispatch(gameState, goblin, "wear sword".AsSpan());
+CommandDispatcher.Dispatch(gameState, player, "look goblin".AsSpan());
+CommandDispatcher.Dispatch(gameState, player, "inventory".AsSpan());
+CommandDispatcher.Dispatch(gameState, player, "get gem".AsSpan());
+CommandDispatcher.Dispatch(gameState, player, "put gem chest".AsSpan());
+CommandDispatcher.Dispatch(gameState, player, "look chest".AsSpan());
+CommandDispatcher.Dispatch(gameState, player, "look".AsSpan());
+CommandDispatcher.Dispatch(gameState, temple, "look".AsSpan());
+CommandDispatcher.Dispatch(gameState, chest, "look".AsSpan());
+CommandDispatcher.Dispatch(gameState, gem, "look".AsSpan());
+CommandDispatcher.Dispatch(gameState, goblin, "get trash".AsSpan());
 
 // testing combat
 //CommandDispatcher.Dispatch(player, "kill goblin".AsSpan());
 
 // testing buffs and dots
-CommandDispatcher.Dispatch(world, goblin, "test troll poison".AsSpan());
-//CommandDispatcher.Dispatch(world, player, "test troll poison".AsSpan()); // will apply a second stack of poison because StackingRule is Stack
-//CommandDispatcher.Dispatch(world, player, "test troll poison".AsSpan()); // will apply a second stack of poison because StackingRule is Stack
-//CommandDispatcher.Dispatch(world, player, "test troll bless".AsSpan()); // will not be applied because StackingRule is None
-//CommandDispatcher.Dispatch(world, player, "test troll bless".AsSpan());
+CommandDispatcher.Dispatch(gameState, goblin, "test troll poison".AsSpan());
+//CommandDispatcher.Dispatch(gameState, player, "test troll poison".AsSpan()); // will apply a second stack of poison because StackingRule is Stack
+//CommandDispatcher.Dispatch(gameState, player, "test troll poison".AsSpan()); // will apply a second stack of poison because StackingRule is Stack
+//CommandDispatcher.Dispatch(gameState, player, "test troll bless".AsSpan()); // will not be applied because StackingRule is None
+//CommandDispatcher.Dispatch(gameState, player, "test troll bless".AsSpan());
 //
-//CommandDispatcher.Dispatch(world, goblin, "test troll poison".AsSpan());
-//CommandDispatcher.Dispatch(world, player, "test troll poison".AsSpan());
-//CommandDispatcher.Dispatch(world, goblin, "test troll poison".AsSpan());
-
-//// tick 1
-//GameLoop.Tick(world);
-//// tick 2
-//GameLoop.Tick(world);
-//// tick 3
-//GameLoop.Tick(world);
-//// tick 4
-//GameLoop.Tick(world);
-//// tick 5
-//GameLoop.Tick(world);
-//// tick 6
-//GameLoop.Tick(world);
-//// tick 7
-//GameLoop.Tick(world);
-//Console.WriteLine("Press any key to exit...");
-//Console.ReadLine();
+//CommandDispatcher.Dispatch(gameState, goblin, "test troll poison".AsSpan());
+//CommandDispatcher.Dispatch(gameState, player, "test troll poison".AsSpan());
+//CommandDispatcher.Dispatch(gameState, goblin, "test troll poison".AsSpan());
 
 var gameServer = new GameServer(world);
 gameServer.Start();
