@@ -11,7 +11,7 @@ namespace MysteryMud.ConsoleApp3.Factories;
 
 public static class EffectFactory
 {
-    public static void ApplyEffect(GameState gameState, EffectTemplate effectTemplate, Entity source, Entity target)
+    public static void ApplyEffect(SystemContext systemContext, GameState gameState, EffectTemplate effectTemplate, Entity source, Entity target)
     {
         ref var targetEffects = ref target.Get<CharacterEffects>();
 
@@ -19,7 +19,7 @@ public static class EffectFactory
         int tagIndex = (int)effectTemplate.Tag;
         if (effectTemplate.Tag != EffectTagId.None && targetEffects.EffectsByTag[tagIndex] is Entity existing)
         {
-            var handled = HandleStacking(gameState, effectTemplate, existing, source);
+            var handled = HandleStacking(systemContext, gameState, effectTemplate, existing, source);
             if (handled)
                 return;
             // not handled: apply new effect
@@ -64,15 +64,10 @@ public static class EffectFactory
                 StartTick = gameState.CurrentTick,
                 ExpirationTick = expirationTick
             });
-            // queue expiration event
-            Scheduler.Publish(new ScheduledEvent
-            {
-                ExecuteAt = expirationTick,
-                Type = ScheduledEventType.EffectExpired,
-                Target = effect
-            });
 
+            // queue expiration event
             Logger.Logger.Factory.AddDurationToEffect(duration.Value, expirationTick);
+            systemContext.Scheduler.Publish(effect, ScheduledEventType.EffectExpired, expirationTick);
         }
 
         // stat modifiers ?
@@ -117,15 +112,10 @@ public static class EffectFactory
                 TickRate = effectTemplate.Dot.Value.TickRate,
                 NextTick = nextTick
             });
-            // queue first tick event
-            Scheduler.Publish(new ScheduledEvent
-            {
-                ExecuteAt = nextTick,
-                Type = ScheduledEventType.DotTick,
-                Target = effect
-            });
 
+            // queue first tick event
             Logger.Logger.Factory.AddDotToEffect(damage, effectTemplate.Dot.Value.DamageType, effectTemplate.Dot.Value.TickRate, nextTick);
+            systemContext.Scheduler.Publish(effect, ScheduledEventType.DotTick, nextTick);
         }
 
         // hot ?
@@ -141,22 +131,16 @@ public static class EffectFactory
                 NextTick = nextTick
             });
             // queue first tick event
-            Scheduler.Publish(new ScheduledEvent
-            {
-                ExecuteAt = nextTick,
-                Type = ScheduledEventType.HotTick,
-                Target = effect
-            });
-
             Logger.Logger.Factory.AddHotToEffect(heal, effectTemplate.Hot.Value.TickRate, nextTick);
+            systemContext.Scheduler.Publish(effect, ScheduledEventType.HotTick, nextTick);
         }
 
         // apply message
         if (effectTemplate.ApplyMessage != null)
-            MessageBus.Publish(source, effectTemplate.ApplyMessage);
+            systemContext.MessageBus.Publish(source, effectTemplate.ApplyMessage);
     }
 
-    private static bool HandleStacking(GameState gameState, EffectTemplate effectTemplate, Entity effect, Entity source)
+    private static bool HandleStacking(SystemContext systemContext, GameState gameState, EffectTemplate effectTemplate, Entity effect, Entity source)
     {
         ref var effectInstance = ref gameState.World.Get<EffectInstance>(effect);
 
@@ -182,15 +166,10 @@ public static class EffectFactory
                     var expirationTick = gameState.CurrentTick + durationValue;
                     duration.LastRefreshTick = gameState.CurrentTick;
                     duration.ExpirationTick = expirationTick;
-                    // schedule a new expiration event (don't remove the old one, just add a new one with the new expiration tick - when the old one executes it will check the current expiration tick and do nothing if it's different)
-                    Scheduler.Publish(new ScheduledEvent
-                    {
-                        ExecuteAt = expirationTick,
-                        Type = ScheduledEventType.EffectExpired,
-                        Target = effect
-                    });
 
+                    // schedule a new expiration event (don't remove the old one, just add a new one with the new expiration tick - when the old one executes it will check the current expiration tick and do nothing if it's different)
                     Logger.Logger.Factory.RefreshEffect(source, effectInstance.Target, effectTemplate, durationValue, expirationTick);
+                    systemContext.Scheduler.Publish(effect, ScheduledEventType.EffectExpired, expirationTick);
                 }
                 return true; // handled
             case StackingRule.Stack:
@@ -203,15 +182,10 @@ public static class EffectFactory
                     var expirationTick = gameState.CurrentTick + durationValue;
                     duration.LastRefreshTick = gameState.CurrentTick;
                     duration.ExpirationTick = expirationTick;
-                    // schedule a new expiration event (don't remove the old one, just add a new one with the new expiration tick - when the old one executes it will check the current expiration tick and do nothing if it's different)
-                    Scheduler.Publish(new ScheduledEvent
-                    {
-                        ExecuteAt = expirationTick,
-                        Type = ScheduledEventType.EffectExpired,
-                        Target = effect
-                    });
 
+                    // schedule a new expiration event (don't remove the old one, just add a new one with the new expiration tick - when the old one executes it will check the current expiration tick and do nothing if it's different)
                     Logger.Logger.Factory.StackEffect(source, effectInstance.Target, effectTemplate, durationValue, expirationTick, effectInstance.StackCount);
+                    systemContext.Scheduler.Publish(effect, ScheduledEventType.EffectExpired, expirationTick);
                 }
                 return true; // handled
         }

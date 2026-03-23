@@ -5,11 +5,11 @@ using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Characters.Players;
 using MysteryMud.ConsoleApp3.Components.Rooms;
-using MysteryMud.ConsoleApp3.Core.Eventing;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Factories;
-using MysteryMud.ConsoleApp3.Network;
-using MysteryMud.ConsoleApp3.Services;
+using MysteryMud.ConsoleApp3.Infrastructure;
+using MysteryMud.ConsoleApp3.Infrastructure.Network;
+using MysteryMud.ConsoleApp3.Infrastructure.Services;
 
 namespace MysteryMud.ConsoleApp3;
 
@@ -18,7 +18,10 @@ public class GameServer
     private readonly World _world;
     private readonly ConnectionService _connections;
     private readonly TelnetServer _telnet;
-    private readonly IMessageService _messageService;
+    private readonly MessageService _messageService;
+    private readonly CommandBus _commandBus;
+    private readonly MessageBus _messageBus;
+    private readonly Scheduler _scheduler;
     private readonly GameLoop _gameLoop;
 
     public GameServer()
@@ -38,9 +41,12 @@ public class GameServer
         );
 
         _messageService = new MessageService(_telnet);
-        Services.Services.Messages = _messageService; // static service locator for now, can refactor to proper dependency injection later
 
-        _gameLoop = new GameLoop(_world);
+        _commandBus = new CommandBus();
+        _messageBus = new MessageBus(_messageService);
+        _scheduler = new Scheduler();
+
+        _gameLoop = new GameLoop(_messageService, _commandBus, _messageBus, _scheduler, _world);
     }
 
     public void Start()
@@ -58,7 +64,7 @@ public class GameServer
         if (_connections.TryGetEntity(connectionId, out var entity))
         {
             // TODO: detect if the command is a login command and handle that separately, for now we just enqueue everything to the command system and it can handle it from there
-            CommandBus.Publish(entity, input);
+            _commandBus.Publish(entity, input);
         }
     }
 
@@ -141,10 +147,10 @@ public class GameServer
             Effects = [],
             EffectsByTag = new Entity?[32]
         });
-        player.Add(new Location { Room = WorldFactory.StartingRoomEntity });
+        player.Add(new Location { Room = RoomFactory.StartingRoomEntity });
         player.Add(new PositionComponent { Position = Position.Standing });
         player.Add<DirtyStats>(); // ensure stats are recomputed
-        WorldFactory.StartingRoomEntity.Get<RoomContents>().Characters.Add(player); // move to starting room
+        RoomFactory.StartingRoomEntity.Get<RoomContents>().Characters.Add(player); // move to starting room
 
         _telnet.Write(connectionId, "Welcome to the game!\r\n> ");
         _telnet.Flush(connectionId);

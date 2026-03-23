@@ -2,17 +2,26 @@
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Core;
 using MysteryMud.ConsoleApp3.Core.Eventing;
-using MysteryMud.ConsoleApp3.Extensions;
+using MysteryMud.ConsoleApp3.Components.Extensions;
+using MysteryMud.ConsoleApp3.Infrastructure.Services;
 using MysteryMud.ConsoleApp3.Systems;
 
 namespace MysteryMud.ConsoleApp3;
 
 internal class GameLoop
 {
+    private readonly IMessageService _messageService;
+    private readonly ICommandBus _commandBus;
+    private readonly IMessageBus _messageBus;
+    private readonly IScheduler _scheduler;
     private readonly World _world;
 
-    public GameLoop(World world)
+    public GameLoop(IMessageService messageService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, World world)
     {
+        _messageService = messageService;
+        _commandBus = commandBus;
+        _messageBus = messageBus;
+        _scheduler = scheduler;
         _world = world;
     }
 
@@ -38,23 +47,31 @@ internal class GameLoop
             CurrentTick = TimeSystem.CurrentTick
         };
 
+        var systemContext = new SystemContext
+        {
+            CommandBus = _commandBus,
+            MessageBus = _messageBus,
+            Scheduler = _scheduler
+        };
+
+
         // process player commands
-        CommandBus.Process(state);
+        _commandBus.Process(systemContext, state);
 
         // process scheduled events
-        Scheduler.Process(state);
+        _scheduler.Process(systemContext, state);
         // handle state transitions for effects
         //StateMachineSystem.Update(world); TODO: implement state machine system and handle with scheduled events
 
         // AiSystem.Process(world);
         // handle combat rounds
-        CombatSystem.Process(state);
+        CombatSystem.Process(systemContext, state);
 
         // handle deaths and related consequences
-        DeathSystem.Process(state);
+        DeathSystem.Process(systemContext, state);
 
         // handle player deaths and respawns
-        RespawnSystem.Process(state);
+        RespawnSystem.Process(systemContext, state);
 
         // recalculate stats for entities
         StatSystem.Process(state);
@@ -63,10 +80,10 @@ internal class GameLoop
         CleanupSystem.Process(state);
 
         // process messages to be sent to players
-        MessageBus.Process(state);
+        _messageBus.Process(systemContext, state);
 
         // send output to players
-        FlushOutputSystem.Process(state);
+        FlushOutputSystem.Process(_messageService, state);
     }
 
     private void CheckConsoleInput()

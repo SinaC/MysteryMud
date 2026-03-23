@@ -9,7 +9,7 @@ namespace MysteryMud.ConsoleApp3.Systems;
 
 static class DotSystem
 {
-    public static void HandleTick(GameState state, Entity effect)
+    public static void HandleTick(SystemContext systemContext, GameState state, Entity effect)
     {
         if (!effect.IsAlive())
             return;
@@ -34,7 +34,7 @@ static class DotSystem
         // perform damage
         var damage = dot.Damage * effectInstance.StackCount;
         Logger.Logger.Dot.ApplyDamage(effect, effectInstance.Target, damage, dot.DamageType, dot.TickRate);
-        DamageSystem.ApplyDamage(effectInstance.Target, damage, dot.DamageType, effectInstance.Source);
+        DamageSystem.ApplyDamage(systemContext, effectInstance.Target, damage, dot.DamageType, effectInstance.Source);
 
         // killed ?
         if (effectInstance.Target.Has<Dead>())
@@ -48,11 +48,6 @@ static class DotSystem
 
         // queue next tick even if after expiration tick to handle effect refresh
         Logger.Logger.Dot.ScheduleNextTick(effect, effectInstance.Target, dot.NextTick);
-        Scheduler.Publish(new ScheduledEvent
-        {
-            ExecuteAt = dot.NextTick,
-            Target = effect,
-            Type = ScheduledEventType.DotTick
-        });
+        systemContext.Scheduler.Publish(effect, ScheduledEventType.DotTick, dot.NextTick);
     }
 }

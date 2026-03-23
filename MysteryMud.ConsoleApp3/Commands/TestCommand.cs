@@ -4,7 +4,6 @@ using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Core;
-using MysteryMud.ConsoleApp3.Core.Eventing;
 using MysteryMud.ConsoleApp3.Data.Definitions;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Factories;
@@ -16,18 +15,18 @@ public class TestCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.TargetAndText;
 
-    public void Execute(GameState gameState, Entity actor, CommandContext ctx)
+    public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {
         ref var roomContents = ref actor.Get<Location>().Room.Get<RoomContents>().Characters;
         var target = TargetingSystem.SelectSingleTarget(actor, ctx.Primary, roomContents);
 
         if (target == default)
         {
-            MessageBus.Publish(actor, "You don't see that here.");
+            systemContext.MessageBus.Publish(actor, "You don't see that here.");
             return;
         }
 
-        if (MemoryExtensions.Equals(ctx.Text, "poison", StringComparison.OrdinalIgnoreCase))
+        if (ctx.Text.Equals("poison".AsSpan(), StringComparison.OrdinalIgnoreCase))
         {
             var effectTemplate = new EffectTemplate
             {
@@ -61,9 +60,9 @@ public class TestCommand : ICommand
                 Hot = null // not hot
             };
 
-            EffectFactory.ApplyEffect(gameState, effectTemplate, actor, target);
+            EffectFactory.ApplyEffect(systemContext, gameState, effectTemplate, actor, target);
         }
-        else if (MemoryExtensions.Equals(ctx.Text, "bless", StringComparison.OrdinalIgnoreCase))
+        else if (ctx.Text.Equals("bless".AsSpan(), StringComparison.OrdinalIgnoreCase))
         {
             var effectTemplate = new EffectTemplate
             {
@@ -96,7 +95,7 @@ public class TestCommand : ICommand
                 },
             };
 
-            EffectFactory.ApplyEffect(gameState, effectTemplate, actor, target);
+            EffectFactory.ApplyEffect(systemContext, gameState, effectTemplate, actor, target);
         }
     }
 }

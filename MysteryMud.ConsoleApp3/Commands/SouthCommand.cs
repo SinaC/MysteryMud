@@ -4,7 +4,6 @@ using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Core;
-using MysteryMud.ConsoleApp3.Core.Eventing;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Systems;
 
@@ -14,7 +13,7 @@ public class SouthCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.None;
 
-    public void Execute(GameState gameState, Entity actor, CommandContext ctx)
+    public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {
         // Get room
         ref var room = ref actor.Get<Location>().Room;
@@ -24,13 +23,13 @@ public class SouthCommand : ICommand
         var southExit = roomGraph.Exits.SingleOrDefault(e => e.Direction == Direction.South);
         if (southExit.Equals(default(Exit)) || southExit.TargetRoom == Entity.Null)
         {
-            MessageBus.Publish(actor, "Alas, you cannot go that way.");
+            systemContext.MessageBus.Publish(actor, "Alas, you cannot go that way.");
             return;
         }
 
-        MessageBus.Publish(actor, $"You leaves south."); // TODO send message to current room: "{actor} leaves south."
+        systemContext.MessageBus.Publish(actor, $"You leaves south."); // TODO send message to current room: "{actor} leaves south."
         MovementSystem.Move(actor, southExit.TargetRoom);
-        DisplayRoomSystem.DisplayRoom(actor, southExit.TargetRoom);
+        DisplayRoomSystem.DisplayRoom(systemContext, actor, southExit.TargetRoom);
         // TODO: send message to target room: "{actor} has arrived."
     }
 }

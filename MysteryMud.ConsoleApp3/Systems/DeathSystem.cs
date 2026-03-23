@@ -6,28 +6,27 @@ using MysteryMud.ConsoleApp3.Components.Characters.Players;
 using MysteryMud.ConsoleApp3.Components.Items;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Core;
-using MysteryMud.ConsoleApp3.Core.Eventing;
-using MysteryMud.ConsoleApp3.Extensions;
+using MysteryMud.ConsoleApp3.Components.Extensions;
 using MysteryMud.ConsoleApp3.Factories;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 
 public static class DeathSystem
 {
-    public static void Process(GameState state)
+    public static void Process(SystemContext systemContext, GameState state)
     {
         var query = new QueryDescription()
           .WithAll<Dead>();
         state.World.Query(query, (Entity entity, ref Dead dead) =>
         {
-            HandleDeath(state.World, entity, dead.Killer); // TODO: pass killer
+            HandleDeath(systemContext, state.World, entity, dead.Killer); // TODO: pass killer
         });
     }
 
-    public static void HandleDeath(World world, Entity victim, Entity killer)
+    private static void HandleDeath(SystemContext systemContext, World world, Entity victim, Entity killer)
     {
         //TODO: log
-        CreateCorpse(world, victim, killer);
+        CreateCorpse(systemContext, world, victim, killer);
 
         AddTags(world, victim);
         RemoveFromRoomContents(world, victim);
@@ -40,7 +39,7 @@ public static class DeathSystem
         victim.Add<Dead>(); // mark as dead
         // player will respawn, NPCs will be cleaned up by CleanupSystem
         if (victim.Has<PlayerTag>())
-            victim.Add(new RespawnState { RespawnRoom = WorldFactory.RespawnRoomEntity });
+            victim.Add(new RespawnState { RespawnRoom = RoomFactory.RespawnRoomEntity });
     }
 
     private static void RemoveFromRoomContents(World world, Entity victim)
@@ -75,7 +74,7 @@ public static class DeathSystem
     }
 
     // TODO: create a corpse entity that can hold the items instead of dropping items on the floor
-    private static void CreateCorpse(World world, Entity victim, Entity killer)
+    private static void CreateCorpse(SystemContext systemContext, World world, Entity victim, Entity killer)
     {
         if (!victim.Has<Location, Inventory>())
             return; // can't create a corpse if we don't know where the victim is
@@ -94,7 +93,7 @@ public static class DeathSystem
 
             //ContainmentSystem.Move(world, item, victim.Get<Location>().Room);
             ItemMovementSystem.DropItem(victim, location.Room, item);
-            MessageBus.Publish(killer, $"{victim.DisplayName} drops {item.DisplayName}.");
+            systemContext.MessageBus.Publish(killer, $"{victim.DisplayName} drops {item.DisplayName}.");
         }
     }
 }

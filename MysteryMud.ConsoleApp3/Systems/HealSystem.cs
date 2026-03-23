@@ -1,15 +1,15 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Components.Characters;
-using MysteryMud.ConsoleApp3.Core.Eventing;
-using MysteryMud.ConsoleApp3.Extensions;
+using MysteryMud.ConsoleApp3.Core;
+using MysteryMud.ConsoleApp3.Components.Extensions;
 using MysteryMud.ConsoleApp3.Simulation.Calculators;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 
 public static class HealSystem
 {
-    public static ApplyHealResult ApplyHeal(Entity target, int healAmount, Entity source)
+    public static ApplyHealResult ApplyHeal(SystemContext systemContext, Entity target, int healAmount, Entity source)
     {
         if (target.Has<Dead>())
             return ApplyHealResult.Dead; // can't heal something that's already dead
@@ -28,8 +28,8 @@ public static class HealSystem
 
         Logger.Logger.Heal.Apply(source, target, healAmount, ref health);
 
-        MessageBus.Publish(source, $"%GYou heal %g{target.DisplayName} for %g{healAmount}%g health.%x");
-        MessageBus.Publish(target, $"%G{source.DisplayName} heals you for %g{healAmount}%g health.%x");
+        systemContext.MessageBus.Publish(source, $"%GYou heal %g{target.DisplayName} for %g{healAmount}%g health.%x");
+        systemContext.MessageBus.Publish(target, $"%G{source.DisplayName} heals you for %g{healAmount}%g health.%x");
 
         var aggro = AggroCalculator.CalculateHealAggro(target, source, healAmount);
         AggroSystem.AddAggro(target, source, aggro);

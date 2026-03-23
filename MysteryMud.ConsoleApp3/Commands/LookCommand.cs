@@ -6,8 +6,7 @@ using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Items;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Core;
-using MysteryMud.ConsoleApp3.Core.Eventing;
-using MysteryMud.ConsoleApp3.Extensions;
+using MysteryMud.ConsoleApp3.Components.Extensions;
 using MysteryMud.ConsoleApp3.Systems;
 
 namespace MysteryMud.ConsoleApp3.Commands;
@@ -24,12 +23,12 @@ public class LookCommand : ICommand
     //          - item in container: show container description and contents
     //   - one argument (only for character): prioritize character > item in room > item in inventory > item in equipped slots
     // TODO: handle self, all, indexed targets
-    public void Execute(GameState gameState, Entity actor, CommandContext ctx)
+    public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {
         // No argument: show room/container overview
         if (ctx.Primary.Kind == TargetKind.Single && ctx.Primary.Name.IsEmpty)
         {
-            LookAround(actor);
+            LookAround(systemContext, actor);
             return;
         }
 
@@ -49,7 +48,7 @@ public class LookCommand : ICommand
         {
             if (TargetingSystem.Matches(c, targetName))
             {
-                MessageBus.Publish(actor, $"Character: {c.DisplayName}");
+                systemContext.MessageBus.Publish(actor, $"Character: {c.DisplayName}");
                 return;
             }
         }
@@ -59,7 +58,7 @@ public class LookCommand : ICommand
         {
             if (TargetingSystem.Matches(item, targetName))
             {
-                MessageBus.Publish(actor, $"Item: {item.DisplayName}");
+                systemContext.MessageBus.Publish(actor, $"Item: {item.DisplayName}");
                 return;
             }
         }
@@ -72,7 +71,7 @@ public class LookCommand : ICommand
             {
                 if (TargetingSystem.Matches(item, targetName))
                 {
-                    MessageBus.Publish(actor, $"You are carrying: {item.DisplayName}");
+                    systemContext.MessageBus.Publish(actor, $"You are carrying: {item.DisplayName}");
                     return;
                 }
             }
@@ -80,15 +79,15 @@ public class LookCommand : ICommand
 
         // 4) Try items in equipped slots (optional)
         // For demo, we assume inventory = equipment too
-        MessageBus.Publish(actor, $"You see nothing matching '{ctx.Primary.Name}' here.");
+        systemContext.MessageBus.Publish(actor, $"You see nothing matching '{ctx.Primary.Name}' here.");
     }
 
-    private void LookAround(Entity actor)
+    private void LookAround(SystemContext systemContext, Entity actor)
     {
         ref var location = ref actor.TryGetRef<Location>(out var hasLocation);
         if (hasLocation)
         {
-            DisplayRoomSystem.DisplayRoom(actor, location.Room);
+            DisplayRoomSystem.DisplayRoom(systemContext, actor, location.Room);
             return;
         }
 
@@ -97,13 +96,13 @@ public class LookCommand : ICommand
         {
             if (containedIn.Character != Entity.Null)
             {
-                MessageBus.Publish(actor, $"You are in {containedIn.Character.DisplayName}'s inventory.");
+                systemContext.MessageBus.Publish(actor, $"You are in {containedIn.Character.DisplayName}'s inventory.");
                 // TODO: display inventory ?
                 return;
             }
             else if (containedIn.Container != Entity.Null)
             {
-                MessageBus.Publish(actor, $"You are inside {containedIn.Container.DisplayName}.");
+                systemContext.MessageBus.Publish(actor, $"You are inside {containedIn.Container.DisplayName}.");
                 // TODO: display container contents ?
                 return;
             }

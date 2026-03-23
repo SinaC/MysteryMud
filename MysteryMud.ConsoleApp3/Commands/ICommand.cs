@@ -4,7 +4,7 @@ using MysteryMud.ConsoleApp3.Core;
 
 namespace MysteryMud.ConsoleApp3.Commands;
 
-interface ICommand
+public interface ICommand
 {
     //string Name { get; }
     //string[] Aliases { get; }
@@ -17,5 +17,5 @@ interface ICommand
     //int Priority { get; }
     //bool AllowAbbreviation { get; }
 
-    void Execute(GameState gameState, Entity actor, CommandContext ctx);
+    void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx);
 }

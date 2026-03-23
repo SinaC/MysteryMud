@@ -4,9 +4,7 @@ using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Items;
 using MysteryMud.ConsoleApp3.Core;
-using MysteryMud.ConsoleApp3.Core.Eventing;
-using MysteryMud.ConsoleApp3.Extensions;
-using MysteryMud.ConsoleApp3.Systems;
+using MysteryMud.ConsoleApp3.Components.Extensions;
 
 namespace MysteryMud.ConsoleApp3.Commands;
 
@@ -15,20 +13,20 @@ public class InventoryCommand : ICommand
 {
     public CommandParseMode ParseMode => CommandParseMode.None;
 
-    public void Execute(GameState gameState, Entity actor, CommandContext ctx)
+    public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {
         var inventory = actor.Get<Inventory>();
         if (inventory.Items.Count == 0)
         {
-            MessageBus.Publish(actor, "Your inventory is empty.");
+            systemContext.MessageBus.Publish(actor, "Your inventory is empty.");
         }
         else
         {
-            MessageBus.Publish(actor, "You are carrying:");
+            systemContext.MessageBus.Publish(actor, "You are carrying:");
             foreach (var item in inventory.Items)
             {
                 if (!item.Has<Equipped>())
-                    MessageBus.Publish(actor, $"- {item.DisplayName}");
+                    systemContext.MessageBus.Publish(actor, $"- {item.DisplayName}");
             }
         }
     }

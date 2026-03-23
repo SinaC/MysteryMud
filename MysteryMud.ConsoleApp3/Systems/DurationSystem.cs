@@ -3,13 +3,12 @@ using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Components.Characters;
 using MysteryMud.ConsoleApp3.Components.Effects;
 using MysteryMud.ConsoleApp3.Core;
-using MysteryMud.ConsoleApp3.Core.Eventing;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 
 public static class DurationSystem
 {
-    public static void HandleExpiration(GameState state, Entity effect)
+    public static void HandleExpiration(SystemContext systemContext, GameState state, Entity effect)
     {
         if (!effect.IsAlive())
             return;
@@ -53,7 +52,7 @@ public static class DurationSystem
         if (effectInstance.Template.WearOffMessage != null)
         {
             // TODO: in room ?
-            MessageBus.Publish(effectInstance.Target, effectInstance.Template.WearOffMessage);
+            systemContext.MessageBus.Publish(effectInstance.Target, effectInstance.Template.WearOffMessage);
         }
 
         state.World.Destroy(effect);

@@ -9,7 +9,7 @@ namespace MysteryMud.ConsoleApp3.Systems;
 
 static class HotSystem
 {
-    public static void HandleTick(GameState state, Entity effect)
+    public static void HandleTick(SystemContext systemContext, GameState state, Entity effect)
     {
         if (!effect.IsAlive())
             return;
@@ -34,18 +34,13 @@ static class HotSystem
         // perform heal
         var heal = hot.Heal * effectInstance.StackCount;
         Logger.Logger.Hot.ApplyHeal(effect, effectInstance.Target, heal, hot.TickRate);
-        HealSystem.ApplyHeal(effectInstance.Target, heal, effectInstance.Source);
+        HealSystem.ApplyHeal(systemContext, effectInstance.Target, heal, effectInstance.Source);
 
         // calcule next tick
         hot.NextTick = TimeSystem.CurrentTick + hot.TickRate;
 
         // queue next tick even if after expiration tick to handle effect refresh
         Logger.Logger.Hot.ScheduleNextTick(effect, effectInstance.Target, hot.NextTick);
-        Scheduler.Publish(new ScheduledEvent
-        {
-            ExecuteAt = hot.NextTick,
-            Target = effect,
-            Type = ScheduledEventType.HotTick
-        });
+        systemContext.Scheduler.Publish(effect, ScheduledEventType.HotTick, hot.NextTick);
     }
 }
