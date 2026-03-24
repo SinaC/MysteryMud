@@ -24,6 +24,23 @@ scripting
 ARCH-ECS
     https://arch-ecs.gitbook.io/arch/extensions/page-3/arch.system
 
+logging optimization example:
+    public void ProcessData(int[] data)
+    {
+        // Fixed: use source-generated logging.
+        // The data array is passed directly; no expensive operation executed unless log level is enabled.
+        LogProcessingData(data);
+
+        // Fixed: use source-generated logging.
+        LogTraceData(data.Length, data);
+    }
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Processing {Data} items")]
+    private partial void LogProcessingData(int[] data);
+
+    [LoggerMessage(Level = LogLevel.Trace, Message = "Data: Count={Count}, Items={Items}")]
+    private partial void LogTraceData(int count, int[] items);
+
 unwanted behavior
 DOT/HOT + DURATION
 dot: tick rate 2 and duration 5

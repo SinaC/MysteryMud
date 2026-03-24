@@ -13,7 +13,7 @@ using MysteryMud.ConsoleApp3.Infrastructure.Network;
 using MysteryMud.ConsoleApp3.Infrastructure.Scheduler;
 using MysteryMud.ConsoleApp3.Infrastructure.Services;
 
-namespace MysteryMud.ConsoleApp3;
+namespace MysteryMud.ConsoleApp3.Hosting;
 
 public class GameServer
 {

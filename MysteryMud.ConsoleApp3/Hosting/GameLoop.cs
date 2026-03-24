@@ -9,7 +9,7 @@ using MysteryMud.ConsoleApp3.Components.Extensions;
 using MysteryMud.ConsoleApp3.Infrastructure.Services;
 using MysteryMud.ConsoleApp3.Systems;
 
-namespace MysteryMud.ConsoleApp3;
+namespace MysteryMud.ConsoleApp3.Hosting;
 
 internal class GameLoop
 {
@@ -46,8 +46,6 @@ internal class GameLoop
 
     private void Tick()
     {
-        _logger.LogInformation(LogEvents.System, "Processing tick {currentTick}", TimeSystem.CurrentTick);
-
         TimeSystem.NextTick();
 
         var state = new GameState

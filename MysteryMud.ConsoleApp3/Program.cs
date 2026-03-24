@@ -2,7 +2,6 @@
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using MysteryMud.ConsoleApp3;
 using MysteryMud.ConsoleApp3.Commands;
 using MysteryMud.ConsoleApp3.Commands.Registry;
 using MysteryMud.ConsoleApp3.Components;
@@ -12,6 +11,7 @@ using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Core;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Factories;
+using MysteryMud.ConsoleApp3.Hosting;
 using MysteryMud.ConsoleApp3.Infrastructure.Persistence;
 using MysteryMud.ConsoleApp3.Infrastructure.Persistence.Dto;
 using MysteryMud.ConsoleApp3.Systems;

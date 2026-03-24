@@ -2,13 +2,10 @@
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Components;
 using MysteryMud.ConsoleApp3.Components.Characters;
-using MysteryMud.ConsoleApp3.Components.Characters.Players;
+using MysteryMud.ConsoleApp3.Components.Extensions;
 using MysteryMud.ConsoleApp3.Components.Items;
 using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Core;
-using MysteryMud.ConsoleApp3.Components.Characters.Players;
-using MysteryMud.ConsoleApp3.Components.Extensions;
-using MysteryMud.ConsoleApp3.Factories;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 
@@ -29,18 +26,9 @@ public static class DeathSystem
         //TODO: log
         CreateCorpse(ctx, world, victim, killer);
 
-        AddTags(world, victim);
         RemoveFromRoomContents(world, victim);
         RemoveFromCombat(world, victim);
         RemoveEffects(world, victim);
-    }
-
-    private static void AddTags(World world, Entity victim)
-    {
-        victim.Add<Dead>(); // mark as dead
-        // player will respawn, NPCs will be cleaned up by CleanupSystem
-        if (victim.Has<PlayerTag>())
-            victim.Add(new RespawnState { RespawnRoom = RoomFactory.RespawnRoomEntity });
     }
 
     private static void RemoveFromRoomContents(World world, Entity victim)
