@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MysteryMud.Application\MysteryMud.Application.csproj" />
+    <ProjectReference Include="..\MysteryMud.Core\MysteryMud.Core.csproj" />
+    <ProjectReference Include="..\MysteryMud.Domain\MysteryMud.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

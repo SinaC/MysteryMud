@@ -1,5 +1,7 @@
 <Solution>
-  <Project Path="MysteryMud.ConsoleApp/MysteryMud.ConsoleApp.csproj" />
-  <Project Path="MysteryMud.ConsoleApp2/MysteryMud.ConsoleApp2.csproj" Id="ba849ad7-8d19-4bbd-aaf8-904507495bc7" />
-  <Project Path="MysteryMud.ConsoleApp3/MysteryMud.ConsoleApp3.csproj" Id="6326c02c-3c99-43ae-b966-f1f5177cb829" />
+  <Project Path="MysteryMud.Application/MysteryMud.Application.csproj" Id="91c37f5f-53da-4340-a025-d3de4784f75e" />
+  <Project Path="MysteryMud.ConsoleApp/MysteryMud.ConsoleApp.csproj" Id="6326c02c-3c99-43ae-b966-f1f5177cb829" />
+  <Project Path="MysteryMud.Core/MysteryMud.Core.csproj" Id="9f56749a-8164-480e-bf4d-a9c975bba810" />
+  <Project Path="MysteryMud.Domain/MysteryMud.Domain.csproj" Id="9310135b-5176-4452-842b-6ef716f63899" />
+  <Project Path="MysteryMud.Infrastructure/MysteryMud.Infrastructure.csproj" Id="97c83200-37f1-4445-8597-9168922d3750" />
 </Solution>

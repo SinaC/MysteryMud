@@ -1,124 +1,170 @@
 ﻿using Arch.Core;
-using MysteryMud.ConsoleApp.Commands;
-using MysteryMud.ConsoleApp.Components;
-using MysteryMud.ConsoleApp.Events;
-using MysteryMud.ConsoleApp.Systems;
+using Arch.Core.Extensions;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using MysteryMud.Application.Commands;
+using MysteryMud.Application.Commands.Registry;
+using MysteryMud.Application.Systems;
+using MysteryMud.ConsoleApp;
+using MysteryMud.ConsoleApp.Hosting;
+using MysteryMud.Domain.Components;
+using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Components.Items;
+using MysteryMud.Domain.Components.Rooms;
+using MysteryMud.Domain.Data.Enums;
+using MysteryMud.Domain.Factories;
+using MysteryMud.Infrastructure.Persistence;
+using MysteryMud.Infrastructure.Persistence.Dto;
+using Serilog;
+using System.Text.Json;
 
-class Program
+// build configuration
+var configuration = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json")
+    .Build();
+
+// initialize logger
+Log.Logger = new LoggerConfiguration()
+  .MinimumLevel.Debug() // Set the minimum level
+  .ReadFrom.Configuration(configuration)
+  .CreateLogger();
+var factory = LoggerFactory.Create(builder =>
 {
+    builder.AddSerilog(); // Use Serilog as provider
+});
 
-    static void Main()
+var logger = factory.CreateLogger("MysteryMud");
+logger.LogInformation("Log initialized");
+
+// load spells
+var spellJson = @"
+{
+  ""Effects"": [
     {
-        var game = new Game();
-
-        var room1 = game.World.Create(new Room { Title = "Town Square", Description = "A town square." }, new RoomEntities(), new RoomItems());
-        var room2 = game.World.Create(new Room { Title = "Temple Square", Description = "The temple square." }, new RoomEntities(), new RoomItems());
-        var cave = game.World.Create(new Room { Title = "Dark Cave", Description = "A damp cave with dripping water." }, new DarkRoom(), new RoomEntities(), new RoomItems() );
-
-        game.World.Add(room1, new Exit { Direction = "north", TargetRoom = room2 });
-        game.World.Add(room2, new Exit { Direction = "south", TargetRoom = room1 });
-
-        var player = CreatePlayer(game.World, "Hero", room1);
-        var goblin = CreateGoblin(game.World, room1);
-
-        // add sword on floor in room1
-        var sword = game.World.Create(
-            new Item
-            {
-                Name = "Rusty Sword",
-                Description = "An old sword with a chipped blade."
-            }
-        );
-        ref var roomItems = ref game.World.Get<RoomItems>(room1);
-        roomItems.Items.Add(sword);
-
-        var torch = game.World.Create(
-            new Item
-            {
-                Name = "Torch",
-                Description = "A wooden torch burning brightly."
-            },
-            new LightSource { Intensity = 1 }
-        );
-        ref var inv = ref game.World.Get<Inventory>(player);
-        inv.Items.Add(torch);
-
-        game.Commands.Commands.Enqueue(new AttackCommand(player, goblin));
-
-        float dt = 1f;
-
-        while (true)
-        {
-            CommandSystem.Run(game.World, game.Commands);
-            AiSystem.Run(game.World);
-
-            BuffSystem.Run(game.World, dt, game.Cmd);
-            DotSystem.Run(game.World, dt, game.Cmd);
-            StatSystem.Run(game.World);
-            CombatSystem.Run(game.World, game.CombatEvents);
-            CombatEventSystem.Process(game.World, game.CombatEvents, game.Cmd);
-            DeathSystem.Run(game.World, game.Events);
-
-            game.Cmd.Playback(game.World);
-
-            Thread.Sleep(100);
-        }
-    }
-
-    class Game
+      ""Name"": ""Poison"",
+      ""Tag"": ""Poison"",
+      ""Stacking"": ""Stack"",
+      ""MaxStacks"": 3,
+      ""StatModifiers"": [
+        { ""Stat"": ""Strength"", ""Type"": ""Flat"", ""Value"": -3 }
+      ],
+      ""Flags"": [""Poison""],
+      ""DurationFormula"": ""4 * caster.Strength"",
+      ""Dot"": {
+         ""DamageFormula"": ""1"",
+         ""DamageType"": ""Poison"",
+         ""TickRate"": 2
+      }
+    },
     {
-        //public World World = World.Create();
-        //public CommandBuffer Cmd = new();
-        //public CombatEventQueue CombatEvents = new();
-        public World World = World.Create();
-        public CommandQueue Commands = new();
-        public CommandBuffer Cmd = new();
-        public CombatEventQueue CombatEvents = new();
-        public EventBus Events = new();
+      ""Name"": ""Bless"",
+      ""Tag"": ""Bless"",
+      ""Stacking"": ""Refresh"",
+      ""MaxStacks"": 1,
+      ""StatModifiers"": [
+        { ""Stat"": ""HitRoll"", ""Type"": ""Flat"", ""Value"": 5 },
+        { ""Stat"": ""Strength"", ""Type"": ""AddPercent"", ""Value"": 10 }
+      ],
+      ""Flags"": [""Bless""],
+      ""DurationFormula"": ""60"",
+      ""Hot"": {
+         ""HealFormula"": ""3 + caster.Level / 2"",
+         ""TickRate"": 3
+      }
     }
-
-    static Entity CreatePlayer(World world, string name, Entity room)
+  ],
+  ""Spells"": [
     {
-        var e = world.Create(
-            new Name { Value = name },
-            new PlayerTag(),
-            new Inventory(),
-            new Equipment(),
-            new InRoom { Room = room },
-            new BaseStats { Strength = 10, Agility = 10, Vitality = 10 },
-            new EffectiveStats(),
-            new StatsDirty { Value = true },
-            new Health { Current = 100, Max = 100 },
-            new Equipment(),
-            new Attack { Damage = 5 }
-        );
-
-        AddToRoom(world, e, room);
-        return e;
-    }
-
-    static Entity CreateGoblin(World world, Entity room)
+      ""Name"": ""a"",
+      ""Effects"": [""Poison""]
+    },
     {
-        var e = world.Create(
-            new Name { Value = "Goblin" },
-            new NpcTag(),
-            new Inventory(),
-            new Equipment(),
-            new InRoom { Room = room },
-            new BaseStats { Strength = 7, Agility = 6, Vitality = 8 },
-            new EffectiveStats(),
-            new StatsDirty { Value = true },
-            new Health { Current = 50, Max = 50 },
-            new Attack { Damage = 4 }
-        );
-
-        AddToRoom(world, e, room);
-        return e;
+      ""Name"": ""b"",
+      ""Effects"": [""Bless""]
     }
-
-    static void AddToRoom(World world, Entity entity, Entity room)
-    {
-        ref var list = ref world.Get<RoomEntities>(room);
-        list.Entities.Add(entity);
-    }
+  ]
 }
+";
+
+var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+var doc = JsonSerializer.Deserialize<SpellRootData>(spellJson, options);
+
+// convert to spell database
+var spellDatabase = SpellLoader.LoadSpells(doc);
+SpellSystem.SpellDatabase = spellDatabase;
+
+// register commands
+CommandRegistry.Register("test", new TestCommand());
+CommandRegistry.Register("kill", new KillCommand());
+CommandRegistry.Register("get", new GetCommand());
+CommandRegistry.Register("look", new LookCommand());
+CommandRegistry.Register("say", new SayCommand());
+CommandRegistry.Register("tell", new TellCommand());
+CommandRegistry.Register("inventory", new InventoryCommand());
+CommandRegistry.Register("equipment", new EquipmentCommand());
+CommandRegistry.Register("wear", new WearCommand());
+CommandRegistry.Register("remove", new RemoveCommand());
+CommandRegistry.Register("drop", new DropCommand());
+CommandRegistry.Register("give", new GiveCommand());
+CommandRegistry.Register("put", new PutCommand());
+CommandRegistry.Register("north", new NorthCommand());
+CommandRegistry.Register("south", new SouthCommand());
+CommandRegistry.Register("destroy", new DestroyCommand());
+CommandRegistry.Register("sacrifice", new SacrificeCommand());
+CommandRegistry.Register("mstat", new MstatCommand());
+CommandRegistry.Register("cast", new CastCommand());
+
+// create world
+var world = World.Create();
+
+//  temple
+//    |
+//  market
+//    |
+//  common
+var temple = RoomFactory.CreateRoom(world, 1, "temple square", "the temple square");
+var market = RoomFactory.CreateRoom(world, 2, "market square", "the market square");
+var common = RoomFactory.CreateRoom(world, 3, "common square", "the common square");
+RoomFactory.LinkRoom(world, temple, market, Direction.South);
+RoomFactory.LinkRoom(world, market, temple, Direction.North);
+RoomFactory.LinkRoom(world, market, common, Direction.South);
+RoomFactory.LinkRoom(world, common, market, Direction.North);
+
+var player = PlayerFactory.CreatePlayer(world, "sinac", market);
+var goblin = MobFactory.CreateMob(world, "goblin", "a goblin", market);
+var troll = MobFactory.CreateMob(world, "troll", "a troll", market);
+troll.Get<Health>().Current = 10000;
+troll.Get<Health>().Max = 10000;
+var sword = ItemFactory.CreateItemInRoom(world, "sword", "a %#FFFFFF>#FFFF00shiny sword%x", market);
+sword.Add(new Equipable { Slot = EquipmentSlot.MainHand });
+var chest = world.Create(
+            new Item(),
+            new Name { Value = "chest" },
+            new Description { Value = "a chest" },
+            new Location { Room = market },
+            new Container { Capacity = 10 },
+            new ContainerContents { Items = [] }
+        );
+market.Get<RoomContents>().Items.Add(chest);
+var gem = ItemFactory.CreateItemInContainer(world, "gem", "a %#FF0000>#FF00FFsparkling gem%x", chest);
+var trash = ItemFactory.CreateItemInRoom(world, "trash", "some trash", market);
+
+RoomFactory.StartingRoomEntity = market;
+RoomFactory.RespawnRoomEntity = temple;
+
+//var compiler = new FormulaCompiler();
+////var formula = "range(1, range( 5, 10)) + 5 * (caster.level + target.level)";
+////var formula = "max(1, 2, range(1,5), caster.level, if(caster.strength>caster.level && caster.level != target.level, caster.strength, caster.level))";
+//var formula = "max(1, 2, range(1,5), caster.level, if(caster.level >= target.level && sum(1,2,3) < 10 || dice(2,6) == 12, -caster.strength, caster.level))";
+////caster.level > target.level && sum(1,2,3) < 10 || dice(2,6) == 12
+//var func = compiler.Compile(formula);
+//int result = func(null!, troll, player); // result is random between 6 and 55
+//Console.WriteLine(result);
+
+// run demo
+Demo.Run(logger, world);
+
+// start game server
+var gameServer = new GameServer(logger, world);
+gameServer.Start();
