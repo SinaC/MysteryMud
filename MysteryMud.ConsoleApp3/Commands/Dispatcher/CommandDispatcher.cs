@@ -4,7 +4,7 @@ using MysteryMud.ConsoleApp3.Commands.Parser;
 using MysteryMud.ConsoleApp3.Commands.Registry;
 using MysteryMud.ConsoleApp3.Core;
 using MysteryMud.ConsoleApp3.Core.Logging;
-using MysteryMud.ConsoleApp3.Domain.Components.Extensions;
+using MysteryMud.ConsoleApp3.Components.Extensions;
 
 namespace MysteryMud.ConsoleApp3.Commands.Dispatcher;
 

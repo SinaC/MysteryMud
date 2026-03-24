@@ -5,7 +5,7 @@ using MysteryMud.ConsoleApp3.Core;
 using MysteryMud.ConsoleApp3.Core.Eventing;
 using MysteryMud.ConsoleApp3.Core.Logging;
 using MysteryMud.ConsoleApp3.Core.Scheduler;
-using MysteryMud.ConsoleApp3.Domain.Components.Extensions;
+using MysteryMud.ConsoleApp3.Components.Extensions;
 using MysteryMud.ConsoleApp3.Infrastructure.Services;
 using MysteryMud.ConsoleApp3.Systems;
 

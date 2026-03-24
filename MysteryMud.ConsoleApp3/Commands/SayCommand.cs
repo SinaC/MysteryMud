@@ -1,10 +1,10 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.ConsoleApp3.Commands.Parser;
+using MysteryMud.ConsoleApp3.Components;
+using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Core;
-using MysteryMud.ConsoleApp3.Domain.Components;
-using MysteryMud.ConsoleApp3.Domain.Components.Extensions;
-using MysteryMud.ConsoleApp3.Domain.Components.Rooms;
+using MysteryMud.ConsoleApp3.Components.Extensions;
 
 namespace MysteryMud.ConsoleApp3.Commands;
 

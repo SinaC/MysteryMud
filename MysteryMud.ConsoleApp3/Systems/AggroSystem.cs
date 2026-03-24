@@ -1,6 +1,6 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
-using MysteryMud.ConsoleApp3.Domain.Components.Characters.Mobiles;
+using MysteryMud.ConsoleApp3.Components.Characters.Mobiles;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 

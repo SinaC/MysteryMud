@@ -1,7 +1,7 @@
 ﻿using Arch.Core;
 using MysteryMud.ConsoleApp3.Core;
 using MysteryMud.ConsoleApp3.Data.Definitions;
-using MysteryMud.ConsoleApp3.Domain.Factories;
+using MysteryMud.ConsoleApp3.Factories;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 

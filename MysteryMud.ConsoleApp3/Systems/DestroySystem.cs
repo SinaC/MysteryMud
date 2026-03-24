@@ -1,6 +1,6 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
-using MysteryMud.ConsoleApp3.Domain.Components.Items;
+using MysteryMud.ConsoleApp3.Components.Items;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 

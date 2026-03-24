@@ -1,7 +1,7 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
-using MysteryMud.ConsoleApp3.Domain.Components.Characters.Players;
-using MysteryMud.ConsoleApp3.Domain.Components.Extensions;
+using MysteryMud.ConsoleApp3.Components.Characters.Players;
+using MysteryMud.ConsoleApp3.Components.Extensions;
 using MysteryMud.ConsoleApp3.Infrastructure.Network;
 
 namespace MysteryMud.ConsoleApp3.Infrastructure.Services;

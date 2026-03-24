@@ -1,13 +1,14 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.ConsoleApp3.Components;
+using MysteryMud.ConsoleApp3.Components.Characters;
+using MysteryMud.ConsoleApp3.Components.Characters.Players;
+using MysteryMud.ConsoleApp3.Components.Items;
+using MysteryMud.ConsoleApp3.Components.Rooms;
 using MysteryMud.ConsoleApp3.Core;
-using MysteryMud.ConsoleApp3.Domain.Components;
-using MysteryMud.ConsoleApp3.Domain.Components.Characters;
-using MysteryMud.ConsoleApp3.Domain.Components.Characters.Players;
-using MysteryMud.ConsoleApp3.Domain.Components.Extensions;
-using MysteryMud.ConsoleApp3.Domain.Components.Items;
-using MysteryMud.ConsoleApp3.Domain.Components.Rooms;
-using MysteryMud.ConsoleApp3.Domain.Factories;
+using MysteryMud.ConsoleApp3.Components.Characters.Players;
+using MysteryMud.ConsoleApp3.Components.Extensions;
+using MysteryMud.ConsoleApp3.Factories;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 
