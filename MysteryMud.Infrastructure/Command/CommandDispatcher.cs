@@ -33,7 +33,7 @@ public class CommandDispatcher : ICommandDispatcher
         }
 
         // parse arguments using command-specific rules
-        _commandParser.Parse(cmd!.ParseMode, cmdSpan, argsSpan, out var ctx);
+        _commandParser.Parse(cmdSpan, argsSpan, cmd!.ParseOptions.ArgumentCount, cmd!.ParseOptions.LastIsText, out var ctx);
 
         // execute command
         cmd.Execute(systemContext, gameState, actor, ctx);

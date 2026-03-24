@@ -1,19 +1,19 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.Application.Systems;
 using MysteryMud.Core;
+using MysteryMud.Core.Command;
 using MysteryMud.Domain;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Application.Systems;
-using MysteryMud.Core.Command;
 
 namespace MysteryMud.Application.Commands;
 
 public class GiveCommand : ICommand
 {
-    public CommandParseMode ParseMode => CommandParseMode.TargetPair;
+    public CommandParseOptions ParseOptions => ICommand.TargetPair;
 
     public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {

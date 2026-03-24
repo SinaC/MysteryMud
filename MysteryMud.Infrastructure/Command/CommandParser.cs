@@ -4,57 +4,36 @@ namespace MysteryMud.Infrastructure.Command;
 
 public class CommandParser : ICommandParser
 {
-    public void Parse(CommandParseMode parseMode, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args, out CommandContext ctx)
+    public void Parse(ReadOnlySpan<char> cmd, ReadOnlySpan<char> args, int argumentCount, bool lastIsText, out CommandContext ctx)
     {
         ctx = default;
         ctx.Command = cmd;
 
         var e = new ArgumentEnumerator(args);
         int consumed = 0;
-
-        switch (parseMode)
+        int parsed = 0;
+        while (parsed < argumentCount && e.MoveNext())
         {
-            case CommandParseMode.None:
-                break;
+            var token = e.Current;
 
-            case CommandParseMode.Target:
-                if (e.MoveNext())
-                    ctx.Primary = ParseTarget(e.Current);
-                break;
+            // Skip link words
+            if (IsLinkWord(token))
+                continue;
 
-            case CommandParseMode.TargetPair:
-                if (e.MoveNext()) ctx.Primary = ParseTarget(e.Current);
-                if (e.MoveNext()) ctx.Secondary = ParseTarget(e.Current);
-                break;
-
-            case CommandParseMode.TargetTriple:
-                if (e.MoveNext()) ctx.Primary = ParseTarget(e.Current);
-                if (e.MoveNext()) ctx.Secondary = ParseTarget(e.Current);
-                if (e.MoveNext()) ctx.Tertiary = ParseTarget(e.Current); // new field in CommandContext
-                break;
-
-            case CommandParseMode.TargetAndText:
-                if (e.MoveNext())
-                {
-                    ctx.Primary = ParseTarget(e.Current);
-                    consumed = e.Consumed;
-                    if (consumed < args.Length)
-                        ctx.Text = TrimMatchingQuotes(args.Slice(consumed).TrimStart());
-                }
-                break;
-
-            case CommandParseMode.TargetPairAndText:
-                if (e.MoveNext()) ctx.Primary = ParseTarget(e.Current);
-                if (e.MoveNext()) ctx.Secondary = ParseTarget(e.Current);
-                consumed = e.Consumed;
-                if (consumed < args.Length)
-                    ctx.Text = TrimMatchingQuotes(args.Slice(consumed).TrimStart());
-                break;
-
-            case CommandParseMode.FullText:
-                ctx.Text = args.Trim();
-                break;
+            switch (parsed)
+            {
+                case 0: ctx.Primary = ParseTarget(e.Current); break;
+                case 1: ctx.Secondary = ParseTarget(e.Current); break;
+                case 2: ctx.Tertiary = ParseTarget(e.Current); break;
+                case 3: ctx.Quaternary = ParseTarget(e.Current); break;
+                case 4: ctx.Quinary = ParseTarget(e.Current); break;
+            }
+            parsed++;
+            consumed = e.Consumed;
         }
+
+        if (lastIsText && consumed < args.Length)
+            ctx.Text = TrimMatchingQuotes(args[consumed..].TrimStart());
     }
 
     public void SplitCommand(ReadOnlySpan<char> input, out ReadOnlySpan<char> command, out ReadOnlySpan<char> args)
@@ -196,6 +175,14 @@ public class CommandParser : ICommandParser
             span = span[..^1];
 
         return span;
+    }
+
+    private static bool IsLinkWord(ReadOnlySpan<char> token)
+    {
+        return token.Equals("from", StringComparison.OrdinalIgnoreCase)
+            || token.Equals("in", StringComparison.OrdinalIgnoreCase)
+            || token.Equals("on", StringComparison.OrdinalIgnoreCase)
+            || token.Equals("at", StringComparison.OrdinalIgnoreCase);
     }
 }
 //using MysteryMud.Core.Command;

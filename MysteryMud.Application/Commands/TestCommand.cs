@@ -13,7 +13,7 @@ namespace MysteryMud.Application.Commands;
 
 public class TestCommand : ICommand
 {
-    public CommandParseMode ParseMode => CommandParseMode.TargetAndText;
+    public CommandParseOptions ParseOptions => ICommand.TargetAndText;
 
     public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {

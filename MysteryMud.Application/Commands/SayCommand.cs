@@ -10,7 +10,7 @@ namespace MysteryMud.Application.Commands;
 
 public class SayCommand : ICommand
 {
-    public CommandParseMode ParseMode => CommandParseMode.FullText;
+    public CommandParseOptions ParseOptions => ICommand.FullText;
 
     public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {

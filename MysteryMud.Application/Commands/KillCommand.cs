@@ -1,18 +1,18 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
-using MysteryMud.Domain.Components.Characters;
-using MysteryMud.Domain;
-using MysteryMud.Core;
-using MysteryMud.Domain.Components;
-using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Application.Systems;
+using MysteryMud.Core;
 using MysteryMud.Core.Command;
+using MysteryMud.Domain;
+using MysteryMud.Domain.Components;
+using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Components.Rooms;
 
 namespace MysteryMud.Application.Commands;
 
 public class KillCommand : ICommand
 {
-    public CommandParseMode ParseMode => CommandParseMode.Target;
+    public CommandParseOptions ParseOptions => ICommand.Target;
 
     public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {

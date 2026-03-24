@@ -6,5 +6,7 @@ public ref struct CommandContext
     public TargetSpec Primary;
     public TargetSpec Secondary;
     public TargetSpec Tertiary;
-    public ReadOnlySpan<char> Text;
+    public TargetSpec Quaternary;
+    public TargetSpec Quinary; // max 5 targets
+    public ReadOnlySpan<char> Text; // optional free-form text argument, usually the last argument in the command
 }

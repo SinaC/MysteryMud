@@ -88,6 +88,7 @@ static class Demo
         commandDispatcher.Dispatch(systemContext, gameState, player, "look goblin".AsSpan());
         commandDispatcher.Dispatch(systemContext, gameState, player, "inventory".AsSpan());
         commandDispatcher.Dispatch(systemContext, gameState, player, "get gem".AsSpan());
+        commandDispatcher.Dispatch(systemContext, gameState, player, "inventory".AsSpan());
         commandDispatcher.Dispatch(systemContext, gameState, player, "put gem chest".AsSpan());
         commandDispatcher.Dispatch(systemContext, gameState, player, "look chest".AsSpan());
         commandDispatcher.Dispatch(systemContext, gameState, player, "look".AsSpan());

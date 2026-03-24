@@ -11,7 +11,7 @@ namespace MysteryMud.Application.Commands;
 
 public class SouthCommand : ICommand
 {
-    public CommandParseMode ParseMode => CommandParseMode.None;
+    public CommandParseOptions ParseOptions => ICommand.None;
 
     public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {

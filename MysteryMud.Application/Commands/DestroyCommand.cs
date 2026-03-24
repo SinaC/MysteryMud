@@ -11,7 +11,7 @@ namespace MysteryMud.Application.Commands;
 
 public class DestroyCommand : ICommand
 {
-    public CommandParseMode ParseMode => CommandParseMode.Target;
+    public CommandParseOptions ParseOptions => ICommand.Target;
 
     public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {

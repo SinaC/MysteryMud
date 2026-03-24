@@ -11,7 +11,7 @@ namespace MysteryMud.Application.Commands;
 // important note: even when worn item stays in inventory
 public class InventoryCommand : ICommand
 {
-    public CommandParseMode ParseMode => CommandParseMode.None;
+    public CommandParseOptions ParseOptions => ICommand.None;
 
     public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {
