@@ -1,4 +1,9 @@
 <Solution>
+  <Folder Name="/Documentation/">
+    <File Path="Documentation/ISSUES.txt" />
+    <File Path="Documentation/README.txt" />
+    <File Path="Documentation/TODO.txt" />
+  </Folder>
   <Project Path="MysteryMud.Application/MysteryMud.Application.csproj" Id="91c37f5f-53da-4340-a025-d3de4784f75e" />
   <Project Path="MysteryMud.ConsoleApp/MysteryMud.ConsoleApp.csproj" Id="6326c02c-3c99-43ae-b966-f1f5177cb829" />
   <Project Path="MysteryMud.Core/MysteryMud.Core.csproj" Id="9f56749a-8164-480e-bf4d-a9c975bba810" />

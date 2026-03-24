@@ -131,7 +131,7 @@ RoomFactory.LinkRoom(world, market, temple, Direction.North);
 RoomFactory.LinkRoom(world, market, common, Direction.South);
 RoomFactory.LinkRoom(world, common, market, Direction.North);
 
-var player = PlayerFactory.CreatePlayer(world, "sinac", market);
+var player = PlayerFactory.CreatePlayer(world, "player", market);
 var goblin = MobFactory.CreateMob(world, "goblin", "a goblin", market);
 var troll = MobFactory.CreateMob(world, "troll", "a troll", market);
 troll.Get<Health>().Current = 10000;

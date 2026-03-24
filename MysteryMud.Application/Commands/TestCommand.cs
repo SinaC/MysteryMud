@@ -53,7 +53,7 @@ public class TestCommand : ICommand
                 DurationFunc = (world, source, target) => 5,
                 Dot = new DotDefinition
                 {
-                    DamageFunc = (world, source, target) => 3,
+                    DamageFunc = (world, source, target) => 45,
                     TickRate = 2,
                     DamageType = DamageType.Poison
                 },

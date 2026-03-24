@@ -1,4 +1,7 @@
-﻿in CharacterEffects
+﻿
+dot/hot/... should we remove them when source is dead ?
+
+in CharacterEffects
     EffectsByTag can only store the last effect by tag and we havea rule to skip stacking if the source is not the same
 working scenario:
     player A adds an effect with tag T -> stores effect1 in EffectsByTag[T] = effect1 and adds a new entry in Effects

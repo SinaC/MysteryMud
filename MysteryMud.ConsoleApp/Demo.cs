@@ -21,7 +21,7 @@ static class Demo
         // get entities for testing
         Span<Entity> characters = stackalloc Entity[10];
         world.GetEntities(new QueryDescription().WithAll<Health>(), characters);
-        var player = characters.ToArray().First(x => x.Get<Name>().Value == "sinac");
+        var player = characters.ToArray().First(x => x.Get<Name>().Value == "player");
         var goblin = characters.ToArray().First(x => x.Get<Name>().Value == "goblin");
 
         Span<Entity> rooms = stackalloc Entity[10];

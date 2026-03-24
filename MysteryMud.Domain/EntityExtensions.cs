@@ -16,6 +16,8 @@ public static class EntityExtensions
 
         private string BuildDisplayName()
         {
+            if (!entity.IsAlive())
+                return $"DEAD [{entity.Id}]";
             ref var description = ref entity.TryGetRef<Description>(out var descriptionExists);
             if (descriptionExists)
                 return description.Value;
@@ -27,10 +29,12 @@ public static class EntityExtensions
 
         private string BuildDebugName()
         {
+            if (!entity.IsAlive())
+                return $"DEAD ({entity.Id})";
             ref var name = ref entity.TryGetRef<Name>(out var nameExists);
             if (nameExists)
-                return $"{name.Value}({entity.Id} {entity.IsAlive()})";
-            return $"({entity.Id} {entity.IsAlive()})";
+                return $"{name.Value}[{entity.Id}]";
+            return $"[{entity.Id}]";
         }
     }
 }
