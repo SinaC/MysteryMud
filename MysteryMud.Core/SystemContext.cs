@@ -7,7 +7,6 @@ namespace MysteryMud.Core;
 public class SystemContext
 {
     public required ILogger Log { get; init; }
-    public required ICommandBus CommandBus { get; init; }
     public required IMessageBus MessageBus { get; init; }
     public required IScheduler Scheduler { get; init; }
 }

@@ -1,6 +1,6 @@
 ﻿using Arch.Core;
-using MysteryMud.Application.Commands.Dispatcher;
 using MysteryMud.Core;
+using MysteryMud.Core.Command;
 using MysteryMud.Core.Eventing;
 using System.Buffers;
 using System.Collections.Concurrent;
@@ -9,7 +9,13 @@ namespace MysteryMud.Infrastructure.Eventing;
 
 public class CommandBus : ICommandBus
 {
+    private ICommandDispatcher _dispatcher;
     private readonly ConcurrentQueue<CommandEvent> _queue = new();
+
+    public CommandBus(ICommandDispatcher dispatcher)
+    {
+        _dispatcher = dispatcher;
+    }
 
     public void Publish(Entity player, ReadOnlySpan<char> span)
     {
@@ -34,7 +40,7 @@ public class CommandBus : ICommandBus
             var span = cmd.Buffer.AsSpan(0, cmd.Length);
 
             // TODO: check min position
-            CommandDispatcher.Dispatch(ctx, gameState, cmd.Player, span);
+            _dispatcher.Dispatch(ctx, gameState, cmd.Player, span);
 
             ArrayPool<char>.Shared.Return(cmd.Buffer);
         }

@@ -94,27 +94,6 @@ var doc = JsonSerializer.Deserialize<SpellRootData>(spellJson, options);
 var spellDatabase = SpellLoader.LoadSpells(doc);
 SpellSystem.SpellDatabase = spellDatabase;
 
-// register commands
-CommandRegistry.Register("test", new TestCommand());
-CommandRegistry.Register("kill", new KillCommand());
-CommandRegistry.Register("get", new GetCommand());
-CommandRegistry.Register("look", new LookCommand());
-CommandRegistry.Register("say", new SayCommand());
-CommandRegistry.Register("tell", new TellCommand());
-CommandRegistry.Register("inventory", new InventoryCommand());
-CommandRegistry.Register("equipment", new EquipmentCommand());
-CommandRegistry.Register("wear", new WearCommand());
-CommandRegistry.Register("remove", new RemoveCommand());
-CommandRegistry.Register("drop", new DropCommand());
-CommandRegistry.Register("give", new GiveCommand());
-CommandRegistry.Register("put", new PutCommand());
-CommandRegistry.Register("north", new NorthCommand());
-CommandRegistry.Register("south", new SouthCommand());
-CommandRegistry.Register("destroy", new DestroyCommand());
-CommandRegistry.Register("sacrifice", new SacrificeCommand());
-CommandRegistry.Register("mstat", new MstatCommand());
-CommandRegistry.Register("cast", new CastCommand());
-
 // create world
 var world = World.Create();
 

@@ -1,4 +1,6 @@
-﻿namespace MysteryMud.Application.Commands.Parser;
+﻿using MysteryMud.Core.Command;
+
+namespace MysteryMud.Application.Commands.Parser;
 
 class CommandParser
 {

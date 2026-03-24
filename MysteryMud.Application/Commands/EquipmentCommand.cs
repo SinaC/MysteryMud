@@ -4,7 +4,7 @@ using MysteryMud.Core;
 using MysteryMud.Domain;
 using MysteryMud.Domain.Data.Enums;
 using MysteryMud.Domain.Components.Characters;
-using MysteryMud.Application.Commands.Parser;
+using MysteryMud.Core.Command;
 
 namespace MysteryMud.Application.Commands;
 

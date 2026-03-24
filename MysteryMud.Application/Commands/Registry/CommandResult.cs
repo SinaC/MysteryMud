@@ -1,4 +1,6 @@
-﻿namespace MysteryMud.Application.Commands.Registry;
+﻿using MysteryMud.Core.Command;
+
+namespace MysteryMud.Application.Commands.Registry;
 
 class CommandResult
 {

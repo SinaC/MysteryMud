@@ -32,7 +32,7 @@ internal class GameLoop
 
     public void Run()
     {
-        _logger.LogInformation(LogEvents.System,"Starting game loop");
+        _logger.LogInformation(LogEvents.System, "Starting game loop");
 
         while (true)
         {
@@ -57,7 +57,6 @@ internal class GameLoop
         var systemContext = new SystemContext
         {
             Log = _logger,
-            CommandBus = _commandBus,
             MessageBus = _messageBus,
             Scheduler = _scheduler
         };
