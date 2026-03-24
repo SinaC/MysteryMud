@@ -1,6 +1,9 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
+using MysteryMud.Application.Commands;
+using MysteryMud.Application.Commands.Dispatcher;
+using MysteryMud.Application.Commands.Registry;
 using MysteryMud.Core.Logging;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
@@ -21,6 +24,8 @@ public class GameServer
     private readonly ILogger _logger;
     private readonly ConnectionService _connections;
     private readonly TelnetServer _telnet;
+    private readonly CommandRegistry _commandRegistry;
+    private readonly CommandDispatcher _commandDispatcher;
     private readonly MessageService _messageService;
     private readonly CommandBus _commandBus;
     private readonly MessageBus _messageBus;
@@ -45,18 +50,20 @@ public class GameServer
             onDisconnected: HandleDisconnected
         );
 
+        _commandRegistry = new CommandRegistry();
+        _commandDispatcher = new CommandDispatcher(_commandRegistry);
         _messageService = new MessageService(_telnet);
-
-        _commandBus = new CommandBus();
+        _commandBus = new CommandBus(_commandDispatcher);
         _messageBus = new MessageBus(_messageService);
         _scheduler = new Scheduler();
-
         _gameLoop = new GameLoop(_logger, _messageService, _commandBus, _messageBus, _scheduler, _world);
     }
 
     public void Start()
     {
         _logger.LogInformation(LogEvents.System, "Starting game server");
+
+        _commandRegistry.RegisterCommands([typeof(TestCommand).Assembly]);
 
         Task.Run(() => _telnet.Start());
 

@@ -3,8 +3,8 @@ using Arch.Core.Extensions;
 using MysteryMud.Core;
 using MysteryMud.Domain;
 using MysteryMud.Domain.Components.Characters;
-using MysteryMud.Application.Commands.Parser;
 using MysteryMud.Application.Systems;
+using MysteryMud.Core.Command;
 
 namespace MysteryMud.Application.Commands;
 

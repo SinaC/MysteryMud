@@ -1,16 +1,23 @@
 ﻿using Arch.Core;
 using Microsoft.Extensions.Logging;
-using MysteryMud.Domain;
-using MysteryMud.Core;
-using MysteryMud.Core.Logging;
-using MysteryMud.Application.Commands.Registry;
 using MysteryMud.Application.Commands.Parser;
+using MysteryMud.Core;
+using MysteryMud.Core.Command;
+using MysteryMud.Core.Logging;
+using MysteryMud.Domain;
 
 namespace MysteryMud.Application.Commands.Dispatcher;
 
-public static class CommandDispatcher
+public class CommandDispatcher : ICommandDispatcher
 {
-    public static void Dispatch(SystemContext systemContext, GameState gameState, Entity actor, ReadOnlySpan<char> input)
+    private readonly ICommandRegistry _commandRegistry;
+
+    public CommandDispatcher(ICommandRegistry commandRegistry)
+    {
+        _commandRegistry = commandRegistry;
+    }
+
+    public void Dispatch(SystemContext systemContext, GameState gameState, Entity actor, ReadOnlySpan<char> input)
     {
         systemContext.Log.LogDebug(LogEvents.System, "*** [{name}] EXECUTING [{input}]", actor.DebugName, input.ToString());
 
@@ -18,7 +25,7 @@ public static class CommandDispatcher
         CommandParser.SplitCommand(input, out var cmdSpan, out var argsSpan);
 
         // search command in registry
-        if (!CommandRegistry.TryGet(cmdSpan, out var cmd))
+        if (!_commandRegistry.TryGetCommand(cmdSpan, out var cmd))
         {
             systemContext.MessageBus.Publish(actor, "Unknown command.");
             return;

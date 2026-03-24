@@ -1,4 +1,4 @@
-﻿namespace MysteryMud.Application.Commands;
+﻿namespace MysteryMud.Core.Command;
 
 public enum CommandLevel
 {

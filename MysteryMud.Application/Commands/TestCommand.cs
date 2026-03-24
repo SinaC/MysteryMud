@@ -1,8 +1,8 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
-using MysteryMud.Application.Commands.Parser;
 using MysteryMud.Application.Systems;
 using MysteryMud.Core;
+using MysteryMud.Core.Command;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Data.Definitions;
@@ -53,7 +53,7 @@ public class TestCommand : ICommand
                 DurationFunc = (world, source, target) => 5,
                 Dot = new DotDefinition
                 {
-                    DamageFunc = (world, source, target) => 3,
+                    DamageFunc = (world, source, target) => 45,
                     TickRate = 2,
                     DamageType = DamageType.Poison
                 },

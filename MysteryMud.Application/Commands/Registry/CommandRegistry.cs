@@ -1,16 +1,33 @@
-﻿namespace MysteryMud.Application.Commands.Registry;
+﻿using MysteryMud.Core.Command;
+using System.Reflection;
 
-public static class CommandRegistry
+namespace MysteryMud.Application.Commands.Registry;
+
+public class CommandRegistry : ICommandRegistry
 {
     // TODO: trie
-    private static readonly Dictionary<string, ICommand> _commands = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, ICommand> _commands = new(StringComparer.OrdinalIgnoreCase);
 
-    public static void Register(string name, ICommand cmd)
+    public void RegisterCommands(IEnumerable<Assembly> assemblies)
+    {
+        var commandTypes = assemblies
+            .SelectMany(a => a.GetTypes())
+            .Where(t => typeof(ICommand).IsAssignableFrom(t) && !t.IsAbstract);
+
+        foreach (var type in commandTypes)
+        {
+            var command = (ICommand)Activator.CreateInstance(type)!;
+            var name = type.Name.ToLowerInvariant().Replace("command", string.Empty); // Use type name as command name (can be customized with attributes if needed)
+            RegisterCommand(name, command);
+        }
+    }
+
+    public void RegisterCommand(string name, ICommand cmd)
     {
         _commands[name] = cmd;
     }
 
-    public static bool TryGet(ReadOnlySpan<char> cmdSpan, out ICommand? cmd)
+    public bool TryGetCommand(ReadOnlySpan<char> cmdSpan, out ICommand? cmd)
     {
         // Convert to string once (low allocation) to query dictionary
         string key = cmdSpan.ToString();
