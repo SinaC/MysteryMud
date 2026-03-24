@@ -1,7 +1,7 @@
 ﻿using MysteryMud.Core.Command;
 using System.Reflection;
 
-namespace MysteryMud.Application.Commands.Registry;
+namespace MysteryMud.Infrastructure.Command;
 
 public class CommandRegistry : ICommandRegistry
 {

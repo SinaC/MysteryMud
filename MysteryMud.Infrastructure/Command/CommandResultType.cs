@@ -1,4 +1,4 @@
-﻿namespace MysteryMud.Application.Commands.Registry;
+﻿namespace MysteryMud.Infrastructure.Command;
 
 enum CommandResultType
 {

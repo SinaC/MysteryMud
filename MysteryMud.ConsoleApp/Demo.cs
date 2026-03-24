@@ -2,8 +2,6 @@
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Commands;
-using MysteryMud.Application.Commands.Dispatcher;
-using MysteryMud.Application.Commands.Registry;
 using MysteryMud.Core;
 using MysteryMud.Core.Eventing;
 using MysteryMud.Domain;
@@ -11,6 +9,7 @@ using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
+using MysteryMud.Infrastructure.Command;
 using MysteryMud.Infrastructure.Scheduler;
 
 namespace MysteryMud.ConsoleApp;
@@ -19,8 +18,9 @@ static class Demo
 {
     public static void Run(ILogger logger, World world)
     {
+        var commandParser = new CommandParser();
         var commandRegistry = new CommandRegistry();
-        var commandDispatcher = new CommandDispatcher(commandRegistry);
+        var commandDispatcher = new CommandDispatcher(commandRegistry, commandParser);
 
         // get entities for testing
         Span<Entity> characters = stackalloc Entity[10];

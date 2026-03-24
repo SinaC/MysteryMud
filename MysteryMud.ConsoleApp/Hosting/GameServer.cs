@@ -2,8 +2,6 @@
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Commands;
-using MysteryMud.Application.Commands.Dispatcher;
-using MysteryMud.Application.Commands.Registry;
 using MysteryMud.Core.Logging;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
@@ -11,6 +9,7 @@ using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Data.Enums;
 using MysteryMud.Domain.Factories;
+using MysteryMud.Infrastructure.Command;
 using MysteryMud.Infrastructure.Eventing;
 using MysteryMud.Infrastructure.Network;
 using MysteryMud.Infrastructure.Scheduler;
@@ -24,6 +23,7 @@ public class GameServer
     private readonly ILogger _logger;
     private readonly ConnectionService _connections;
     private readonly TelnetServer _telnet;
+    private readonly CommandParser _commandParser;
     private readonly CommandRegistry _commandRegistry;
     private readonly CommandDispatcher _commandDispatcher;
     private readonly MessageService _messageService;
@@ -50,8 +50,9 @@ public class GameServer
             onDisconnected: HandleDisconnected
         );
 
+        _commandParser = new CommandParser();
         _commandRegistry = new CommandRegistry();
-        _commandDispatcher = new CommandDispatcher(_commandRegistry);
+        _commandDispatcher = new CommandDispatcher(_commandRegistry, _commandParser);
         _messageService = new MessageService(_telnet);
         _commandBus = new CommandBus(_commandDispatcher);
         _messageBus = new MessageBus(_messageService);

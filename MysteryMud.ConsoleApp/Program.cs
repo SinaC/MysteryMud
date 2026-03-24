@@ -2,8 +2,6 @@
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using MysteryMud.Application.Commands;
-using MysteryMud.Application.Commands.Registry;
 using MysteryMud.Application.Systems;
 using MysteryMud.ConsoleApp;
 using MysteryMud.ConsoleApp.Hosting;

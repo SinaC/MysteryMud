@@ -1,6 +1,6 @@
 ﻿using MysteryMud.Core.Command;
 
-namespace MysteryMud.Application.Commands.Registry;
+namespace MysteryMud.Infrastructure.Command;
 
 class CommandResult
 {

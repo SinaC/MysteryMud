@@ -1,20 +1,21 @@
 ﻿using Arch.Core;
 using Microsoft.Extensions.Logging;
-using MysteryMud.Application.Commands.Parser;
 using MysteryMud.Core;
 using MysteryMud.Core.Command;
 using MysteryMud.Core.Logging;
 using MysteryMud.Domain;
 
-namespace MysteryMud.Application.Commands.Dispatcher;
+namespace MysteryMud.Infrastructure.Command;
 
 public class CommandDispatcher : ICommandDispatcher
 {
     private readonly ICommandRegistry _commandRegistry;
+    private readonly ICommandParser _commandParser;
 
-    public CommandDispatcher(ICommandRegistry commandRegistry)
+    public CommandDispatcher(ICommandRegistry commandRegistry, ICommandParser commandParser)
     {
         _commandRegistry = commandRegistry;
+        _commandParser = commandParser;
     }
 
     public void Dispatch(SystemContext systemContext, GameState gameState, Entity actor, ReadOnlySpan<char> input)
@@ -22,7 +23,7 @@ public class CommandDispatcher : ICommandDispatcher
         systemContext.Log.LogDebug(LogEvents.System, "*** [{name}] EXECUTING [{input}]", actor.DebugName, input.ToString());
 
         // extract command and arguments
-        CommandParser.SplitCommand(input, out var cmdSpan, out var argsSpan);
+        _commandParser.SplitCommand(input, out var cmdSpan, out var argsSpan);
 
         // search command in registry
         if (!_commandRegistry.TryGetCommand(cmdSpan, out var cmd))
@@ -32,7 +33,7 @@ public class CommandDispatcher : ICommandDispatcher
         }
 
         // parse arguments using command-specific rules
-        CommandParser.Parse(cmd!.ParseMode, cmdSpan, argsSpan, out var ctx);
+        _commandParser.Parse(cmd!.ParseMode, cmdSpan, argsSpan, out var ctx);
 
         // execute command
         cmd.Execute(systemContext, gameState, actor, ctx);
