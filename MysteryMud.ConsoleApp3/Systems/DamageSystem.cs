@@ -1,6 +1,8 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using Microsoft.Extensions.Logging;
 using MysteryMud.ConsoleApp3.Core;
+using MysteryMud.ConsoleApp3.Core.Logging;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Domain.Components.Characters;
 using MysteryMud.ConsoleApp3.Domain.Components.Characters.Players;
@@ -32,14 +34,14 @@ public static class DamageSystem
         // apply damage and check if killed
         health.Current -= damageAmount;
 
-        ctx.Log.Damage("Applying damage from {sourceName} to {targetName} with amount {damage}. Current health: {health.Current}/{health.Max}", source.DebugName, target.DebugName, damageAmount, health.Current, health.Max);
+        ctx.Log.LogInformation(LogEvents.Damage,"Applying damage from {sourceName} to {targetName} with amount {damage}. Current health: {health.Current}/{health.Max}", source.DebugName, target.DebugName, damageAmount, health.Current, health.Max);
 
         ctx.MessageBus.Publish(source, $"%GYou deal %r{damageAmount}%g damage to {target.DisplayName}.%x");
         ctx.MessageBus.Publish(target, $"{source.DisplayName} deals {damageAmount} damage to you.");
 
         if (health.Current <= 0)
         {
-            ctx.Log.Damage("Target {targetName} killed by {sourceName}", target.DebugName, source.DebugName);
+            ctx.Log.LogInformation(LogEvents.Damage,"Target {targetName} killed by {sourceName}", target.DebugName, source.DebugName);
 
             ctx.MessageBus.Publish(source, $"%R{target.DisplayName} is dead.%x");
             ctx.MessageBus.Publish(target, $"You are dead.");

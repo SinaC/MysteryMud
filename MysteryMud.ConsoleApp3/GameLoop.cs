@@ -1,7 +1,9 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using Microsoft.Extensions.Logging;
 using MysteryMud.ConsoleApp3.Core;
 using MysteryMud.ConsoleApp3.Core.Eventing;
+using MysteryMud.ConsoleApp3.Core.Logging;
 using MysteryMud.ConsoleApp3.Core.Scheduler;
 using MysteryMud.ConsoleApp3.Domain.Components.Extensions;
 using MysteryMud.ConsoleApp3.Infrastructure.Services;
@@ -11,16 +13,16 @@ namespace MysteryMud.ConsoleApp3;
 
 internal class GameLoop
 {
-    private readonly IGameLogger _gameLogger;
+    private readonly ILogger _logger;
     private readonly IMessageService _messageService;
     private readonly ICommandBus _commandBus;
     private readonly IMessageBus _messageBus;
     private readonly IScheduler _scheduler;
     private readonly World _world;
 
-    public GameLoop(IGameLogger gameLogger, IMessageService messageService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, World world)
+    public GameLoop(ILogger logger, IMessageService messageService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, World world)
     {
-        _gameLogger = gameLogger;
+        _logger = logger;
         _messageService = messageService;
         _commandBus = commandBus;
         _messageBus = messageBus;
@@ -30,7 +32,7 @@ internal class GameLoop
 
     public void Run()
     {
-        _gameLogger.Info("Starting game loop");
+        _logger.LogInformation(LogEvents.System,"Starting game loop");
 
         while (true)
         {
@@ -44,7 +46,7 @@ internal class GameLoop
 
     private void Tick()
     {
-        _gameLogger.Debug("Processing tick {currentTick}", TimeSystem.CurrentTick);
+        _logger.LogInformation(LogEvents.System, "Processing tick {currentTick}", TimeSystem.CurrentTick);
 
         TimeSystem.NextTick();
 
@@ -56,7 +58,7 @@ internal class GameLoop
 
         var systemContext = new SystemContext
         {
-            Log = _gameLogger,
+            Log = _logger,
             CommandBus = _commandBus,
             MessageBus = _messageBus,
             Scheduler = _scheduler

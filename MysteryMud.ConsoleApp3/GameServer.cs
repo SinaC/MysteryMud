@@ -1,6 +1,7 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
+using MysteryMud.ConsoleApp3.Core.Logging;
 using MysteryMud.ConsoleApp3.Data.Enums;
 using MysteryMud.ConsoleApp3.Domain.Components;
 using MysteryMud.ConsoleApp3.Domain.Components.Characters;
@@ -11,14 +12,13 @@ using MysteryMud.ConsoleApp3.Infrastructure.Eventing;
 using MysteryMud.ConsoleApp3.Infrastructure.Network;
 using MysteryMud.ConsoleApp3.Infrastructure.Scheduler;
 using MysteryMud.ConsoleApp3.Infrastructure.Services;
-using MysteryMud.ConsoleApp3.Logger;
 
 namespace MysteryMud.ConsoleApp3;
 
 public class GameServer
 {
     private readonly World _world;
-    private readonly GameLogger _gameLogger;
+    private readonly ILogger _logger;
     private readonly ConnectionService _connections;
     private readonly TelnetServer _telnet;
     private readonly MessageService _messageService;
@@ -36,7 +36,7 @@ public class GameServer
     {
         _world = world;
 
-        _gameLogger = new GameLogger(logger);
+        _logger = logger;
         _connections = new ConnectionService(_world);
         _telnet = new TelnetServer(
             port: 4000,
@@ -51,12 +51,12 @@ public class GameServer
         _messageBus = new MessageBus(_messageService);
         _scheduler = new Scheduler();
 
-        _gameLoop = new GameLoop(_gameLogger, _messageService, _commandBus, _messageBus, _scheduler, _world);
+        _gameLoop = new GameLoop(_logger, _messageService, _commandBus, _messageBus, _scheduler, _world);
     }
 
     public void Start()
     {
-        _gameLogger.Info("Starting game server");
+        _logger.LogInformation(LogEvents.System, "Starting game server");
 
         Task.Run(() => _telnet.Start());
 
@@ -77,7 +77,7 @@ public class GameServer
 
     private void HandleConnected(int connectionId) // TODO: rename HandleNewConnection
     {
-        _gameLogger.Info("Handling new connection with id {ConnectionId}", connectionId);
+        _logger.LogInformation(LogEvents.System,"Handling new connection with id {ConnectionId}", connectionId);
 
         var entity = _connections.CreatePlayer(connectionId);
 
@@ -87,7 +87,7 @@ public class GameServer
 
     private void HandleDisconnected(int connectionId)
     {
-        _gameLogger.Info("Handling disconnection for connection id {ConnectionId}", connectionId);
+        _logger.LogInformation(LogEvents.System,"Handling disconnection for connection id {ConnectionId}", connectionId);
 
         if (!_connections.TryGetEntity(connectionId, out var entity))
             return;

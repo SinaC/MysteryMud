@@ -1,6 +1,8 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using Microsoft.Extensions.Logging;
 using MysteryMud.ConsoleApp3.Core;
+using MysteryMud.ConsoleApp3.Core.Logging;
 using MysteryMud.ConsoleApp3.Domain.Components.Characters;
 using MysteryMud.ConsoleApp3.Domain.Components.Effects;
 using MysteryMud.ConsoleApp3.Domain.Components.Extensions;
@@ -26,11 +28,11 @@ public static class DurationSystem
 
         if (duration.ExpirationTick != TimeSystem.CurrentTick)
         {
-            ctx.Log.Duration("Rescheduled Duration for Effect {effectName} on Target {targetName} with Expiration Tick {expirationTick}", effect.DebugName, effectInstance.Target.DebugName, duration.ExpirationTick);
+            ctx.Log.LogInformation(LogEvents.Duration,"Rescheduled Duration for Effect {effectName} on Target {targetName} with Expiration Tick {expirationTick}", effect.DebugName, effectInstance.Target.DebugName, duration.ExpirationTick);
             return;
         }
 
-        ctx.Log.Duration("Expiring Duration for Effect {effectName} on Target {targetName}", effect.DebugName, effectInstance.Target.DebugName);
+        ctx.Log.LogInformation(LogEvents.Duration,"Expiring Duration for Effect {effectName} on Target {targetName}", effect.DebugName, effectInstance.Target.DebugName);
 
         // remove the effect from the target's CharacterEffects
         ref var characterEffects = ref effectInstance.Target.Get<CharacterEffects>();

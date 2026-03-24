@@ -1,6 +1,8 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using Microsoft.Extensions.Logging;
 using MysteryMud.ConsoleApp3.Core;
+using MysteryMud.ConsoleApp3.Core.Logging;
 using MysteryMud.ConsoleApp3.Core.Scheduler;
 using MysteryMud.ConsoleApp3.Data.Definitions;
 using MysteryMud.ConsoleApp3.Data.Enums;
@@ -12,7 +14,7 @@ namespace MysteryMud.ConsoleApp3.Domain.Factories;
 
 public static class EffectFactory
 {
-    public static void ApplyEffect(SystemContext systemContext, GameState gameState, EffectTemplate effectTemplate, Entity source, Entity target)
+    public static void ApplyEffect(SystemContext ctx, GameState gameState, EffectTemplate effectTemplate, Entity source, Entity target)
     {
         ref var targetEffects = ref target.Get<CharacterEffects>();
 
@@ -20,7 +22,7 @@ public static class EffectFactory
         int tagIndex = (int)effectTemplate.Tag;
         if (effectTemplate.Tag != EffectTagId.None && targetEffects.EffectsByTag[tagIndex] is Entity existing)
         {
-            var handled = HandleStacking(systemContext, gameState, effectTemplate, existing, source);
+            var handled = HandleStacking(ctx, gameState, effectTemplate, existing, source);
             if (handled)
                 return;
             // not handled: apply new effect
@@ -38,7 +40,7 @@ public static class EffectFactory
         // add effect to target effect cache
         targetEffects.Effects.Add(effect);
 
-        systemContext.Log.Factory("Creating Effect from Template {effectTemplateName} Source {sourceName} Target {targetName}", effectTemplate.Name, source.DebugName, target.DebugName);
+        ctx.Log.LogInformation(LogEvents.Factory, "Creating Effect from Template {effectTemplateName} Source {sourceName} Target {targetName}", effectTemplate.Name, source.DebugName, target.DebugName);
 
         // add tag if applicable
         if (effectTemplate.Tag != EffectTagId.None)
@@ -51,7 +53,7 @@ public static class EffectFactory
             targetEffects.EffectsByTag[tagIndex] = effect;
             targetEffects.ActiveTags |= 1UL << tagIndex;
 
-            systemContext.Log.Factory(" - add tag {tag}", effectTemplate.Tag);
+            ctx.Log.LogInformation(LogEvents.Factory, " - add tag {tag}", effectTemplate.Tag);
         }
 
         // duration ?
@@ -67,8 +69,8 @@ public static class EffectFactory
             });
 
             // queue expiration event
-            systemContext.Log.Factory(" - add duration {duration} ticks (expires at {expirationTick})", duration, expirationTick);
-            systemContext.Scheduler.Publish(effect, ScheduledEventType.EffectExpired, expirationTick);
+            ctx.Log.LogInformation(LogEvents.Factory, " - add duration {duration} ticks (expires at {expirationTick})", duration, expirationTick);
+            ctx.Scheduler.Publish(effect, ScheduledEventType.EffectExpired, expirationTick);
         }
 
         // stat modifiers ?
@@ -86,7 +88,7 @@ public static class EffectFactory
                 };
                 modifiers.Add(modifier);
 
-                systemContext.Log.Factory(" - add stat modifier {stat} {value} ({type})", modifierDefinition.Stat, modifierDefinition.Value, modifierDefinition.Type);
+                ctx.Log.LogInformation(LogEvents.Factory, " - add stat modifier {stat} {value} ({type})", modifierDefinition.Stat, modifierDefinition.Value, modifierDefinition.Type);
             }
             effect.Add(new StatModifiers
             {
@@ -116,8 +118,8 @@ public static class EffectFactory
             });
 
             // queue first tick event
-            systemContext.Log.Factory(" - add DoT {damage} damage of type {damageType} with tick rate {tickRate} and next tick {nextTick}", damage, effectTemplate.Dot.Value.DamageType, effectTemplate.Dot.Value.TickRate, nextTick);
-            systemContext.Scheduler.Publish(effect, ScheduledEventType.DotTick, nextTick);
+            ctx.Log.LogInformation(LogEvents.Factory, " - add DoT {damage} damage of type {damageType} with tick rate {tickRate} and next tick {nextTick}", damage, effectTemplate.Dot.Value.DamageType, effectTemplate.Dot.Value.TickRate, nextTick);
+            ctx.Scheduler.Publish(effect, ScheduledEventType.DotTick, nextTick);
         }
 
         // hot ?
@@ -133,16 +135,16 @@ public static class EffectFactory
                 NextTick = nextTick
             });
             // queue first tick event
-            systemContext.Log.Factory(" - add HoT {heal} heal with tick rate {tickRate} and next tick {nextTick}", heal, effectTemplate.Hot.Value.TickRate, nextTick);
-            systemContext.Scheduler.Publish(effect, ScheduledEventType.HotTick, nextTick);
+            ctx.Log.LogInformation(LogEvents.Factory, " - add HoT {heal} heal with tick rate {tickRate} and next tick {nextTick}", heal, effectTemplate.Hot.Value.TickRate, nextTick);
+            ctx.Scheduler.Publish(effect, ScheduledEventType.HotTick, nextTick);
         }
 
         // apply message
         if (effectTemplate.ApplyMessage != null)
-            systemContext.MessageBus.Publish(source, effectTemplate.ApplyMessage);
+            ctx.MessageBus.Publish(source, effectTemplate.ApplyMessage);
     }
 
-    private static bool HandleStacking(SystemContext systemContext, GameState gameState, EffectTemplate effectTemplate, Entity effect, Entity source)
+    private static bool HandleStacking(SystemContext ctx, GameState gameState, EffectTemplate effectTemplate, Entity effect, Entity source)
     {
         ref var effectInstance = ref gameState.World.Get<EffectInstance>(effect);
 
@@ -170,8 +172,8 @@ public static class EffectFactory
                     duration.ExpirationTick = expirationTick;
 
                     // schedule a new expiration event (don't remove the old one, just add a new one with the new expiration tick - when the old one executes it will check the current expiration tick and do nothing if it's different)
-                    systemContext.Log.Factory("Refreshing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration} Expiration {expirationTick}", effectTemplate.Name, source.DebugName, effectInstance.Target.DebugName, duration, expirationTick);
-                    systemContext.Scheduler.Publish(effect, ScheduledEventType.EffectExpired, expirationTick);
+                    ctx.Log.LogInformation(LogEvents.Factory, "Refreshing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration} Expiration {expirationTick}", effectTemplate.Name, source.DebugName, effectInstance.Target.DebugName, duration, expirationTick);
+                    ctx.Scheduler.Publish(effect, ScheduledEventType.EffectExpired, expirationTick);
                 }
                 return true; // handled
             case StackingRule.Stack:
@@ -186,8 +188,8 @@ public static class EffectFactory
                     duration.ExpirationTick = expirationTick;
 
                     // schedule a new expiration event (don't remove the old one, just add a new one with the new expiration tick - when the old one executes it will check the current expiration tick and do nothing if it's different)
-                    systemContext.Log.Factory("Stacking/Refreshing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration} Expiration {expirationTick} New Stack Count {newStackCount}", effectTemplate.Name, source.DebugName, effectInstance.Target.DebugName, duration, expirationTick, effectInstance.StackCount);
-                    systemContext.Scheduler.Publish(effect, ScheduledEventType.EffectExpired, expirationTick);
+                    ctx.Log.LogInformation(LogEvents.Factory, "Stacking/Refreshing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration} Expiration {expirationTick} New Stack Count {newStackCount}", effectTemplate.Name, source.DebugName, effectInstance.Target.DebugName, duration, expirationTick, effectInstance.StackCount);
+                    ctx.Scheduler.Publish(effect, ScheduledEventType.EffectExpired, expirationTick);
                 }
                 return true; // handled
         }

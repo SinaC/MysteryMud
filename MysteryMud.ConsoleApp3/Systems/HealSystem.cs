@@ -1,6 +1,8 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using Microsoft.Extensions.Logging;
 using MysteryMud.ConsoleApp3.Core;
+using MysteryMud.ConsoleApp3.Core.Logging;
 using MysteryMud.ConsoleApp3.Domain.Components.Characters;
 using MysteryMud.ConsoleApp3.Domain.Components.Extensions;
 using MysteryMud.ConsoleApp3.Simulation.Calculators;
@@ -33,7 +35,7 @@ public static class HealSystem
         // apply heal and cap at max health
         health.Current = Math.Min(health.Current + healAmount, health.Max);
 
-        ctx.Log.Heal("Applying heal from {sourceName} to {targetName} with amount {heal}. Current health: {health.Current}/{health.Max}", source.DebugName, target.DebugName, healAmount, health.Current, health.Max);
+        ctx.Log.LogInformation(LogEvents.Heal,"Applying heal from {sourceName} to {targetName} with amount {heal}. Current health: {health.Current}/{health.Max}", source.DebugName, target.DebugName, healAmount, health.Current, health.Max);
 
         ctx.MessageBus.Publish(source, $"%GYou heal %g{target.DisplayName} for %g{healAmount}%g health.%x");
         ctx.MessageBus.Publish(target, $"%G{source.DisplayName} heals you for %g{healAmount}%g health.%x");

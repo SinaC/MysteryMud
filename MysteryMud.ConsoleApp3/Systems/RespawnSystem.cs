@@ -1,6 +1,8 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using Microsoft.Extensions.Logging;
 using MysteryMud.ConsoleApp3.Core;
+using MysteryMud.ConsoleApp3.Core.Logging;
 using MysteryMud.ConsoleApp3.Domain.Components;
 using MysteryMud.ConsoleApp3.Domain.Components.Characters;
 using MysteryMud.ConsoleApp3.Domain.Components.Characters.Players;
@@ -20,7 +22,7 @@ public static class RespawnSystem
             // Optional: respawn timer check
             //if (Time.time - dead.TimeOfDeath >= RespawnDelay)
             {
-                ctx.Log.Info("Respawning character {playerName} to room {roomName}", player.DebugName, respawnState.RespawnRoom.DebugName);
+                ctx.Log.LogInformation(LogEvents.Respawn, "Respawning character {playerName} to room {roomName}", player.DebugName, respawnState.RespawnRoom.DebugName);
 
                 // Move player to respawn room
                 location.Room = respawnState.RespawnRoom;

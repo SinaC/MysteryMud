@@ -1,6 +1,8 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using Microsoft.Extensions.Logging;
 using MysteryMud.ConsoleApp3.Core;
+using MysteryMud.ConsoleApp3.Core.Logging;
 using MysteryMud.ConsoleApp3.Domain.Components;
 using MysteryMud.ConsoleApp3.Domain.Components.Characters;
 using MysteryMud.ConsoleApp3.Domain.Components.Characters.Mobiles;
@@ -8,7 +10,6 @@ using MysteryMud.ConsoleApp3.Domain.Components.Characters.Players;
 using MysteryMud.ConsoleApp3.Domain.Components.Extensions;
 using MysteryMud.ConsoleApp3.Domain.Components.Items;
 using MysteryMud.ConsoleApp3.Domain.Components.Rooms;
-using System.ComponentModel;
 
 namespace MysteryMud.ConsoleApp3.Systems;
 
@@ -26,7 +27,7 @@ public static class CleanupSystem
                 .WithAll<DisconnectedTag>();
         state.World.Query(disconnectedPlayersQuery, (Entity player, ref DisconnectedTag disconnectedTag) =>
         {
-            ctx.Log.Cleanup("Cleaning up disconnected player {characterName}", player.DebugName);
+            ctx.Log.LogInformation(LogEvents.Cleanup,"Cleaning up disconnected player {characterName}", player.DebugName);
 
             ref var location = ref player.TryGetRef<Location>(out var hasLocation);
             if (hasLocation)
@@ -47,7 +48,7 @@ public static class CleanupSystem
                 .WithAll<Dead, Location, NpcTag>();
         state.World.Query(destroyCharactersQuery, (Entity character, ref Dead deadTag, ref Location location, ref NpcTag npcTag) =>
         {
-            ctx.Log.Cleanup("Cleaning up character {characterName} from room {roomName}", character.DebugName, location.Room.DebugName);
+            ctx.Log.LogInformation(LogEvents.Cleanup,"Cleaning up character {characterName} from room {roomName}", character.DebugName, location.Room.DebugName);
 
             ref var roomContents = ref location.Room.Get<RoomContents>();
             roomContents.Characters.Remove(character);
@@ -70,7 +71,7 @@ public static class CleanupSystem
             ref var location = ref item.TryGetRef<Location>(out var hasLocation);
             if (hasLocation)
             {
-                ctx.Log.Cleanup("Cleaning up item {itemName} from location {locationName}", item.DebugName, location.Room.DebugName);
+                ctx.Log.LogInformation(LogEvents.Cleanup,"Cleaning up item {itemName} from location {locationName}", item.DebugName, location.Room.DebugName);
 
                 ref var roomContents = ref location.Room.Get<RoomContents>();
                 roomContents.Items.Remove(item);
@@ -81,14 +82,14 @@ public static class CleanupSystem
             {
                 if (containedIn.Character != Entity.Null)
                 {
-                    ctx.Log.Cleanup("Cleaning up item {itemName} from inventory of {inventoryOwnerName}", item.DebugName, containedIn.Character.DebugName);
+                    ctx.Log.LogInformation(LogEvents.Cleanup,"Cleaning up item {itemName} from inventory of {inventoryOwnerName}", item.DebugName, containedIn.Character.DebugName);
 
                     ref var inventory = ref containedIn.Character.Get<Inventory>();
                     inventory.Items.Remove(item);
                 }
                 else if (containedIn.Container != Entity.Null)
                 {
-                    ctx.Log.Cleanup("Cleaning up item {itemName} from container {containerName}", item.DebugName, containedIn.Container.DebugName);
+                    ctx.Log.LogInformation(LogEvents.Cleanup,"Cleaning up item {itemName} from container {containerName}", item.DebugName, containedIn.Container.DebugName);
 
                     ref var containerContents = ref containedIn.Container.Get<ContainerContents>();
                     containerContents.Items.Remove(item);
@@ -103,7 +104,7 @@ public static class CleanupSystem
                 {
                     if (equipment.Slots[slot] == item)
                     {
-                        ctx.Log.Cleanup("Cleaning up item {itemName} from equipment of {wearerName} in slot {slot}", item.DebugName, equipped.Wearer.DebugName, slot);
+                        ctx.Log.LogInformation(LogEvents.Cleanup,"Cleaning up item {itemName} from equipment of {wearerName} in slot {slot}", item.DebugName, equipped.Wearer.DebugName, slot);
 
                         equipment.Slots[slot] = Entity.Null;
                     }
