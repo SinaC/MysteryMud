@@ -3,7 +3,7 @@ using MysteryMud.Core;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.Domain.Factories;
 
-namespace MysteryMud.Application.Systems;
+namespace MysteryMud.Domain.Systems;
 
 public static class SpellSystem
 {

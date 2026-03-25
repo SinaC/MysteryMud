@@ -1,7 +1,7 @@
 ﻿using Arch.Core;
 using MysteryMud.GameData.Enums;
 
-namespace MysteryMud.Application.Simulation.Calculators;
+namespace MysteryMud.Domain.Calculators;
 
 public static class AggroCalculator
 {

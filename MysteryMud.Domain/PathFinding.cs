@@ -2,7 +2,7 @@
 using Arch.Core.Extensions;
 using MysteryMud.Domain.Components.Rooms;
 
-namespace MysteryMud.Application.Simulation;
+namespace MysteryMud.Domain;
 
 public static class Pathfinding
 {

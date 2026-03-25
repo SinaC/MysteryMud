@@ -4,7 +4,7 @@ using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.GameData.Enums;
 
-namespace MysteryMud.Application.Systems;
+namespace MysteryMud.Domain.Systems;
 
 // important note: even when worn, item stays in inventory
 public static class EquipmentSystem

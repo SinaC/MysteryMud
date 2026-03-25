@@ -5,7 +5,7 @@ using MysteryMud.GameData.Enums;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
 
-namespace MysteryMud.Application.Systems;
+namespace MysteryMud.Domain.Systems;
 
 public static class StatSystem
 {

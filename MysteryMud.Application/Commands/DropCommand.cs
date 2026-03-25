@@ -5,8 +5,8 @@ using MysteryMud.Domain;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
-using MysteryMud.Application.Systems;
 using MysteryMud.Core.Command;
+using MysteryMud.Domain.Systems;
 
 namespace MysteryMud.Application.Commands;
 

@@ -1,4 +1,4 @@
-﻿namespace MysteryMud.Application.Systems;
+﻿namespace MysteryMud.Domain.Systems;
 
 // TODO
 public static class VisibilitySystem

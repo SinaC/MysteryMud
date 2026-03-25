@@ -5,7 +5,7 @@ using MysteryMud.Domain;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
 
-namespace MysteryMud.Application.Systems;
+namespace MysteryMud.Domain.Systems;
 
 public class DisplayRoomSystem
 {

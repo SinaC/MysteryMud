@@ -11,7 +11,7 @@ using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.Domain.Components.Characters.Players;
 
-namespace MysteryMud.Application.Systems;
+namespace MysteryMud.Domain.Systems;
 
 public static class CleanupSystem
 {

@@ -8,9 +8,9 @@ using MysteryMud.GameData.Enums;
 using MysteryMud.Domain.Factories;
 using MysteryMud.Core;
 using MysteryMud.Core.Logging;
-using MysteryMud.Application.Simulation.Calculators;
+using MysteryMud.Domain.Calculators;
 
-namespace MysteryMud.Application.Systems;
+namespace MysteryMud.Domain.Systems;
 
 public static class DamageSystem
 {

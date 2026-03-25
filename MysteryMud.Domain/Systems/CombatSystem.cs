@@ -6,7 +6,7 @@ using MysteryMud.GameData.Enums;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
 
-namespace MysteryMud.Application.Systems;
+namespace MysteryMud.Domain.Systems;
 
 public static class CombatSystem
 {

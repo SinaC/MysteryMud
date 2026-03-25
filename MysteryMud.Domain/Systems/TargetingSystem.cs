@@ -4,7 +4,7 @@ using MysteryMud.Core.Command;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 
-namespace MysteryMud.Application.Systems;
+namespace MysteryMud.Domain.Systems;
 
 public static class TargetingSystem
 {

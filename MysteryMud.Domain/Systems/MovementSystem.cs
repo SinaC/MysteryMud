@@ -4,7 +4,7 @@ using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
 
-namespace MysteryMud.Application.Systems;
+namespace MysteryMud.Domain.Systems;
 
 public static class MovementSystem
 {

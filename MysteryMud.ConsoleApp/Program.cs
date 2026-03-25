@@ -2,7 +2,6 @@
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using MysteryMud.Application.Systems;
 using MysteryMud.ConsoleApp;
 using MysteryMud.ConsoleApp.Hosting;
 using MysteryMud.Domain.Components;
@@ -15,6 +14,7 @@ using MysteryMud.Infrastructure.Persistence;
 using MysteryMud.Infrastructure.Persistence.Dto;
 using Serilog;
 using System.Text.Json;
+using MysteryMud.Domain.Systems;
 
 // build configuration
 var configuration = new ConfigurationBuilder()

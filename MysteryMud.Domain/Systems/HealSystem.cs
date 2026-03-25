@@ -1,13 +1,13 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
-using MysteryMud.Application.Simulation.Calculators;
 using MysteryMud.Core;
 using MysteryMud.Core.Logging;
 using MysteryMud.Domain;
+using MysteryMud.Domain.Calculators;
 using MysteryMud.Domain.Components.Characters;
 
-namespace MysteryMud.Application.Systems;
+namespace MysteryMud.Domain.Systems;
 
 public static class HealSystem
 {

@@ -4,7 +4,7 @@ using MysteryMud.Domain;
 using MysteryMud.GameData.Enums;
 using MysteryMud.Domain.Components.Characters;
 
-namespace MysteryMud.Application.Systems;
+namespace MysteryMud.Domain.Systems;
 
 // TODO: see Mud.Net
 public static class ActSystem

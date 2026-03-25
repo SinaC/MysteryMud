@@ -2,7 +2,7 @@
 using Arch.Core.Extensions;
 using MysteryMud.Domain.Components;
 
-namespace MysteryMud.Application.Systems;
+namespace MysteryMud.Domain.Systems;
 
 public static class NameSystem
 {

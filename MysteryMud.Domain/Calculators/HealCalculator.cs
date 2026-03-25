@@ -1,6 +1,6 @@
 ﻿using Arch.Core;
 
-namespace MysteryMud.Application.Simulation.Calculators;
+namespace MysteryMud.Domain.Calculators;
 
 public static class HealCalculator
 {
