@@ -2,7 +2,7 @@
 	{
 		"Name": "test",
 		"Aliases": [],
-		"RequiredLevel": "Admin",
+		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 0,
 		"AllowAbbreviation": false,

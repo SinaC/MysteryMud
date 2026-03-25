@@ -2,7 +2,7 @@
 
 namespace MysteryMud.Infrastructure.Network;
 
-public class OutputBuffer
+public class OutputBuffer : IDisposable
 {
     private byte[] _buffer;
     private int _length;
@@ -27,6 +27,7 @@ public class OutputBuffer
     }
 
     public ReadOnlyMemory<byte> Data => _buffer.AsMemory(0, _length);
+    //public ReadOnlySpan<byte> AsSpan() => _buffer.AsSpan(0, _length);  use if asynchronous API is needed
 
     public void Clear() => _length = 0;
 
@@ -44,5 +45,12 @@ public class OutputBuffer
         ArrayPool<byte>.Shared.Return(_buffer);
 
         _buffer = newBuffer;
+    }
+
+    public void Dispose()
+    {
+        ArrayPool<byte>.Shared.Return(_buffer);
+        _buffer = Array.Empty<byte>();
+        _length = 0;
     }
 }

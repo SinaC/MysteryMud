@@ -70,7 +70,6 @@ static class Demo
         commandDispatcher.Dispatch(systemContext, gameState, chest, "look".AsSpan());
         commandDispatcher.Dispatch(systemContext, gameState, gem, "look".AsSpan());
         commandDispatcher.Dispatch(systemContext, gameState, goblin, "get trash".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, goblin, "test troll poison".AsSpan());
 
         ////testing combat
         //commandDispatcher.Dispatch(systemContext, gameState, player, "kill goblin".AsSpan());

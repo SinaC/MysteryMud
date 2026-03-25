@@ -26,6 +26,11 @@ public class TestCommand : ICommand
         ref var roomContents = ref actor.Get<Location>().Room.Get<RoomContents>().Characters;
         var target = TargetingSystem.SelectSingleTarget(actor, ctx.Primary, roomContents);
 
+        systemContext.MessageBus.Publish(actor, "Ansi16: %RR%GG%YY%BB%MM%CC%WW%rr%gg%yy%bb%mm%cc%ww%xnocolor");
+        systemContext.MessageBus.Publish(actor, "Ansi256: %=214orange%xnocolor");
+        systemContext.MessageBus.Publish(actor, "RGB: %#FFA500orange%xnocolor");
+        systemContext.MessageBus.Publish(actor, "GRADIENT: %#FFA500>#00FFA5orange-2-cyan%xnocolor");
+
         if (target == default)
         {
             systemContext.MessageBus.Publish(actor, "You don't see that here.");
