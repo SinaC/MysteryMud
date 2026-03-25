@@ -1,5 +1,5 @@
 ﻿using Arch.Core;
-using MysteryMud.Domain.Data.Definitions;
+using MysteryMud.GameData.Definitions;
 
 namespace MysteryMud.Domain.Components.Effects;
 

@@ -1,23 +1,36 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.Core;
+using MysteryMud.Core.Command;
 using MysteryMud.Domain;
-using MysteryMud.Domain.Data.Enums;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Application.Systems;
-using MysteryMud.Core.Command;
+using MysteryMud.Domain.Systems;
+using MysteryMud.GameData.Definitions;
+using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.Commands;
 
 public class MstatCommand : ICommand
 {
-    public CommandParseMode ParseMode => CommandParseMode.Target;
+    public CommandParseOptions ParseOptions => ICommand.Target;
+    public CommandDefinition Definition { get; }
+
+    public MstatCommand(CommandDefinition definition)
+    {
+        Definition = definition;
+    }
 
     public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {
+        if (ctx.TargetCount == 0)
+        {
+            systemContext.MessageBus.Publish(actor, "Mstat what ?");
+            return;
+        }
+
         var people = actor.Get<Location>().Room.Get<RoomContents>().Characters;
 
         var target = TargetingSystem.SelectSingleTarget(actor, ctx.Primary, people);
@@ -70,7 +83,7 @@ public class MstatCommand : ICommand
             var sourceName = effectInstance.Source.DisplayName;
             if (hasDuration)
             {
-                var remainingTicks = duration.ExpirationTick - (duration.LastRefreshTick ?? duration.StartTick);
+                var remainingTicks = duration.ExpirationTick - gameState.CurrentTick;
                 systemContext.MessageBus.Publish(actor, $"- {effectName} Source: {sourceName} Stacks: {stackCount} Remaining ticks: {remainingTicks}");
             }
             else

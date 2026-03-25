@@ -1,12 +1,12 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
-using MysteryMud.Application.Systems;
 using MysteryMud.Core;
 using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Logging;
 using MysteryMud.Core.Scheduler;
 using MysteryMud.Domain;
+using MysteryMud.Domain.Systems;
 using MysteryMud.Infrastructure.Services;
 
 namespace MysteryMud.ConsoleApp.Hosting;

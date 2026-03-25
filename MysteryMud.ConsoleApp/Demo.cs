@@ -1,27 +1,23 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
-using MysteryMud.Application.Commands;
-using MysteryMud.Application.Commands.Dispatcher;
-using MysteryMud.Application.Commands.Registry;
 using MysteryMud.Core;
+using MysteryMud.Core.Command;
 using MysteryMud.Core.Eventing;
 using MysteryMud.Domain;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
+using MysteryMud.GameData.Definitions;
 using MysteryMud.Infrastructure.Scheduler;
 
 namespace MysteryMud.ConsoleApp;
 
 static class Demo
 {
-    public static void Run(ILogger logger, World world)
+    public static void Run(ILogger logger, World world, ICommandDispatcher commandDispatcher)
     {
-        var commandRegistry = new CommandRegistry();
-        var commandDispatcher = new CommandDispatcher(commandRegistry);
-
         // get entities for testing
         Span<Entity> characters = stackalloc Entity[10];
         world.GetEntities(new QueryDescription().WithAll<Health>(), characters);
@@ -41,28 +37,6 @@ static class Demo
         var gameState = new GameState { World = world, CurrentTick = 0 };
         // system context for testing
         var systemContext = new SystemContext { Log = logger, MessageBus = new DemoMessageBus(), Scheduler = new Scheduler() };
-
-        // add commands
-        // register commands
-        commandRegistry.RegisterCommand("test", new TestCommand());
-        commandRegistry.RegisterCommand("kill", new KillCommand());
-        commandRegistry.RegisterCommand("get", new GetCommand());
-        commandRegistry.RegisterCommand("look", new LookCommand());
-        commandRegistry.RegisterCommand("say", new SayCommand());
-        commandRegistry.RegisterCommand("tell", new TellCommand());
-        commandRegistry.RegisterCommand("inventory", new InventoryCommand());
-        commandRegistry.RegisterCommand("equipment", new EquipmentCommand());
-        commandRegistry.RegisterCommand("wear", new WearCommand());
-        commandRegistry.RegisterCommand("remove", new RemoveCommand());
-        commandRegistry.RegisterCommand("drop", new DropCommand());
-        commandRegistry.RegisterCommand("give", new GiveCommand());
-        commandRegistry.RegisterCommand("put", new PutCommand());
-        commandRegistry.RegisterCommand("north", new NorthCommand());
-        commandRegistry.RegisterCommand("south", new SouthCommand());
-        commandRegistry.RegisterCommand("destroy", new DestroyCommand());
-        commandRegistry.RegisterCommand("sacrifice", new SacrificeCommand());
-        commandRegistry.RegisterCommand("mstat", new MstatCommand());
-        commandRegistry.RegisterCommand("cast", new CastCommand());
 
         // test commands
         commandDispatcher.Dispatch(systemContext, gameState, player, "look".AsSpan());
@@ -88,6 +62,7 @@ static class Demo
         commandDispatcher.Dispatch(systemContext, gameState, player, "look goblin".AsSpan());
         commandDispatcher.Dispatch(systemContext, gameState, player, "inventory".AsSpan());
         commandDispatcher.Dispatch(systemContext, gameState, player, "get gem".AsSpan());
+        commandDispatcher.Dispatch(systemContext, gameState, player, "inventory".AsSpan());
         commandDispatcher.Dispatch(systemContext, gameState, player, "put gem chest".AsSpan());
         commandDispatcher.Dispatch(systemContext, gameState, player, "look chest".AsSpan());
         commandDispatcher.Dispatch(systemContext, gameState, player, "look".AsSpan());
@@ -109,6 +84,19 @@ static class Demo
         //commandDispatcher.Dispatch(systemContext, gameState, goblin, "test troll poison".AsSpan());
         //commandDispatcher.Dispatch(systemContext, gameState, player, "test troll poison".AsSpan());
         //commandDispatcher.Dispatch(systemContext, gameState, goblin, "test troll poison".AsSpan());
+    }
+
+    private static CommandDefinition CreateDefinition(string name, bool allowAbbrevation = true, int priority = 0)
+    {
+        return new CommandDefinition
+        {
+            Name = name,
+            Aliases= [],
+            RequiredLevel = GameData.Enums.CommandLevel.Player,
+            MinimumPosition = GameData.Enums.Position.Standing,
+            Priority = priority,
+            AllowAbbreviation = allowAbbrevation,
+        };
     }
 
     private class DemoMessageBus : IMessageBus

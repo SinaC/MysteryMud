@@ -1,19 +1,32 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.Core;
+using MysteryMud.Core.Command;
 using MysteryMud.Domain;
 using MysteryMud.Domain.Components.Characters;
-using MysteryMud.Application.Systems;
-using MysteryMud.Core.Command;
+using MysteryMud.Domain.Systems;
+using MysteryMud.GameData.Definitions;
 
 namespace MysteryMud.Application.Commands;
 
 public class RemoveCommand : ICommand
 {
-    public CommandParseMode ParseMode => CommandParseMode.Target;
+    public CommandParseOptions ParseOptions => ICommand.Target; 
+    public CommandDefinition Definition { get; }
+
+    public RemoveCommand(CommandDefinition definition)
+    {
+        Definition = definition;
+    }
 
     public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {
+        if (ctx.TargetCount == 0)
+        {
+            systemContext.MessageBus.Publish(actor, "Remove what ?");
+            return;
+        }
+
         ref var equipment = ref actor.Get<Equipment>();
 
         // TODO: remove all ? remove x.something

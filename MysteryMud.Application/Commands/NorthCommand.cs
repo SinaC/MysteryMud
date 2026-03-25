@@ -1,17 +1,24 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.Core;
-using MysteryMud.Domain.Data.Enums;
+using MysteryMud.Core.Command;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Application.Systems;
-using MysteryMud.Core.Command;
+using MysteryMud.Domain.Systems;
+using MysteryMud.GameData.Definitions;
+using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.Commands;
 
 public class NorthCommand : ICommand
 {
-    public CommandParseMode ParseMode => CommandParseMode.None;
+    public CommandParseOptions ParseOptions => ICommand.None;
+    public CommandDefinition Definition { get; }
+
+    public NorthCommand(CommandDefinition definition)
+    {
+        Definition = definition;
+    }
 
     public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {

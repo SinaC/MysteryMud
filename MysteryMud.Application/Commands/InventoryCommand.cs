@@ -5,13 +5,20 @@ using MysteryMud.Core.Command;
 using MysteryMud.Domain;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
+using MysteryMud.GameData.Definitions;
 
 namespace MysteryMud.Application.Commands;
 
 // important note: even when worn item stays in inventory
 public class InventoryCommand : ICommand
 {
-    public CommandParseMode ParseMode => CommandParseMode.None;
+    public CommandParseOptions ParseOptions => ICommand.None;
+    public CommandDefinition Definition { get; }
+
+    public InventoryCommand(CommandDefinition definition)
+    {
+        Definition = definition;
+    }
 
     public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {

@@ -1,0 +1,155 @@
+[
+	{
+		"Name": "test",
+		"Aliases": [],
+		"RequiredLevel": "Player",
+		"MinimumPosition": "Standing",
+		"Priority": 0,
+		"AllowAbbreviation": false
+	},
+
+	{
+		"Name": "cast",
+		"Aliases": [],
+		"RequiredLevel": "Player",
+		"MinimumPosition": "Standing",
+		"Priority": 50,
+		"AllowAbbreviation": true
+	},
+	{
+		"Name": "destroy",
+		"Aliases": [],
+		"RequiredLevel": "Player",
+		"MinimumPosition": "Standing",
+		"Priority": 0,
+		"AllowAbbreviation": true
+	},
+	{
+		"Name": "drop",
+		"Aliases": [],
+		"RequiredLevel": "Player",
+		"MinimumPosition": "Standing",
+		"Priority": 0,
+		"AllowAbbreviation": true
+	},
+	{
+		"Name": "equipment",
+		"Aliases": [],
+		"RequiredLevel": "Player",
+		"MinimumPosition": "Standing",
+		"Priority": 0,
+		"AllowAbbreviation": true
+	},
+	{
+		"Name": "get",
+		"Aliases": ["take"],
+		"RequiredLevel": "Player",
+		"MinimumPosition": "Standing",
+		"Priority": 100,
+		"AllowAbbreviation": true
+	},
+	{
+		"Name": "give",
+		"Aliases": [],
+		"RequiredLevel": "Player",
+		"MinimumPosition": "Standing",
+		"Priority": 0,
+		"AllowAbbreviation": true
+	},
+	{
+		"Name": "inventory",
+		"Aliases": [],
+		"RequiredLevel": "Player",
+		"MinimumPosition": "Standing",
+		"Priority": 0,
+		"AllowAbbreviation": true
+	},
+	{
+		"Name": "kill",
+		"Aliases": [],
+		"RequiredLevel": "Player",
+		"MinimumPosition": "Standing",
+		"Priority": 0,
+		"AllowAbbreviation": true
+	},
+	{
+		"Name": "look",
+		"Aliases": [],
+		"RequiredLevel": "Player",
+		"MinimumPosition": "Standing",
+		"Priority": 0,
+		"AllowAbbreviation": true
+	},
+	{
+		"Name": "mstat",
+		"Aliases": [],
+		"RequiredLevel": "Player",
+		"MinimumPosition": "Standing",
+		"Priority": 0,
+		"AllowAbbreviation": true
+	},
+	{
+		"Name": "north",
+		"Aliases": [],
+		"RequiredLevel": "Player",
+		"MinimumPosition": "Standing",
+		"Priority": 1000,
+		"AllowAbbreviation": true
+	},
+	{
+		"Name": "put",
+		"Aliases": [],
+		"RequiredLevel": "Player",
+		"MinimumPosition": "Standing",
+		"Priority": 0,
+		"AllowAbbreviation": true
+	},
+	{
+		"Name": "remove",
+		"Aliases": [],
+		"RequiredLevel": "Player",
+		"MinimumPosition": "Standing",
+		"Priority": 0,
+		"AllowAbbreviation": true
+	},
+	{
+		"Name": "sacrifice",
+		"Aliases": [],
+		"RequiredLevel": "Player",
+		"MinimumPosition": "Standing",
+		"Priority": 0,
+		"AllowAbbreviation": true
+	},
+	{
+		"Name": "say",
+		"Aliases": [],
+		"RequiredLevel": "Player",
+		"MinimumPosition": "Standing",
+		"Priority": 0,
+		"AllowAbbreviation": true
+	},
+	{
+		"Name": "south",
+		"Aliases": [],
+		"RequiredLevel": "Player",
+		"MinimumPosition": "Standing",
+		"Priority": 1000,
+		"AllowAbbreviation": true
+	},
+	{
+		"Name": "tell",
+		"Aliases": [],
+		"RequiredLevel": "Player",
+		"MinimumPosition": "Standing",
+		"Priority": 0,
+		"AllowAbbreviation": true
+	},
+	{
+		"Name": "wear",
+		"Aliases": [],
+		"RequiredLevel": "Player",
+		"MinimumPosition": "Standing",
+		"Priority": 0,
+		"AllowAbbreviation": true
+	}
+]

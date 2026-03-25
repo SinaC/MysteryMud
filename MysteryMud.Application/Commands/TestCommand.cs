@@ -1,19 +1,25 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
-using MysteryMud.Application.Systems;
 using MysteryMud.Core;
 using MysteryMud.Core.Command;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Data.Definitions;
-using MysteryMud.Domain.Data.Enums;
+using MysteryMud.GameData.Definitions;
+using MysteryMud.GameData.Enums;
 using MysteryMud.Domain.Factories;
+using MysteryMud.Domain.Systems;
 
 namespace MysteryMud.Application.Commands;
 
 public class TestCommand : ICommand
 {
-    public CommandParseMode ParseMode => CommandParseMode.TargetAndText;
+    public CommandParseOptions ParseOptions => ICommand.TargetAndText;
+    public CommandDefinition Definition { get; }
+
+    public TestCommand(CommandDefinition definition)
+    {
+        Definition = definition;
+    }
 
     public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {

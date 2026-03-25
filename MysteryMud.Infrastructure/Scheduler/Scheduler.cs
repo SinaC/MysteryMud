@@ -1,7 +1,7 @@
 ﻿using Arch.Core;
-using MysteryMud.Application.Systems;
 using MysteryMud.Core;
 using MysteryMud.Core.Scheduler;
+using MysteryMud.Domain.Systems;
 
 namespace MysteryMud.Infrastructure.Scheduler;
 

@@ -1,19 +1,26 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.Core;
+using MysteryMud.Core.Command;
 using MysteryMud.Domain;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Application.Systems;
-using MysteryMud.Core.Command;
+using MysteryMud.Domain.Systems;
+using MysteryMud.GameData.Definitions;
 
 namespace MysteryMud.Application.Commands;
 
 public class LookCommand : ICommand
 {
-    public CommandParseMode ParseMode => CommandParseMode.TargetPair;
+    public CommandParseOptions ParseOptions => ICommand.TargetPair;
+    public CommandDefinition Definition { get; }
+
+    public LookCommand(CommandDefinition definition)
+    {
+        Definition = definition;
+    }
 
     // arguments:
     //   - no argument
@@ -26,7 +33,7 @@ public class LookCommand : ICommand
     public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {
         // No argument: show room/container overview
-        if (ctx.Primary.Kind == TargetKind.Single && ctx.Primary.Name.IsEmpty)
+        if (ctx.TargetCount == 0)
         {
             LookAround(systemContext, actor);
             return;
@@ -62,6 +69,16 @@ public class LookCommand : ICommand
             if (TargetingSystem.Matches(item, targetName))
             {
                 systemContext.MessageBus.Publish(actor, $"Item: {item.DisplayName}");
+
+                // TODO: remove, should be in ExamineCommand
+                ref var containerContents = ref item.TryGetRef<ContainerContents>(out var isContainerContents);
+                if (isContainerContents)
+                {
+                    foreach (var containerItem in containerContents.Items)
+                    {
+                        systemContext.MessageBus.Publish(actor, $"It contains: {containerItem.DisplayName}");
+                    }
+                }
                 return;
             }
         }

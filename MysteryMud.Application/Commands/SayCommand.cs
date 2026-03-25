@@ -5,12 +5,19 @@ using MysteryMud.Core.Command;
 using MysteryMud.Domain;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
+using MysteryMud.GameData.Definitions;
 
 namespace MysteryMud.Application.Commands;
 
 public class SayCommand : ICommand
 {
-    public CommandParseMode ParseMode => CommandParseMode.FullText;
+    public CommandParseOptions ParseOptions => ICommand.FullText;
+    public CommandDefinition Definition { get; }
+
+    public SayCommand(CommandDefinition definition)
+    {
+        Definition = definition;
+    }
 
     public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {

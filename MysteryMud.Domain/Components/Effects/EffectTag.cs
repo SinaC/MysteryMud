@@ -1,4 +1,4 @@
-﻿using MysteryMud.Domain.Data.Enums;
+﻿using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Components.Effects;
 

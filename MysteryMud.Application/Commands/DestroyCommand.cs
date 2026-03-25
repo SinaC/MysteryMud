@@ -1,20 +1,33 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
-using MysteryMud.Application.Systems;
 using MysteryMud.Core;
 using MysteryMud.Core.Command;
 using MysteryMud.Domain;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
+using MysteryMud.Domain.Systems;
+using MysteryMud.GameData.Definitions;
 
 namespace MysteryMud.Application.Commands;
 
 public class DestroyCommand : ICommand
 {
-    public CommandParseMode ParseMode => CommandParseMode.Target;
+    public CommandParseOptions ParseOptions => ICommand.Target;
+    public CommandDefinition Definition { get; }
+
+    public DestroyCommand(CommandDefinition definition)
+    {
+        Definition = definition;
+    }
 
     public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {
+        if (ctx.TargetCount == 0)
+        {
+            systemContext.MessageBus.Publish(actor, "Destroy what ?");
+            return;
+        }
+
         // search in inventory (equipped items are also in inventory)
         ref var inventory = ref actor.Get<Inventory>();
 

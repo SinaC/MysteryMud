@@ -1,0 +1,46 @@
+{
+  "Effects": [
+    {
+      "Name": "Poison",
+      "Tag": "Poison",
+      "Stacking": "Stack",
+      "MaxStacks": 3,
+      "StatModifiers": [
+        { "Stat": "Strength", "Type": "Flat", "Value": -3 }
+      ],
+      "Flags": ["Poison"],
+      "DurationFormula": "4 * caster.Strength",
+      "Dot": {
+         "DamageFormula": "1",
+         "DamageType": "Poison",
+         "TickRate": 2
+      }
+    },
+    {
+      "Name": "Bless",
+      "Tag": "Bless",
+      "Stacking": "Refresh",
+      "MaxStacks": 1,
+      "StatModifiers": [
+        { "Stat": "HitRoll", "Type": "Flat", "Value": 5 },
+        { "Stat": "Strength", "Type": "AddPercent", "Value": 10 }
+      ],
+      "Flags": ["Bless"],
+      "DurationFormula": "60",
+      "Hot": {
+         "HealFormula": "3 + caster.Level / 2",
+         "TickRate": 3
+      }
+    }
+  ],
+  "Spells": [
+    {
+      "Name": "a",
+      "Effects": ["Poison"]
+    },
+    {
+      "Name": "b",
+      "Effects": ["Bless"]
+    }
+  ]
+}

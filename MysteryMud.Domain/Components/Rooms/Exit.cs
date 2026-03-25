@@ -1,5 +1,5 @@
 ﻿using Arch.Core;
-using MysteryMud.Domain.Data.Enums;
+using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Components.Rooms;
 
