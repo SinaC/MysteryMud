@@ -1,7 +1,6 @@
 ﻿namespace MysteryMud.Infrastructure.Persistence.Dto;
 
-public class HotData
-{
-    public string HealFormula { get; set; }
-    public int TickRate { get; set; } // in ticks
-}
+public record HotData(
+    string HealFormula,
+    int TickRate // in ticks
+);

@@ -1,8 +1,7 @@
 ﻿namespace MysteryMud.Infrastructure.Persistence.Dto;
 
-public class DotData
-{
-    public string DamageFormula { get; set; }
-    public string DamageType { get; set; }
-    public int TickRate { get; set; } // in ticks
-}
+public record DotData(
+    string DamageFormula,
+    string DamageType,
+    int TickRate // in ticks
+);

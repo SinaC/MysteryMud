@@ -1,4 +1,4 @@
-﻿namespace MysteryMud.Domain.Data.Enums;
+﻿namespace MysteryMud.GameData.Enums;
 
 public enum GenderType
 {

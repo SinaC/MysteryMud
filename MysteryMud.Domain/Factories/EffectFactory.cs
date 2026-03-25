@@ -6,8 +6,8 @@ using MysteryMud.Core.Logging;
 using MysteryMud.Core.Scheduler;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
-using MysteryMud.Domain.Data.Definitions;
-using MysteryMud.Domain.Data.Enums;
+using MysteryMud.GameData.Definitions;
+using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Factories;
 

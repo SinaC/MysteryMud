@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain;
-using MysteryMud.Domain.Data.Enums;
+using MysteryMud.GameData.Enums;
 using MysteryMud.Domain.Factories;
 using MysteryMud.Core;
 using MysteryMud.Core.Logging;

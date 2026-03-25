@@ -1,6 +1,6 @@
 ﻿using MysteryMud.Application.Simulation.Compilers;
-using MysteryMud.Domain.Data.Definitions;
-using MysteryMud.Domain.Data.Enums;
+using MysteryMud.GameData.Definitions;
+using MysteryMud.GameData.Enums;
 using MysteryMud.Infrastructure.Persistence.Dto;
 
 namespace MysteryMud.Infrastructure.Persistence;
@@ -20,9 +20,9 @@ public static class SpellLoader
                 Name = e.Name,
                 Tag = Enum.Parse<EffectTagId>(e.Tag),
                 Stacking = Enum.Parse<StackingRule>(e.Stacking),
-                MaxStacks = e.MaxStacks,
+                MaxStacks = Math.Max(1, e.MaxStacks),
                 //TODO: Flags = Enum.Parse<AffectFlags>(e.Flags),
-                StatModifiers = e.StatModifiers.ConvertAll(sm => new StatModifierDefinition
+                StatModifiers = e.StatModifiers.Select(sm => new StatModifierDefinition
                 {
                     Stat = Enum.Parse<StatType>(sm.Stat),
                     Type = Enum.Parse<ModifierType>(sm.Type),
@@ -65,7 +65,7 @@ public static class SpellLoader
             spells[s.Name] = new SpellDefinition
             {
                 Name = s.Name,
-                Effects = s.Effects.ConvertAll(name => templates[name]).ToArray()
+                Effects = s.Effects.Select(name => templates[name]).ToArray()
             };
         }
 

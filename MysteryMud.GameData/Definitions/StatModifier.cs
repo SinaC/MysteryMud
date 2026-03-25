@@ -1,6 +1,6 @@
-﻿using MysteryMud.Domain.Data.Enums;
+﻿using MysteryMud.GameData.Enums;
 
-namespace MysteryMud.Domain.Data.Definitions;
+namespace MysteryMud.GameData.Definitions;
 
 public struct StatModifier
 {

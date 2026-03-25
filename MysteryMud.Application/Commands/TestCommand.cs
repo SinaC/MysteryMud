@@ -5,8 +5,8 @@ using MysteryMud.Core;
 using MysteryMud.Core.Command;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Data.Definitions;
-using MysteryMud.Domain.Data.Enums;
+using MysteryMud.GameData.Definitions;
+using MysteryMud.GameData.Enums;
 using MysteryMud.Domain.Factories;
 
 namespace MysteryMud.Application.Commands;

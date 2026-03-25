@@ -1,4 +1,5 @@
 ﻿using MysteryMud.Core.Command;
+using MysteryMud.GameData.Enums;
 using System.Reflection;
 
 namespace MysteryMud.Infrastructure.Command;
@@ -14,6 +15,7 @@ public class CommandRegistry : ICommandRegistry
             .SelectMany(a => a.GetTypes())
             .Where(t => typeof(ICommand).IsAssignableFrom(t) && !t.IsAbstract);
 
+        // TODO: use attributes for command name, aliases, permissions, etc. instead of convention-based naming
         foreach (var type in commandTypes)
         {
             var command = (ICommand)Activator.CreateInstance(type)!;
@@ -34,6 +36,7 @@ public class CommandRegistry : ICommandRegistry
         return _commands.TryGetValue(key, out cmd);
     }
 
+    // TODO: command name, alias, permission, position should be found in attribute or json config instead of convention-based naming and hardcoded values
     //private readonly Node _root = new();
 
     //// Insert main command

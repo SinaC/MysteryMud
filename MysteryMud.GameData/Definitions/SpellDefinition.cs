@@ -1,4 +1,4 @@
-﻿namespace MysteryMud.Domain.Data.Definitions;
+﻿namespace MysteryMud.GameData.Definitions;
 
 public class SpellDefinition
 {

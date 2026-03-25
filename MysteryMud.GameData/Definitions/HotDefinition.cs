@@ -1,6 +1,6 @@
 ﻿using Arch.Core;
 
-namespace MysteryMud.Domain.Data.Definitions;
+namespace MysteryMud.GameData.Definitions;
 
 public struct HotDefinition
 {

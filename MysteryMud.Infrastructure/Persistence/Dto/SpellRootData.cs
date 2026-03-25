@@ -1,7 +1,6 @@
 ﻿namespace MysteryMud.Infrastructure.Persistence.Dto;
 
-public class SpellRootData
-{
-    public List<EffectTemplateData> Effects { get; set; }
-    public List<SpellData> Spells { get; set; }
-}
+public record SpellRootData(
+    List<EffectTemplateData> Effects,
+    List<SpellData> Spells
+);

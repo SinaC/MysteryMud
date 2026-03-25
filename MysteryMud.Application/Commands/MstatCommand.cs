@@ -8,7 +8,7 @@ using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Data.Enums;
+using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.Commands;
 
