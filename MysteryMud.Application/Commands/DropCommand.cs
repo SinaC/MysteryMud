@@ -13,7 +13,7 @@ namespace MysteryMud.Application.Commands;
 
 public class DropCommand : ICommand
 {
-    public CommandParseOptions ParseOptions => ICommand.Target;
+    public CommandParseOptions ParseOptions => CommandParseOptions.Target;
     public CommandDefinition Definition { get; }
 
     public DropCommand(CommandDefinition definition)

@@ -10,4 +10,7 @@ public readonly struct CommandDefinition
     public required Position MinimumPosition { get; init; }
     public required int Priority { get; init; }
     public required bool AllowAbbreviation { get; init; }
+    public required string HelpText { get; init; }
+    public required string[] Syntaxes { get; init; }
+    public required string[] Categories { get; init; }
 }

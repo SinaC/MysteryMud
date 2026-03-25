@@ -2,9 +2,9 @@ Layer             Role
 GameData          Pure data: positions, enums, spell/effect definitions, constants. No behavior. Immutable.
 Core              Fundamental abstractions for your system: interfaces, command definitions, priorities. Agnostic to runtime ECS.
 Domain            ECS components, systems, factories, domain logic (mutable runtime state).
-Application       Concrete command implementations.
-Infrastructure    Registries, persistence, networking, scheduler, eventing, dispatcher, parser.
-ConsoleApp        entry point, console I/O, game loop, game server.
+Application       Parser and concrete command implementations.
+Infrastructure    Registries, persistence, networking, scheduler, eventing, dispatcher.
+ConsoleApp        Entry point, console I/O, game loop, game server.
 
 Entity/Components
 

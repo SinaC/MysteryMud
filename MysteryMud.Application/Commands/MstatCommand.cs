@@ -15,7 +15,7 @@ namespace MysteryMud.Application.Commands;
 
 public class MstatCommand : ICommand
 {
-    public CommandParseOptions ParseOptions => ICommand.Target;
+    public CommandParseOptions ParseOptions => CommandParseOptions.Target;
     public CommandDefinition Definition { get; }
 
     public MstatCommand(CommandDefinition definition)

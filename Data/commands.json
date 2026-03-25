@@ -2,10 +2,13 @@
 	{
 		"Name": "test",
 		"Aliases": [],
-		"RequiredLevel": "Player",
+		"RequiredLevel": "Admin",
 		"MinimumPosition": "Standing",
 		"Priority": 0,
-		"AllowAbbreviation": false
+		"AllowAbbreviation": false,
+		"HelpText": "",
+		"Syntaxes": ["cmd"],
+		"Categories": ["poc"]
 	},
 
 	{
@@ -13,8 +16,11 @@
 		"Aliases": [],
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
-		"Priority": 50,
-		"AllowAbbreviation": true
+		"Priority": 500,
+		"AllowAbbreviation": true,
+		"HelpText": "Before you can cast a spell, you have to practice it.  The more you practice,\nthe higher chance you have of success when casting.  Casting spells costs mana.\nThe mana cost decreases as your level increases.\n\nThe <target> is optional.  Many spells which need targets will use an\nappropriate default target, especially during combat.\n\nThe <casting level> is optional. Many spells have casting level higher than 1,\nand you don't have to cast spells at maximum casting level.\n\nIf the spell name is more than one word, then you must quote the spell name.\nExample: cast 'cure critic' frag.  Quoting is optional for single-word spells.\nYou can abbreviate the spell name.\n\nWhen you cast an offensive spell, the victim usually gets a saving throw.\nThe effect of the spell is reduced or eliminated if the victim makes the\nsaving throw successfully.\n\nSome examples:\n  cast 'chill touch' victim   will cast 'chill touch' on victim\n  cast armor newbie           will cast armor on newbie\n  cast fireball               will cast fireball on current target if already\n    in combat\n  cast 'floating disc'        will cast 'floating disc' on caster\n\nSee also the help sections for individual spells.\nUse the 'spells' command to see the spells you already have (help spells).",
+		"Syntaxes": ["[cmd] <ability> <target>"],
+		"Categories": ["ability", "spells"]
 	},
 	{
 		"Name": "destroy",
@@ -22,7 +28,10 @@
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 0,
-		"AllowAbbreviation": true
+		"AllowAbbreviation": true,
+		"HelpText": "Destroys an item from your inventory.",
+		"Syntaxes": ["[cmd] <item>"],
+		"Categories": ["item", "inventory"]
 	},
 	{
 		"Name": "drop",
@@ -30,7 +39,12 @@
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 0,
-		"AllowAbbreviation": true
+		"AllowAbbreviation": true,
+		"HelpText": "[cmd] drops an object, or some coins, on the ground.\n[cmd] understand the object names 'ALL' for all objects and\n'ALL.object' for all objects with the same name.\n[cmd] X.sword is also allowed to drop the Xth sword of the list.",
+		"Syntaxes": ["[cmd] <item>",
+					 "[cmd] <amount> silver|gold",
+					 "[cmd] all"],
+		"Categories": ["item", "inventory"]
 	},
 	{
 		"Name": "equipment",
@@ -38,7 +52,10 @@
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 0,
-		"AllowAbbreviation": true
+		"AllowAbbreviation": true,
+		"HelpText": "[cmd] lists your equipment (armor, weapons, and held items).",
+		"Syntaxes": ["[cmd]"],
+		"Categories": ["information"]
 	},
 	{
 		"Name": "get",
@@ -46,7 +63,11 @@
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 100,
-		"AllowAbbreviation": true
+		"AllowAbbreviation": true,
+		"HelpText": "[cmd] gets an object, either lying on the ground, or from a container, or even\nfrom a corpse. TAKE is a synonym for get.\n[cmd] understand the object names 'ALL' for all objects and\n'ALL.object' for all objects with the same name.\n[cmd] X.sword is also allowed to get the Xth sword of the list.",
+		"Syntaxes": ["[cmd] <item>",
+					 "[cmd] <item> <container>"],
+		"Categories": ["item", "inventory"]
 	},
 	{
 		"Name": "give",
@@ -54,7 +75,11 @@
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 0,
-		"AllowAbbreviation": true
+		"AllowAbbreviation": true,
+		"HelpText": "[cmd] gives an object, or some coins, to another character.\n[cmd] X.sword is also allowed to give the Xth sword of the list.",
+		"Syntaxes": ["[cmd] <item> <character>",
+					 "[cmd] <amount> coin|coins|silver|gold <character>"],
+		"Categories": ["item", "equipment"]
 	},
 	{
 		"Name": "inventory",
@@ -62,39 +87,60 @@
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 0,
-		"AllowAbbreviation": true
+		"AllowAbbreviation": true,
+		"HelpText": "[cmd] lists your inventory.",
+		"Syntaxes": ["[cmd]"],
+		"Categories": ["information"]
 	},
 	{
 		"Name": "kill",
 		"Aliases": [],
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
-		"Priority": 0,
-		"AllowAbbreviation": true
+		"Priority": 1000,
+		"AllowAbbreviation": true,
+		"HelpText": "[cmd] is used to kill mobiles (monsters) you see all over the world.\nTo kill other players, you have to use MURDER.",
+		"Syntaxes": ["[cmd] <character>"],
+		"Categories": ["combat"]
 	},
 	{
 		"Name": "look",
-		"Aliases": [],
+		"Aliases": ["read"],
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 0,
-		"AllowAbbreviation": true
+		"AllowAbbreviation": true,
+		"HelpText": "[cmd] looks at something and sees what you can see.",
+		"Syntaxes": ["[cmd]",
+					 "[cmd] in <container>",
+					 "[cmd] in <corpse>",
+					 "[cmd] <character>",
+					 "[cmd] <item>",
+					 "[cmd] <keyword>",
+					 "[cmd] <direction>"],
+		"Categories": ["information"]
 	},
 	{
 		"Name": "mstat",
-		"Aliases": [],
+		"Aliases": ["cstat"],
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 0,
-		"AllowAbbreviation": true
+		"AllowAbbreviation": true,
+		"HelpText": "Display information about a character (player or mobile)",
+		"Syntaxes": ["[cmd] <character>"],
+		"Categories": ["information"]
 	},
 	{
 		"Name": "north",
 		"Aliases": [],
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
-		"Priority": 1000,
-		"AllowAbbreviation": true
+		"Priority": 10000,
+		"AllowAbbreviation": true,
+		"HelpText": "Use this command to walk in north direction.",
+		"Syntaxes": ["[cmd]"],
+		"Categories": ["movement"]
 	},
 	{
 		"Name": "put",
@@ -102,7 +148,10 @@
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 0,
-		"AllowAbbreviation": true
+		"AllowAbbreviation": true,
+		"HelpText": "[cmd] puts an object into a container.\n[cmd] understand the object names 'ALL' for all objects and\n'ALL.object' for all objects with the same name.\n[cmd] X.sword is also allowed to put the Xth sword of the list.",
+		"Syntaxes": ["[cmd] <item> [in] <container>"],
+		"Categories": ["item", "equipment"]
 	},
 	{
 		"Name": "remove",
@@ -110,23 +159,32 @@
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 0,
-		"AllowAbbreviation": true
+		"AllowAbbreviation": true,
+		"HelpText": "[cmd] will take any object from your equipment and put it back into your\ninventory.",
+		"Syntaxes": ["[cmd] <item>"],
+		"Categories": ["item", "equipment"]
 	},
 	{
 		"Name": "sacrifice",
-		"Aliases": [],
+		"Aliases": ["tap", "junk"],
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 0,
-		"AllowAbbreviation": true
+		"AllowAbbreviation": true,
+		"HelpText": "[cmd] offers an object to your god, who may reward you.\nThe nature of the reward depends upon the type of object.",
+		"Syntaxes": ["[cmd] all", "[cmd] <item>"],
+		"Categories": ["item"]
 	},
 	{
 		"Name": "say",
-		"Aliases": [],
+		"Aliases": ["'"],
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 0,
-		"AllowAbbreviation": true
+		"AllowAbbreviation": true,
+		"HelpText": "[cmd] sends a message to all awake players/mobs in your room (In Character channel).",
+		"Syntaxes": ["[cmd] <message>"],
+		"Categories": ["communication"]
 	},
 	{
 		"Name": "south",
@@ -134,7 +192,10 @@
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 1000,
-		"AllowAbbreviation": true
+		"AllowAbbreviation": true,
+		"HelpText": "Use this command to walk in south direction.",
+		"Syntaxes": ["[cmd]"],
+		"Categories": ["movement"]
 	},
 	{
 		"Name": "tell",
@@ -142,14 +203,21 @@
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 0,
-		"AllowAbbreviation": true
+		"AllowAbbreviation": true,
+		"HelpText": "[cmd] sends a message to one player anywhere in the world.",
+		"Syntaxes": ["[cmd] <player name> <message>"],
+		"Categories": ["communication"]
 	},
 	{
 		"Name": "wear",
 		"Aliases": [],
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
-		"Priority": 0,
-		"AllowAbbreviation": true
+		"Priority": 1500,
+		"AllowAbbreviation": true,
+		"HelpText": "[cmd] will take an armor from inventory and start using it\nas equipment.\n[cmd] ALL will attempt to HOLD, WEAR, or WIELD each suitable item in your\ninventory.\n[cmd] ALL.object will attempt to HOLD, WEAR or WIELD each suitable item\nin your inventory with the same name",
+		"Syntaxes": ["[cmd] <item>",
+					 "[cmd] all"],
+		"Categories": ["item", "equipment"]
 	}
 ]

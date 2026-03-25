@@ -12,7 +12,7 @@ namespace MysteryMud.Application.Commands;
 
 public class DestroyCommand : ICommand
 {
-    public CommandParseOptions ParseOptions => ICommand.Target;
+    public CommandParseOptions ParseOptions => CommandParseOptions.Target;
     public CommandDefinition Definition { get; }
 
     public DestroyCommand(CommandDefinition definition)

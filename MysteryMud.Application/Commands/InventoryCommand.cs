@@ -12,7 +12,7 @@ namespace MysteryMud.Application.Commands;
 // important note: even when worn item stays in inventory
 public class InventoryCommand : ICommand
 {
-    public CommandParseOptions ParseOptions => ICommand.None;
+    public CommandParseOptions ParseOptions => CommandParseOptions.None;
     public CommandDefinition Definition { get; }
 
     public InventoryCommand(CommandDefinition definition)

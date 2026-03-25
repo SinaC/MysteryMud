@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Application;
 using MysteryMud.Application.Commands;
+using MysteryMud.Application.ExplicitCommands;
 using MysteryMud.ConsoleApp;
 using MysteryMud.ConsoleApp.Hosting;
 using MysteryMud.Domain.Components;
@@ -98,17 +99,18 @@ SpellSystem.SpellDatabase = spellDatabase;
 var commandLoader = new JsonCommandLoader();
 var commandDefinitions = commandLoader.Load(Path.Combine(basePath, gamePaths.CommandsJson));
 
-// Initialize registry (Infrastructure)
+// initialize coimmand registry (Infrastructure)
 var commandRegistry = new CommandRegistry();
-commandRegistry.RegisterCommands(commandDefinitions, [typeof(TestCommand).Assembly]);
+var helpCommand = new HelpCommand(commandRegistry); // special case for help command since it needs registry reference
+commandRegistry.RegisterCommands(commandDefinitions, [typeof(TestCommand).Assembly], helpCommand);
 
-// Initialize dispatcher and parser (Application)
+// initialize dispatcher and parser (Application)
 var commandParser = new CommandParser();
 var commandDispatcher = new CommandDispatcher(commandRegistry, commandParser);
 
 
 // run demo
-//Demo.Run(logger, world, commandDispatcher);
+Demo.Run(logger, world, commandDispatcher);
 
 // start game server
 var gameServer = new GameServer(logger, world, commandDispatcher);

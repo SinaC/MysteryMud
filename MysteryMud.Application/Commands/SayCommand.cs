@@ -11,7 +11,7 @@ namespace MysteryMud.Application.Commands;
 
 public class SayCommand : ICommand
 {
-    public CommandParseOptions ParseOptions => ICommand.FullText;
+    public CommandParseOptions ParseOptions => CommandParseOptions.FullText;
     public CommandDefinition Definition { get; }
 
     public SayCommand(CommandDefinition definition)
