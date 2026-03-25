@@ -4,6 +4,7 @@ using MysteryMud.Core;
 using MysteryMud.Core.Command;
 using MysteryMud.Core.Logging;
 using MysteryMud.Domain;
+using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Infrastructure.Command;
 
@@ -26,23 +27,19 @@ public class CommandDispatcher : ICommandDispatcher
         _commandParser.SplitCommand(input, out var cmdSpan, out var argsSpan);
 
         // search command in registry
-        var findResult = _commandRegistry.Find(GameData.Enums.CommandLevel.Immortal, GameData.Enums.Position.Standing, cmdSpan); // TODO: command level and position should be determined based on actor's state, not hardcoded
-        switch(findResult.Type)
+        var findResult = _commandRegistry.Find(CommandLevel.Immortal, Position.Standing, cmdSpan, out var command); // TODO: command level and position should be determined based on actor's state, not hardcoded
+        switch(findResult)
         {
-            case CommandFindResultType.NotFound:
+            case CommandFindResult.NotFound:
                 systemContext.MessageBus.Publish(actor, "Unknown command.");
                 return;
-            case CommandFindResultType.Ambiguous:
-                systemContext.MessageBus.Publish(actor, "Ambiguous command."); // TODO
-                return;
-            case CommandFindResultType.NoPermission:
+            case CommandFindResult.NoPermission:
                 systemContext.MessageBus.Publish(actor, "Permission denied."); // TODO
                 return;
-            case CommandFindResultType.WrongPosition:
+            case CommandFindResult.WrongPosition:
                 systemContext.MessageBus.Publish(actor, "Invalid position."); // TODO
                 return; 
         }
-        var command = findResult.Command!;
 
         // parse arguments using command-specific rules
         _commandParser.Parse(cmdSpan, argsSpan, command!.ParseOptions.ArgumentCount, command!.ParseOptions.LastIsText, out var ctx);

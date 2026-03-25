@@ -12,7 +12,7 @@ namespace MysteryMud.Application.Commands;
 
 public class WearCommand : ICommand
 {
-    public CommandParseOptions ParseOptions => ICommand.Target;
+    public CommandParseOptions ParseOptions => CommandParseOptions.Target;
     public CommandDefinition Definition { get; }
 
     public WearCommand(CommandDefinition definition)

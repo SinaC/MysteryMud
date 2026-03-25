@@ -14,7 +14,7 @@ namespace MysteryMud.Application.Commands;
 
 public class GiveCommand : ICommand
 {
-    public CommandParseOptions ParseOptions => ICommand.TargetPair;
+    public CommandParseOptions ParseOptions => CommandParseOptions.TargetPair;
     public CommandDefinition Definition { get; }
 
     public GiveCommand(CommandDefinition definition)

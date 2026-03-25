@@ -1,5 +1,4 @@
 ﻿using BenchmarkDotNet.Attributes;
-using System.Reflection;
 
 namespace MysteryMud.Benchmarks.CommandRegistry;
 
@@ -9,11 +8,11 @@ namespace MysteryMud.Benchmarks.CommandRegistry;
 [MemoryDiagnoser]
 public class TrieBenchmark
 {
-    private List<CommandDefinition> _commands;
-    private OriginalCommandRegistry _original;
-    private OptimizedCommandRegistry _optimized;
-    private RomCommandRegistry _rom;
-    private List<string> _testInputs;
+    private List<CommandDefinition> _commands = default!;
+    private OriginalCommandRegistry _original = default!;
+    private OptimizedCommandRegistry _optimized = default!;
+    private RomCommandRegistry _rom = default!;
+    private List<string> _testInputs = default!;
 
     [GlobalSetup]
     public void Setup()
@@ -21,13 +20,13 @@ public class TrieBenchmark
         _commands = GenerateCommands(300).ToList();
 
         _original = new OriginalCommandRegistry();
-        _original.RegisterCommands(_commands, new Assembly[0]);
+        _original.RegisterCommands(_commands, []);
 
         _optimized = new OptimizedCommandRegistry();
-        _optimized.RegisterCommands(_commands, new Assembly[0]);
+        _optimized.RegisterCommands(_commands, []);
 
         _rom = new RomCommandRegistry();
-        _rom.RegisterCommands(_commands, new Assembly[0]);
+        _rom.RegisterCommands(_commands, []);
 
         _testInputs = _commands
             .Select(c => c.Name.Substring(0, Math.Min(3, c.Name.Length)))

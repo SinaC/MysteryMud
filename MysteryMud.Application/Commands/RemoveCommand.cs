@@ -11,7 +11,7 @@ namespace MysteryMud.Application.Commands;
 
 public class RemoveCommand : ICommand
 {
-    public CommandParseOptions ParseOptions => ICommand.Target; 
+    public CommandParseOptions ParseOptions => CommandParseOptions.Target; 
     public CommandDefinition Definition { get; }
 
     public RemoveCommand(CommandDefinition definition)

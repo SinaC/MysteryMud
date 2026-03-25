@@ -12,7 +12,7 @@ namespace MysteryMud.Application.Commands;
 
 public class SouthCommand : ICommand
 {
-    public CommandParseOptions ParseOptions => ICommand.None;
+    public CommandParseOptions ParseOptions => CommandParseOptions.None;
     public CommandDefinition Definition { get; }
 
     public SouthCommand(CommandDefinition definition)

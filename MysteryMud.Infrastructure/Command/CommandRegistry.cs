@@ -1,4 +1,5 @@
 ﻿using Arch.Core;
+using CommunityToolkit.HighPerformance;
 using MysteryMud.Core;
 using MysteryMud.Core.Command;
 using MysteryMud.Core.Extensions;
@@ -12,29 +13,39 @@ public class CommandRegistry : ICommandRegistry
 {
     private ICommand[] _commands = [];
 
-    public void RegisterCommands(IEnumerable<CommandDefinition> definitions, IEnumerable<Assembly> assemblies)
+    public void RegisterCommands(IEnumerable<CommandDefinition> definitions, IEnumerable<Assembly> assemblies, params ICommand[] explicitCommands)
     {
         var list = new List<ICommand>();
 
+        // First register explicit commands passed in (e.g. HelpCommand) - these take absolute precedence over convention-based ones
+        foreach (var explicitCommand in explicitCommands ?? [])
+        {
+            // Add command for main name
+            list.Add(explicitCommand);
+
+            // Aliases become separate entries (important!)
+            foreach (var alias in explicitCommand.Definition.Aliases)
+                list.Add(new AliasCommand(alias, explicitCommand));
+        }
+
+        // Then register convention-based commands from assemblies
+        var commandTypes = assemblies.SelectMany(a => a.GetTypes()).Where(t => typeof(ICommand).IsAssignableFrom(t) && !t.IsAbstract);
         foreach (var def in definitions)
         {
             var typeName = $"{def.Name.FirstCharToUpper()}Command";
+            var type = commandTypes.FirstOrDefault(t => t.Name == typeName && typeof(ICommand).IsAssignableFrom(t));
 
-            var type = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(a => a.GetTypes())
-                .FirstOrDefault(t => t.Name == typeName && typeof(ICommand).IsAssignableFrom(t));
-
-            if (type == null) continue;
+            if (type == null)
+                continue;
 
             var cmd = (ICommand)Activator.CreateInstance(type, def)!;
 
+            // Add command for main name
             list.Add(cmd);
 
             // Aliases become separate entries (important!)
             foreach (var alias in def.Aliases)
-            {
                 list.Add(new AliasCommand(alias, cmd));
-            }
         }
 
         // Critical: ordering defines behavior
@@ -44,11 +55,13 @@ public class CommandRegistry : ICommandRegistry
             .ToArray();
     }
 
-    public CommandFindResult Find(CommandLevel level, Position position, ReadOnlySpan<char> input)
+    public CommandFindResult Find(CommandLevel level, Position position, ReadOnlySpan<char> input, out ICommand? command)
     {
-        bool foundPrefix = false;
-        bool anyPermission = false;
-        bool anyPosition = false;
+        var foundPrefix = false;
+        var anyPermission = false;
+        var anyPosition = false;
+
+        command = null;
 
         foreach (var cmd in _commands)
         {
@@ -72,26 +85,36 @@ public class CommandRegistry : ICommandRegistry
 
             // Exact match always wins immediately
             if (input.Equals(name, StringComparison.OrdinalIgnoreCase))
-                return CommandFindResult.Success(cmd);
+            {
+                command = cmd;
+                return CommandFindResult.Success;
+            }
 
             if (!cmd.Definition.AllowAbbreviation)
                 continue;
 
             // FIRST valid match wins
-            return CommandFindResult.Success(cmd);
+            command = cmd;
+            return CommandFindResult.Success;
         }
 
         if (!foundPrefix)
-            return CommandFindResult.Fail(CommandFindResultType.NotFound);
+            return CommandFindResult.NotFound;
 
         if (!anyPermission)
-            return CommandFindResult.Fail(CommandFindResultType.NoPermission);
+            return CommandFindResult.NoPermission;
 
         if (!anyPosition)
-            return CommandFindResult.Fail(CommandFindResultType.WrongPosition);
+            return CommandFindResult.WrongPosition;
 
-        return CommandFindResult.Fail(CommandFindResultType.NotFound);
+        return CommandFindResult.NotFound;
     }
+
+    public IEnumerable<CommandDefinition> GetCommandDefinitions(CommandLevel commandLevel)
+        => _commands
+            .Where(c => c.Definition.RequiredLevel <= commandLevel)
+            .Select(c => c.Definition)
+            .DistinctBy(d => d.Name); // Aliases share the same definition, so distinct by name
 
     private sealed class AliasCommand : ICommand
     {
@@ -110,7 +133,10 @@ public class CommandRegistry : ICommandRegistry
                 RequiredLevel = _inner.Definition.RequiredLevel,
                 MinimumPosition = _inner.Definition.MinimumPosition,
                 Priority = _inner.Definition.Priority,
-                AllowAbbreviation = _inner.Definition.AllowAbbreviation
+                AllowAbbreviation = _inner.Definition.AllowAbbreviation,
+                HelpText = _inner.Definition.HelpText,
+                Syntaxes = _inner.Definition.Syntaxes,
+                Categories = _inner.Definition.Categories,
             };
         }
 

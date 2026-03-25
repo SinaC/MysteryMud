@@ -11,7 +11,7 @@ namespace MysteryMud.Application.Commands;
 
 public class CastCommand : ICommand
 {
-    public CommandParseOptions ParseOptions => ICommand.TargetPair; // TODO: some spells might require text argument instead of target, or no argument at all. This should be defined in CommandDefinition and handled in parsing logic
+    public CommandParseOptions ParseOptions => CommandParseOptions.TargetPair; // TODO: some spells might require text argument instead of target, or no argument at all. This should be defined in CommandDefinition and handled in parsing logic
     public CommandDefinition Definition { get; }
 
     public CastCommand(CommandDefinition definition)

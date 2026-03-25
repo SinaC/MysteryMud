@@ -12,7 +12,7 @@ namespace MysteryMud.Application.Commands;
 
 public class SacrificeCommand : ICommand
 {
-    public CommandParseOptions ParseOptions => ICommand.Target;
+    public CommandParseOptions ParseOptions => CommandParseOptions.Target;
     public CommandDefinition Definition { get; }
 
     public SacrificeCommand(CommandDefinition definition)

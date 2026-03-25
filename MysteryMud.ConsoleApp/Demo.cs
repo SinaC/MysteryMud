@@ -70,6 +70,7 @@ static class Demo
         commandDispatcher.Dispatch(systemContext, gameState, chest, "look".AsSpan());
         commandDispatcher.Dispatch(systemContext, gameState, gem, "look".AsSpan());
         commandDispatcher.Dispatch(systemContext, gameState, goblin, "get trash".AsSpan());
+        commandDispatcher.Dispatch(systemContext, gameState, goblin, "test troll poison".AsSpan());
 
         ////testing combat
         //commandDispatcher.Dispatch(systemContext, gameState, player, "kill goblin".AsSpan());
@@ -84,19 +85,6 @@ static class Demo
         //commandDispatcher.Dispatch(systemContext, gameState, goblin, "test troll poison".AsSpan());
         //commandDispatcher.Dispatch(systemContext, gameState, player, "test troll poison".AsSpan());
         //commandDispatcher.Dispatch(systemContext, gameState, goblin, "test troll poison".AsSpan());
-    }
-
-    private static CommandDefinition CreateDefinition(string name, bool allowAbbrevation = true, int priority = 0)
-    {
-        return new CommandDefinition
-        {
-            Name = name,
-            Aliases= [],
-            RequiredLevel = GameData.Enums.CommandLevel.Player,
-            MinimumPosition = GameData.Enums.Position.Standing,
-            Priority = priority,
-            AllowAbbreviation = allowAbbrevation,
-        };
     }
 
     private class DemoMessageBus : IMessageBus

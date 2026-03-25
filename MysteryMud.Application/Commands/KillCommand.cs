@@ -13,7 +13,7 @@ namespace MysteryMud.Application.Commands;
 
 public class KillCommand : ICommand
 {
-    public CommandParseOptions ParseOptions => ICommand.Target;
+    public CommandParseOptions ParseOptions => CommandParseOptions.Target;
     public CommandDefinition Definition { get; }
 
     public KillCommand(CommandDefinition definition)

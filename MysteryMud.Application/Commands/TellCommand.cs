@@ -12,7 +12,7 @@ namespace MysteryMud.Application.Commands;
 
 public class TellCommand : ICommand
 {
-    public CommandParseOptions ParseOptions => ICommand.TargetAndText;
+    public CommandParseOptions ParseOptions => CommandParseOptions.TargetAndText;
     public CommandDefinition Definition { get; }
 
     public TellCommand(CommandDefinition definition)
