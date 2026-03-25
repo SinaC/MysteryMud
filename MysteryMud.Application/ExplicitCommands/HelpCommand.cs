@@ -58,7 +58,7 @@ public class HelpCommand : ICommand
                 systemContext.MessageBus.Publish(actor, $"Category: {group.Key}");
                 foreach (var cmd in group)
                 {
-                    systemContext.MessageBus.Publish(actor, $"  {cmd.Name} - {cmd.HelpText}");
+                    systemContext.MessageBus.Publish(actor, $"  {cmd.Name} -  %#FA8640>#0486FA{cmd.HelpText}");
                 }
             }
         }

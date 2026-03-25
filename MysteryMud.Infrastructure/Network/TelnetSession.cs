@@ -4,6 +4,7 @@ using System.Buffers.Binary;
 using System.IO.Compression;
 using System.IO.Pipelines;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Channels;
@@ -223,22 +224,101 @@ public sealed class TelnetSession : IDisposable
         Write(text.AsSpan());
     }
 
+    //    public void Write(ReadOnlySpan<char> span)
+    //    {
+    //        if (_disposed)
+    //            return;
+
+    //        if (!span.ContainsAny('%', '{'))
+    //        {
+    //            while (!span.IsEmpty)
+    //            {
+    //#pragma warning disable CA2014 // Do not use stackalloc in loops
+    //                Span<byte> temp = stackalloc byte[1024];
+    //#pragma warning restore CA2014 // Do not use stackalloc in loops
+
+    //                Encoding.ASCII.GetEncoder().Convert(
+    //                    span,
+    //                    temp,
+    //                    flush: false,
+    //                    out var charsUsed,
+    //                    out var bytesUsed,
+    //                    out var completed);
+
+    //                WriteBytes(temp[..bytesUsed]);
+    //                span = span[charsUsed..];
+    //            }
+    //        }
+
+    //        MudColorPipeline.Render(this, span);
+    //    }
+
+    //public void Write(ReadOnlySpan<char> span)
+    //{
+    //    if (_disposed || span.IsEmpty)
+    //        return;
+
+    //    // If the string is simple (no color codes / % or {), encode directly
+    //    if (!span.ContainsAny('%', '{'))
+    //    {
+    //        WriteAsciiDirect(span);
+    //        return;
+    //    }
+
+    //    // Otherwise, use your MudColorPipeline
+    //    MudColorPipeline.Render(this, span);
+    //}
+
     public void Write(ReadOnlySpan<char> span)
     {
-        if (_disposed)
+        if (_disposed || span.IsEmpty)
             return;
 
-        if (!span.ContainsAny('%', '{'))
+        // --- FAST PATH: no IAC, no color sequences ---
+        if (!span.Contains((char)Telnet.IAC) && !span.ContainsAny('%', '{'))
         {
-            Span<byte> temp = stackalloc byte[1024];
-
-            int bytes = Encoding.ASCII.GetBytes(span, temp);
-
-            WriteBytes(temp[..bytes]);
+            _output.Write(MemoryMarshal.Cast<char, byte>(span));
             return;
         }
 
-        MudColorPipeline.Render(this, span);
+        // --- SLOW PATH: rare IAC or color sequences ---
+        int start = 0;
+
+        for (int i = 0; i < span.Length; i++)
+        {
+            char c = span[i];
+
+            // Escape IAC byte
+            if ((byte)c == Telnet.IAC)
+            {
+                // Write chunk before IAC
+                if (i > start)
+                    _output.Write(MemoryMarshal.Cast<char, byte>(span.Slice(start, i - start)));
+
+                // Double the IAC
+                _output.WriteByte(Telnet.IAC);
+                _output.WriteByte(Telnet.IAC);
+
+                start = i + 1;
+                continue;
+            }
+
+            // Handle color sequences
+            if (c == '%' || c == '{')
+            {
+                // Write chunk before the color code
+                if (i > start)
+                    _output.Write(MemoryMarshal.Cast<char, byte>(span.Slice(start, i - start)));
+
+                // Hand off remaining span to the color pipeline
+                MudColorPipeline.Render(this, span[i..]);
+                return;
+            }
+        }
+
+        // Write any remaining chunk
+        if (start < span.Length)
+            _output.Write(MemoryMarshal.Cast<char, byte>(span.Slice(start)));
     }
 
     internal void WriteChar(char c)
@@ -246,44 +326,73 @@ public sealed class TelnetSession : IDisposable
         if (_disposed)
             return;
 
-        Span<char> cbuf = stackalloc char[1];
-        Span<byte> bbuf = stackalloc byte[4];
+        byte b = (byte)c; // ASCII only
 
-        cbuf[0] = c;
-
-        int bytes = Encoding.ASCII.GetBytes(cbuf, bbuf);
-
-        WriteBytes(bbuf[..bytes]);
+        if (b == Telnet.IAC)
+        {
+            // Escape IAC
+            _output.WriteByte(Telnet.IAC);
+            _output.WriteByte(Telnet.IAC);
+        }
+        else
+        {
+            _output.WriteByte(b);
+        }
     }
 
     internal void WriteAnsi(ReadOnlySpan<char> text)
     {
-        if (_disposed)
+        if (_disposed || text.IsEmpty)
             return;
 
-        Span<byte> buf = stackalloc byte[64];
-
-        int bytes = Encoding.ASCII.GetBytes(text, buf);
-
-        WriteBytes(buf[..bytes]);
+        // --- FAST PATH: no IAC ---
+        _output.Write(MemoryMarshal.Cast<char, byte>(text));
     }
 
-    private void WriteBytes(ReadOnlySpan<byte> bytes)
+    internal void WriteBytes(ReadOnlySpan<byte> bytes)
     {
-        if (_disposed)
+        if (_disposed || bytes.IsEmpty)
             return;
 
-        foreach (byte b in bytes)
+        // IAC is rare, check for it first to avoid unnecessary looping and method calls in the common case
+        if (!bytes.Contains(Telnet.IAC))
         {
-            if (b == Telnet.IAC)
+            _output.Write(bytes);
+            return;
+        }
+
+        // IAC is present, need to escape it by doubling
+        int start = 0;
+
+        while (true)
+        {
+            // Find the next IAC byte
+            int idx = bytes[start..].IndexOf(Telnet.IAC);
+
+            if (idx < 0)
             {
-                _output.WriteByte(Telnet.IAC);
-                _output.WriteByte(Telnet.IAC);
+                // No more IAC → write remaining slice in one go
+                _output.Write(bytes[start..]);
+                return;
             }
-            else
+
+            idx += start;
+
+            // Write chunk before IAC
+            if (idx > start)
             {
-                _output.WriteByte(b);
+                _output.Write(bytes[start..idx]);
             }
+
+            // Escape IAC by doubling it
+            _output.WriteByte(Telnet.IAC);
+            _output.WriteByte(Telnet.IAC);
+
+            // Move past the escaped byte
+            start = idx + 1;
+
+            if (start >= bytes.Length)
+                return;
         }
     }
 
@@ -343,7 +452,7 @@ public sealed class TelnetSession : IDisposable
             sent += bytes;
         }
     }
-    
+
     // =====================================================
     // ECHO
     // =====================================================
@@ -677,6 +786,7 @@ public sealed class TelnetSession : IDisposable
             _socket?.Shutdown(SocketShutdown.Both);
             _socket?.Close();
             _socket?.Dispose();
+            _output.Dispose();
         }
         catch { }
 

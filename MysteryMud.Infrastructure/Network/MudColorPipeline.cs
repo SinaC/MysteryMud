@@ -125,21 +125,105 @@ public static class MudColorPipeline
     {
         switch (conn.TelnetState.ColorMode)
         {
-            case ColorMode.TrueColor:
-                conn.WriteAnsi(FgRgb(c.R, c.G, c.B));
-                break;
-
-            case ColorMode.ANSI256:
-                int paletteIndex = RgbToAnsi256(c.R, c.G, c.B);
-                conn.WriteAnsi(Fg256(paletteIndex));
-                break;
+            case ColorMode.None:
+                return;
 
             case ColorMode.ANSI16:
-                var colorCode = RgbToAnsi16(c.R, c.G, c.B);
-                conn.WriteAnsi(Fg16(colorCode));
+                {
+                    // 4–5 bytes max: ESC[3Xm or ESC[9Xm
+                    Span<byte> buf = stackalloc byte[5];
+                    int len = FormatAnsi16(RgbToAnsi16(c.R, c.G, c.B), buf);
+                    conn.WriteBytes(buf.Slice(0, len));
+                    return;
+                }
 
-                break;
+            case ColorMode.ANSI256:
+                {
+                    Span<byte> buf = stackalloc byte[10]; // max ESC[38;5;XXXm = 10 bytes
+                    int paletteIndex = RgbToAnsi256(c.R, c.G, c.B);
+                    int len = FormatAnsi256(paletteIndex, buf);
+                    conn.WriteBytes(buf.Slice(0, len));
+                    return;
+                }
+
+            case ColorMode.TrueColor:
+                {
+                    Span<byte> buf = stackalloc byte[20]; // max ESC[38;2;RR;GG;BBm = 19 bytes
+                    int len = FormatAnsiRgb(c, buf);
+                    conn.WriteBytes(buf.Slice(0, len));
+                    return;
+                }
         }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    static int FormatAnsi16(byte code, Span<byte> buf)
+    {
+        buf[0] = 0x1b; // ESC
+        buf[1] = (byte)'[';
+        buf[2] = (byte)('0' + code / 10); // 3 for 31..37, 9 for 90..97
+        buf[3] = (byte)('0' + code % 10);
+        buf[4] = (byte)'m';
+        return 5;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    static int FormatAnsi256(int paletteIndex, Span<byte> buf)
+    {
+        buf[0] = 0x1b; // ESC
+        buf[1] = (byte)'[';
+        buf[2] = (byte)'3';
+        buf[3] = (byte)'8';
+        buf[4] = (byte)';';
+        buf[5] = (byte)'5';
+        buf[6] = (byte)';';
+
+        int pos = 7;
+        pos += WriteDec((byte)paletteIndex, buf.Slice(pos));
+        buf[pos++] = (byte)'m';
+        return pos;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    static int FormatAnsiRgb(MudColorDef c, Span<byte> buf)
+    {
+        buf[0] = 0x1b; // ESC
+        buf[1] = (byte)'[';
+        buf[2] = (byte)'3';
+        buf[3] = (byte)'8';
+        buf[4] = (byte)';';
+        buf[5] = (byte)'2';
+        buf[6] = (byte)';';
+
+        int pos = 7;
+        pos += WriteDec(c.R, buf.Slice(pos));
+        buf[pos++] = (byte)';';
+        pos += WriteDec(c.G, buf.Slice(pos));
+        buf[pos++] = (byte)';';
+        pos += WriteDec(c.B, buf.Slice(pos));
+        buf[pos++] = (byte)'m';
+
+        return pos;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    static int WriteDec(byte value, Span<byte> buf)
+    {
+        if (value >= 100)
+        {
+            buf[0] = (byte)('0' + value / 100);
+            buf[1] = (byte)('0' + (value / 10) % 10);
+            buf[2] = (byte)('0' + value % 10);
+            return 3;
+        }
+        if (value >= 10)
+        {
+            buf[0] = (byte)('0' + value / 10);
+            buf[1] = (byte)('0' + value % 10);
+            return 2;
+        }
+        buf[0] = (byte)('0' + value);
+        return 1;
     }
 
     static void WriteGradient(TelnetSession conn, ReadOnlySpan<char> text, MudColorDef a, MudColorDef b)
@@ -149,11 +233,41 @@ public static class MudColorPipeline
         for (int i = 0; i < len; i++)
         {
             float t = i / (float)(len - 1);
-
             var c = Lerp(a, b, t);
 
-            WriteColor(conn, c);
+            // Write color sequence
+            switch (conn.TelnetState.ColorMode)
+            {
+                case ColorMode.None:
+                    break;
 
+                case ColorMode.ANSI16:
+                    {
+                        Span<byte> buf = stackalloc byte[5];
+                        int lenSeq = FormatAnsi16(RgbToAnsi16(c.R, c.G, c.B), buf);
+                        conn.WriteBytes(buf[..lenSeq]);
+                        break;
+                    }
+
+                case ColorMode.ANSI256:
+                    {
+                        Span<byte> buf = stackalloc byte[10];
+                        int paletteIndex = RgbToAnsi256(c.R, c.G, c.B);
+                        int lenSeq = FormatAnsi256(paletteIndex, buf);
+                        conn.WriteBytes(buf[..lenSeq]);
+                        break;
+                    }
+
+                case ColorMode.TrueColor:
+                    {
+                        Span<byte> buf = stackalloc byte[20];
+                        int lenSeq = FormatAnsiRgb(c, buf);
+                        conn.WriteBytes(buf[..lenSeq]);
+                        break;
+                    }
+            }
+
+            // Write the character
             conn.WriteChar(text[i]);
         }
     }
@@ -263,8 +377,8 @@ public static class MudColorPipeline
 
         // no validation, just parse hex digits
         a.R = HexByte(text[i + 2], text[i + 3]);
-        a.G = HexByte(text[i + 4], text[i + 3]);
-        a.B = HexByte(text[i + 6], text[i + 3]);
+        a.G = HexByte(text[i + 4], text[i + 5]);
+        a.B = HexByte(text[i + 6], text[i + 7]);
 
         b.R = HexByte(text[i + 10], text[i + 11]);
         b.G = HexByte(text[i + 12], text[i + 13]);
