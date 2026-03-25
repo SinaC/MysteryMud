@@ -2,19 +2,20 @@
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using MysteryMud.Application;
+using MysteryMud.Application.Commands;
 using MysteryMud.ConsoleApp;
 using MysteryMud.ConsoleApp.Hosting;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.GameData.Enums;
 using MysteryMud.Domain.Factories;
-using MysteryMud.Infrastructure.Persistence;
-using MysteryMud.Infrastructure.Persistence.Dto;
-using Serilog;
-using System.Text.Json;
 using MysteryMud.Domain.Systems;
+using MysteryMud.GameData.Enums;
+using MysteryMud.Infrastructure.Command;
+using MysteryMud.Infrastructure.Persistence;
+using Serilog;
 
 // build configuration
 var configuration = new ConfigurationBuilder()
@@ -35,62 +36,9 @@ var factory = LoggerFactory.Create(builder =>
 var logger = factory.CreateLogger("MysteryMud");
 logger.LogInformation("Log initialized");
 
-// load spells
-var spellJson = @"
-{
-  ""Effects"": [
-    {
-      ""Name"": ""Poison"",
-      ""Tag"": ""Poison"",
-      ""Stacking"": ""Stack"",
-      ""MaxStacks"": 3,
-      ""StatModifiers"": [
-        { ""Stat"": ""Strength"", ""Type"": ""Flat"", ""Value"": -3 }
-      ],
-      ""Flags"": [""Poison""],
-      ""DurationFormula"": ""4 * caster.Strength"",
-      ""Dot"": {
-         ""DamageFormula"": ""1"",
-         ""DamageType"": ""Poison"",
-         ""TickRate"": 2
-      }
-    },
-    {
-      ""Name"": ""Bless"",
-      ""Tag"": ""Bless"",
-      ""Stacking"": ""Refresh"",
-      ""MaxStacks"": 1,
-      ""StatModifiers"": [
-        { ""Stat"": ""HitRoll"", ""Type"": ""Flat"", ""Value"": 5 },
-        { ""Stat"": ""Strength"", ""Type"": ""AddPercent"", ""Value"": 10 }
-      ],
-      ""Flags"": [""Bless""],
-      ""DurationFormula"": ""60"",
-      ""Hot"": {
-         ""HealFormula"": ""3 + caster.Level / 2"",
-         ""TickRate"": 3
-      }
-    }
-  ],
-  ""Spells"": [
-    {
-      ""Name"": ""a"",
-      ""Effects"": [""Poison""]
-    },
-    {
-      ""Name"": ""b"",
-      ""Effects"": [""Bless""]
-    }
-  ]
-}
-";
-
-var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-var doc = JsonSerializer.Deserialize<SpellRootData>(spellJson, options);
-
-// convert to spell database
-var spellDatabase = SpellLoader.LoadSpells(doc);
-SpellSystem.SpellDatabase = spellDatabase;
+// initialize options
+var gamePaths = new GamePathsOptions();
+configuration.GetSection("GamePaths").Bind(gamePaths);
 
 // create world
 var world = World.Create();
@@ -139,9 +87,29 @@ RoomFactory.RespawnRoomEntity = temple;
 //int result = func(null!, troll, player); // result is random between 6 and 55
 //Console.WriteLine(result);
 
+var basePath = AppContext.BaseDirectory;
+
+// load spell definitions
+var spellLoader = new JsonSpellLoader();
+var spellDatabase = spellLoader.LoadSpells(Path.Combine(basePath, gamePaths.SpellsJson));
+SpellSystem.SpellDatabase = spellDatabase;
+
+// load command definitions
+var commandLoader = new JsonCommandLoader();
+var commandDefinitions = commandLoader.Load(Path.Combine(basePath, gamePaths.CommandsJson));
+
+// Initialize registry (Infrastructure)
+var commandRegistry = new CommandRegistry();
+commandRegistry.RegisterCommands(commandDefinitions, [typeof(TestCommand).Assembly]);
+
+// Initialize dispatcher and parser (Application)
+var commandParser = new CommandParser();
+var commandDispatcher = new CommandDispatcher(commandRegistry, commandParser);
+
+
 // run demo
-Demo.Run(logger, world);
+//Demo.Run(logger, world, commandDispatcher);
 
 // start game server
-var gameServer = new GameServer(logger, world);
+var gameServer = new GameServer(logger, world, commandDispatcher);
 gameServer.Start();

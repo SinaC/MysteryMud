@@ -3,8 +3,8 @@
 public record CommandDefinitionData(
     string Name,
     string[] Aliases,
-    int RequiredLevel,
-    int MinimumPosition,
+    string RequiredLevel,
+    string MinimumPosition,
     int Priority,
     bool AllowAbbreviation
 );

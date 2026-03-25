@@ -5,6 +5,7 @@ using MysteryMud.Core.Command;
 using MysteryMud.Domain;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
+using MysteryMud.GameData.Definitions;
 
 namespace MysteryMud.Application.Commands;
 
@@ -12,6 +13,12 @@ namespace MysteryMud.Application.Commands;
 public class InventoryCommand : ICommand
 {
     public CommandParseOptions ParseOptions => ICommand.None;
+    public CommandDefinition Definition { get; }
+
+    public InventoryCommand(CommandDefinition definition)
+    {
+        Definition = definition;
+    }
 
     public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {

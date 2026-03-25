@@ -3,9 +3,9 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.GameData.Definitions;
 
-public struct DotDefinition
+public readonly struct DotDefinition
 {
-    public Func<World, Entity, Entity, int> DamageFunc;
-    public DamageType DamageType;
-    public int TickRate;
+    public required Func<World, Entity, Entity, int> DamageFunc { get; init; }
+    public required DamageType DamageType { get; init; }
+    public required int TickRate { get; init; }
 }

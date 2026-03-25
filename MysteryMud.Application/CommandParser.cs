@@ -1,6 +1,6 @@
 ﻿using MysteryMud.Core.Command;
 
-namespace MysteryMud.Infrastructure.Command;
+namespace MysteryMud.Application;
 
 public class CommandParser : ICommandParser
 {
@@ -34,6 +34,8 @@ public class CommandParser : ICommandParser
 
         if (lastIsText && consumed < args.Length)
             ctx.Text = TrimMatchingQuotes(args[consumed..].TrimStart());
+
+        ctx.TargetCount = parsed;
     }
 
     public void SplitCommand(ReadOnlySpan<char> input, out ReadOnlySpan<char> command, out ReadOnlySpan<char> args)

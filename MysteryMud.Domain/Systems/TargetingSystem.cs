@@ -9,10 +9,7 @@ namespace MysteryMud.Domain.Systems;
 public static class TargetingSystem
 {
     // Select entities matching the target spec
-    public static List<Entity> SelectTargets(
-        Entity actor,
-        TargetSpec spec,
-        List<Entity> entities)
+    public static List<Entity> SelectTargets(Entity actor, TargetSpec spec, List<Entity> entities)
     {
         var results = new List<Entity>();
 
@@ -27,7 +24,7 @@ public static class TargetingSystem
         for (int i = 0; i < entities.Count; i++)
         {
             var entity = entities[i];
-            if (!Matches(entity, spec.Name))
+            if (!Matches(entity, spec.Name, spec.Kind == TargetKind.All)) // of course, 'All' with an empty name should match everything
                 continue;
 
             matchCount++;
@@ -65,7 +62,7 @@ public static class TargetingSystem
         for (int i = 0; i < entities.Count; i++)
         {
             var entity = entities[i];
-            if (!Matches(entity, spec.Name))
+            if (!Matches(entity, spec.Name, spec.Kind == TargetKind.All)) // of course, 'All' with an empty name should match everything
                 continue;
 
             matchCount++;
@@ -90,11 +87,12 @@ public static class TargetingSystem
     }
 
     // Simple prefix matching, case-insensitive
-    public static bool Matches(Entity e, ReadOnlySpan<char> query)
+    public static bool Matches(Entity e, ReadOnlySpan<char> query, bool isAll = false)
     {
         if (e.Has<Dead>() || e.Has<DestroyedTag>()) // don't consider dead/destroyed entities as valid targets
             return false;
-        if (query.IsEmpty) return true; // 'all' or unspecified
+        if (query.IsEmpty)
+            return isAll;
         return NameSystem.Matches(e, query);
     }
 }

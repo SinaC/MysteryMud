@@ -7,15 +7,28 @@ using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Systems;
+using MysteryMud.GameData.Definitions;
 
 namespace MysteryMud.Application.Commands;
 
 public class PutCommand : ICommand
 {
     public CommandParseOptions ParseOptions => ICommand.TargetPair;
+    public CommandDefinition Definition { get; }
+
+    public PutCommand(CommandDefinition definition)
+    {
+        Definition = definition;
+    }
 
     public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {
+        if (ctx.TargetCount < 2)
+        {
+            systemContext.MessageBus.Publish(actor, "Put what in what ?");
+            return;
+        }
+
         var inventory = actor.Get<Inventory>();
 
         var container = FindContainer(actor, ctx.Secondary);

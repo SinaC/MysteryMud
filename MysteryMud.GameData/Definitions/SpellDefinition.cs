@@ -2,7 +2,7 @@
 
 public class SpellDefinition
 {
-    public string Name = default!;
+    public required string Name { get; init; }
     // TODO: direct damage/heal
-    public EffectTemplate[] Effects = [];
+    public required EffectTemplate[] Effects { get; init; }
 }

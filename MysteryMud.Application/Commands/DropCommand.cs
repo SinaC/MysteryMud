@@ -1,21 +1,34 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.Core;
+using MysteryMud.Core.Command;
 using MysteryMud.Domain;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
-using MysteryMud.Core.Command;
 using MysteryMud.Domain.Systems;
+using MysteryMud.GameData.Definitions;
 
 namespace MysteryMud.Application.Commands;
 
 public class DropCommand : ICommand
 {
     public CommandParseOptions ParseOptions => ICommand.Target;
+    public CommandDefinition Definition { get; }
+
+    public DropCommand(CommandDefinition definition)
+    {
+        Definition = definition;
+    }
 
     public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {
+        if (ctx.TargetCount == 0)
+        {
+            systemContext.MessageBus.Publish(actor, "Drop what ?");
+            return;
+        }
+
         ref var inventory = ref actor.Get<Inventory>();
         ref var room = ref actor.Get<Location>().Room;
 

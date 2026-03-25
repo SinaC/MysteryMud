@@ -2,8 +2,8 @@
 
 namespace MysteryMud.GameData.Definitions;
 
-public struct HotDefinition
+public readonly struct HotDefinition
 {
-    public Func<World, Entity, Entity, int> HealFunc;
-    public int TickRate;
+    public required Func<World, Entity, Entity, int> HealFunc { get; init; }
+    public required int TickRate { get; init; }
 }

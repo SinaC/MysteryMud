@@ -1,6 +1,6 @@
 ﻿namespace MysteryMud.Infrastructure.Command;
 
-enum CommandResultType
+public enum CommandFindResultType
 {
     Success,
     NotFound,

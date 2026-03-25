@@ -20,22 +20,34 @@ public class CommandDispatcher : ICommandDispatcher
 
     public void Dispatch(SystemContext systemContext, GameState gameState, Entity actor, ReadOnlySpan<char> input)
     {
-        systemContext.Log.LogDebug(LogEvents.System, "*** [{name}] EXECUTING [{input}]", actor.DebugName, input.ToString());
+        systemContext.Log.LogInformation(LogEvents.System, "*** [{name}] EXECUTING [{input}]", actor.DebugName, input.ToString());
 
         // extract command and arguments
         _commandParser.SplitCommand(input, out var cmdSpan, out var argsSpan);
 
         // search command in registry
-        if (!_commandRegistry.TryGetCommand(cmdSpan, out var cmd))
+        var findResult = _commandRegistry.Find(GameData.Enums.CommandLevel.Immortal, GameData.Enums.Position.Standing, cmdSpan); // TODO: command level and position should be determined based on actor's state, not hardcoded
+        switch(findResult.Type)
         {
-            systemContext.MessageBus.Publish(actor, "Unknown command.");
-            return;
+            case CommandFindResultType.NotFound:
+                systemContext.MessageBus.Publish(actor, "Unknown command.");
+                return;
+            case CommandFindResultType.Ambiguous:
+                systemContext.MessageBus.Publish(actor, "Ambiguous command."); // TODO
+                return;
+            case CommandFindResultType.NoPermission:
+                systemContext.MessageBus.Publish(actor, "Permission denied."); // TODO
+                return;
+            case CommandFindResultType.WrongPosition:
+                systemContext.MessageBus.Publish(actor, "Invalid position."); // TODO
+                return; 
         }
+        var command = findResult.Command!;
 
         // parse arguments using command-specific rules
-        _commandParser.Parse(cmdSpan, argsSpan, cmd!.ParseOptions.ArgumentCount, cmd!.ParseOptions.LastIsText, out var ctx);
+        _commandParser.Parse(cmdSpan, argsSpan, command!.ParseOptions.ArgumentCount, command!.ParseOptions.LastIsText, out var ctx);
 
         // execute command
-        cmd.Execute(systemContext, gameState, actor, ctx);
+        command.Execute(systemContext, gameState, actor, ctx);
     }
 }

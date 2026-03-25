@@ -7,15 +7,28 @@ using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Systems;
+using MysteryMud.GameData.Definitions;
 
 namespace MysteryMud.Application.Commands;
 
 public class KillCommand : ICommand
 {
     public CommandParseOptions ParseOptions => ICommand.Target;
+    public CommandDefinition Definition { get; }
+
+    public KillCommand(CommandDefinition definition)
+    {
+        Definition = definition;
+    }
 
     public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {
+        if (ctx.TargetCount == 0)
+        {
+            systemContext.MessageBus.Publish(actor, "Kill whom ?");
+            return;
+        }
+
         var roomContents = actor.Get<Location>().Room.Get<RoomContents>().Characters;
         var target = TargetingSystem.SelectSingleTarget(actor, ctx.Primary, roomContents);
 

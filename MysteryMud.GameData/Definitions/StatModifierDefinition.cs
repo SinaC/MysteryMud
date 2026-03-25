@@ -2,10 +2,10 @@
 
 namespace MysteryMud.GameData.Definitions;
 
-public struct StatModifierDefinition
+public readonly struct StatModifierDefinition
 {
     // TODO: value formula ?
-    public StatType Stat;
-    public ModifierType Type;
-    public int Value;
+    public required StatType Stat { get; init; }
+    public required ModifierType Type { get; init; }
+    public required int Value { get; init; }
 }

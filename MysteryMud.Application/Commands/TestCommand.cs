@@ -14,6 +14,12 @@ namespace MysteryMud.Application.Commands;
 public class TestCommand : ICommand
 {
     public CommandParseOptions ParseOptions => ICommand.TargetAndText;
+    public CommandDefinition Definition { get; }
+
+    public TestCommand(CommandDefinition definition)
+    {
+        Definition = definition;
+    }
 
     public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {

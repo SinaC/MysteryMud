@@ -1,15 +1,14 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
-using MysteryMud.Application.Commands;
+using MysteryMud.Core.Command;
 using MysteryMud.Core.Logging;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.GameData.Enums;
 using MysteryMud.Domain.Factories;
-using MysteryMud.Infrastructure.Command;
+using MysteryMud.GameData.Enums;
 using MysteryMud.Infrastructure.Eventing;
 using MysteryMud.Infrastructure.Network;
 using MysteryMud.Infrastructure.Scheduler;
@@ -21,27 +20,22 @@ public class GameServer
 {
     private readonly World _world;
     private readonly ILogger _logger;
+    private readonly ICommandDispatcher _commandDispatcher;
+
     private readonly ConnectionService _connections;
     private readonly TelnetServer _telnet;
-    private readonly CommandParser _commandParser;
-    private readonly CommandRegistry _commandRegistry;
-    private readonly CommandDispatcher _commandDispatcher;
     private readonly MessageService _messageService;
     private readonly CommandBus _commandBus;
     private readonly MessageBus _messageBus;
     private readonly Scheduler _scheduler;
     private readonly GameLoop _gameLoop;
 
-    public GameServer(ILogger logger)
-        : this(logger, World.Create())
-    {
-    }
-
-    public GameServer(ILogger logger, World world)
+    public GameServer(ILogger logger, World world, ICommandDispatcher commandDispatcher)
     {
         _world = world;
-
         _logger = logger;
+        _commandDispatcher = commandDispatcher;
+
         _connections = new ConnectionService(_world);
         _telnet = new TelnetServer(
             port: 4000,
@@ -49,10 +43,6 @@ public class GameServer
             onConnected: HandleConnected,
             onDisconnected: HandleDisconnected
         );
-
-        _commandParser = new CommandParser();
-        _commandRegistry = new CommandRegistry();
-        _commandDispatcher = new CommandDispatcher(_commandRegistry, _commandParser);
         _messageService = new MessageService(_telnet);
         _commandBus = new CommandBus(_commandDispatcher);
         _messageBus = new MessageBus(_messageService);
@@ -63,8 +53,6 @@ public class GameServer
     public void Start()
     {
         _logger.LogInformation(LogEvents.System, "Starting game server");
-
-        _commandRegistry.RegisterCommands([typeof(TestCommand).Assembly]);
 
         Task.Run(() => _telnet.Start());
 

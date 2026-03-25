@@ -8,15 +8,28 @@ using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Systems;
+using MysteryMud.GameData.Definitions;
 
 namespace MysteryMud.Application.Commands;
 
 public class GetCommand : ICommand
 {
     public CommandParseOptions ParseOptions => ICommand.TargetPair;
+    public CommandDefinition Definition { get; }
+
+    public GetCommand(CommandDefinition definition)
+    {
+        Definition = definition;
+    }
 
     public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {
+        if (ctx.TargetCount == 0)
+        {
+            systemContext.MessageBus.Publish(actor, "Get what ?");
+            return;
+        }
+
         if (ctx.Secondary.Name.IsEmpty)
         {
             // default: room

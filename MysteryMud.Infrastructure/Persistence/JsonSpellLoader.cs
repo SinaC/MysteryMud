@@ -2,30 +2,38 @@
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.Infrastructure.Persistence.Dto;
+using System.Text.Json;
 
 namespace MysteryMud.Infrastructure.Persistence;
 
-public static class SpellLoader
+public class JsonSpellLoader
 {
-    public static SpellDatabase LoadSpells(SpellRootData doc)
+    public SpellDatabase LoadSpells(string filePath)
     {
         var formulaCompiler = new FormulaCompiler();
 
+        if (!File.Exists(filePath))
+            throw new FileNotFoundException($"Command JSON file not found: {filePath}");
+
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var json = File.ReadAllText(filePath);
+        var data = JsonSerializer.Deserialize<SpellAndEffectRootData>(json, options)!;
+
         // load templates first so spells can reference them
         var templates = new Dictionary<string, EffectTemplate>();
-        foreach (var e in doc.Effects)
+        foreach (var e in data.Effects)
         {
             var template = new EffectTemplate
             {
                 Name = e.Name,
                 Tag = Enum.Parse<EffectTagId>(e.Tag),
-                Stacking = Enum.Parse<StackingRule>(e.Stacking),
+                Stacking = Enum.Parse<StackingRule>(e.Stacking, ignoreCase: true),
                 MaxStacks = Math.Max(1, e.MaxStacks),
                 //TODO: Flags = Enum.Parse<AffectFlags>(e.Flags),
                 StatModifiers = e.StatModifiers.Select(sm => new StatModifierDefinition
                 {
-                    Stat = Enum.Parse<StatType>(sm.Stat),
-                    Type = Enum.Parse<ModifierType>(sm.Type),
+                    Stat = Enum.Parse<StatType>(sm.Stat, ignoreCase: true),
+                    Type = Enum.Parse<ModifierType>(sm.Type, ignoreCase: true),
                     Value = sm.Value
                 }).ToArray(),
                 ApplyMessage = e.ApplyMessage,
@@ -41,7 +49,7 @@ public static class SpellLoader
                 template.Dot = new DotDefinition
                 {
                     DamageFunc = formulaCompiler.Compile(e.Dot.DamageFormula),
-                    DamageType = Enum.Parse<DamageType>(e.Dot.DamageType),
+                    DamageType = Enum.Parse<DamageType>(e.Dot.DamageType, ignoreCase: true),
                     TickRate = e.Dot.TickRate,
                 };
             }
@@ -60,7 +68,7 @@ public static class SpellLoader
 
         // load spells
         var spells = new Dictionary<string, SpellDefinition>();
-        foreach (var s in doc.Spells)
+        foreach (var s in data.Spells)
         {
             spells[s.Name] = new SpellDefinition
             {

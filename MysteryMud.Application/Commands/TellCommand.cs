@@ -6,18 +6,25 @@ using MysteryMud.Domain;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Systems;
+using MysteryMud.GameData.Definitions;
 
 namespace MysteryMud.Application.Commands;
 
 public class TellCommand : ICommand
 {
     public CommandParseOptions ParseOptions => ICommand.TargetAndText;
+    public CommandDefinition Definition { get; }
+
+    public TellCommand(CommandDefinition definition)
+    {
+        Definition = definition;
+    }
 
     public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {
         var message = ctx.Text;
 
-        if (ctx.Primary.Name.IsEmpty)
+        if (ctx.TargetCount == 0)
         {
             systemContext.MessageBus.Publish(actor, "Tell whom?");
             return;

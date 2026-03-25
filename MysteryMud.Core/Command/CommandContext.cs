@@ -3,6 +3,7 @@
 public ref struct CommandContext
 {
     public ReadOnlySpan<char> Command;
+    public int TargetCount;
     public TargetSpec Primary;
     public TargetSpec Secondary;
     public TargetSpec Tertiary;

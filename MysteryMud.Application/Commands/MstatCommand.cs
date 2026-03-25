@@ -8,6 +8,7 @@ using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Systems;
+using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.Commands;
@@ -15,9 +16,21 @@ namespace MysteryMud.Application.Commands;
 public class MstatCommand : ICommand
 {
     public CommandParseOptions ParseOptions => ICommand.Target;
+    public CommandDefinition Definition { get; }
+
+    public MstatCommand(CommandDefinition definition)
+    {
+        Definition = definition;
+    }
 
     public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {
+        if (ctx.TargetCount == 0)
+        {
+            systemContext.MessageBus.Publish(actor, "Mstat what ?");
+            return;
+        }
+
         var people = actor.Get<Location>().Room.Get<RoomContents>().Characters;
 
         var target = TargetingSystem.SelectSingleTarget(actor, ctx.Primary, people);

@@ -1,16 +1,23 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.Core;
-using MysteryMud.Domain;
-using MysteryMud.GameData.Enums;
-using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Core.Command;
+using MysteryMud.Domain;
+using MysteryMud.Domain.Components.Characters;
+using MysteryMud.GameData.Definitions;
+using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.Commands;
 
 public class EquipmentCommand : ICommand
 {
     public CommandParseOptions ParseOptions => ICommand.None;
+    public CommandDefinition Definition { get; }
+
+    public EquipmentCommand(CommandDefinition definition)
+    {
+        Definition = definition;
+    }
 
     public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {
