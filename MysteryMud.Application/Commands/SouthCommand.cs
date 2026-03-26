@@ -27,16 +27,14 @@ public class SouthCommand : ICommand
 
         // Get south exit
         var roomGraph = room.Get<RoomGraph>();
-        var southExit = roomGraph.Exits.SingleOrDefault(e => e.Direction == Direction.South);
+        var southExit = roomGraph.Exits.SingleOrDefault(e => e.Direction == Directions.South);
         if (southExit.Equals(default(Exit)) || southExit.TargetRoom == Entity.Null)
         {
-            systemContext.MessageBus.Publish(actor, "Alas, you cannot go that way.");
+            systemContext.Msg.Send(actor, "Alas, you cannot go that way.");
             return;
         }
 
-        systemContext.MessageBus.Publish(actor, $"You leaves south."); // TODO send message to current room: "{actor} leaves south."
-        MovementSystem.Move(actor, southExit.TargetRoom);
+        MovementSystem.Move(systemContext, actor, southExit.TargetRoom, Directions.South);
         DisplayRoomSystem.DisplayRoom(systemContext, actor, southExit.TargetRoom);
-        // TODO: send message to target room: "{actor} has arrived."
     }
 }

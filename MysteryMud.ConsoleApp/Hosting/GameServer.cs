@@ -8,6 +8,7 @@ using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Factories;
+using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Enums;
 using MysteryMud.Infrastructure.Eventing;
 using MysteryMud.Infrastructure.Network;
@@ -28,6 +29,7 @@ public class GameServer
     private readonly CommandBus _commandBus;
     private readonly MessageBus _messageBus;
     private readonly Scheduler _scheduler;
+    private readonly ActService _actService;
     private readonly GameLoop _gameLoop;
 
     public GameServer(ILogger logger, World world, ICommandDispatcher commandDispatcher)
@@ -47,7 +49,8 @@ public class GameServer
         _commandBus = new CommandBus(_commandDispatcher);
         _messageBus = new MessageBus(_messageService);
         _scheduler = new Scheduler();
-        _gameLoop = new GameLoop(_logger, _messageService, _commandBus, _messageBus, _scheduler, _world);
+        _actService = new ActService(_messageBus);
+        _gameLoop = new GameLoop(_logger, _messageService, _commandBus, _messageBus, _scheduler, _actService, _world);
     }
 
     public void Start()
@@ -108,38 +111,39 @@ public class GameServer
     private void InitializePlayer(Entity player, int connectionId)
     {
         // TODO: fill in with actual character creation data, load from file, etc
+        player.Add(new CharacterTag());
         player.Add(new PlayerTag());
         player.Add(new Name { Value = "joel" }); // RODO: implement character creation and loading from file, for now just use a placeholder name
         player.Add(new BaseStats
         {
             Level = 1,
             Experience = 0,
-            Values = new Dictionary<StatType, int>
+            Values = new Dictionary<StatTypes, int>
             {
-                [StatType.Strength] = 15,
-                [StatType.Intelligence] = 10,
-                [StatType.Wisdom] = 15,
-                [StatType.Dexterity] = 12,
-                [StatType.Constitution] = 15,
-                [StatType.HitRoll] = 0,
-                [StatType.DamRoll] = 0,
-                [StatType.Armor] = 0
+                [StatTypes.Strength] = 15,
+                [StatTypes.Intelligence] = 10,
+                [StatTypes.Wisdom] = 15,
+                [StatTypes.Dexterity] = 12,
+                [StatTypes.Constitution] = 15,
+                [StatTypes.HitRoll] = 0,
+                [StatTypes.DamRoll] = 0,
+                [StatTypes.Armor] = 0
             }
         });
         player.Add(new EffectiveStats
         {
             Level = 1,
             Experience = 0,
-            Values = new Dictionary<StatType, int>
+            Values = new Dictionary<StatTypes, int>
             {
-                [StatType.Strength] = 15,
-                [StatType.Intelligence] = 10,
-                [StatType.Wisdom] = 15,
-                [StatType.Dexterity] = 12,
-                [StatType.Constitution] = 15,
-                [StatType.HitRoll] = 0,
-                [StatType.DamRoll] = 0,
-                [StatType.Armor] = 0
+                [StatTypes.Strength] = 15,
+                [StatTypes.Intelligence] = 10,
+                [StatTypes.Wisdom] = 15,
+                [StatTypes.Dexterity] = 12,
+                [StatTypes.Constitution] = 15,
+                [StatTypes.HitRoll] = 0,
+                [StatTypes.DamRoll] = 0,
+                [StatTypes.Armor] = 0
             }
         });
         player.Add(new Health { Current = 100, Max = 100 });
@@ -151,7 +155,7 @@ public class GameServer
             EffectsByTag = new Entity?[32]
         });
         player.Add(new Location { Room = RoomFactory.StartingRoomEntity });
-        player.Add(new PositionComponent { Position = Position.Standing });
+        player.Add(new Position { Value = Positions.Standing });
         player.Add<DirtyStats>(); // ensure stats are recomputed
         RoomFactory.StartingRoomEntity.Get<RoomContents>().Characters.Add(player); // move to starting room
 

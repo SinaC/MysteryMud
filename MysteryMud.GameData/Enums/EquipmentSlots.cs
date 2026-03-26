@@ -1,6 +1,6 @@
 ﻿namespace MysteryMud.GameData.Enums;
 
-public enum EquipmentSlot
+public enum EquipmentSlots
 {
     None = 0,
     Light = 1,

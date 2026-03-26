@@ -1,6 +1,6 @@
 ﻿namespace MysteryMud.GameData.Enums;
 
-public enum Direction
+public enum Directions
 {
     North,
     South,

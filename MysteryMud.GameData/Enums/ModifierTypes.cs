@@ -1,6 +1,6 @@
 ﻿namespace MysteryMud.GameData.Enums;
 
-public enum ModifierType
+public enum ModifierTypes
 {
     Flat,       // STR +5
     AddPercent, // STR +20%

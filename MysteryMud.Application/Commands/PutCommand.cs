@@ -25,7 +25,7 @@ public class PutCommand : ICommand
     {
         if (ctx.TargetCount < 2)
         {
-            systemContext.MessageBus.Publish(actor, "Put what in what ?");
+            systemContext.Msg.Send(actor, "Put what in what ?");
             return;
         }
 
@@ -34,7 +34,7 @@ public class PutCommand : ICommand
         var container = FindContainer(actor, ctx.Secondary);
         if (container == default)
         {
-            systemContext.MessageBus.Publish(actor, "You don't see that here.");
+            systemContext.Msg.Send(actor, "You don't see that here.");
             return;
         }
 
@@ -42,7 +42,7 @@ public class PutCommand : ICommand
         {
             ItemMovementSystem.PutItem(actor, container, item);
 
-            systemContext.MessageBus.Publish(actor, $"You put {item.DisplayName} in {container.DisplayName}.");
+            systemContext.Msg.Send(actor, $"You put {item.DisplayName} in {container.DisplayName}.");
         }
     }
 

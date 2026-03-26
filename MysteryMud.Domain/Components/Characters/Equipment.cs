@@ -5,5 +5,5 @@ namespace MysteryMud.Domain.Components.Characters;
 
 public struct Equipment
 {
-    public Dictionary<EquipmentSlot, Entity> Slots;
+    public Dictionary<EquipmentSlots, Entity> Slots;
 }

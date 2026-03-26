@@ -9,7 +9,8 @@ using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.GameData.Definitions;
+using MysteryMud.Domain.Formatters;
+using MysteryMud.Domain.Services;
 using MysteryMud.Infrastructure.Scheduler;
 
 namespace MysteryMud.ConsoleApp;
@@ -29,14 +30,15 @@ static class Demo
         var temple = rooms.ToArray().First(x => x.Get<Name>().Value == "temple square");
 
         Span<Entity> items = stackalloc Entity[10];
-        world.GetEntities(new QueryDescription().WithAll<Item>(), items);
+        world.GetEntities(new QueryDescription().WithAll<ItemTag>(), items);
         var chest = items.ToArray().First(x => x.Get<Name>().Value == "chest");
         var gem = items.ToArray().First(x => x.Get<Name>().Value == "gem");
 
         // game state for testing
         var gameState = new GameState { World = world, CurrentTick = 0 };
         // system context for testing
-        var systemContext = new SystemContext { Log = logger, MessageBus = new DemoMessageBus(), Scheduler = new Scheduler() };
+        var messageBus = new DemoMessageBus();
+        var systemContext = new SystemContext { Log = logger, Msg = messageBus, Scheduler = new Scheduler(), Act = new ActService(messageBus) };
 
         // test commands
         commandDispatcher.Dispatch(systemContext, gameState, player, "look".AsSpan());
@@ -88,10 +90,20 @@ static class Demo
 
     private class DemoMessageBus : IMessageBus
     {
-        public void Publish(Entity entity, string message)
+        public void Send(Entity entity, string message)
         {
             Console.WriteLine($"Message to {entity.DebugName}: {message}");
         }
+
+        public void Act(IEnumerable<Entity> entities, string format, params object[] arguments)
+        {
+            foreach (var target in entities)
+            {
+                var phrase = ActFormatter.FormatActOneLine(target, format, arguments);
+                Console.WriteLine($"Act message to {target.DebugName}: {phrase}");
+            }
+        }
+
         public void Process(SystemContext ctx, GameState gameState)
         {
             // no-op for demo

@@ -1,9 +1,6 @@
-﻿using Arch.Core;
+﻿namespace MysteryMud.Core.Eventing;
 
-namespace MysteryMud.Core.Eventing;
-
-public interface IMessageBus
+public interface IMessageBus : IMessageWriter
 {
-    void Publish(Entity entity, string message);
     public void Process(SystemContext ctx, GameState gameState);
 }

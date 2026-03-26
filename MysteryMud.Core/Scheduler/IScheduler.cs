@@ -1,9 +1,6 @@
-﻿using Arch.Core;
+﻿namespace MysteryMud.Core.Scheduler;
 
-namespace MysteryMud.Core.Scheduler;
-
-public interface IScheduler
+public interface IScheduler : ISchedule
 {
-    public void Schedule(Entity entity, ScheduledEventType type, long executedAt);
     public void Process(SystemContext ctx, GameState state);
 }

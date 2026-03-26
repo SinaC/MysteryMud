@@ -25,7 +25,7 @@ public class KillCommand : ICommand
     {
         if (ctx.TargetCount == 0)
         {
-            systemContext.MessageBus.Publish(actor, "Kill whom ?");
+            systemContext.Msg.Send(actor, "Kill whom ?");
             return;
         }
 
@@ -34,19 +34,19 @@ public class KillCommand : ICommand
 
         if (target == default)
         {
-            systemContext.MessageBus.Publish(actor, "You don't see that here.");
+            systemContext.Msg.Send(actor, "You don't see that here.");
             return;
         }
 
         if (target.Equals(actor))
         {
-            systemContext.MessageBus.Publish(actor, "You hit yourself. Ouch.");
+            systemContext.Msg.Send(actor, "You hit yourself. Ouch.");
             return;
         }
 
         // TODO: check if already in combat, if so, maybe switch targets? Or maybe not allow switching targets?
 
-        systemContext.MessageBus.Publish(actor, $"{actor.DisplayName} attacks {target.DisplayName}");
+        systemContext.Msg.Send(actor, $"{actor.DisplayName} attacks {target.DisplayName}");
         actor.Add(new CombatState { Target = target, RoundDelay = 0 });
         target.Add(new CombatState { Target = actor, RoundDelay = 1 }); // strikes back
     }

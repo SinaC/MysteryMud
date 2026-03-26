@@ -1,7 +1,6 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.Core;
-using MysteryMud.Domain;
 using MysteryMud.GameData.Enums;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
@@ -62,13 +61,13 @@ public static class CombatSystem
     private static bool ResolveAttack(SystemContext ctx, World world, Entity attacker, Entity target, EffectiveStats stats)
     {
         var targetStats = target.Get<EffectiveStats>();
-        int attackRoll = stats.Values[StatType.HitRoll] + Random.Shared.Next(1, 20);
-        int defenseRoll = targetStats.Values[StatType.Armor] + Random.Shared.Next(1, 20);
+        int attackRoll = stats.Values[StatTypes.HitRoll] + Random.Shared.Next(1, 20);
+        int defenseRoll = targetStats.Values[StatTypes.Armor] + Random.Shared.Next(1, 20);
 
         if (attackRoll >= defenseRoll)
         {
-            var damage = stats.Values[StatType.DamRoll] + Random.Shared.Next(1, 6); // TODO: calculate damage based on weapon, skills, etc.
-            var damageType = DamageType.Physical; // TODO: determine damage type based on weapon, skills, etc.
+            var damage = stats.Values[StatTypes.DamRoll] + Random.Shared.Next(1, 6); // TODO: calculate damage based on weapon, skills, etc.
+            var damageType = DamageTypes.Physical; // TODO: determine damage type based on weapon, skills, etc.
 
             var result = DamageSystem.ApplyDamage(ctx, target, damage, damageType, attacker);
 
@@ -76,8 +75,8 @@ public static class CombatSystem
         }
         else
         {
-            ctx.MessageBus.Publish(attacker, $"You miss {target.DisplayName}.");
-            ctx.MessageBus.Publish(target, $"{attacker.DisplayName} misses you.");
+            ctx.Msg.Send(attacker, $"You miss {target.DisplayName}.");
+            ctx.Msg.Send(target, $"{attacker.DisplayName} misses you.");
 
             return true;
         }

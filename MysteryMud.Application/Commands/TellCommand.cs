@@ -26,15 +26,15 @@ public class TellCommand : ICommand
 
         if (ctx.TargetCount == 0)
         {
-            systemContext.MessageBus.Publish(actor, "Tell whom?");
+            systemContext.Msg.Send(actor, "Tell whom?");
             return;
         }
 
         var roomContents = actor.Get<Location>().Room.Get<RoomContents>().Characters;
         foreach (var target in TargetingSystem.SelectTargets(actor, ctx.Primary, roomContents))
         {
-            systemContext.MessageBus.Publish(actor, $"You tell {target.DisplayName}: {message}");
-            systemContext.MessageBus.Publish(target, $"{actor.DisplayName} tells you: {message}");
+            systemContext.Msg.Send(actor, $"You tell {target.DisplayName}: {message}");
+            systemContext.Msg.Send(target, $"{actor.DisplayName} tells you: {message}");
         }
     }
 }

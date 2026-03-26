@@ -26,7 +26,7 @@ public class GiveCommand : ICommand
     {
         if (ctx.TargetCount < 2)
         {
-            systemContext.MessageBus.Publish(actor, "Give what to whom ?");
+            systemContext.Msg.Send(actor, "Give what to whom ?");
             return;
         }
 
@@ -38,7 +38,7 @@ public class GiveCommand : ICommand
         var target = TargetingSystem.SelectSingleTarget(actor, ctx.Secondary, roomContents.Characters);
         if (target == default)
         {
-            systemContext.MessageBus.Publish(actor, "They are not here.");
+            systemContext.Msg.Send(actor, "They are not here.");
             return;
         }
 
@@ -53,7 +53,7 @@ public class GiveCommand : ICommand
             }
 
             ItemMovementSystem.GiveItem(actor, target, item);
-            systemContext.MessageBus.Publish(actor, $"You give {item.DisplayName} to {target.DisplayName}.");
+            systemContext.Msg.Send(actor, $"You give {item.DisplayName} to {target.DisplayName}.");
         }
     }
 }

@@ -5,7 +5,7 @@ namespace MysteryMud.Domain.Calculators;
 
 public static class AggroCalculator
 {
-    public static int CalculateDamageAggro(Entity target, Entity source, int damageAmount, DamageType damageType)
+    public static int CalculateDamageAggro(Entity target, Entity source, int damageAmount, DamageTypes damageType)
     {
         return damageAmount; // TODO
     }

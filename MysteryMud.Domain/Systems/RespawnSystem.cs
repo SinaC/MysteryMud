@@ -3,7 +3,6 @@ using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Logging;
-using MysteryMud.Domain;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Rooms;
@@ -43,7 +42,7 @@ public static class RespawnSystem
                     player.Add<DirtyStats>();
 
                 // TODO: send to room
-                ctx.MessageBus.Publish(player, "You have respawned!");
+                ctx.Msg.Send(player, $"You have respawned at {location.Room.DisplayName}!");
             }
         });
     }

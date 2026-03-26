@@ -27,7 +27,7 @@ public class MstatCommand : ICommand
     {
         if (ctx.TargetCount == 0)
         {
-            systemContext.MessageBus.Publish(actor, "Mstat what ?");
+            systemContext.Msg.Send(actor, "Mstat what ?");
             return;
         }
 
@@ -36,41 +36,41 @@ public class MstatCommand : ICommand
         var target = TargetingSystem.SelectSingleTarget(actor, ctx.Primary, people);
         if (target == default)
         {
-            systemContext.MessageBus.Publish(actor, "No such target.");
+            systemContext.Msg.Send(actor, "No such target.");
             return;
         }
 
         // TODO: ref ?
         var (name, location, health, baseStats, effectiveStats, inventory, equipment, characterEffects) = target.Get<Name, Location, Health, BaseStats, EffectiveStats, Inventory, Equipment, CharacterEffects>();
-        systemContext.MessageBus.Publish(actor, $"Name: {name.Value}");
+        systemContext.Msg.Send(actor, $"Name: {name.Value}");
         ref var description = ref target.TryGetRef<Description>(out var hasDescription);
         if (hasDescription)
-            systemContext.MessageBus.Publish(actor, $"Description: {description.Value}");
-        systemContext.MessageBus.Publish(actor, $"Location: {location.Room.DisplayName}");
-        systemContext.MessageBus.Publish(actor, $"Health: {health.Current}/{health.Max}");
+            systemContext.Msg.Send(actor, $"Description: {description.Value}");
+        systemContext.Msg.Send(actor, $"Location: {location.Room.DisplayName}");
+        systemContext.Msg.Send(actor, $"Health: {health.Current}/{health.Max}");
         ref var mana = ref target.TryGetRef<Mana>(out var hasMana);
         if (hasMana)
-            systemContext.MessageBus.Publish(actor, $"Mana: {mana.Current}/{mana.Max}");
-        foreach (var stat in Enum.GetValues<StatType>())
+            systemContext.Msg.Send(actor, $"Mana: {mana.Current}/{mana.Max}");
+        foreach (var stat in Enum.GetValues<StatTypes>())
         {
-            systemContext.MessageBus.Publish(actor, $"{stat}: {effectiveStats.Values[stat]}/{baseStats.Values[stat]}");
+            systemContext.Msg.Send(actor, $"{stat}: {effectiveStats.Values[stat]}/{baseStats.Values[stat]}");
         }
         ref var combatState = ref target.TryGetRef<CombatState>(out var inCombat);
         if (inCombat)
-            systemContext.MessageBus.Publish(actor, $"Fighting: {combatState.Target.DisplayName} Delay: {combatState.RoundDelay}");
-        systemContext.MessageBus.Publish(actor, $"Inventory:");
+            systemContext.Msg.Send(actor, $"Fighting: {combatState.Target.DisplayName} Delay: {combatState.RoundDelay}");
+        systemContext.Msg.Send(actor, $"Inventory:");
         foreach (var item in inventory.Items)
-            systemContext.MessageBus.Publish(actor, $"- {item.DisplayName}");
-        systemContext.MessageBus.Publish(actor, $"Equipment:");
-        foreach (var slot in Enum.GetValues<EquipmentSlot>())
+            systemContext.Msg.Send(actor, $"- {item.DisplayName}");
+        systemContext.Msg.Send(actor, $"Equipment:");
+        foreach (var slot in Enum.GetValues<EquipmentSlots>())
         {
             if (equipment.Slots.TryGetValue(slot, out var item))
-                systemContext.MessageBus.Publish(actor, $"{slot}: {item.DisplayName}");
+                systemContext.Msg.Send(actor, $"{slot}: {item.DisplayName}");
             else
-                systemContext.MessageBus.Publish(actor, $"{slot}: nothing");
+                systemContext.Msg.Send(actor, $"{slot}: nothing");
         }
-        systemContext.MessageBus.Publish(actor, $"Active tags: {characterEffects.ActiveTags}");
-        systemContext.MessageBus.Publish(actor, $"Effects:");
+        systemContext.Msg.Send(actor, $"Active tags: {characterEffects.ActiveTags}");
+        systemContext.Msg.Send(actor, $"Effects:");
         foreach (var effect in characterEffects.Effects)
         {
             ref var effectInstance = ref effect.Get<EffectInstance>();
@@ -84,19 +84,19 @@ public class MstatCommand : ICommand
             if (hasDuration)
             {
                 var remainingTicks = duration.ExpirationTick - gameState.CurrentTick;
-                systemContext.MessageBus.Publish(actor, $"- {effectName} Source: {sourceName} Stacks: {stackCount} Remaining ticks: {remainingTicks}");
+                systemContext.Msg.Send(actor, $"- {effectName} Source: {sourceName} Stacks: {stackCount} Remaining ticks: {remainingTicks}");
             }
             else
-                systemContext.MessageBus.Publish(actor, $"- {effectName} Source: {sourceName} Stacks: {stackCount} Permanent");
+                systemContext.Msg.Send(actor, $"- {effectName} Source: {sourceName} Stacks: {stackCount} Permanent");
             if (hasStatModifiers)
             {
                 foreach (var modifier in statModifiers.Values)
-                    systemContext.MessageBus.Publish(actor, $"  - {modifier.Type} {modifier.Value} {modifier.Stat}");
+                    systemContext.Msg.Send(actor, $"  - {modifier.Type} {modifier.Value} {modifier.Stat}");
             }
             if (hasDamageOverTime)
-                systemContext.MessageBus.Publish(actor, $"  - Damage over time: {damageOverTime.Damage} every {damageOverTime.TickRate} ticks");
+                systemContext.Msg.Send(actor, $"  - Damage over time: {damageOverTime.Damage} every {damageOverTime.TickRate} ticks");
             if (hasHealOverTime)
-                systemContext.MessageBus.Publish(actor, $"  - Heal over time: {healOverTime.Heal} every {healOverTime.TickRate} ticks");
+                systemContext.Msg.Send(actor, $"  - Heal over time: {healOverTime.Heal} every {healOverTime.TickRate} ticks");
         }
     }
 }

@@ -24,7 +24,7 @@ public class DestroyCommand : ICommand
     {
         if (ctx.TargetCount == 0)
         {
-            systemContext.MessageBus.Publish(actor, "Destroy what ?");
+            systemContext.Msg.Send(actor, "Destroy what ?");
             return;
         }
 
@@ -42,7 +42,7 @@ public class DestroyCommand : ICommand
 
             DestroySystem.DestroyItem(item);
 
-            systemContext.MessageBus.Publish(actor, $"You destroy {item.DisplayName}.");
+            systemContext.Msg.Send(actor, $"You destroy {item.DisplayName}.");
         }
     }
 }

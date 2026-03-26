@@ -23,7 +23,7 @@ public class SayCommand : ICommand
     {
         if (ctx.Text.IsEmpty)
         {
-            systemContext.MessageBus.Publish(actor, "Say what?");
+            systemContext.Msg.Send(actor, "Say what?");
             return;
         }
 
@@ -34,12 +34,12 @@ public class SayCommand : ICommand
         var roomContents = room.Get<RoomContents>();
         var roomCharacters = roomContents.Characters;
 
-        systemContext.MessageBus.Publish(actor, $"You say: {ctx.Text}");
+        systemContext.Msg.Send(actor, $"You say: {ctx.Text}");
         foreach (var target in roomCharacters)
         {
             if (!target.Equals(actor))
             {
-                systemContext.MessageBus.Publish(target, $"{actor.DisplayName} says: {ctx.Text}");
+                systemContext.Msg.Send(target, $"{actor.DisplayName} says: {ctx.Text}");
             }
         }
     }

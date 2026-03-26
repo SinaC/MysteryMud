@@ -52,10 +52,10 @@ var world = World.Create();
 var temple = RoomFactory.CreateRoom(world, 1, "temple square", "the temple square");
 var market = RoomFactory.CreateRoom(world, 2, "market square", "the market square");
 var common = RoomFactory.CreateRoom(world, 3, "common square", "the common square");
-RoomFactory.LinkRoom(world, temple, market, Direction.South);
-RoomFactory.LinkRoom(world, market, temple, Direction.North);
-RoomFactory.LinkRoom(world, market, common, Direction.South);
-RoomFactory.LinkRoom(world, common, market, Direction.North);
+RoomFactory.LinkRoom(world, temple, market, Directions.South);
+RoomFactory.LinkRoom(world, market, temple, Directions.North);
+RoomFactory.LinkRoom(world, market, common, Directions.South);
+RoomFactory.LinkRoom(world, common, market, Directions.North);
 
 var player = PlayerFactory.CreatePlayer(world, "player", market);
 var goblin = MobFactory.CreateMob(world, "goblin", "a goblin", market);
@@ -63,9 +63,9 @@ var troll = MobFactory.CreateMob(world, "troll", "a troll", market);
 troll.Get<Health>().Current = 10000;
 troll.Get<Health>().Max = 10000;
 var sword = ItemFactory.CreateItemInRoom(world, "sword", "a %#FFFFFF>#FFFF00shiny sword%x", market);
-sword.Add(new Equipable { Slot = EquipmentSlot.MainHand });
+sword.Add(new Equipable { Slot = EquipmentSlots.MainHand });
 var chest = world.Create(
-            new Item(),
+            new ItemTag(),
             new Name { Value = "chest" },
             new Description { Value = "a chest" },
             new Location { Room = market },
@@ -110,7 +110,7 @@ var commandDispatcher = new CommandDispatcher(commandRegistry, commandParser);
 
 
 // run demo
-Demo.Run(logger, world, commandDispatcher);
+//Demo.Run(logger, world, commandDispatcher);
 
 // start game server
 var gameServer = new GameServer(logger, world, commandDispatcher);

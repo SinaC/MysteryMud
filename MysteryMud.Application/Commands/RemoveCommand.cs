@@ -23,7 +23,7 @@ public class RemoveCommand : ICommand
     {
         if (ctx.TargetCount == 0)
         {
-            systemContext.MessageBus.Publish(actor, "Remove what ?");
+            systemContext.Msg.Send(actor, "Remove what ?");
             return;
         }
 
@@ -38,11 +38,11 @@ public class RemoveCommand : ICommand
             {
                 EquipmentSystem.Unequip(actor, kv.Key);
 
-                systemContext.MessageBus.Publish(actor, $"You remove {item.DisplayName}.");
+                systemContext.Msg.Send(actor, $"You remove {item.DisplayName}.");
                 return;
             }
         }
 
-        systemContext.MessageBus.Publish(actor, "You are not wearing that.");
+        systemContext.Msg.Send(actor, "You are not wearing that.");
     }
 }

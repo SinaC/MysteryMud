@@ -7,7 +7,7 @@ public class EffectTemplate
 {
     public string Name = default!;
     public EffectTagId Tag;
-    public StackingRule Stacking;
+    public StackingRules Stacking;
     public int MaxStacks = 1;
     public AffectFlags Flags; // TODO
     public StatModifierDefinition[] StatModifiers = []; // formula ?

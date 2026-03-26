@@ -1,6 +1,6 @@
 ﻿namespace MysteryMud.GameData.Enums;
 
-public enum WearLocation
+public enum WearLocations
 {
     Light = 1,
     Head = 2,

@@ -1,6 +1,6 @@
 ﻿namespace MysteryMud.GameData.Enums;
 
-public enum DamageType
+public enum DamageTypes
 {
     None,
     Physical,

@@ -5,6 +5,7 @@ using MysteryMud.Core;
 using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Logging;
 using MysteryMud.Core.Scheduler;
+using MysteryMud.Core.Services;
 using MysteryMud.Domain;
 using MysteryMud.Domain.Systems;
 using MysteryMud.Infrastructure.Services;
@@ -18,15 +19,17 @@ internal class GameLoop
     private readonly ICommandBus _commandBus;
     private readonly IMessageBus _messageBus;
     private readonly IScheduler _scheduler;
+    private readonly IActService _actService;
     private readonly World _world;
 
-    public GameLoop(ILogger logger, IMessageService messageService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, World world)
+    public GameLoop(ILogger logger, IMessageService messageService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, IActService actService, World world)
     {
         _logger = logger;
         _messageService = messageService;
         _commandBus = commandBus;
         _messageBus = messageBus;
         _scheduler = scheduler;
+        this._actService = actService;
         _world = world;
     }
 
@@ -57,10 +60,10 @@ internal class GameLoop
         var systemContext = new SystemContext
         {
             Log = _logger,
-            MessageBus = _messageBus,
-            Scheduler = _scheduler
+            Msg = _messageBus,
+            Scheduler = _scheduler,
+            Act = _actService
         };
-
 
         // process player commands
         _commandBus.Process(systemContext, state);
