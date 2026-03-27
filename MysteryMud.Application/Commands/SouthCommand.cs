@@ -30,7 +30,7 @@ public class SouthCommand : ICommand
         var southExit = roomGraph.Exits.SingleOrDefault(e => e.Direction == Directions.South);
         if (southExit.Equals(default(Exit)) || southExit.TargetRoom == Entity.Null)
         {
-            systemContext.Msg.Send(actor, "Alas, you cannot go that way.");
+            systemContext.Msg.To(actor).Send("Alas, you cannot go that way.");
             return;
         }
 

@@ -42,7 +42,7 @@ public static class RespawnSystem
                     player.Add<DirtyStats>();
 
                 // TODO: send to room
-                ctx.Msg.Send(player, $"You have respawned at {location.Room.DisplayName}!");
+                ctx.Msg.To(player).Send($"You have respawned at {location.Room.DisplayName}!");
             }
         });
     }

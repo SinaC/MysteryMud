@@ -25,15 +25,15 @@ public class InventoryCommand : ICommand
         var inventory = actor.Get<Inventory>();
         if (inventory.Items.Count == 0)
         {
-            systemContext.Msg.Send(actor, "Your inventory is empty.");
+            systemContext.Msg.To(actor).Send("Your inventory is empty.");
         }
         else
         {
-            systemContext.Msg.Send(actor, "You are carrying:");
+            systemContext.Msg.To(actor).Send("You are carrying:");
             foreach (var item in inventory.Items)
             {
                 if (!item.Has<Equipped>())
-                    systemContext.Msg.Send(actor, $"- {item.DisplayName}");
+                    systemContext.Msg.To(actor).Send($"- {item.DisplayName}");
             }
         }
     }

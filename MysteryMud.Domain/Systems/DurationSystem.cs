@@ -3,9 +3,9 @@ using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Logging;
-using MysteryMud.GameData.Enums;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
+using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Systems;
 
@@ -55,7 +55,7 @@ public static class DurationSystem
         if (effectInstance.Template.WearOffMessage != null)
         {
             // TODO: in room ?
-            ctx.Msg.Send(effectInstance.Target, effectInstance.Template.WearOffMessage);
+            ctx.Msg.To(effectInstance.Target).Send(effectInstance.Template.WearOffMessage);
         }
 
         state.World.Destroy(effect);

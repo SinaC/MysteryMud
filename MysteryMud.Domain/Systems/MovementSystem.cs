@@ -27,8 +27,8 @@ public static class MovementSystem
             else // moving a character, so update room contents
             {
                 oldRoomContents.Characters.Remove(entity);
-                ctx.Act.Send(oldRoomContents.Characters, "{0} leaves {1}", entity, direction); // entity will not receive the msg, but the other characters in the room will
-                ctx.Act.Send(newRoomContents.Characters, "{0} has arrived", entity); // entity will not receive the msg, but the other characters in the room will
+                ctx.Msg.To(oldRoomContents.Characters).Act("{0} leaves {1}").With(entity, direction); // entity will not receive the msg, but the other characters in the room will
+                ctx.Msg.To(newRoomContents.Characters).Act("{0} has arrived").With(entity); // entity will not receive the msg, but the other characters in the room will
                 newRoomContents.Characters.Add(entity);
             }
 

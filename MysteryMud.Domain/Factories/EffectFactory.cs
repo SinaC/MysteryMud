@@ -140,7 +140,7 @@ public static class EffectFactory
 
         // apply message
         if (effectTemplate.ApplyMessage != null)
-            ctx.Msg.Send(source, effectTemplate.ApplyMessage);
+            ctx.Msg.To(source).Send(effectTemplate.ApplyMessage);
     }
 
     private static bool HandleStacking(SystemContext ctx, GameState gameState, EffectTemplate effectTemplate, Entity effect, Entity source)

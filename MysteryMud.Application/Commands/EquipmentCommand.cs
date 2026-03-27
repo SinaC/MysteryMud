@@ -23,14 +23,14 @@ public class EquipmentCommand : ICommand
     {
         ref var equipment = ref actor.Get<Equipment>();
 
-        systemContext.Msg.Send(actor, "You are wearing:");
+        systemContext.Msg.To(actor).Send("You are wearing:");
 
         foreach (var slot in Enum.GetValues<EquipmentSlots>())
         {
             if (equipment.Slots.TryGetValue(slot, out var item))
-                systemContext.Msg.Send(actor, $"{slot}: {item.DisplayName}");
+                systemContext.Msg.To(actor).Send($"{slot}: {item.DisplayName}");
             else
-                systemContext.Msg.Send(actor, $"{slot}: nothing");
+                systemContext.Msg.To(actor).Send($"{slot}: nothing");
         }
     }
 }

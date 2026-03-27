@@ -25,11 +25,12 @@ public class GameServer
 
     private readonly ConnectionService _connections;
     private readonly TelnetServer _telnet;
-    private readonly MessageService _messageService;
+    private readonly OutputService _outputService;
     private readonly CommandBus _commandBus;
     private readonly MessageBus _messageBus;
     private readonly Scheduler _scheduler;
     private readonly ActService _actService;
+    private readonly GameMessageService _gameMessageService;
     private readonly GameLoop _gameLoop;
 
     public GameServer(ILogger logger, World world, ICommandDispatcher commandDispatcher)
@@ -45,12 +46,13 @@ public class GameServer
             onConnected: HandleConnected,
             onDisconnected: HandleDisconnected
         );
-        _messageService = new MessageService(_telnet);
+        _outputService = new OutputService(_telnet);
         _commandBus = new CommandBus(_commandDispatcher);
-        _messageBus = new MessageBus(_messageService);
+        _messageBus = new MessageBus(_outputService);
         _scheduler = new Scheduler();
-        _actService = new ActService(_messageBus);
-        _gameLoop = new GameLoop(_logger, _messageService, _commandBus, _messageBus, _scheduler, _actService, _world);
+        _actService = new ActService();
+        _gameMessageService = new GameMessageService(_messageBus, _actService);
+        _gameLoop = new GameLoop(_logger, _outputService, _commandBus, _messageBus, _scheduler, _gameMessageService, _world);
     }
 
     public void Start()

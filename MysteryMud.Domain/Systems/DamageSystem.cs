@@ -1,14 +1,13 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
-using MysteryMud.Domain.Components.Characters;
-using MysteryMud.Domain.Components.Characters.Players;
-using MysteryMud.GameData.Enums;
-using MysteryMud.Domain.Factories;
 using MysteryMud.Core;
 using MysteryMud.Core.Logging;
 using MysteryMud.Domain.Calculators;
-using MysteryMud.Domain.Formatters;
+using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Components.Characters.Players;
+using MysteryMud.Domain.Factories;
+using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Systems;
 
@@ -36,15 +35,14 @@ public static class DamageSystem
 
         ctx.Log.LogInformation(LogEvents.Damage,"Applying damage from {sourceName} to {targetName} with amount {damage}. Current health: {health.Current}/{health.Max}", source.DebugName, target.DebugName, damageAmount, health.Current, health.Max);
 
-        ctx.Msg.Send(source, $"%GYou deal %r{damageAmount}%g damage to {target.DisplayName}.%x");
-        ctx.Msg.Send(target, $"{source.DisplayName} deals {damageAmount} damage to you.");
+        ctx.Msg.ToAll(source).Act("%G{0} deal{0:v} %r{1}%g damage to {2}.%x").With(source, damageAmount, target);
 
         if (health.Current <= 0)
         {
             ctx.Log.LogInformation(LogEvents.Damage,"Target {targetName} killed by {sourceName}", target.DebugName, source.DebugName);
 
-            ctx.Msg.Send(target, "%RYou have been KILLED%x");
-            ctx.Act.Send(target, ActTargetOptions.ToRoom, "{0} is dead", target);
+            ctx.Msg.To(target).Send("%RYou have been KILLED%x");
+            ctx.Msg.ToRoom(target).Act("{0} is dead").With(target);
 
             AddKilledTags(target, source);
             return ApplyDamageResult.Killed;

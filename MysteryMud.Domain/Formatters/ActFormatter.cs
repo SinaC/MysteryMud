@@ -1,10 +1,8 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.Core.Extensions;
-using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
-using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.GameData.Enums;
 using System.Diagnostics;
 using System.Text;
@@ -14,31 +12,12 @@ namespace MysteryMud.Domain.Formatters;
 // IFormattable cannot be used because formatting depends on who'll receive the message (CanSee check)
 public static class ActFormatter
 {
-    public static IEnumerable<Entity> GetActTargets(ActTargetOptions option, Entity actor, Positions minPosition = Positions.Resting, params Entity[]? victims)
-    {
-        ref var location = ref actor.TryGetRef<Location>(out var hasLocation);
-        if (!hasLocation)
-            return [];
-        ref var roomContents = ref location.Room.TryGetRef<RoomContents>(out var hasRoomContents);
-        if (!hasRoomContents)
-            return [];
-
-        return option switch
-        {
-            ActTargetOptions.ToAll => roomContents.Characters.Where(x => x.Position >= minPosition),
-            ActTargetOptions.ToRoom => roomContents.Characters.Where(x => x != actor && x.Position >= minPosition),
-            ActTargetOptions.ToGroup => [],// TODO: return Group?.Members ?? this.Yield(); // no check on position
-            ActTargetOptions.ToCharacter => actor.Position >= minPosition ? [actor] : [],
-            ActTargetOptions.ToNotVictims => roomContents.Characters.Where(x => x != actor && (victims == null || victims.Length == 0 || !victims.Contains(x)) && x.Position >= minPosition),
-            _ => [],// TODO: better error handling, including logging the error with option and entity information
-        };
-    }
-
     public static string FormatActOneLine(Entity target, string format, params object[]? arguments)
     {
         StringBuilder result = new();
 
         var state = ActParsingStates.Normal;
+        var argumentIndex = 0;
         object? currentArgument = null!;
         StringBuilder argumentFormat = null!;
         foreach (char c in format)
@@ -67,7 +46,7 @@ public static class ActFormatter
                     }
                     else if (c >= '0' && c <= '9') // {x -> argument found
                     {
-                        var argumentIndex = c - '0';
+                        argumentIndex = c - '0';
                         if (argumentIndex >= arguments?.Length)
                         {
                             // TODO: better error handling, including logging the error with format and target information
@@ -81,7 +60,7 @@ public static class ActFormatter
                 case ActParsingStates.ArgumentFound: // searching for } or :
                     if (c == '}')
                     {
-                        FormatActOneArgument(target, result, null, currentArgument);
+                        FormatActOneArgument(target, result, argumentIndex, null, currentArgument);
                         state = ActParsingStates.Normal;
                     }
                     else if (c == ':')
@@ -91,7 +70,7 @@ public static class ActFormatter
                     if (c == '}')
                     {
                         Debug.Assert(argumentFormat != null);
-                        FormatActOneArgument(target, result, argumentFormat.ToString(), currentArgument);
+                        FormatActOneArgument(target, result, argumentIndex, argumentFormat.ToString(), currentArgument);
                         state = ActParsingStates.Normal;
                     }
                     else
@@ -116,11 +95,11 @@ public static class ActFormatter
         FormatSeparatorFound,
     }
 
-    private static void FormatActOneArgument(Entity target, StringBuilder sb, ReadOnlySpan<char> format, object? argument)
+    private static void FormatActOneArgument(Entity target, StringBuilder sb, int argumentIndex, ReadOnlySpan<char> argumentFormat, object? argument)
     {
         if (argument is Entity character && character.Has<CharacterTag>())
         {
-            var letter = format.Length > 0 ? format[0] : 'n';
+            var letter = argumentFormat.Length > 0 ? argumentFormat[0] : (argumentIndex == 0 ? 'N' : 'n'); // default to 'N' or 'n' if no format specified
             ref var gender = ref character.TryGetRef<Gender>(out var hasGender);
             var genderType = hasGender ? gender.Value : Genders.Neutral;
             switch (letter)
@@ -213,10 +192,10 @@ public static class ActFormatter
             return;
         }
 
-        if (format.IsEmpty)
+        if (argumentFormat.IsEmpty)
             sb.Append(argument);
         else if (argument is IFormattable formattable)
-            sb.Append(formattable.ToString(format.ToString(), null));
+            sb.Append(formattable.ToString(argumentFormat.ToString(), null));
         else
             sb.Append(argument);
     }

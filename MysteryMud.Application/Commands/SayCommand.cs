@@ -2,7 +2,6 @@
 using Arch.Core.Extensions;
 using MysteryMud.Core;
 using MysteryMud.Core.Command;
-using MysteryMud.Domain;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.GameData.Definitions;
@@ -23,7 +22,7 @@ public class SayCommand : ICommand
     {
         if (ctx.Text.IsEmpty)
         {
-            systemContext.Msg.Send(actor, "Say what?");
+            systemContext.Msg.To(actor).Send("Say what?");
             return;
         }
 
@@ -34,13 +33,6 @@ public class SayCommand : ICommand
         var roomContents = room.Get<RoomContents>();
         var roomCharacters = roomContents.Characters;
 
-        systemContext.Msg.Send(actor, $"You say: {ctx.Text}");
-        foreach (var target in roomCharacters)
-        {
-            if (!target.Equals(actor))
-            {
-                systemContext.Msg.Send(target, $"{actor.DisplayName} says: {ctx.Text}");
-            }
-        }
+        systemContext.Msg.ToAll(actor).Act($"{0} say{0:v}: {1}").With(actor, ctx.Text.ToString());
     }
 }

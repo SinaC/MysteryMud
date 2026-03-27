@@ -36,8 +36,7 @@ public static class HealSystem
 
         ctx.Log.LogInformation(LogEvents.Heal,"Applying heal from {sourceName} to {targetName} with amount {heal}. Current health: {health.Current}/{health.Max}", source.DebugName, target.DebugName, healAmount, health.Current, health.Max);
 
-        ctx.Msg.Send(source, $"%GYou heal %g{target.DisplayName} for %g{healAmount}%g health.%x");
-        ctx.Msg.Send(target, $"%G{source.DisplayName} heals you for %g{healAmount}%g health.%x");
+        ctx.Msg.ToRoom(source).Act("%G{0} heal %g{1} for %g{2}%g health.%x").With(source, target, healAmount);
 
         var aggro = AggroCalculator.CalculateHealAggro(target, source, healAmount);
         AggroSystem.AddAggro(target, source, aggro);

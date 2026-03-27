@@ -31,13 +31,13 @@ public class CommandDispatcher : ICommandDispatcher
         switch(findResult)
         {
             case CommandFindResult.NotFound:
-                systemContext.Msg.Send(actor, "Unknown command.");
+                systemContext.Msg.To(actor).Send("Unknown command.");
                 return;
             case CommandFindResult.NoPermission:
-                systemContext.Msg.Send(actor, "Permission denied."); // TODO
+                systemContext.Msg.To(actor).Send("Permission denied."); // TODO
                 return;
             case CommandFindResult.WrongPosition:
-                systemContext.Msg.Send(actor, "Invalid position."); // TODO
+                systemContext.Msg.To(actor).Send("Invalid position."); // TODO
                 return; 
         }
 

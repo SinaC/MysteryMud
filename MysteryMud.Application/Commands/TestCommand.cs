@@ -4,10 +4,10 @@ using MysteryMud.Core;
 using MysteryMud.Core.Command;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.GameData.Definitions;
-using MysteryMud.GameData.Enums;
 using MysteryMud.Domain.Factories;
 using MysteryMud.Domain.Systems;
+using MysteryMud.GameData.Definitions;
+using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.Commands;
 
@@ -26,14 +26,14 @@ public class TestCommand : ICommand
         ref var roomContents = ref actor.Get<Location>().Room.Get<RoomContents>().Characters;
         var target = TargetingSystem.SelectSingleTarget(actor, ctx.Primary, roomContents);
 
-        systemContext.Msg.Send(actor, "Ansi16: %RR%GG%YY%BB%MM%CC%WW%rr%gg%yy%bb%mm%cc%ww%xnocolor");
-        systemContext.Msg.Send(actor, "Ansi256: %=214orange%xnocolor");
-        systemContext.Msg.Send(actor, "RGB: %#FFA500orange%xnocolor");
-        systemContext.Msg.Send(actor, "GRADIENT: %#FFA500>#00FFA5orange-2-cyan%xnocolor");
+        systemContext.Msg.To(actor).Send("Ansi16: %RR%GG%YY%BB%MM%CC%WW%rr%gg%yy%bb%mm%cc%ww%xnocolor");
+        systemContext.Msg.To(actor).Send("Ansi256: %=214orange%xnocolor");
+        systemContext.Msg.To(actor).Send("RGB: %#FFA500orange%xnocolor");
+        systemContext.Msg.To(actor).Send("GRADIENT: %#FFA500>#00FFA5orange-2-cyan%xnocolor");
 
         if (target == default)
         {
-            systemContext.Msg.Send(actor, "You don't see that here.");
+            systemContext.Msg.To(actor).Send("You don't see that here.");
             return;
         }
 

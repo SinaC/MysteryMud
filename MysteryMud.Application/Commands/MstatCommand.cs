@@ -27,7 +27,7 @@ public class MstatCommand : ICommand
     {
         if (ctx.TargetCount == 0)
         {
-            systemContext.Msg.Send(actor, "Mstat what ?");
+            systemContext.Msg.To(actor).Send("Mstat what ?");
             return;
         }
 
@@ -36,41 +36,41 @@ public class MstatCommand : ICommand
         var target = TargetingSystem.SelectSingleTarget(actor, ctx.Primary, people);
         if (target == default)
         {
-            systemContext.Msg.Send(actor, "No such target.");
+            systemContext.Msg.To(actor).Send("No such target.");
             return;
         }
 
         // TODO: ref ?
         var (name, location, health, baseStats, effectiveStats, inventory, equipment, characterEffects) = target.Get<Name, Location, Health, BaseStats, EffectiveStats, Inventory, Equipment, CharacterEffects>();
-        systemContext.Msg.Send(actor, $"Name: {name.Value}");
+        systemContext.Msg.To(actor).Send($"Name: {name.Value}");
         ref var description = ref target.TryGetRef<Description>(out var hasDescription);
         if (hasDescription)
-            systemContext.Msg.Send(actor, $"Description: {description.Value}");
-        systemContext.Msg.Send(actor, $"Location: {location.Room.DisplayName}");
-        systemContext.Msg.Send(actor, $"Health: {health.Current}/{health.Max}");
+            systemContext.Msg.To(actor).Send($"Description: {description.Value}");
+        systemContext.Msg.To(actor).Send($"Location: {location.Room.DisplayName}");
+        systemContext.Msg.To(actor).Send($"Health: {health.Current}/{health.Max}");
         ref var mana = ref target.TryGetRef<Mana>(out var hasMana);
         if (hasMana)
-            systemContext.Msg.Send(actor, $"Mana: {mana.Current}/{mana.Max}");
+            systemContext.Msg.To(actor).Send($"Mana: {mana.Current}/{mana.Max}");
         foreach (var stat in Enum.GetValues<StatTypes>())
         {
-            systemContext.Msg.Send(actor, $"{stat}: {effectiveStats.Values[stat]}/{baseStats.Values[stat]}");
+            systemContext.Msg.To(actor).Send($"{stat}: {effectiveStats.Values[stat]}/{baseStats.Values[stat]}");
         }
         ref var combatState = ref target.TryGetRef<CombatState>(out var inCombat);
         if (inCombat)
-            systemContext.Msg.Send(actor, $"Fighting: {combatState.Target.DisplayName} Delay: {combatState.RoundDelay}");
-        systemContext.Msg.Send(actor, $"Inventory:");
+            systemContext.Msg.To(actor).Send($"Fighting: {combatState.Target.DisplayName} Delay: {combatState.RoundDelay}");
+        systemContext.Msg.To(actor).Send($"Inventory:");
         foreach (var item in inventory.Items)
-            systemContext.Msg.Send(actor, $"- {item.DisplayName}");
-        systemContext.Msg.Send(actor, $"Equipment:");
+            systemContext.Msg.To(actor).Send($"- {item.DisplayName}");
+        systemContext.Msg.To(actor).Send($"Equipment:");
         foreach (var slot in Enum.GetValues<EquipmentSlots>())
         {
             if (equipment.Slots.TryGetValue(slot, out var item))
-                systemContext.Msg.Send(actor, $"{slot}: {item.DisplayName}");
+                systemContext.Msg.To(actor).Send($"{slot}: {item.DisplayName}");
             else
-                systemContext.Msg.Send(actor, $"{slot}: nothing");
+                systemContext.Msg.To(actor).Send($"{slot}: nothing");
         }
-        systemContext.Msg.Send(actor, $"Active tags: {characterEffects.ActiveTags}");
-        systemContext.Msg.Send(actor, $"Effects:");
+        systemContext.Msg.To(actor).Send($"Active tags: {characterEffects.ActiveTags}");
+        systemContext.Msg.To(actor).Send($"Effects:");
         foreach (var effect in characterEffects.Effects)
         {
             ref var effectInstance = ref effect.Get<EffectInstance>();
@@ -84,19 +84,19 @@ public class MstatCommand : ICommand
             if (hasDuration)
             {
                 var remainingTicks = duration.ExpirationTick - gameState.CurrentTick;
-                systemContext.Msg.Send(actor, $"- {effectName} Source: {sourceName} Stacks: {stackCount} Remaining ticks: {remainingTicks}");
+                systemContext.Msg.To(actor).Send($"- {effectName} Source: {sourceName} Stacks: {stackCount} Remaining ticks: {remainingTicks}");
             }
             else
-                systemContext.Msg.Send(actor, $"- {effectName} Source: {sourceName} Stacks: {stackCount} Permanent");
+                systemContext.Msg.To(actor).Send($"- {effectName} Source: {sourceName} Stacks: {stackCount} Permanent");
             if (hasStatModifiers)
             {
                 foreach (var modifier in statModifiers.Values)
-                    systemContext.Msg.Send(actor, $"  - {modifier.Type} {modifier.Value} {modifier.Stat}");
+                    systemContext.Msg.To(actor).Send($"  - {modifier.Type} {modifier.Value} {modifier.Stat}");
             }
             if (hasDamageOverTime)
-                systemContext.Msg.Send(actor, $"  - Damage over time: {damageOverTime.Damage} every {damageOverTime.TickRate} ticks");
+                systemContext.Msg.To(actor).Send($"  - Damage over time: {damageOverTime.Damage} every {damageOverTime.TickRate} ticks");
             if (hasHealOverTime)
-                systemContext.Msg.Send(actor, $"  - Heal over time: {healOverTime.Heal} every {healOverTime.TickRate} ticks");
+                systemContext.Msg.To(actor).Send($"  - Heal over time: {healOverTime.Heal} every {healOverTime.TickRate} ticks");
         }
     }
 }

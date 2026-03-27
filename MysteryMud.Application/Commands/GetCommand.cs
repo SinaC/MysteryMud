@@ -26,7 +26,7 @@ public class GetCommand : ICommand
     {
         if (ctx.TargetCount == 0)
         {
-            systemContext.Msg.Send(actor, "Get what ?");
+            systemContext.Msg.To(actor).Send("Get what ?");
             return;
         }
 
@@ -38,7 +38,7 @@ public class GetCommand : ICommand
             foreach (var item in TargetingSystem.SelectTargets(actor, ctx.Primary, roomContents.Items))
             {
                 ItemMovementSystem.GetItemFromRoom(actor, room, item);
-                systemContext.Msg.Send(actor, $"You get {item.DisplayName}.");
+                systemContext.Msg.To(actor).Send($"You get {item.DisplayName}.");
             }
         }
         else
@@ -46,7 +46,7 @@ public class GetCommand : ICommand
             var container = FindContainer(actor, ctx.Secondary);
             if (container == default)
             {
-                systemContext.Msg.Send(actor, "You don't see that here.");
+                systemContext.Msg.To(actor).Send("You don't see that here.");
                 return;
             }
 
@@ -54,7 +54,7 @@ public class GetCommand : ICommand
             foreach (var item in TargetingSystem.SelectTargets(actor, ctx.Primary, containerContents.Items))
             {
                 ItemMovementSystem.GetItemFromContainer(actor, container, item);
-                systemContext.Msg.Send(actor, $"You get {item.DisplayName} from {container.DisplayName}.");
+                systemContext.Msg.To(actor).Send($"You get {item.DisplayName} from {container.DisplayName}.");
             }
         }
     }

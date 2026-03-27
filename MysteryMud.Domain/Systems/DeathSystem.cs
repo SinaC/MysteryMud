@@ -1,10 +1,10 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.Core;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Core;
 
 namespace MysteryMud.Domain.Systems;
 
@@ -81,7 +81,7 @@ public static class DeathSystem
 
             //ContainmentSystem.Move(world, item, victim.Get<Location>().Room);
             ItemMovementSystem.DropItem(victim, location.Room, item);
-            ctx.Msg.Send(killer, $"{victim.DisplayName} drops {item.DisplayName}.");
+            ctx.Msg.ToRoom(killer).Act("{0} drop{0:v} {1}.").With(victim, item);
         }
     }
 }

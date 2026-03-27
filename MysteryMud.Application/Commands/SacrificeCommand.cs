@@ -24,7 +24,7 @@ public class SacrificeCommand : ICommand
     {
         if (ctx.TargetCount == 0)
         {
-            systemContext.Msg.Send(actor, "Sacrifice what ?");
+            systemContext.Msg.To(actor).Send("Sacrifice what ?");
             return;
         }
 
@@ -36,7 +36,7 @@ public class SacrificeCommand : ICommand
         {
             DestroySystem.DestroyItem(item);
 
-            systemContext.Msg.Send(actor, $"You sacrifice the {item.DisplayName}.");
+            systemContext.Msg.To(actor).Send($"You sacrifice the {item.DisplayName}.");
         }
     }
 }

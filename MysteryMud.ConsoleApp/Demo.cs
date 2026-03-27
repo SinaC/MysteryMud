@@ -9,9 +9,9 @@ using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Formatters;
 using MysteryMud.Domain.Services;
 using MysteryMud.Infrastructure.Scheduler;
+using MysteryMud.Infrastructure.Services;
 
 namespace MysteryMud.ConsoleApp;
 
@@ -38,7 +38,9 @@ static class Demo
         var gameState = new GameState { World = world, CurrentTick = 0 };
         // system context for testing
         var messageBus = new DemoMessageBus();
-        var systemContext = new SystemContext { Log = logger, Msg = messageBus, Scheduler = new Scheduler(), Act = new ActService(messageBus) };
+        var actService = new ActService();
+        var gameMessageService = new GameMessageService(messageBus, actService);
+        var systemContext = new SystemContext { Log = logger, Msg = gameMessageService, Scheduler = new Scheduler() };
 
         // test commands
         commandDispatcher.Dispatch(systemContext, gameState, player, "look".AsSpan());
@@ -90,23 +92,14 @@ static class Demo
 
     private class DemoMessageBus : IMessageBus
     {
-        public void Send(Entity entity, string message)
+        public void Publish(Entity entity, string message)
         {
             Console.WriteLine($"Message to {entity.DebugName}: {message}");
         }
 
-        public void Act(IEnumerable<Entity> entities, string format, params object[] arguments)
-        {
-            foreach (var target in entities)
-            {
-                var phrase = ActFormatter.FormatActOneLine(target, format, arguments);
-                Console.WriteLine($"Act message to {target.DebugName}: {phrase}");
-            }
-        }
-
         public void Process(SystemContext ctx, GameState gameState)
         {
-            // no-op for demo
+            // nop for demo
         }
     }
 }

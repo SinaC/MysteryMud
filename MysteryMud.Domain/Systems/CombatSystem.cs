@@ -1,9 +1,9 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.Core;
-using MysteryMud.GameData.Enums;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
+using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Systems;
 
@@ -75,8 +75,7 @@ public static class CombatSystem
         }
         else
         {
-            ctx.Msg.Send(attacker, $"You miss {target.DisplayName}.");
-            ctx.Msg.Send(target, $"{attacker.DisplayName} misses you.");
+            ctx.Msg.ToAll(attacker).Act("{0} miss{0:v} {1}.").With(attacker, target);
 
             return true;
         }
