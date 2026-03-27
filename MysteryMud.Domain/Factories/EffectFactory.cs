@@ -140,7 +140,7 @@ public static class EffectFactory
 
         // apply message
         if (effectTemplate.ApplyMessage != null)
-            ctx.MessageBus.Publish(source, effectTemplate.ApplyMessage);
+            ctx.Msg.To(source).Send(effectTemplate.ApplyMessage);
     }
 
     private static bool HandleStacking(SystemContext ctx, GameState gameState, EffectTemplate effectTemplate, Entity effect, Entity source)
@@ -158,10 +158,10 @@ public static class EffectFactory
 
         switch (effectTemplate.Stacking)
         {
-            case StackingRule.None:
+            case StackingRules.None:
                 // if the stacking rule is None, do not apply the new effect and do not refresh the duration
                 return true; // handled
-            case StackingRule.Refresh:
+            case StackingRules.Refresh:
                 if (hasDuration)
                 {
                     // update Duration
@@ -175,7 +175,7 @@ public static class EffectFactory
                     ctx.Scheduler.Schedule(effect, ScheduledEventType.EffectExpired, expirationTick);
                 }
                 return true; // handled
-            case StackingRule.Stack:
+            case StackingRules.Stack:
                 if (effectInstance.StackCount < effectTemplate.MaxStacks)
                     effectInstance.StackCount++;
                 if (hasDuration)

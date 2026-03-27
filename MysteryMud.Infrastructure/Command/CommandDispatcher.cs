@@ -27,17 +27,17 @@ public class CommandDispatcher : ICommandDispatcher
         _commandParser.SplitCommand(input, out var cmdSpan, out var argsSpan);
 
         // search command in registry
-        var findResult = _commandRegistry.Find(CommandLevel.Immortal, Position.Standing, cmdSpan, out var command); // TODO: command level and position should be determined based on actor's state, not hardcoded
+        var findResult = _commandRegistry.Find(CommandLevels.Immortal, Positions.Standing, cmdSpan, out var command); // TODO: command level and position should be determined based on actor's state, not hardcoded
         switch(findResult)
         {
             case CommandFindResult.NotFound:
-                systemContext.MessageBus.Publish(actor, "Unknown command.");
+                systemContext.Msg.To(actor).Send("Unknown command.");
                 return;
             case CommandFindResult.NoPermission:
-                systemContext.MessageBus.Publish(actor, "Permission denied."); // TODO
+                systemContext.Msg.To(actor).Send("Permission denied."); // TODO
                 return;
             case CommandFindResult.WrongPosition:
-                systemContext.MessageBus.Publish(actor, "Invalid position."); // TODO
+                systemContext.Msg.To(actor).Send("Invalid position."); // TODO
                 return; 
         }
 

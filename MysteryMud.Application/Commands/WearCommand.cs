@@ -24,7 +24,7 @@ public class WearCommand : ICommand
     {
         if (ctx.TargetCount == 0)
         {
-            systemContext.MessageBus.Publish(actor, "Wear what ?");
+            systemContext.Msg.To(actor).Send("Wear what ?");
             return;
         }
 
@@ -34,17 +34,17 @@ public class WearCommand : ICommand
         {
             if (!item.Has<Equipable>())
             {
-                systemContext.MessageBus.Publish(actor, "You can't wear that.");
+                systemContext.Msg.To(actor).Send("You can't wear that.");
                 return;
             }
 
             if (!EquipmentSystem.Equip(actor, item))
             {
-                systemContext.MessageBus.Publish(actor, "Slot already used.");
+                systemContext.Msg.To(actor).Send("Slot already used.");
                 return;
             }
 
-            systemContext.MessageBus.Publish(actor, $"You wear {item.DisplayName}.");
+            systemContext.Msg.To(actor).Send($"You wear {item.DisplayName}.");
             return;
         }
     }

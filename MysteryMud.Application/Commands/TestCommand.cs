@@ -4,10 +4,10 @@ using MysteryMud.Core;
 using MysteryMud.Core.Command;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.GameData.Definitions;
-using MysteryMud.GameData.Enums;
 using MysteryMud.Domain.Factories;
 using MysteryMud.Domain.Systems;
+using MysteryMud.GameData.Definitions;
+using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.Commands;
 
@@ -26,14 +26,14 @@ public class TestCommand : ICommand
         ref var roomContents = ref actor.Get<Location>().Room.Get<RoomContents>().Characters;
         var target = TargetingSystem.SelectSingleTarget(actor, ctx.Primary, roomContents);
 
-        systemContext.MessageBus.Publish(actor, "Ansi16: %RR%GG%YY%BB%MM%CC%WW%rr%gg%yy%bb%mm%cc%ww%xnocolor");
-        systemContext.MessageBus.Publish(actor, "Ansi256: %=214orange%xnocolor");
-        systemContext.MessageBus.Publish(actor, "RGB: %#FFA500orange%xnocolor");
-        systemContext.MessageBus.Publish(actor, "GRADIENT: %#FFA500>#00FFA5orange-2-cyan%xnocolor");
+        systemContext.Msg.To(actor).Send("Ansi16: %RR%GG%YY%BB%MM%CC%WW%rr%gg%yy%bb%mm%cc%ww%xnocolor");
+        systemContext.Msg.To(actor).Send("Ansi256: %=214orange%xnocolor");
+        systemContext.Msg.To(actor).Send("RGB: %#FFA500orange%xnocolor");
+        systemContext.Msg.To(actor).Send("GRADIENT: %#FFA500>#00FFA5orange-2-cyan%xnocolor");
 
         if (target == default)
         {
-            systemContext.MessageBus.Publish(actor, "You don't see that here.");
+            systemContext.Msg.To(actor).Send("You don't see that here.");
             return;
         }
 
@@ -43,21 +43,21 @@ public class TestCommand : ICommand
             {
                 Name = "Poison2",
                 Tag = EffectTagId.Poison,
-                Stacking = StackingRule.Stack,
+                Stacking = StackingRules.Stack,
                 MaxStacks = 3,
                 StatModifiers =
                 [
                     new StatModifierDefinition
                     {
-                        Stat = StatType.Strength,
+                        Stat = StatTypes.Strength,
                         Value = -2,
-                        Type = ModifierType.Flat
+                        Type = ModifierTypes.Flat
                     },
                     new StatModifierDefinition
                     {
-                        Stat = StatType.HitRoll,
+                        Stat = StatTypes.HitRoll,
                         Value = -3,
-                        Type = ModifierType.Flat
+                        Type = ModifierTypes.Flat
                     },
                 ],
                 Flags = AffectFlags.Poison,
@@ -66,7 +66,7 @@ public class TestCommand : ICommand
                 {
                     DamageFunc = (world, source, target) => 45,
                     TickRate = 2,
-                    DamageType = DamageType.Poison
+                    DamageType = DamageTypes.Poison
                 },
                 Hot = null // not hot
             };
@@ -79,21 +79,21 @@ public class TestCommand : ICommand
             {
                 Name = "Bless2",
                 Tag = EffectTagId.Bless,
-                Stacking = StackingRule.None,
+                Stacking = StackingRules.None,
                 MaxStacks = 1,
                 StatModifiers =
                 [
                     new StatModifierDefinition
                     {
-                        Stat = StatType.Intelligence,
+                        Stat = StatTypes.Intelligence,
                         Value = 2,
-                        Type = ModifierType.Flat
+                        Type = ModifierTypes.Flat
                     },
                     new StatModifierDefinition
                     {
-                        Stat = StatType.HitRoll,
+                        Stat = StatTypes.HitRoll,
                         Value = 10,
-                        Type = ModifierType.AddPercent
+                        Type = ModifierTypes.AddPercent
                     },
                 ],
                 Flags = AffectFlags.Bless,

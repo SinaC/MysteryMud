@@ -58,7 +58,7 @@ public class LookCommand : ICommand
         {
             if (TargetingSystem.Matches(c, targetName))
             {
-                systemContext.MessageBus.Publish(actor, $"Character: {c.DisplayName}");
+                systemContext.Msg.To(actor).Send($"Character: {c.DisplayName}");
                 return;
             }
         }
@@ -68,7 +68,7 @@ public class LookCommand : ICommand
         {
             if (TargetingSystem.Matches(item, targetName))
             {
-                systemContext.MessageBus.Publish(actor, $"Item: {item.DisplayName}");
+                systemContext.Msg.To(actor).Send($"Item: {item.DisplayName}");
 
                 // TODO: remove, should be in ExamineCommand
                 ref var containerContents = ref item.TryGetRef<ContainerContents>(out var isContainerContents);
@@ -76,7 +76,7 @@ public class LookCommand : ICommand
                 {
                     foreach (var containerItem in containerContents.Items)
                     {
-                        systemContext.MessageBus.Publish(actor, $"It contains: {containerItem.DisplayName}");
+                        systemContext.Msg.To(actor).Send($"It contains: {containerItem.DisplayName}");
                     }
                 }
                 return;
@@ -91,7 +91,7 @@ public class LookCommand : ICommand
             {
                 if (TargetingSystem.Matches(item, targetName))
                 {
-                    systemContext.MessageBus.Publish(actor, $"You are carrying: {item.DisplayName}");
+                    systemContext.Msg.To(actor).Send($"You are carrying: {item.DisplayName}");
                     return;
                 }
             }
@@ -99,7 +99,7 @@ public class LookCommand : ICommand
 
         // 4) Try items in equipped slots (optional)
         // For demo, we assume inventory = equipment too
-        systemContext.MessageBus.Publish(actor, $"You see nothing matching '{ctx.Primary.Name}' here.");
+        systemContext.Msg.To(actor).Send($"You see nothing matching '{ctx.Primary.Name}' here.");
     }
 
     private void LookAround(SystemContext systemContext, Entity actor)
@@ -116,13 +116,13 @@ public class LookCommand : ICommand
         {
             if (containedIn.Character != Entity.Null)
             {
-                systemContext.MessageBus.Publish(actor, $"You are in {containedIn.Character.DisplayName}'s inventory.");
+                systemContext.Msg.To(actor).Send($"You are in {containedIn.Character.DisplayName}'s inventory.");
                 // TODO: display inventory ?
                 return;
             }
             else if (containedIn.Container != Entity.Null)
             {
-                systemContext.MessageBus.Publish(actor, $"You are inside {containedIn.Container.DisplayName}.");
+                systemContext.Msg.To(actor).Send($"You are inside {containedIn.Container.DisplayName}.");
                 // TODO: display container contents ?
                 return;
             }

@@ -1,6 +1,6 @@
 ﻿namespace MysteryMud.GameData.Enums;
 
-public enum Position
+public enum Positions
 {
     Dead = 0,
     MortallyWounded = 1,

@@ -9,8 +9,9 @@ using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.GameData.Definitions;
+using MysteryMud.Domain.Services;
 using MysteryMud.Infrastructure.Scheduler;
+using MysteryMud.Infrastructure.Services;
 
 namespace MysteryMud.ConsoleApp;
 
@@ -29,14 +30,17 @@ static class Demo
         var temple = rooms.ToArray().First(x => x.Get<Name>().Value == "temple square");
 
         Span<Entity> items = stackalloc Entity[10];
-        world.GetEntities(new QueryDescription().WithAll<Item>(), items);
+        world.GetEntities(new QueryDescription().WithAll<ItemTag>(), items);
         var chest = items.ToArray().First(x => x.Get<Name>().Value == "chest");
         var gem = items.ToArray().First(x => x.Get<Name>().Value == "gem");
 
         // game state for testing
         var gameState = new GameState { World = world, CurrentTick = 0 };
         // system context for testing
-        var systemContext = new SystemContext { Log = logger, MessageBus = new DemoMessageBus(), Scheduler = new Scheduler() };
+        var messageBus = new DemoMessageBus();
+        var actService = new ActService();
+        var gameMessageService = new GameMessageService(messageBus, actService);
+        var systemContext = new SystemContext { Log = logger, Msg = gameMessageService, Scheduler = new Scheduler() };
 
         // test commands
         commandDispatcher.Dispatch(systemContext, gameState, player, "look".AsSpan());
@@ -92,9 +96,10 @@ static class Demo
         {
             Console.WriteLine($"Message to {entity.DebugName}: {message}");
         }
+
         public void Process(SystemContext ctx, GameState gameState)
         {
-            // no-op for demo
+            // nop for demo
         }
     }
 }

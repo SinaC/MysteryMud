@@ -6,5 +6,5 @@ namespace MysteryMud.Domain.Components.Items;
 public struct Equipped
 {
     public Entity Wearer;
-    public EquipmentSlot Slot;
+    public EquipmentSlots Slot;
 }

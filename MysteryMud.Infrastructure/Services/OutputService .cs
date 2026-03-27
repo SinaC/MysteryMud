@@ -6,11 +6,11 @@ using MysteryMud.Infrastructure.Network;
 
 namespace MysteryMud.Infrastructure.Services;
 
-public class MessageService : IMessageService
+public class OutputService : IOutputService
 {
     private readonly TelnetServer _telnet;
 
-    public MessageService(TelnetServer telnet)
+    public OutputService(TelnetServer telnet)
     {
         _telnet = telnet;
     }

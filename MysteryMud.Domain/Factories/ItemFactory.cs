@@ -12,7 +12,7 @@ public static class ItemFactory
     public static Entity CreateItemInRoom(World world, string name, string description, Entity room)
     {
         var item = world.Create(
-            new Item(),
+            new ItemTag(),
             new Name { Value = name },
             new Description { Value = description },
             new Location { Room = room }
@@ -25,7 +25,7 @@ public static class ItemFactory
     public static Entity CreateItemInInventory(World world, string name, string description, Entity character)
     {
         var item = world.Create(
-            new Item(),
+            new ItemTag(),
             new Name { Value = name },
             new Description { Value = description },
             new ContainedIn { Character = character }
@@ -38,7 +38,7 @@ public static class ItemFactory
     public static Entity CreateItemInContainer(World world, string name, string description, Entity container)
     {
         var item = world.Create(
-            new Item(),
+            new ItemTag(),
             new Name { Value = name },
             new Description { Value = description },
             new ContainedIn { Container = container }

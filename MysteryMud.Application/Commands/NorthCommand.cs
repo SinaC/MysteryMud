@@ -27,16 +27,14 @@ public class NorthCommand : ICommand
 
         // Get North exit
         ref var roomGraph = ref room.Get<RoomGraph>();
-        var northExit = roomGraph.Exits.SingleOrDefault(e => e.Direction == Direction.North);
+        var northExit = roomGraph.Exits.SingleOrDefault(e => e.Direction == Directions.North);
         if (northExit.Equals(default(Exit)) || northExit.TargetRoom == Entity.Null)
         {
-            systemContext.MessageBus.Publish(actor, "Alas, you cannot go that way.");
+            systemContext.Msg.To(actor).Send("Alas, you cannot go that way.");
             return;
         }
 
-        systemContext.MessageBus.Publish(actor, $"You leaves north."); // TODO send message to current room: "{actor} leaves North."
-        MovementSystem.Move(actor, northExit.TargetRoom);
+        MovementSystem.Move(systemContext, actor, northExit.TargetRoom, Directions.North);
         DisplayRoomSystem.DisplayRoom(systemContext, actor, northExit.TargetRoom);
-        // TODO: send message to target room: "{actor} has arrived."
     }
 }

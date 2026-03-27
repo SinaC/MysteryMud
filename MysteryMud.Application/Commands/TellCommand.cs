@@ -2,7 +2,6 @@
 using Arch.Core.Extensions;
 using MysteryMud.Core;
 using MysteryMud.Core.Command;
-using MysteryMud.Domain;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Systems;
@@ -26,15 +25,14 @@ public class TellCommand : ICommand
 
         if (ctx.TargetCount == 0)
         {
-            systemContext.MessageBus.Publish(actor, "Tell whom?");
+            systemContext.Msg.To(actor).Send("Tell whom?");
             return;
         }
 
         var roomContents = actor.Get<Location>().Room.Get<RoomContents>().Characters;
         foreach (var target in TargetingSystem.SelectTargets(actor, ctx.Primary, roomContents))
         {
-            systemContext.MessageBus.Publish(actor, $"You tell {target.DisplayName}: {message}");
-            systemContext.MessageBus.Publish(target, $"{actor.DisplayName} tells you: {message}");
+            systemContext.Msg.To([actor, target]).Act("{0} tell{0:v} {1}: {2}").With(actor, target, message.ToString());
         }
     }
 }

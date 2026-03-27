@@ -25,7 +25,7 @@ public class DropCommand : ICommand
     {
         if (ctx.TargetCount == 0)
         {
-            systemContext.MessageBus.Publish(actor, "Drop what ?");
+            systemContext.Msg.To(actor).Send("Drop what ?");
             return;
         }
 
@@ -42,7 +42,7 @@ public class DropCommand : ICommand
             }
 
             ItemMovementSystem.DropItem(actor, room, item);
-            systemContext.MessageBus.Publish(actor, $"You drop {item.DisplayName}.");
+            systemContext.Msg.To(actor).Send($"You drop {item.DisplayName}.");
         }
     }
 }

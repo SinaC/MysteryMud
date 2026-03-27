@@ -33,7 +33,7 @@ public static class EquipmentSystem
         return true;
     }
 
-    public static void Unequip(Entity actor, EquipmentSlot slot)
+    public static void Unequip(Entity actor, EquipmentSlots slot)
     {
         ref var equipment = ref actor.Get<Equipment>();
 

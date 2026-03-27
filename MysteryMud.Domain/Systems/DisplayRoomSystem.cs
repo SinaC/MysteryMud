@@ -1,7 +1,6 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.Core;
-using MysteryMud.Domain;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
 
@@ -19,31 +18,31 @@ public class DisplayRoomSystem
         var roomItems = roomContents.Items;
         var roomCharacters = roomContents.Characters;
 
-        ctx.MessageBus.Publish(actor, $"{roomName.Value}");
-        ctx.MessageBus.Publish(actor, $"{roomDescription.Value}");
+        ctx.Msg.To(actor).Send($"{roomName.Value}");
+        ctx.Msg.To(actor).Send($"{roomDescription.Value}");
         if (roomGraph.Exits.Count == 0)
         {
-            ctx.MessageBus.Publish(actor, "No exits.");
+            ctx.Msg.To(actor).Send("No exits.");
         }
         else
         {
-            ctx.MessageBus.Publish(actor, "Exits:");
+            ctx.Msg.To(actor).Send("Exits:");
             foreach (var exit in roomGraph.Exits)
             {
-                ctx.MessageBus.Publish(actor, $"- {exit.Direction} - {exit.TargetRoom.DisplayName}");
+                ctx.Msg.To(actor).Send($"- {exit.Direction} - {exit.TargetRoom.DisplayName}");
             }
         }
-        ctx.MessageBus.Publish(actor, "Characters here:");
+        ctx.Msg.To(actor).Send("Characters here:");
         foreach (var c in roomCharacters)
         {
             if (c.Equals(actor)) continue; // skip self
-            ctx.MessageBus.Publish(actor, $"- {c.DisplayName}");
+            ctx.Msg.To(actor).Send($"- {c.DisplayName}");
         }
 
-        ctx.MessageBus.Publish(actor, "Items here:");
+        ctx.Msg.To(actor).Send("Items here:");
         foreach (var item in roomItems)
         {
-            ctx.MessageBus.Publish(actor, $"- {item.DisplayName}");
+            ctx.Msg.To(actor).Send($"- {item.DisplayName}");
         }
     }
 }

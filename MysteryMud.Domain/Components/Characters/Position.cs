@@ -2,7 +2,7 @@
 
 namespace MysteryMud.Domain.Components.Characters;
 
-public struct PositionComponent
+public struct Position
 {
-    public Position Position;
+    public Positions Value;
 }

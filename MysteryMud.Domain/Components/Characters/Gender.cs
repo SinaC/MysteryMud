@@ -4,5 +4,5 @@ namespace MysteryMud.Domain.Components.Characters;
 
 public struct Gender
 {
-    public GenderType Value;
+    public Genders Value;
 }

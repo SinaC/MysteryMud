@@ -5,6 +5,7 @@ using MysteryMud.Core;
 using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Logging;
 using MysteryMud.Core.Scheduler;
+using MysteryMud.Core.Services;
 using MysteryMud.Domain;
 using MysteryMud.Domain.Systems;
 using MysteryMud.Infrastructure.Services;
@@ -14,19 +15,21 @@ namespace MysteryMud.ConsoleApp.Hosting;
 internal class GameLoop
 {
     private readonly ILogger _logger;
-    private readonly IMessageService _messageService;
+    private readonly IOutputService _outputService;
     private readonly ICommandBus _commandBus;
     private readonly IMessageBus _messageBus;
     private readonly IScheduler _scheduler;
+    private readonly IGameMessageService _gameMessageService;
     private readonly World _world;
 
-    public GameLoop(ILogger logger, IMessageService messageService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, World world)
+    public GameLoop(ILogger logger, IOutputService putputService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, IGameMessageService gameMessageService, World world)
     {
         _logger = logger;
-        _messageService = messageService;
+        _outputService = putputService;
         _commandBus = commandBus;
         _messageBus = messageBus;
         _scheduler = scheduler;
+        _gameMessageService = gameMessageService;
         _world = world;
     }
 
@@ -57,10 +60,9 @@ internal class GameLoop
         var systemContext = new SystemContext
         {
             Log = _logger,
-            MessageBus = _messageBus,
+            Msg = _gameMessageService,
             Scheduler = _scheduler
         };
-
 
         // process player commands
         _commandBus.Process(systemContext, state);
@@ -90,7 +92,7 @@ internal class GameLoop
         _messageBus.Process(systemContext, state);
 
         // send output to players
-        _messageService.FlushAll();
+        _outputService.FlushAll();
     }
 
     private void CheckConsoleInput()

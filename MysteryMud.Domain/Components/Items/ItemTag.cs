@@ -1,5 +1,5 @@
 ﻿namespace MysteryMud.Domain.Components.Items;
 
-public struct Item
+public struct ItemTag
 {
 }

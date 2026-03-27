@@ -23,14 +23,14 @@ public class CastCommand : ICommand
     {
         if (ctx.TargetCount == 0)
         {
-            systemContext.MessageBus.Publish(actor, "Cast what ?");
+            systemContext.Msg.To(actor).Send("Cast what ?");
         }
 
         // search spell
         var spellName = ctx.Primary.Name;
         if (!SpellSystem.SpellDatabase.Spells.TryGetValue(spellName.ToString(), out var spell))
         {
-            systemContext.MessageBus.Publish(actor, $"Unknown spell: {spellName}");
+            systemContext.Msg.To(actor).Send($"Unknown spell: {spellName}");
             return;
         }
 
@@ -39,7 +39,7 @@ public class CastCommand : ICommand
         var target = TargetingSystem.SelectSingleTarget(actor, ctx.Secondary, roomContents);
         if (target == default)
         {
-            systemContext.MessageBus.Publish(actor, "You don't see that here.");
+            systemContext.Msg.To(actor).Send("You don't see that here.");
             return;
         }
 

@@ -1,6 +1,6 @@
 ﻿namespace MysteryMud.GameData.Enums;
 
-public enum StackingRule
+public enum StackingRules
 {
     None,
     Refresh,

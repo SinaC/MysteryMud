@@ -9,11 +9,11 @@ public class MessageBus : IMessageBus
 {
     private readonly Queue<MessageEvent> _queue = new();
 
-    private readonly IMessageService _messageService;
+    private readonly IOutputService _outputService;
 
-    public MessageBus(IMessageService messageService)
+    public MessageBus(IOutputService outputService)
     {
-        _messageService = messageService;
+        _outputService = outputService;
     }
 
     public void Publish(Entity entity, string message)
@@ -25,7 +25,7 @@ public class MessageBus : IMessageBus
     {
         while (_queue.TryDequeue(out var evt))
         {
-            _messageService.Send(evt.Entity, evt.Message);
+            _outputService.Send(evt.Entity, evt.Message);
         }
     }
 }

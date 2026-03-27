@@ -16,8 +16,8 @@ public class HelpCommand : ICommand
     {
         Name = "help",
         Aliases = ["?"],
-        RequiredLevel = CommandLevel.Player,
-        MinimumPosition = Position.Dead,
+        RequiredLevel = CommandLevels.Player,
+        MinimumPosition = Positions.Dead,
         Priority = 0,
         AllowAbbreviation = true,
         HelpText = "[cmd] shows you commands in a category, all categories or all commands starting with a prefix.",
@@ -34,31 +34,31 @@ public class HelpCommand : ICommand
     {
         if (ctx.TargetCount == 0)
         {
-            var commands = _commandRegistry.GetCommandDefinitions(CommandLevel.Player); // TODO: CommandLevel should be determined by actor's actual level, not just Player
-            systemContext.MessageBus.Publish(actor, "Available command categories:%W");
+            var commands = _commandRegistry.GetCommandDefinitions(CommandLevels.Player); // TODO: CommandLevel should be determined by actor's actual level, not just Player
+            systemContext.Msg.To(actor).Send("Available command categories:%W");
             foreach (var chunk in commands.Where(x => x.Categories.Length > 0).SelectMany(cmd => cmd.Categories).Distinct().OrderBy(x => x).Chunk(4))
             {
-                systemContext.MessageBus.Publish(actor, string.Join(string.Empty, chunk.Select(x => $"{x,-14}")));
+                systemContext.Msg.To(actor).Send(string.Join(string.Empty, chunk.Select(x => $"{x,-14}")));
             }
-            systemContext.MessageBus.Publish(actor, "%xNo category:%W");
+            systemContext.Msg.To(actor).Send("%xNo category:%W");
             foreach(var chunk in commands.Where(cmd => cmd.Categories.Length == 0).Select(cmd => cmd.Name).OrderBy(x => x).Chunk(4))
             {
-                systemContext.MessageBus.Publish(actor, string.Join(string.Empty, chunk.Select(x => $"{x,-14}")));
+                systemContext.Msg.To(actor).Send(string.Join(string.Empty, chunk.Select(x => $"{x,-14}")));
             }
-            systemContext.MessageBus.Publish(actor, "%xType 'help <category>' to see commands in that category, or 'help <prefix>' to search for commands starting with that prefix.");
+            systemContext.Msg.To(actor).Send("%xType 'help <category>' to see commands in that category, or 'help <prefix>' to search for commands starting with that prefix.");
         }
         else
         {
             var arg = ctx.Primary.Name.ToString();
-            var commandsByCategory = _commandRegistry.GetCommandDefinitions(CommandLevel.Player)
+            var commandsByCategory = _commandRegistry.GetCommandDefinitions(CommandLevels.Player)
                 .Where(cmd => cmd.Name.StartsWith(arg, StringComparison.OrdinalIgnoreCase) || cmd.Categories.Contains(arg, StringComparer.OrdinalIgnoreCase))
                 .GroupBy(cmd => cmd.Categories.FirstOrDefault(c => c.Equals(arg, StringComparison.OrdinalIgnoreCase)) ?? "uncategorized");
             foreach (var group in commandsByCategory)
             {
-                systemContext.MessageBus.Publish(actor, $"Category: {group.Key}");
+                systemContext.Msg.To(actor).Send($"Category: {group.Key}");
                 foreach (var cmd in group)
                 {
-                    systemContext.MessageBus.Publish(actor, $"  {cmd.Name} -  %#FA8640>#0486FA{cmd.HelpText}");
+                    systemContext.Msg.To(actor).Send($"  {cmd.Name} -  %#FA8640>#0486FA{cmd.HelpText}");
                 }
             }
         }
