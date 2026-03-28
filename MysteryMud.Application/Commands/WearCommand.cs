@@ -1,7 +1,8 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.Application.Parsing;
+using MysteryMud.Application.Queries;
 using MysteryMud.Core;
-using MysteryMud.Core.Command;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Extensions;
@@ -30,7 +31,7 @@ public class WearCommand : ICommand
 
         ref var inventory = ref actor.Get<Inventory>();
 
-        foreach (var item in TargetingSystem.SelectTargets(actor, ctx.Primary, inventory.Items))
+        foreach (var item in EntityFinder.SelectTargets(actor, ctx.Primary, inventory.Items))
         {
             if (!item.Has<Equipable>())
             {

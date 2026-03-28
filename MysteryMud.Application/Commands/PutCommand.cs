@@ -1,7 +1,8 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.Application.Parsing;
+using MysteryMud.Application.Queries;
 using MysteryMud.Core;
-using MysteryMud.Core.Command;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Rooms;
@@ -38,7 +39,7 @@ public class PutCommand : ICommand
             return;
         }
 
-        foreach (var item in TargetingSystem.SelectTargets(actor, ctx.Primary, inventory.Items).Where(x => x != container))
+        foreach (var item in EntityFinder.SelectTargets(actor, ctx.Primary, inventory.Items).Where(x => x != container))
         {
             ItemMovementSystem.PutItem(actor, container, item);
 
@@ -52,13 +53,13 @@ public class PutCommand : ICommand
         var room = actor.Get<Location>().Room;
         var roomContents = room.Get<RoomContents>();
 
-        var container = TargetingSystem.SelectSingleTarget(actor, containerArg, roomContents.Items);
+        var container = EntityFinder.SelectSingleTarget(actor, containerArg, roomContents.Items);
         if (container != default)
             return container;
 
         // Then inventory
         var inventory = actor.Get<Inventory>();
-        container = TargetingSystem.SelectSingleTarget(actor, containerArg, inventory.Items);
+        container = EntityFinder.SelectSingleTarget(actor, containerArg, inventory.Items);
         if (container != default)
             return container;
 

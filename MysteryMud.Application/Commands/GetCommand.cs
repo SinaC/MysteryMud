@@ -1,7 +1,8 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.Application.Parsing;
+using MysteryMud.Application.Queries;
 using MysteryMud.Core;
-using MysteryMud.Core.Command;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
@@ -35,7 +36,7 @@ public class GetCommand : ICommand
             // default: room
             var room = actor.Get<Location>().Room;
             var roomContents = room.Get<RoomContents>();
-            foreach (var item in TargetingSystem.SelectTargets(actor, ctx.Primary, roomContents.Items))
+            foreach (var item in EntityFinder.SelectTargets(actor, ctx.Primary, roomContents.Items))
             {
                 ItemMovementSystem.GetItemFromRoom(actor, room, item);
                 systemContext.Msg.To(actor).Send($"You get {item.DisplayName}.");
@@ -51,7 +52,7 @@ public class GetCommand : ICommand
             }
 
             var containerContents = container.Get<ContainerContents>();
-            foreach (var item in TargetingSystem.SelectTargets(actor, ctx.Primary, containerContents.Items))
+            foreach (var item in EntityFinder.SelectTargets(actor, ctx.Primary, containerContents.Items))
             {
                 ItemMovementSystem.GetItemFromContainer(actor, container, item);
                 systemContext.Msg.To(actor).Send($"You get {item.DisplayName} from {container.DisplayName}.");
@@ -65,13 +66,13 @@ public class GetCommand : ICommand
         var room = actor.Get<Location>().Room;
         var roomContents = room.Get<RoomContents>();
 
-        var container = TargetingSystem.SelectSingleTarget(actor, containerArg, roomContents.Items);
+        var container = EntityFinder.SelectSingleTarget(actor, containerArg, roomContents.Items);
         if (container != default)
             return container;
 
         // Then inventory
         var inventory = actor.Get<Inventory>();
-        container = TargetingSystem.SelectSingleTarget(actor, containerArg, inventory.Items);
+        container = EntityFinder.SelectSingleTarget(actor, containerArg, inventory.Items);
         if (container != default)
             return container;
 

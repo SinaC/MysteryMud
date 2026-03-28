@@ -1,7 +1,8 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.Application.Parsing;
+using MysteryMud.Application.Queries;
 using MysteryMud.Core;
-using MysteryMud.Core.Command;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
@@ -35,7 +36,7 @@ public class GiveCommand : ICommand
         var roomContents = room.Get<RoomContents>();
 
         // Find target character in room
-        var target = TargetingSystem.SelectSingleTarget(actor, ctx.Secondary, roomContents.Characters);
+        var target = EntityFinder.SelectSingleTarget(actor, ctx.Secondary, roomContents.Characters);
         if (target == default)
         {
             systemContext.Msg.To(actor).Send("They are not here.");
@@ -43,7 +44,7 @@ public class GiveCommand : ICommand
         }
 
         // Move item
-        foreach (var item in TargetingSystem.SelectTargets(actor, ctx.Primary, inventory.Items))
+        foreach (var item in EntityFinder.SelectTargets(actor, ctx.Primary, inventory.Items))
         {
             // Unequip if necessary
             if (item.Has<Equipped>())

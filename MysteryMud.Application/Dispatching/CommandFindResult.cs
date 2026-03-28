@@ -1,4 +1,4 @@
-﻿namespace MysteryMud.Core.Command;
+﻿namespace MysteryMud.Application.Dispatching;
 
 public enum CommandFindResult
 {

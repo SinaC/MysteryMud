@@ -1,4 +1,4 @@
-﻿namespace MysteryMud.Core.Command;
+﻿namespace MysteryMud.Application.Parsing;
 
 public ref struct CommandContext
 {

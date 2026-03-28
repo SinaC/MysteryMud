@@ -1,7 +1,9 @@
 ﻿using Arch.Core;
+using MysteryMud.Application.Parsing;
+using MysteryMud.Core;
 using MysteryMud.GameData.Definitions;
 
-namespace MysteryMud.Core.Command;
+namespace MysteryMud.Application.Commands;
 
 public interface ICommand
 {

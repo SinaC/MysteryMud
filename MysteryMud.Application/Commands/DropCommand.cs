@@ -1,7 +1,8 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.Application.Parsing;
+using MysteryMud.Application.Queries;
 using MysteryMud.Core;
-using MysteryMud.Core.Command;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
@@ -32,7 +33,7 @@ public class DropCommand : ICommand
         ref var inventory = ref actor.Get<Inventory>();
         ref var room = ref actor.Get<Location>().Room;
 
-        foreach (var item in TargetingSystem.SelectTargets(actor, ctx.Primary, inventory.Items))
+        foreach (var item in EntityFinder.SelectTargets(actor, ctx.Primary, inventory.Items))
         {
             // Unequip if necessary
             if (item.Has<Equipped>())

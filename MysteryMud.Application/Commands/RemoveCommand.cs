@@ -1,7 +1,8 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.Application.Parsing;
+using MysteryMud.Application.Queries;
 using MysteryMud.Core;
-using MysteryMud.Core.Command;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.OldSystems;
@@ -34,7 +35,7 @@ public class RemoveCommand : ICommand
         {
             var item = kv.Value;
 
-            if (TargetingSystem.Matches(item, ctx.Primary.Name))
+            if (EntityFinder.Matches(item, ctx.Primary.Name))
             {
                 EquipmentSystem.Unequip(actor, kv.Key);
 

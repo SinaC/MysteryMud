@@ -1,6 +1,7 @@
 ﻿using Arch.Core;
+using MysteryMud.Core;
 
-namespace MysteryMud.Core.Command;
+namespace MysteryMud.Application.Dispatching;
 
 public interface ICommandDispatcher
 {

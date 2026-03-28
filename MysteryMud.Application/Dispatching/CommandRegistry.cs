@@ -1,13 +1,14 @@
 ﻿using Arch.Core;
 using CommunityToolkit.HighPerformance;
+using MysteryMud.Application.Commands;
+using MysteryMud.Application.Parsing;
 using MysteryMud.Core;
-using MysteryMud.Core.Command;
 using MysteryMud.Core.Extensions;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using System.Reflection;
 
-namespace MysteryMud.Infrastructure.Command;
+namespace MysteryMud.Application.Dispatching;
 
 public class CommandRegistry : ICommandRegistry
 {

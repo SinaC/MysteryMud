@@ -1,12 +1,13 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
-using MysteryMud.Core.Command;
+using MysteryMud.Application.Parsing;
+using MysteryMud.Application.Queries.Matching;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 
-namespace MysteryMud.Domain.OldSystems;
+namespace MysteryMud.Application.Queries;
 
-public static class TargetingSystem
+public static class EntityFinder
 {
     // Select entities matching the target spec
     public static List<Entity> SelectTargets(Entity actor, TargetSpec spec, List<Entity> entities)
@@ -93,6 +94,6 @@ public static class TargetingSystem
             return false;
         if (query.IsEmpty)
             return isAll;
-        return NameSystem.Matches(e, query);
+        return NameMatcher.Matches(e, query);
     }
 }

@@ -1,7 +1,8 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.Application.Parsing;
+using MysteryMud.Application.Queries;
 using MysteryMud.Core;
-using MysteryMud.Core.Command;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Extensions;
@@ -31,7 +32,7 @@ public class DestroyCommand : ICommand
         // search in inventory (equipped items are also in inventory)
         ref var inventory = ref actor.Get<Inventory>();
 
-        foreach (var item in TargetingSystem.SelectTargets(actor, ctx.Primary, inventory.Items))
+        foreach (var item in EntityFinder.SelectTargets(actor, ctx.Primary, inventory.Items))
         {
             // Unequip if necessary
             if (item.Has<Equipped>())

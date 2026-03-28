@@ -1,6 +1,4 @@
-﻿using MysteryMud.Core.Command;
-
-namespace MysteryMud.Application;
+﻿namespace MysteryMud.Application.Parsing;
 
 public class CommandParser : ICommandParser
 {

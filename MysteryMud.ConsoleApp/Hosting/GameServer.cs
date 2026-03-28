@@ -1,7 +1,7 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
-using MysteryMud.Core.Command;
+using MysteryMud.Application.Dispatching;
 using MysteryMud.Core.Logging;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;

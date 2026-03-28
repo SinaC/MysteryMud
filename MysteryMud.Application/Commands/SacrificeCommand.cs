@@ -1,7 +1,8 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.Application.Parsing;
+using MysteryMud.Application.Queries;
 using MysteryMud.Core;
-using MysteryMud.Core.Command;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Extensions;
@@ -32,7 +33,7 @@ public class SacrificeCommand : ICommand
         ref var room = ref actor.Get<Location>().Room;
         ref var roomContents = ref room.Get<RoomContents>();
 
-        foreach (var item in TargetingSystem.SelectTargets(actor, ctx.Primary, roomContents.Items))
+        foreach (var item in EntityFinder.SelectTargets(actor, ctx.Primary, roomContents.Items))
         {
             DestroySystem.DestroyItem(item);
 

@@ -1,8 +1,9 @@
-﻿using MysteryMud.GameData.Definitions;
+﻿using MysteryMud.Application.Commands;
+using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using System.Reflection;
 
-namespace MysteryMud.Core.Command;
+namespace MysteryMud.Application.Dispatching;
 
 public interface ICommandRegistry
 {

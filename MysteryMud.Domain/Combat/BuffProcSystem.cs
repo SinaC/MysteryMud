@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace MysteryMud.Domain.Combat;
+﻿namespace MysteryMud.Domain.Combat;
 
 public class BuffProcSystem
 {

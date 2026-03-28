@@ -1,7 +1,8 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.Application.Parsing;
+using MysteryMud.Application.Queries;
 using MysteryMud.Core;
-using MysteryMud.Core.Command;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
@@ -56,7 +57,7 @@ public class LookCommand : ICommand
         // 1️) Try characters in room
         foreach (var target in roomCharacters)
         {
-            if (TargetingSystem.Matches(target, targetName))
+            if (EntityFinder.Matches(target, targetName))
             {
                 systemContext.Msg.To(actor).Send($"Character: {target.DisplayName}");
 
@@ -76,7 +77,7 @@ public class LookCommand : ICommand
         // 2️) Try items in room
         foreach (var item in roomItems)
         {
-            if (TargetingSystem.Matches(item, targetName))
+            if (EntityFinder.Matches(item, targetName))
             {
                 systemContext.Msg.To(actor).Send($"Item: {item.DisplayName}");
 
@@ -99,7 +100,7 @@ public class LookCommand : ICommand
         {
             foreach (var item in inventory.Items)
             {
-                if (TargetingSystem.Matches(item, targetName))
+                if (EntityFinder.Matches(item, targetName))
                 {
                     systemContext.Msg.To(actor).Send($"You are carrying: {item.DisplayName}");
                     return;

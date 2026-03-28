@@ -1,11 +1,11 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.Application.Parsing;
+using MysteryMud.Application.Queries;
 using MysteryMud.Core;
-using MysteryMud.Core.Command;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Factories;
-using MysteryMud.Domain.OldSystems;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
@@ -24,7 +24,7 @@ public class TestCommand : ICommand
     public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {
         ref var roomContents = ref actor.Get<Location>().Room.Get<RoomContents>().Characters;
-        var target = TargetingSystem.SelectSingleTarget(actor, ctx.Primary, roomContents);
+        var target = EntityFinder.SelectSingleTarget(actor, ctx.Primary, roomContents);
 
         systemContext.Msg.To(actor).Send("Ansi16: %RR%GG%YY%BB%MM%CC%WW%rr%gg%yy%bb%mm%cc%ww%xnocolor");
         systemContext.Msg.To(actor).Send("Ansi256: %=214orange%xnocolor");

@@ -2,9 +2,9 @@
 using Arch.Core.Extensions;
 using MysteryMud.Domain.Components;
 
-namespace MysteryMud.Domain.OldSystems;
+namespace MysteryMud.Application.Queries.Matching;
 
-public static class NameSystem
+public static class NameMatcher
 {
     public static bool Matches(Entity e, string query)
     {

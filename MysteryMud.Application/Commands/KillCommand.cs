@@ -1,12 +1,12 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.Application.Parsing;
+using MysteryMud.Application.Queries;
 using MysteryMud.Core;
-using MysteryMud.Core.Command;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Extensions;
-using MysteryMud.Domain.OldSystems;
 using MysteryMud.GameData.Definitions;
 
 namespace MysteryMud.Application.Commands;
@@ -30,7 +30,7 @@ public class KillCommand : ICommand
         }
 
         var roomContents = actor.Get<Location>().Room.Get<RoomContents>().Characters;
-        var target = TargetingSystem.SelectSingleTarget(actor, ctx.Primary, roomContents);
+        var target = EntityFinder.SelectSingleTarget(actor, ctx.Primary, roomContents);
 
         if (target == default)
         {
