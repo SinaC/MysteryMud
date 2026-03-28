@@ -11,6 +11,7 @@ using MysteryMud.Domain.Factories;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Enums;
 using MysteryMud.Infrastructure.Eventing;
+using MysteryMud.Infrastructure.Intent;
 using MysteryMud.Infrastructure.Network;
 using MysteryMud.Infrastructure.Scheduler;
 using MysteryMud.Infrastructure.Services;
@@ -31,6 +32,7 @@ public class GameServer
     private readonly Scheduler _scheduler;
     private readonly ActService _actService;
     private readonly GameMessageService _gameMessageService;
+    private readonly IntentBusContainer _intentBusContainer;
     private readonly GameLoop _gameLoop;
 
     public GameServer(ILogger logger, World world, ICommandDispatcher commandDispatcher)
@@ -52,7 +54,8 @@ public class GameServer
         _scheduler = new Scheduler();
         _actService = new ActService();
         _gameMessageService = new GameMessageService(_messageBus, _actService);
-        _gameLoop = new GameLoop(_logger, _outputService, _commandBus, _messageBus, _scheduler, _gameMessageService, _world);
+        _intentBusContainer = new IntentBusContainer();
+        _gameLoop = new GameLoop(_logger, _outputService, _commandBus, _messageBus, _scheduler, _gameMessageService, _intentBusContainer, _world);
     }
 
     public void Start()

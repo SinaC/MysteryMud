@@ -12,7 +12,6 @@ using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Factories;
-using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Enums;
 using MysteryMud.Infrastructure.Command;
 using MysteryMud.Infrastructure.Persistence;
@@ -75,6 +74,7 @@ var chest = world.Create(
 market.Get<RoomContents>().Items.Add(chest);
 var gem = ItemFactory.CreateItemInContainer(world, "gem", "a %#FF0000>#FF00FFsparkling gem%x", chest);
 var trash = ItemFactory.CreateItemInRoom(world, "trash", "some trash", market);
+var collar = ItemFactory.CreateItemInInventory(world, "collar", "a nice collar", goblin);
 
 RoomFactory.StartingRoomEntity = market;
 RoomFactory.RespawnRoomEntity = temple;
@@ -93,7 +93,6 @@ var basePath = AppContext.BaseDirectory;
 // load spell definitions
 var spellLoader = new JsonSpellLoader();
 var spellDatabase = spellLoader.LoadSpells(Path.Combine(basePath, gamePaths.SpellsJson));
-SpellSystem.SpellDatabase = spellDatabase;
 
 // load command definitions
 var commandLoader = new JsonCommandLoader();
@@ -111,6 +110,7 @@ var commandDispatcher = new CommandDispatcher(commandRegistry, commandParser);
 
 // run demo
 //Demo.Run(logger, world, commandDispatcher);
+Demo2.Run(logger, world, commandDispatcher);
 
 // start game server
 var gameServer = new GameServer(logger, world, commandDispatcher);

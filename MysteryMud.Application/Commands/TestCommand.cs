@@ -5,7 +5,7 @@ using MysteryMud.Core.Command;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Factories;
-using MysteryMud.Domain.Systems;
+using MysteryMud.Domain.OldSystems;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 

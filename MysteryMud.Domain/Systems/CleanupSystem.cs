@@ -5,35 +5,40 @@ using MysteryMud.Core;
 using MysteryMud.Core.Logging;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
-using MysteryMud.Domain.Components.Items;
-using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.Domain.Components.Characters.Players;
+using MysteryMud.Domain.Components.Items;
+using MysteryMud.Domain.Components.Rooms;
+using MysteryMud.Domain.Extensions;
 
 namespace MysteryMud.Domain.Systems;
 
-public static class CleanupSystem
+public class CleanupSystem
 {
+    private readonly ILogger _logger;
+
+    public CleanupSystem(ILogger logger)
+    {
+        _logger = logger;
+    }
+
     // check disconnected players and remove them from the world
     // check Location for characters
     // check Location for items
     // check ContainedIn for items
     // check Equipped for items
-    public static void Process(SystemContext ctx, GameState state)
+    public void Tick(GameState state)
     {
         // destroy disconnected players
         var disconnectedPlayersQuery = new QueryDescription()
                 .WithAll<DisconnectedTag>();
         state.World.Query(disconnectedPlayersQuery, (Entity player, ref DisconnectedTag disconnectedTag) =>
         {
-            ctx.Log.LogInformation(LogEvents.Cleanup,"Cleaning up disconnected player {characterName}", player.DebugName);
+            _logger.LogInformation(LogEvents.Cleanup,"Cleaning up disconnected player {characterName}", player.DebugName);
 
-            ref var location = ref player.TryGetRef<Location>(out var hasLocation);
-            if (hasLocation)
-            {
-                ref var roomContents = ref location.Room.Get<RoomContents>();
-                roomContents.Characters.Remove(player);
-            }
+            RemoveFromCombat(state.World, player);
+            RemoveFromRoomContents(player);
+            RemoveEffects(state.World, player);
 
             // TODO: destroy any items the character is carrying or equipped with
             // TODO: if the character is a pet, remove it from its owner's pet list
@@ -43,20 +48,21 @@ public static class CleanupSystem
         });
 
         // destroy NPCs
-        var destroyCharactersQuery = new QueryDescription()
+        var destroyNpcsQuery = new QueryDescription()
                 .WithAll<Dead, Location, NpcTag>();
-        state.World.Query(destroyCharactersQuery, (Entity character, ref Dead deadTag, ref Location location, ref NpcTag npcTag) =>
+        state.World.Query(destroyNpcsQuery, (Entity npc, ref Dead deadTag, ref Location location, ref NpcTag npcTag) =>
         {
-            ctx.Log.LogInformation(LogEvents.Cleanup,"Cleaning up character {characterName} from room {roomName}", character.DebugName, location.Room.DebugName);
+            _logger.LogInformation(LogEvents.Cleanup,"Cleaning up npc {characterName} from room {roomName}", npc.DebugName, location.Room.DebugName);
 
-            ref var roomContents = ref location.Room.Get<RoomContents>();
-            roomContents.Characters.Remove(character);
+            RemoveFromCombat(state.World, npc);
+            RemoveFromRoomContents(npc);
+            RemoveEffects(state.World, npc);
 
             // TODO: destroy any items the character is carrying or equipped with
             // TODO: if the character is a pet, remove it from its owner's pet list
             // TODO: if the character is a follower, remove it from its leader's follower list
 
-            state.World.Destroy(character);
+            state.World.Destroy(npc);
         });
 
         // destroy items
@@ -70,7 +76,7 @@ public static class CleanupSystem
             ref var location = ref item.TryGetRef<Location>(out var hasLocation);
             if (hasLocation)
             {
-                ctx.Log.LogInformation(LogEvents.Cleanup,"Cleaning up item {itemName} from location {locationName}", item.DebugName, location.Room.DebugName);
+                _logger.LogInformation(LogEvents.Cleanup,"Cleaning up item {itemName} from location {locationName}", item.DebugName, location.Room.DebugName);
 
                 ref var roomContents = ref location.Room.Get<RoomContents>();
                 roomContents.Items.Remove(item);
@@ -81,14 +87,14 @@ public static class CleanupSystem
             {
                 if (containedIn.Character != Entity.Null)
                 {
-                    ctx.Log.LogInformation(LogEvents.Cleanup,"Cleaning up item {itemName} from inventory of {inventoryOwnerName}", item.DebugName, containedIn.Character.DebugName);
+                    _logger.LogInformation(LogEvents.Cleanup,"Cleaning up item {itemName} from inventory of {inventoryOwnerName}", item.DebugName, containedIn.Character.DebugName);
 
                     ref var inventory = ref containedIn.Character.Get<Inventory>();
                     inventory.Items.Remove(item);
                 }
                 else if (containedIn.Container != Entity.Null)
                 {
-                    ctx.Log.LogInformation(LogEvents.Cleanup,"Cleaning up item {itemName} from container {containerName}", item.DebugName, containedIn.Container.DebugName);
+                    _logger.LogInformation(LogEvents.Cleanup,"Cleaning up item {itemName} from container {containerName}", item.DebugName, containedIn.Container.DebugName);
 
                     ref var containerContents = ref containedIn.Container.Get<ContainerContents>();
                     containerContents.Items.Remove(item);
@@ -103,7 +109,7 @@ public static class CleanupSystem
                 {
                     if (equipment.Slots[slot] == item)
                     {
-                        ctx.Log.LogInformation(LogEvents.Cleanup,"Cleaning up item {itemName} from equipment of {wearerName} in slot {slot}", item.DebugName, equipped.Wearer.DebugName, slot);
+                        _logger.LogInformation(LogEvents.Cleanup,"Cleaning up item {itemName} from equipment of {wearerName} in slot {slot}", item.DebugName, equipped.Wearer.DebugName, slot);
 
                         equipment.Slots[slot] = Entity.Null;
                     }
@@ -112,6 +118,37 @@ public static class CleanupSystem
             // finally, destroy the item
             state.World.Destroy(item);
         });
+    }
+
+    private static void RemoveFromRoomContents(Entity victim)
+    {
+        ref var location = ref victim.TryGetRef<Location>(out var hasLocation);
+        if (!hasLocation)
+            return; // can't remove from room contents if we don't know where the victim is
+        ref var roomContents = ref location.Room.Get<RoomContents>();
+        roomContents.Characters.Remove(victim);
+    }
+
+    private static void RemoveFromCombat(World world, Entity victim)
+    {
+        // remove from combat
+        victim.Remove<CombatState>();
+        // remove combat state for anyone targeting this entity
+        var query = new QueryDescription()
+          .WithAll<CombatState>();
+        world.Query(query, (Entity actor, ref CombatState combat) =>
+        {
+            if (combat.Target == victim)
+                actor.Remove<CombatState>();
+        });
+    }
+
+    private static void RemoveEffects(World world, Entity victim)
+    {
+        // remove all effects on victim
+        ref var characterEffects = ref victim.Get<CharacterEffects>();
+        foreach (var effect in characterEffects.Effects)
+            world.Destroy(effect);
     }
 
     public static void FullCleanup(World world)

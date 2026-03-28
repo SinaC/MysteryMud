@@ -1,0 +1,477 @@
+🧠 Global ECS Contracts (apply to ALL systems)
+✅ Always true
+Dead is authoritative
+entity.Has<DeadComponent>() == true  ⇒ entity is unusable
+Must not move
+Must not attack
+Must not be targeted
+Must not receive new intents
+Structural changes are delayed
+❌ No system removes entities (except CleanupSystem)
+❌ No system removes from RoomContents (except Movement/Cleanup)
+✔ Systems may add/remove components, but carefully
+Intents are requests, not guarantees
+A MoveIntent does not mean movement will happen
+A FleeIntent does not mean escape succeeds
+Events are facts
+DamageEvent = damage happened
+DeathEvent = entity is dead (or will be processed as dead)
+RoomContents is a fast index, not truth
+Must always filter:
+if (!entity.IsAlive()) continue;
+
+🔧 SYSTEM CONTRACTS
+
+1. Input → Commands
+Can assume:
+Entity exists
+Entity is alive
+Must NOT:
+Modify world directly
+Send events
+Must:
+Emit Intents only
+
+2. AISystem
+Can assume:
+World is consistent at start of tick
+Targets may become invalid later
+Must NOT:
+Assume target will still be valid later in tick
+Must:
+Emit intents only (AttackIntent, MoveIntent, etc.)
+
+3. AggroSystem
+Can assume:
+Threat values are from previous tick
+Must NOT:
+Target dead entities
+Must:
+Emit AttackIntent
+
+4. FleeSystem
+Input:
+FleeIntent
+Can assume:
+Entity may already be dead → must check
+Must:
+Validate exits
+Emit MoveIntent
+Must NOT:
+Move entity directly
+
+5. ChaseSystem
+Can assume:
+Target may have moved or died
+Must:
+Revalidate target location
+
+6. MovementSystem
+🔴 One of the most critical systems
+Can assume:
+MoveIntent exists
+Entity may be dead → must check
+Must:
+Be the ONLY system modifying RoomContents (except Cleanup)
+Update:
+LocationComponent
+RoomContents
+Must NOT:
+Assume destination is valid without checking
+
+7. InteractionSystem
+Can assume:
+Entity is alive
+Items exist in room
+Must:
+Validate ownership/location
+Emit events if needed
+Must NOT:
+Assume item is still there (race with other players)
+
+8. StatSystem
+Can assume:
+Dirty flags are correct
+Must:
+Be pure computation
+Must NOT:
+Emit intents/events
+
+9. DOT/HOT/EffectSystem
+Can assume:
+Effects may exist on dead entities
+Must:
+Skip dead entities unless effect says otherwise
+Must:
+Emit DamageEvent, HealEvent, etc.
+
+10. ThreatSystem
+Input:
+Damage/heal events
+Must:
+Ignore dead entities
+Must NOT:
+Assign threat to dead targets
+
+11. NPCTargetSystem
+Can assume:
+Threat list exists
+Must:
+Filter dead targets
+Must:
+Assign valid targets only
+
+12. GroupCombatSystem
+Can assume:
+Allies may already be dead this tick
+Must:
+Filter dead entities
+
+13. AbilitySystem
+Can assume:
+Inputs may be stale (target moved/died)
+Must:
+Revalidate EVERYTHING:
+range
+target alive
+mana/cost
+
+14. CombatSystem
+Input:
+AttackIntent
+Must:
+Revalidate attacker & target alive
+Emit DamageEvent
+Must:
+Optionally emit CounterAttackEvent
+Must NOT:
+Modify HP directly
+
+15. DamageSystem
+🔴 Another critical system
+Can assume:
+DamageEvents are valid
+Must:
+Apply HP changes
+Add DeadComponent immediately when HP ≤ 0
+Emit only ONE DeathEvent per entity per tick
+Must NOT:
+Remove entity
+Modify RoomContents
+
+16. DeathSystem
+Can assume:
+Entity already has DeadComponent
+Must:
+Broadcast death
+Trigger follow-up intents (loot, respawn, etc.)
+Must NOT:
+Remove entity
+Modify RoomContents
+
+17. RespawnSystem
+Can assume:
+Entity is dead
+Must:
+Either:
+revive (remove DeadComponent, reset HP)
+or schedule respawn
+
+18. LootSystem
+Can assume:
+Source room still contains corpse/items
+Must:
+Move items safely
+Must NOT:
+Assume items are still there (race condition safe)
+
+19. CleanupSystem
+🔴 The ONLY structural authority
+Can assume:
+All decisions already made
+Must:
+Remove entities with DeadComponent
+Remove from:
+RoomContents
+inventories
+world
+Must NOT:
+Emit gameplay events
+
+20. OutputSystem
+Must:
+Only read
+Never mutate
+🔑 Cross-System Safety Rules
+
+Rule 1: Always revalidate
+
+Every system must assume:
+
+“Anything I read may have changed earlier this tick.”
+
+Rule 2: Dead check first
+if (!entity.IsAlive()) continue;
+
+Should be muscle memory.
+
+Rule 3: Never trust references
+
+If you store:
+
+combat.Target
+
+Always check:
+
+combat.Target != null && combat.Target.IsAlive()
+
+Rule 4: Only one system owns each mutation
+Mutation	Owner
+HP	DamageSystem
+Position	MovementSystem
+Death flag	DamageSystem
+Entity removal	CleanupSystem
+Inventory transfer	Interaction/Loot
+
+Rule 5: Events are append-only facts
+
+Never:
+
+cancel events
+modify events
+🧩 Final Mental Model
+
+Each tick is:
+
+[ Snapshot of world ]
+        ↓
+[ Systems apply changes via intents/events ]
+        ↓
+[ Entities marked with state flags (Dead, etc.) ]
+        ↓
+[ Cleanup makes it real ]
+
+
+
+============================
+DEBUGGING TIPS
+============================
+🧠 1. Core Debug Philosophy
+
+You don’t want to log everything. You want:
+
+✅ Deterministic trace of:
+Intents created
+Events emitted
+Key state changes (HP, location, death)
+❌ NOT:
+Every component read
+Every loop iteration
+
+🧩 2. Tick-Level Logging (MANDATORY)
+
+At the start of each tick:
+
+[Tick 1234 START]
+
+At the end:
+
+[Tick 1234 END]
+
+🧩 3. System-Level Logging
+
+Each system logs only if it does something
+
+[Tick 1234][CombatSystem]
+  A attacks B
+
+👉 No empty logs = low noise
+
+🧩 4. IntentBus Debugging
+
+Whenever an intent is added:
+
+[Tick 1234][Intent]
+  A -> AttackIntent(target=B)
+[Tick 1234][Intent]
+  A -> FleeIntent
+💡 Tip
+
+Wrap your bus:
+
+public void Add<T>(T intent)
+{
+    _intents.Add(intent);
+    _logger.Log($"[Intent] {Format(intent)}");
+}
+
+🧩 5. EventBus Debugging
+
+Same idea:
+
+[Tick 1234][Event]
+  DamageEvent A -> B (5 dmg)
+[Tick 1234][Event]
+  DeathEvent B killed by A
+
+🧩 6. State Change Logging (CRITICAL)
+
+Only log important mutations
+
+❤️ HP changes
+[Tick 1234][HP]
+  B: 10 → 5 (A dealt 5)
+💀 Death
+[Tick 1234][Death]
+  B died (killer: A)
+🚶 Movement
+[Tick 1234][Move]
+  A: Room1 → Room2
+🎒 Inventory
+[Tick 1234][Loot]
+  A loots gem
+
+🧩 7. Room Snapshot Debug (VERY POWERFUL)
+
+When debugging spatial bugs:
+
+[Tick 1234][Room: Tavern]
+  Characters: A, B(dead), C
+  Items: gem, sword
+
+👉 You’ll instantly see:
+
+dead entities still present (expected)
+duplicates
+missing entities
+
+🧩 8. Combat Snapshot Debug
+[Tick 1234][Combat]
+  A -> B
+  B -> A
+
+🧩 9. One-Line Per Entity (GOD MODE DEBUG)
+
+When things get messy:
+
+[Tick 1234][Entity A]
+  HP: 5/20
+  Room: Tavern
+  Target: B
+  State: Alive
+[Tick 1234][Entity B]
+  HP: 0/20
+  Room: Tavern
+  State: Dead
+
+🧪 10. Debug Scenarios You MUST Test
+
+These will catch almost all bugs.
+
+⚔️ Scenario 1: Double kill
+A and B both low HP
+Both attack
+
+✅ Expect:
+
+Both die once
+No duplicate DeathEvent
+No crash
+⚔️ Scenario 2: Overkill (your bug)
+A at 1 HP
+Multiple attackers
+
+✅ Expect:
+
+One DeathEvent
+One loot trigger
+No duplicate messages
+🏃 Scenario 3: Wimpy flee
+A drops below threshold
+
+✅ Expect:
+
+FleeIntent created once
+Movement next tick
+🎒 Scenario 4: Loot race
+A and B both get all
+
+✅ Expect:
+
+Items distributed without duplication
+🧟 Scenario 5: Dead entity actions
+Entity dies mid-tick
+
+✅ Expect:
+
+No movement
+No attack
+No targeting
+
+🧰 11. Debug Helpers (HIGHLY RECOMMENDED)
+✔ Entity formatting
+string Name(Entity e)
+{
+    return e.Get<NameComponent>().Name;
+}
+✔ Intent formatting
+string Format(AttackIntent i)
+{
+    return $"{Name(i.Entity)} attacks {Name(i.Target)}";
+}
+✔ Event formatting
+string Format(DamageEvent e)
+{
+    return $"{Name(e.Source)} -> {Name(e.Target)} ({e.Amount})";
+}
+
+🚨 12. Debug Assertions (SUPER IMPORTANT)
+
+These prevent silent corruption.
+
+❗ Never allow dead entities to act
+Debug.Assert(!entity.Has<DeadComponent>(), "Dead entity acting!");
+❗ HP should not go below extreme values
+Debug.Assert(health.Current >= -1000);
+❗ No duplicate death
+Debug.Assert(!entity.Has<DeadComponent>(), "Duplicate death detected");
+
+(inside DamageSystem before adding it)
+
+🔍 13. “Why did this happen?” Mode
+
+Add a trace ID per action chain
+
+Example:
+
+AttackIntent { Id = 42 }
+DamageEvent { SourceIntentId = 42 }
+DeathEvent { SourceIntentId = 42 }
+
+Logs:
+
+[Trace 42]
+  A attacks B
+  B takes 5 damage
+  B dies
+
+👉 This is insanely helpful later.
+
+🧩 14. Log Levels
+
+Use levels to avoid spam:
+
+INFO → gameplay events
+DEBUG → intents/events
+TRACE → full tick dump
+🧠 Final Debug Mindset
+
+When something breaks, you should be able to answer:
+
+Was the intent created?
+Was it transformed correctly?
+Was the event emitted?
+Was the state updated?
+Was cleanup correct?
+
+If you can’t answer one of these → add a log there.

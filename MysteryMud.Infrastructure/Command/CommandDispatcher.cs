@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Command;
 using MysteryMud.Core.Logging;
-using MysteryMud.Domain;
+using MysteryMud.Domain.Extensions;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Infrastructure.Command;

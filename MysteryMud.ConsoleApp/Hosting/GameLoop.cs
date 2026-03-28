@@ -3,11 +3,12 @@ using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Eventing;
+using MysteryMud.Core.Intent;
 using MysteryMud.Core.Logging;
 using MysteryMud.Core.Scheduler;
 using MysteryMud.Core.Services;
-using MysteryMud.Domain;
-using MysteryMud.Domain.Systems;
+using MysteryMud.Domain.Extensions;
+using MysteryMud.Domain.OldSystems;
 using MysteryMud.Infrastructure.Services;
 
 namespace MysteryMud.ConsoleApp.Hosting;
@@ -20,9 +21,10 @@ internal class GameLoop
     private readonly IMessageBus _messageBus;
     private readonly IScheduler _scheduler;
     private readonly IGameMessageService _gameMessageService;
+    private readonly IIntentWriterContainer _intentWriterContainer;
     private readonly World _world;
 
-    public GameLoop(ILogger logger, IOutputService putputService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, IGameMessageService gameMessageService, World world)
+    public GameLoop(ILogger logger, IOutputService putputService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, IGameMessageService gameMessageService, IIntentWriterContainer intentWriterContainer, World world)
     {
         _logger = logger;
         _outputService = putputService;
@@ -30,6 +32,7 @@ internal class GameLoop
         _messageBus = messageBus;
         _scheduler = scheduler;
         _gameMessageService = gameMessageService;
+        _intentWriterContainer = intentWriterContainer;
         _world = world;
     }
 
@@ -61,7 +64,8 @@ internal class GameLoop
         {
             Log = _logger,
             Msg = _gameMessageService,
-            Scheduler = _scheduler
+            Scheduler = _scheduler,
+            Intent = _intentWriterContainer,
         };
 
         // process player commands

@@ -2,12 +2,12 @@
 using Arch.Core.Extensions;
 using MysteryMud.Core;
 using MysteryMud.Core.Command;
-using MysteryMud.Domain;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Systems;
+using MysteryMud.Domain.Extensions;
+using MysteryMud.Domain.OldSystems;
 using MysteryMud.GameData.Definitions;
 
 namespace MysteryMud.Application.Commands;
@@ -54,11 +54,21 @@ public class LookCommand : ICommand
         var targetName = ctx.Primary.Name;
 
         // 1️) Try characters in room
-        foreach (var c in roomCharacters)
+        foreach (var target in roomCharacters)
         {
-            if (TargetingSystem.Matches(c, targetName))
+            if (TargetingSystem.Matches(target, targetName))
             {
-                systemContext.Msg.To(actor).Send($"Character: {c.DisplayName}");
+                systemContext.Msg.To(actor).Send($"Character: {target.DisplayName}");
+
+                // TODO: remove, should be in ExamineCommand
+                ref var targetInventory = ref target.TryGetRef<Inventory>(out var hasTargetInventory);
+                if (hasTargetInventory)
+                {
+                    foreach (var item in targetInventory.Items)
+                    {
+                        systemContext.Msg.To(actor).Act("{0} {0:b} carrying: {1}").With(target, item);
+                    }
+                }
                 return;
             }
         }

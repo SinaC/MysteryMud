@@ -3,6 +3,7 @@
     <File Path="Documentation/ISSUES.txt" />
     <File Path="Documentation/README.txt" />
     <File Path="Documentation/TODO.txt" />
+    <File Path="MENTAL MODEL.TXT" />
   </Folder>
   <Project Path="MysteryMud.GameData/MysteryMud.GameData.csproj" Id="067a5c51-4372-458a-9c12-50e2ddb327ad" />
   <Folder Name="/Tools/">

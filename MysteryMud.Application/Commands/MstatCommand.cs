@@ -2,12 +2,12 @@
 using Arch.Core.Extensions;
 using MysteryMud.Core;
 using MysteryMud.Core.Command;
-using MysteryMud.Domain;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Systems;
+using MysteryMud.Domain.Extensions;
+using MysteryMud.Domain.OldSystems;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 

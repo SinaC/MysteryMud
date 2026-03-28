@@ -4,12 +4,13 @@ using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Command;
 using MysteryMud.Core.Eventing;
-using MysteryMud.Domain;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
+using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Services;
+using MysteryMud.Infrastructure.Intent;
 using MysteryMud.Infrastructure.Scheduler;
 using MysteryMud.Infrastructure.Services;
 
@@ -40,7 +41,7 @@ static class Demo
         var messageBus = new DemoMessageBus();
         var actService = new ActService();
         var gameMessageService = new GameMessageService(messageBus, actService);
-        var systemContext = new SystemContext { Log = logger, Msg = gameMessageService, Scheduler = new Scheduler() };
+        var systemContext = new SystemContext { Log = logger, Msg = gameMessageService, Scheduler = new Scheduler(), Intent = new IntentBusContainer() };
 
         // test commands
         commandDispatcher.Dispatch(systemContext, gameState, player, "look".AsSpan());

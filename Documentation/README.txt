@@ -1,3 +1,5 @@
+Project structure
+
 Layer             Role
 GameData          Pure data: positions, enums, spell/effect definitions, constants. No behavior. Immutable.
 Core              Fundamental abstractions for your system: interfaces, command definitions, priorities. Agnostic to runtime ECS.
@@ -5,6 +7,48 @@ Domain            ECS components, systems, factories, domain logic (mutable runt
 Application       Parser and concrete command implementations.
 Infrastructure    Registries, persistence, networking, scheduler, eventing, dispatcher.
 ConsoleApp        Entry point, console I/O, game loop, game server.
+
+Tick pipeline
+
+1. Input → Commands → Intents (player & AI)
+2. AISystem                      // NPC behavior, emits intents
+3. AggroSystem                    // Auto-attack based on aggro
+4. FleeSystem                     // Convert flee intent → move intent
+5. ChaseSystem                     // NPC chase movement
+6. MovementSystem                  // Resolve all MoveIntents
+7. InteractionSystem               // get/drop/put/give
+8. StatSystem                       // recalc stats from DirtyStats components (was originally 9)
+9. DOT/HOT/EffectDurationSystem    // apply scheduled effects (damage, heal, buffs/debuffs) (was originally 8)
+10. ThreatSystem.UpdateThreat       // from damage, heal, buffs
+11. NPCTargetSystem.AssignTargets   // select high threat targets
+12. GroupCombatSystem.Resolve       // handle assist/protect/own target attack intents
+13. AbilitySystem                   // spells, skill usage
+14. CombatOrchestrator              // AttackIntents → AttackEvents + reactions, procs, spell effects, damage, heal, etc. Loop until no more AttackIntents or max depth reached
+15. DeathSystem                     // detect deaths
+16. RespawnSystem                   // auto-resurrect players
+17. LootSystem                       // handle loot & auto-loot
+18. CleanupSystem                    // remove destroyed items / dead NPCs
+19. Output → MessageBus             // send updates to players
+
+CombatOrchestrator (step 14) details
+    HitPhase / IntentResolution
+        Determine hit, dodge, parry
+        Generate AttackResolved events
+        Produce messages like “You dodged!”
+    ProduceDamage
+        Converts AttackResolved(Hit) into DamageEvent
+        Sets SourceType = Hit (or Spell, DoT, etc.)
+        No reactions here
+    DamageSystem
+        Applies HP changes
+        Generates death events if HP ≤ 0
+        Sends messages like “You take 5 damage”
+        Does not trigger counterattack
+    ReactionPhase
+        Loops over AttackResolved events (or potentially damage events if needed)
+        Checks conditions: parry -> guaranteed counter, hit -> chance to counter
+        Generates new AttackIntents for counterattacks
+        These intents go into Next buffer, which is processed in the same tick
 
 Entity/Components
 
