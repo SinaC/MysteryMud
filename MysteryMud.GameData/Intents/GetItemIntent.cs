@@ -1,4 +1,5 @@
 ﻿using Arch.Core;
+using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.GameData.Intents;
 
@@ -6,5 +7,8 @@ public struct GetItemIntent
 {
     public Entity Entity;
     public Entity Item;
-    public Entity RoomOrContainer;
+
+    public GetSourceKind SourceKind;
+
+    public Entity Source; // room or container
 }

@@ -1,7 +1,8 @@
 ﻿using Arch.Core;
 using MysteryMud.Core;
+using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Scheduler;
-using MysteryMud.Domain.OldSystems;
+using MysteryMud.GameData.Events;
 
 namespace MysteryMud.Infrastructure.Scheduler;
 
@@ -20,31 +21,37 @@ public class Scheduler : IScheduler
         _queue.Enqueue(scheduledEvent, (scheduledEvent.ExecuteAt, scheduledEvent.Type));
     }
 
-    public void Process(SystemContext systemContext, GameState state)
+    public void Process(GameState state, IEventBuffer<DotTriggeredEvent> dots, IEventBuffer<HotTriggeredEvent> hots, IEventBuffer<EffectExpiredEvent> expired)
     {
         // Process all events that are due to execute at or before the current time
         // priority is determined first by execution time, then by event type (to ensure consistent ordering of events scheduled for the same time)
         while (_queue.TryPeek(out var ev, out var priority) && priority.time <= state.CurrentTick)
         {
             _queue.Dequeue();
-            Execute(systemContext, state, ref ev);
+            Execute(dots, hots, expired, ref ev);
         }
     }
 
-    private static void Execute(SystemContext systemContext, GameState state, ref ScheduledEvent ev)
+    private static void Execute(IEventBuffer<DotTriggeredEvent> dots, IEventBuffer<HotTriggeredEvent> hots, IEventBuffer<EffectExpiredEvent> expired, ref ScheduledEvent ev)
     {
         switch (ev.Type)
         {
             case ScheduledEventType.DotTick:
-                DotSystem.HandleTick(systemContext, state, ev.Target);
+                // emit dot triggered event
+                ref var dotEvt = ref dots.Add();
+                dotEvt.Effect = ev.Target;
                 break;
 
             case ScheduledEventType.HotTick:
-                HotSystem.HandleTick(systemContext, state, ev.Target);
+                // emit hot triggered event
+                ref var hotEvt = ref hots.Add();
+                hotEvt.Effect = ev.Target;
                 break;
 
             case ScheduledEventType.EffectExpired:
-                DurationSystem.HandleExpiration(systemContext, state, ev.Target);
+                // emit expired event
+                ref var expiredEvt = ref expired.Add();
+                expiredEvt.Effect = ev.Target;
                 break;
         }
     }

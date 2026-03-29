@@ -13,7 +13,7 @@ public class DamageFactory
         _damages = damages;
     }
 
-    public ref DamageEvent Create(AttackResolved resolved) // no need to check if source/target is alive
+    public ref DamageEvent CreateHit(AttackResolved resolved) // no need to check if source/target is alive
     {
         //ref var effectiveStats = ref resolved.Source.Get<EffectiveStats>();
         // TODO: calculate damage based on stats, skills, buffs, etc.

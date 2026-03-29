@@ -2,17 +2,37 @@
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
+using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Logging;
+using MysteryMud.Core.Services;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.GameData.Enums;
+using MysteryMud.GameData.Events;
 
-namespace MysteryMud.Domain.OldSystems;
+namespace MysteryMud.Domain.Systems;
 
-public static class DurationSystem
+public class DurationSystem
 {
-    public static void HandleExpiration(SystemContext ctx, GameState state, Entity effect)
+    private readonly ILogger _logger;
+    private readonly IGameMessageService _msg;
+    private readonly IEventBuffer<EffectExpiredEvent> _expired;
+
+    public DurationSystem(ILogger logger, IGameMessageService msg, IEventBuffer<EffectExpiredEvent> expired)
+    {
+        _logger = logger;
+        _msg = msg;
+        _expired = expired;
+    }
+
+    public void Tick(GameState state)
+    {
+        foreach (var expired in _expired.GetAll())
+            ProcessOneEffect(state, expired.Effect);
+    }
+
+    public void ProcessOneEffect(GameState state, Entity effect)
     {
         if (!effect.IsAlive())
             return;
@@ -27,13 +47,13 @@ public static class DurationSystem
 
         ref var duration = ref effect.Get<Duration>();
 
-        if (duration.ExpirationTick != TimeSystem.CurrentTick)
+        if (duration.ExpirationTick != state.CurrentTick)
         {
-            ctx.Log.LogInformation(LogEvents.Duration,"Rescheduled Duration for Effect {effectName} on Target {targetName} with Expiration Tick {expirationTick}", effect.DebugName, effectInstance.Target.DebugName, duration.ExpirationTick);
+            _logger.LogInformation(LogEvents.Duration,"Rescheduled Duration for Effect {effectName} on Target {targetName} with Expiration Tick {expirationTick}", effect.DebugName, effectInstance.Target.DebugName, duration.ExpirationTick);
             return;
         }
 
-        ctx.Log.LogInformation(LogEvents.Duration,"Expiring Duration for Effect {effectName} on Target {targetName}", effect.DebugName, effectInstance.Target.DebugName);
+        _logger.LogInformation(LogEvents.Duration,"Expiring Duration for Effect {effectName} on Target {targetName}", effect.DebugName, effectInstance.Target.DebugName);
 
         // remove the effect from the target's CharacterEffects
         ref var characterEffects = ref effectInstance.Target.Get<CharacterEffects>();
@@ -56,7 +76,7 @@ public static class DurationSystem
         if (effectInstance.Template.WearOffMessage != null)
         {
             // TODO: in room ?
-            ctx.Msg.To(effectInstance.Target).Send(effectInstance.Template.WearOffMessage);
+            _msg.To(effectInstance.Target).Send(effectInstance.Template.WearOffMessage);
         }
 
         state.World.Destroy(effect);

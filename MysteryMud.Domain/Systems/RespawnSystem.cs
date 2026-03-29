@@ -1,19 +1,25 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
-using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
-using MysteryMud.Core.Logging;
+using MysteryMud.Core.Services;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Extensions;
 
-namespace MysteryMud.Domain.OldSystems;
+namespace MysteryMud.Domain.Systems;
 
-public static class RespawnSystem
+public class RespawnSystem
 {
-    public static void Process(SystemContext ctx, GameState state)
+    private readonly IGameMessageService _msg;
+
+    public RespawnSystem(IGameMessageService msg)
+    {
+        _msg = msg;
+    }
+
+    public void Tick(GameState state)
     {
         var query = new QueryDescription()
             .WithAll<PlayerTag, RespawnState, Location, Health>();
@@ -22,8 +28,6 @@ public static class RespawnSystem
             // Optional: respawn timer check
             //if (Time.time - dead.TimeOfDeath >= RespawnDelay)
             {
-                ctx.Log.LogInformation(LogEvents.Respawn, "Respawning character {playerName} to room {roomName}", player.DebugName, respawnState.RespawnRoom.DebugName);
-
                 // Move player to respawn room
                 location.Room = respawnState.RespawnRoom;
 
@@ -43,7 +47,7 @@ public static class RespawnSystem
                     player.Add<DirtyStats>();
 
                 // TODO: send to room
-                ctx.Msg.To(player).Send($"You have respawned at {location.Room.DisplayName}!");
+                _msg.To(player).Send($"You have respawned at {location.Room.DisplayName}!");
             }
         });
     }

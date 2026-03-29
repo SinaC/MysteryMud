@@ -8,14 +8,19 @@ public interface IIntentWriterContainer
     IIntentWriter<FleeIntent> Flee { get; }
     // MoveSystem
     IIntentWriter<MoveIntent> Move { get; }
-    // InteractionSystem
+    // ItemInteractionSystem
     IIntentWriter<GetItemIntent> GetItem { get; }
     IIntentWriter<DropItemIntent> DropItem { get; }
     IIntentWriter<GiveItemIntent> GiveItem { get; }
     IIntentWriter<PutItemIntent> PutItem { get; }
+    IIntentWriter<WearItemIntent> WearItem { get; }
+    IIntentWriter<RemoveItemIntent> RemoveItem { get; }
+    IIntentWriter<DestroyItemIntent> DestroyItem { get; }
+    IIntentWriter<SacrificeItemIntent> SacrificeItem { get; }
     // CombatSystem
     IIntentWriter<AttackIntent> Attack { get; } // can write to current attack buffer
-    IIntentWriter<AttackIntent> AttackNext { get; } // can write to next attack buffer, for counterattacks and multiattack combos
     // LootSystem
     IIntentWriter<LootIntent> Loot { get; }
+    // LookSystem
+    IIntentWriter<LookIntent> Look { get; }
 }

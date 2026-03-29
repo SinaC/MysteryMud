@@ -2,6 +2,7 @@
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Dispatching;
+using MysteryMud.Application.Services;
 using MysteryMud.Core;
 using MysteryMud.Core.Eventing;
 using MysteryMud.Domain.Combat;
@@ -13,12 +14,14 @@ using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Services;
 using MysteryMud.Domain.Systems;
+using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
 using MysteryMud.Infrastructure.Eventing;
 using MysteryMud.Infrastructure.Intent;
+using MysteryMud.Infrastructure.Scheduler;
 using MysteryMud.Infrastructure.Services;
 
-namespace MysteryMud.ConsoleApp;
+namespace MysteryMud.ConsoleApp.Demo;
 
 static class Demo2
 {
@@ -46,40 +49,54 @@ static class Demo2
         var messageBus = new DemoMessageBus();
         var actService = new ActService();
         var gameMessageService = new GameMessageService(messageBus, actService);
+        var lookService = new LookService(gameMessageService);
 
         // initialize systems and buffers
         var intentBusContainer = new IntentBusContainer();
         var fleeBlockedEventBuffer = new EventBuffer<FleeBlockedEvent>();
+        var movedEventBuffer = new EventBuffer<MovedEvent>();
         var itemGotEventBuffer = new EventBuffer<ItemGotEvent>();
         var itemDroppedEventBuffer = new EventBuffer<ItemDroppedEvent>();
         var itemGivenEventBuffer = new EventBuffer<ItemGivenEvent>();
         var itemPutEventBuffer = new EventBuffer<ItemPutEvent>();
+        var itemWornEventBuffer = new EventBuffer<ItemWornEvent>();
+        var itemRemovedEventBuffer = new EventBuffer<ItemRemovedEvent>();
+        var itemDestroyedEventBuffer = new EventBuffer<ItemDestroyedEvent>();
+        var itemSacrifierEventBuffer = new EventBuffer<ItemSacrifiedEvent>();
         var damageEventBuffer = new EventBuffer<DamageEvent>();
         var deathEventBuffer = new EventBuffer<DeathEvent>();
         var itemLootedEventBuffer = new EventBuffer<ItemLootedEvent>();
+        var lookedEventBuffer = new EventBuffer<LookedEvent>();
+
+        var systemContext = new SystemContext { Log = logger, Msg = gameMessageService, Scheduler = new Scheduler(), Intent = intentBusContainer };
 
         // TODO: deathEvent and damageEvent are purely combat events and should probably remains the only event passed to systems, other events like itemGotEvent, itemDroppedEvent, itemGivenEvent, itemPutEvent can be directly sent to message service without going through event buffer since they are only used for messaging and no system needs to react to them, this way we can avoid the complexity of managing multiple event buffers and also avoid the issue of events being processed in the wrong order (like damage events being processed before attack intents)
         // TODO: we should replace all these eventbuffers with a more generic event system
-        var damageResolver = new DamageResolver(gameMessageService, deathEventBuffer);
+
+        var aggroResolver = new AggroResolver();
+        var damageResolver = new DamageResolver(aggroResolver, gameMessageService, deathEventBuffer);
         var combatOrchestrator = new CombatOrchestrator(gameMessageService, intentBusContainer, damageEventBuffer, damageResolver);
 
-        var fleeSystem = new FleeSystem(intentBusContainer, fleeBlockedEventBuffer);
-        var itemInteractionSystem = new ItemInteractionSystem(gameMessageService, intentBusContainer, itemGotEventBuffer, itemDroppedEventBuffer, itemGivenEventBuffer, itemPutEventBuffer);
+        var fleeSystem = new FleeSystem(gameMessageService, intentBusContainer, fleeBlockedEventBuffer);
+        var movementSystem = new MovementSystem(gameMessageService, intentBusContainer, movedEventBuffer);
+        var itemInteractionSystem = new ItemInteractionSystem(gameMessageService, intentBusContainer, itemGotEventBuffer, itemDroppedEventBuffer, itemGivenEventBuffer, itemPutEventBuffer, itemWornEventBuffer, itemRemovedEventBuffer, itemDestroyedEventBuffer, itemSacrifierEventBuffer);
+        var statsSystem = new StatsSystem();
         var autoAttackSystem = new AutoAttackSystem(intentBusContainer);
         var damageSystem = new DamageSystem(damageResolver, damageEventBuffer);
         var deathSystem = new DeathSystem(gameMessageService, intentBusContainer, deathEventBuffer);
         var lootSystem = new LootSystem(gameMessageService, intentBusContainer, itemLootedEventBuffer);
+        var lookSystem = new LookSystem(lookService, intentBusContainer, lookedEventBuffer);
         var cleanupSystem = new CleanupSystem(logger);
 
-        // subscribe to events for demo purposes
-        var fleeBlockedEventDispatcher = new EventDispatcher<FleeBlockedEvent>();
-        var damageEventDispatcher = new EventDispatcher<DamageEvent>();
-        var itemGotEventDispatcher = new EventDispatcher<ItemGotEvent>();
-        var itemDropEventDispatcher = new EventDispatcher<ItemDroppedEvent>();
-        var itemGivenEventDispatcher = new EventDispatcher<ItemGivenEvent>();
-        var itemPutEventDispatcher = new EventDispatcher<ItemPutEvent>();
-        var deathEventDispatcher = new EventDispatcher<DeathEvent>();
-        var itemLootedEventDispatcher = new EventDispatcher<ItemLootedEvent>();
+        //// subscribe to events for demo purposes
+        //var fleeBlockedEventDispatcher = new EventDispatcher<FleeBlockedEvent>();
+        //var damageEventDispatcher = new EventDispatcher<DamageEvent>();
+        //var itemGotEventDispatcher = new EventDispatcher<ItemGotEvent>();
+        //var itemDropEventDispatcher = new EventDispatcher<ItemDroppedEvent>();
+        //var itemGivenEventDispatcher = new EventDispatcher<ItemGivenEvent>();
+        //var itemPutEventDispatcher = new EventDispatcher<ItemPutEvent>();
+        //var deathEventDispatcher = new EventDispatcher<DeathEvent>();
+        //var itemLootedEventDispatcher = new EventDispatcher<ItemLootedEvent>();
 
         //fleeBlockedEventDispatcher.Subscribe(e => gameMessageService.To(e.Entity).Send($"You cannot flee: {e.Reason}."));
         //itemGotEventDispatcher.Subscribe(e => gameMessageService.To(e.Entity).Send($"You get {e.Item.DisplayName} from {e.RoomOrContainer.DisplayName}."));
@@ -122,9 +139,11 @@ static class Demo2
         trollEffectiveStats.Dodge = 0; // for testing, make sure all hits land so we can see the counterattack in action
         trollEffectiveStats.Parry = 0; // for testing, make sure all hits land so we can see the counterattack in action
         trollEffectiveStats.CounterAttack = 100; // for testing, make sure all we counterattack every time so we can see the counterattack in action
+        commandDispatcher.Dispatch(systemContext, gameState, goblin, "kill troll".AsSpan());
         // goblin uses command kill troll
-        goblin.Add(new CombatState { Target = troll, RoundDelay = 0 });
+        //goblin.Add(new CombatState { Target = troll, RoundDelay = 0 });
 
+        // start of gameloop
 
         // TODO: reset reaction budget for all entities at the start of tick
         //foreach (var entity in world.Query<ReactionBudget>())
@@ -133,24 +152,26 @@ static class Demo2
         //}
 
         // one tick
-        fleeSystem.Tick();
+        lookSystem.Tick(gameState, LookMode.Snapshot);
+        fleeSystem.Tick(gameState);
+        movementSystem.Tick(gameState);
         itemInteractionSystem.Tick(gameState);
-
+        statsSystem.Tick(gameState);
         autoAttackSystem.Tick(gameState);
         combatOrchestrator.Tick(gameState);
-
         deathSystem.Tick(gameState);
         lootSystem.Tick(gameState);
+        lookSystem.Tick(gameState, LookMode.PostUpdate);
 
-        // dispatch events for demo purposes
-        fleeBlockedEventDispatcher.Dispatch(fleeBlockedEventBuffer.GetAll());
-        itemGotEventDispatcher.Dispatch(itemGotEventBuffer.GetAll());
-        itemDropEventDispatcher.Dispatch(itemDroppedEventBuffer.GetAll());
-        itemGivenEventDispatcher.Dispatch(itemGivenEventBuffer.GetAll());
-        itemPutEventDispatcher.Dispatch(itemPutEventBuffer.GetAll());
-        damageEventDispatcher.Dispatch(damageEventBuffer.GetAll());
-        deathEventDispatcher.Dispatch(deathEventBuffer.GetAll());
-        itemLootedEventDispatcher.Dispatch(itemLootedEventBuffer.GetAll());
+        //// dispatch events for demo purposes
+        //fleeBlockedEventDispatcher.Dispatch(fleeBlockedEventBuffer.GetAll());
+        //itemGotEventDispatcher.Dispatch(itemGotEventBuffer.GetAll());
+        //itemDropEventDispatcher.Dispatch(itemDroppedEventBuffer.GetAll());
+        //itemGivenEventDispatcher.Dispatch(itemGivenEventBuffer.GetAll());
+        //itemPutEventDispatcher.Dispatch(itemPutEventBuffer.GetAll());
+        //damageEventDispatcher.Dispatch(damageEventBuffer.GetAll());
+        //deathEventDispatcher.Dispatch(deathEventBuffer.GetAll());
+        //itemLootedEventDispatcher.Dispatch(itemLootedEventBuffer.GetAll());
 
         cleanupSystem.Tick(gameState);
 
@@ -160,9 +181,14 @@ static class Demo2
         itemDroppedEventBuffer.Clear();
         itemGivenEventBuffer.Clear();
         itemPutEventBuffer.Clear();
+        itemDestroyedEventBuffer.Clear();
+        itemSacrifierEventBuffer.Clear();
         damageEventBuffer.Clear();
         deathEventBuffer.Clear();
         itemLootedEventBuffer.Clear();
+        lookedEventBuffer.Clear();
+
+        // end of gameloop
     }
 
     // TODO: don't use event buffer to display message to player, we can directly send message when we generate event, we can use event buffer to store events for systems that need to react to them but for events that are only used to display message we can directly send message without storing them in buffer, this way we can avoid the complexity of managing event buffers and also avoid the issue of events being processed in the wrong order (like damage events being processed before attack intents)

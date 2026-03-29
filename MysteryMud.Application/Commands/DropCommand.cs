@@ -5,9 +5,6 @@ using MysteryMud.Application.Queries;
 using MysteryMud.Core;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
-using MysteryMud.Domain.Components.Items;
-using MysteryMud.Domain.Extensions;
-using MysteryMud.Domain.OldSystems;
 using MysteryMud.GameData.Definitions;
 
 namespace MysteryMud.Application.Commands;
@@ -35,15 +32,11 @@ public class DropCommand : ICommand
 
         foreach (var item in EntityFinder.SelectTargets(actor, ctx.Primary, inventory.Items))
         {
-            // Unequip if necessary
-            if (item.Has<Equipped>())
-            {
-                ref var equipped = ref item.Get<Equipped>();
-                EquipmentSystem.Unequip(actor, equipped.Slot);
-            }
-
-            ItemMovementSystem.DropItem(actor, room, item);
-            systemContext.Msg.To(actor).Send($"You drop {item.DisplayName}.");
+            // intent to drop item
+            ref var dropItemIntent = ref systemContext.Intent.DropItem.Add();
+            dropItemIntent.Entity = actor;
+            dropItemIntent.Item = item;
+            dropItemIntent.Room = room;
         }
     }
 }

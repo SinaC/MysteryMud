@@ -1,6 +1,6 @@
-﻿namespace MysteryMud.Domain.Combat;
+﻿namespace MysteryMud.Domain.Combat.Resolvers;
 
-public class BuffProcSystem
+public class BuffProcResolver
 {
     //public struct BuffProc
     //{

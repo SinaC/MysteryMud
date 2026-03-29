@@ -5,8 +5,6 @@ using MysteryMud.Application.Queries;
 using MysteryMud.Core;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Extensions;
-using MysteryMud.Domain.OldSystems;
 using MysteryMud.GameData.Definitions;
 
 namespace MysteryMud.Application.Commands;
@@ -35,9 +33,10 @@ public class SacrificeCommand : ICommand
 
         foreach (var item in EntityFinder.SelectTargets(actor, ctx.Primary, roomContents.Items))
         {
-            DestroySystem.DestroyItem(item);
-
-            systemContext.Msg.To(actor).Send($"You sacrifice the {item.DisplayName}.");
+            // intent to sacrifice item
+            ref var intent = ref systemContext.Intent.DestroyItem.Add();
+            intent.Entity = actor;
+            intent.Item = item;
         }
     }
 }

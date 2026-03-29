@@ -8,18 +8,21 @@ public interface IIntentContainer: IIntentWriterContainer
     Span<FleeIntent> FleeSpan { get; }
     // MoveSystem
     Span<MoveIntent> MoveSpan { get; }
-    // InteractionSystem
+    // ItemInteractionSystem
     Span<GetItemIntent> GetItemSpan { get; }
     Span<DropItemIntent> DropItemSpan { get; }
     Span<GiveItemIntent> GiveItemSpan { get; }
     Span<PutItemIntent> PutItemSpan { get; }
+    Span<WearItemIntent> WearItemSpan { get; }
+    Span<RemoveItemIntent> RemoveItemSpan { get; }
+    Span<DestroyItemIntent> DestroyItemSpan { get; }
+    Span<SacrificeItemIntent> SacrificeItemSpan { get; }
     // CombatSystem
     Span<AttackIntent> AttackSpan { get; } // can only iterate on the current attack buffer, not the next buffer
     // LootSystem
     Span<LootIntent> LootSpan { get; }
-
-    // Swap attack and attack next buffers
-    void SwapAttackBuffers();
+    // LookSystem
+    Span<LookIntent> LookSpan { get; }
 
     void ClearAll();
 }

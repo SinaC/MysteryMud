@@ -7,6 +7,7 @@ public struct MoveIntent
 {
     public Entity Actor;
     public Entity FromRoom;
-    public Entity ToRoom; // calculated by FleeSystem
+    public Entity ToRoom;
     public Directions Direction;
+    public bool AutoLook;
 }

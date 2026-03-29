@@ -14,7 +14,7 @@ using MysteryMud.Infrastructure.Intent;
 using MysteryMud.Infrastructure.Scheduler;
 using MysteryMud.Infrastructure.Services;
 
-namespace MysteryMud.ConsoleApp;
+namespace MysteryMud.ConsoleApp.Demo;
 
 static class Demo
 {

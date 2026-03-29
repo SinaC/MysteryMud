@@ -11,6 +11,8 @@ using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Factories;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.GameData.Events;
+using System.Drawing;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MysteryMud.Domain.Systems;
 
@@ -40,7 +42,35 @@ public sealed class DeathSystem
         _msg.To(deathEvent.Dead).Send("%RYou have been KILLED%x");
         _msg.ToRoom(deathEvent.Dead).Act("{0} is dead").With(deathEvent.Dead);
 
+        RemoveFromCombat(world, deathEvent.Dead);
         CreateCorpse(world, deathEvent.Dead, deathEvent.Killer);
+
+        // TODO
+        //// Queue XP reward
+        //ctx.QueueIntent(new GrantRewardIntent
+        //{
+        //    Target = death.Killer,
+        //    RewardSpec = new RewardSpec { XP = death.ExperienceValue }
+        //});
+        // TODO: RewardSystem
+        //-Applies coins, XP, items
+        //- Pushes messages to players
+    }
+
+    // TODO: this could be optimized by having a "Targeting" component that lists all entities targeting a given entity, so we don't have to scan everyone in the world for combat state every time someone dies. We would need to maintain this list as combat states are added/removed, but it would make removing combat state on death much more efficient.
+    // mutually remove combat state from victim and anyone targeting the victim in one query if possible
+    private static void RemoveFromCombat(World world, Entity victim)
+    {
+        // remove from combat
+        victim.Remove<CombatState>();
+        // remove combat state for anyone targeting this entity
+        var query = new QueryDescription()
+          .WithAll<CombatState>();
+        world.Query(query, (Entity actor, ref CombatState combat) =>
+        {
+            if (combat.Target == victim)
+                actor.Remove<CombatState>();
+        });
     }
 
     private void CreateCorpse(World world, Entity victim, Entity killer)
@@ -70,7 +100,7 @@ public sealed class DeathSystem
         }
         corpse.Add(containerContents);
 
-        // trigger autoloot
+        // trigger autoloot (TODO: only for player and if autoloot enabled)
         ref var lootIntent = ref _intents.Loot.Add();
         lootIntent.Looter = killer;
         lootIntent.Corpse = corpse;

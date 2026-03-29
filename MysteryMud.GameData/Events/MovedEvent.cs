@@ -9,4 +9,5 @@ public struct MovedEvent
     public Entity FromRoom;
     public Entity ToRoom;
     public Directions Direction;
+    public bool AutoLook;
 }

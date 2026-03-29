@@ -10,25 +10,33 @@ ConsoleApp        Entry point, console I/O, game loop, game server.
 
 Tick pipeline
 
-1. Input → Commands → Intents (player & AI)
-2. AISystem                      // NPC behavior, emits intents
-3. AggroSystem                    // Auto-attack based on aggro
-4. FleeSystem                     // Convert flee intent → move intent
-5. ChaseSystem                     // NPC chase movement
-6. MovementSystem                  // Resolve all MoveIntents
-7. InteractionSystem               // get/drop/put/give
-8. StatSystem                       // recalc stats from DirtyStats components (was originally 9)
-9. DOT/HOT/EffectDurationSystem    // apply scheduled effects (damage, heal, buffs/debuffs) (was originally 8)
-10. ThreatSystem.UpdateThreat       // from damage, heal, buffs
-11. NPCTargetSystem.AssignTargets   // select high threat targets
-12. GroupCombatSystem.Resolve       // handle assist/protect/own target attack intents
-13. AbilitySystem                   // spells, skill usage
-14. CombatOrchestrator              // AttackIntents → AttackEvents + reactions, procs, spell effects, damage, heal, etc. Loop until no more AttackIntents or max depth reached
-15. DeathSystem                     // detect deaths
-16. RespawnSystem                   // auto-resurrect players
-17. LootSystem                       // handle loot & auto-loot
-18. CleanupSystem                    // remove destroyed items / dead NPCs
-19. Output → MessageBus             // send updates to players
+1. Input → Commands → Intents       // Player commands → may generate manual LookIntent (Mode=Snapshot)
+2. LookSystem(Snapshot)             // Processes all LookIntents with Mode=Snapshot → reads current world state before any effects → produces messages
+3. AISystem                         // NPC behavior → generates intents
+4. AggroSystem                      // Auto-attack intents based on aggro
+5. FleeSystem                       // Convert flee → MoveIntents
+6. ChaseSystem                      // NPC chase movement
+7. MovementSystem                   // Resolves MoveIntents → emits auto-look PostUpdate (Mode=PostUpdate)
+8. InteractionSystem                // Handle get/drop/put/give/...
+9. StatSystem                       // Recalculate stats from DirtyFlags
+10. TimedEffects                    // Apply scheduled effects (damage, heal, buffs/debuffs)
+11. ThreatSystem.UpdateThreat       // Update aggro/threat
+12. NPCTargetSystem.AssignTargets   // Select highest threat targets
+13. GroupCombatSystem.Resolve       // Handle assist/protect/own target attack intents
+14. AbilitySystem                   // Resolve skill/spell usage → may generate Damage/Effect intents
+15. CombatOrchestrator              // Resolve AttackIntents → AttackEvents + reactions, procs, spell effects, damage, heal, etc.
+16. DeathSystem                     // Flag dead entities
+17. RespawnSystem                   // Auto-resurrect players
+18. LootSystem                      // Handle loot & auto-loot
+19. LookSystem(PostUpdate)          // Processes LookIntents with Mode=PostUpdate → reflects final world state after all updates
+20. CleanupSystem                   // Remove destroyed items / dead NPCs / disconnected players
+21. Output → MessageBus             // Send all messages to players
+
+TimedEffects (step 10) details
+    Scheduled events generates DotTriggeredEvent/HotTriggeredEvent at intervals and EffectExpiredEvent when duration ends
+    DotSystem: handles DotTriggeredEvent, generates DamageEvent and reschedules next tick (we don't know if the target will still be alive once damage are done, thus we don't check for that here and always reschedule tick)
+    HotSystem: handles HotTriggeredEvent, generates HealEvent and reschedules next tick
+    DurationSystem: handles EffectExpiredEvent, removes effect and sends wear off message
 
 CombatOrchestrator (step 14) details
     HitPhase / IntentResolution

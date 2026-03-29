@@ -6,7 +6,6 @@ using MysteryMud.Core;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Extensions;
 using MysteryMud.GameData.Definitions;
 
 namespace MysteryMud.Application.Commands;
@@ -46,7 +45,7 @@ public class KillCommand : ICommand
 
         // TODO: check if already in combat, if so, maybe switch targets? Or maybe not allow switching targets?
 
-        systemContext.Msg.To(actor).Send($"{actor.DisplayName} attacks {target.DisplayName}");
+        // flag both as in combat with each other, with the target striking back after a delay
         actor.Add(new CombatState { Target = target, RoundDelay = 0 });
         target.Add(new CombatState { Target = actor, RoundDelay = 1 }); // strikes back
     }

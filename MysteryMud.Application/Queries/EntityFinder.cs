@@ -2,8 +2,10 @@
 using Arch.Core.Extensions;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries.Matching;
+using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
+using MysteryMud.Domain.Components.Rooms;
 
 namespace MysteryMud.Application.Queries;
 
@@ -84,6 +86,25 @@ public static class EntityFinder
                 return entity; // For 'All', just return the first match (or consider throwing an exception)
             }
         }
+        return default;
+    }
+
+    public static Entity FindContainer(Entity actor, TargetSpec containerArg)
+    {
+        // Search in room first
+        var room = actor.Get<Location>().Room;
+        var roomContents = room.Get<RoomContents>();
+
+        var container = SelectSingleTarget(actor, containerArg, roomContents.Items);
+        if (container != default)
+            return container;
+
+        // Then inventory
+        var inventory = actor.Get<Inventory>();
+        container = SelectSingleTarget(actor, containerArg, inventory.Items);
+        if (container != default)
+            return container;
+
         return default;
     }
 

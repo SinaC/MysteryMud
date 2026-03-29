@@ -1,15 +1,15 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.Core;
-using MysteryMud.GameData.Enums;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
+using MysteryMud.GameData.Enums;
 
-namespace MysteryMud.Domain.OldSystems;
+namespace MysteryMud.Domain.Systems;
 
-public static class StatSystem
+public class StatsSystem
 {
-    public static void Process(GameState state)
+    public void Tick(GameState state)
     {
         var query = new QueryDescription()
                 .WithAll<BaseStats, EffectiveStats, DirtyStats>()

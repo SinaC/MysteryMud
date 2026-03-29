@@ -5,11 +5,9 @@ using MysteryMud.Application.Queries;
 using MysteryMud.Core;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
-using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Extensions;
-using MysteryMud.Domain.OldSystems;
 using MysteryMud.GameData.Definitions;
+using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.Commands;
 
@@ -36,7 +34,18 @@ public class LookCommand : ICommand
         // No argument: show room/container overview
         if (ctx.TargetCount == 0)
         {
-            LookAround(systemContext, actor);
+            ref var location = ref actor.TryGetRef<Location>(out var hasLocation);
+            if (!hasLocation)
+            {
+                systemContext.Msg.To(actor).Send("You are floating in the void. You see nothing.");
+                return;
+            }
+
+            // intent to look at room
+            ref var lookRoomIntent = ref systemContext.Intent.Look.Add();
+            lookRoomIntent.Viewer = actor;
+            lookRoomIntent.TargetKind = LookTargetKind.Room;
+            lookRoomIntent.Target = location.Room;
             return;
         }
 
@@ -59,17 +68,11 @@ public class LookCommand : ICommand
         {
             if (EntityFinder.Matches(target, targetName))
             {
-                systemContext.Msg.To(actor).Send($"Character: {target.DisplayName}");
-
-                // TODO: remove, should be in ExamineCommand
-                ref var targetInventory = ref target.TryGetRef<Inventory>(out var hasTargetInventory);
-                if (hasTargetInventory)
-                {
-                    foreach (var item in targetInventory.Items)
-                    {
-                        systemContext.Msg.To(actor).Act("{0} {0:b} carrying: {1}").With(target, item);
-                    }
-                }
+                // intent to look at character
+                ref var lookCharacterIntent = ref systemContext.Intent.Look.Add();
+                lookCharacterIntent.Viewer = actor;
+                lookCharacterIntent.TargetKind = LookTargetKind.Character;
+                lookCharacterIntent.Target = target;
                 return;
             }
         }
@@ -79,17 +82,11 @@ public class LookCommand : ICommand
         {
             if (EntityFinder.Matches(item, targetName))
             {
-                systemContext.Msg.To(actor).Send($"Item: {item.DisplayName}");
-
-                // TODO: remove, should be in ExamineCommand
-                ref var containerContents = ref item.TryGetRef<ContainerContents>(out var isContainerContents);
-                if (isContainerContents)
-                {
-                    foreach (var containerItem in containerContents.Items)
-                    {
-                        systemContext.Msg.To(actor).Send($"It contains: {containerItem.DisplayName}");
-                    }
-                }
+                // intent to look at item
+                ref var lookItemIntent = ref systemContext.Intent.Look.Add();
+                lookItemIntent.Viewer = actor;
+                lookItemIntent.TargetKind = LookTargetKind.Item;
+                lookItemIntent.Target = item;
                 return;
             }
         }
@@ -102,7 +99,11 @@ public class LookCommand : ICommand
             {
                 if (EntityFinder.Matches(item, targetName))
                 {
-                    systemContext.Msg.To(actor).Send($"You are carrying: {item.DisplayName}");
+                    // intent to look at item
+                    ref var lookItemIntent = ref systemContext.Intent.Look.Add();
+                    lookItemIntent.Viewer = actor;
+                    lookItemIntent.TargetKind = LookTargetKind.Item;
+                    lookItemIntent.Target = item;
                     return;
                 }
             }
@@ -111,32 +112,5 @@ public class LookCommand : ICommand
         // 4) Try items in equipped slots (optional)
         // For demo, we assume inventory = equipment too
         systemContext.Msg.To(actor).Send($"You see nothing matching '{ctx.Primary.Name}' here.");
-    }
-
-    private void LookAround(SystemContext systemContext, Entity actor)
-    {
-        ref var location = ref actor.TryGetRef<Location>(out var hasLocation);
-        if (hasLocation)
-        {
-            DisplayRoomSystem.DisplayRoom(systemContext, actor, location.Room);
-            return;
-        }
-
-        ref var containedIn = ref actor.TryGetRef<ContainedIn>(out var hasContainedIn);
-        if (hasContainedIn)
-        {
-            if (containedIn.Character != Entity.Null)
-            {
-                systemContext.Msg.To(actor).Send($"You are in {containedIn.Character.DisplayName}'s inventory.");
-                // TODO: display inventory ?
-                return;
-            }
-            else if (containedIn.Container != Entity.Null)
-            {
-                systemContext.Msg.To(actor).Send($"You are inside {containedIn.Container.DisplayName}.");
-                // TODO: display container contents ?
-                return;
-            }
-        }
     }
 }

@@ -54,7 +54,7 @@ public sealed class CombatOrchestrator
             // if hit is successful, produce damage and handle reactions before resolving next hit, this way we can properly handle counterattacks between hits instead of waiting for all hits to be resolved and then handling reactions which can lead to unrealistic scenarios like player attacking 3 times and then monster counterattacking 3 times even if the player is already dead after the first hit
             if (resolvedHit.Result == AttackResults.Hit)
             {
-                ref var damageEvent = ref _damageProducer.Create(resolvedHit);
+                ref var damageEvent = ref _damageProducer.CreateHit(resolvedHit);
 
                 _damageResolver.Resolve(damageEvent);
 

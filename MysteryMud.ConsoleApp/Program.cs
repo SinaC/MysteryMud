@@ -110,7 +110,7 @@ var commandDispatcher = new CommandDispatcher(commandRegistry, commandParser);
 
 // run demo
 //Demo.Run(logger, world, commandDispatcher);
-Demo2.Run(logger, world, commandDispatcher);
+//Demo2.Run(logger, world, commandDispatcher);
 
 // start game server
 var gameServer = new GameServer(logger, world, commandDispatcher);
