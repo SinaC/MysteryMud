@@ -1,11 +1,10 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.Application.Parsing;
+using MysteryMud.Application.Queries;
 using MysteryMud.Core;
-using MysteryMud.Core.Command;
-using MysteryMud.Domain;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
-using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Definitions;
 
 namespace MysteryMud.Application.Commands;
@@ -30,22 +29,30 @@ public class WearCommand : ICommand
 
         ref var inventory = ref actor.Get<Inventory>();
 
-        foreach (var item in TargetingSystem.SelectTargets(actor, ctx.Primary, inventory.Items))
+        foreach (var item in EntityFinder.SelectTargets(actor, ctx.Primary, inventory.Items))
         {
-            if (!item.Has<Equipable>())
+            ref var equipable = ref item.TryGetRef<Equipable>(out var isEquipable);
+            if (!isEquipable)
             {
                 systemContext.Msg.To(actor).Send("You can't wear that.");
                 return;
             }
 
-            if (!EquipmentSystem.Equip(actor, item))
+            ref var equipment = ref actor.Get<Equipment>();
+
+            var slot = equipable.Slot;
+
+            if (equipment.Slots.ContainsKey(slot))
             {
-                systemContext.Msg.To(actor).Send("Slot already used.");
+                systemContext.Msg.To(actor).Send("You already wear.");
                 return;
             }
 
-            systemContext.Msg.To(actor).Send($"You wear {item.DisplayName}.");
-            return;
+            // intent to wear item
+            ref var wearItemIntent = ref systemContext.Intent.WearItem.Add();
+            wearItemIntent.Actor = actor;
+            wearItemIntent.Item = item;
+            wearItemIntent.Slot = slot;
         }
     }
 }

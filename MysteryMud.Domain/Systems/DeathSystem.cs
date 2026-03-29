@@ -1,44 +1,64 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.Core;
+using MysteryMud.Core.Eventing;
+using MysteryMud.Core.Intent;
+using MysteryMud.Core.Services;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
-using MysteryMud.Domain.Components.Rooms;
+using MysteryMud.Domain.Extensions;
+using MysteryMud.Domain.Factories;
+using MysteryMud.Domain.Helpers;
+using MysteryMud.GameData.Events;
+using System.Drawing;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MysteryMud.Domain.Systems;
 
-public static class DeathSystem
+public sealed class DeathSystem
 {
-    public static void Process(SystemContext ctx, GameState state)
+    private IGameMessageService _msg;
+    private readonly IIntentContainer _intents;
+    private readonly IEventBuffer<DeathEvent> _deathEvents;
+
+    public DeathSystem(IGameMessageService msg, IIntentContainer intents, IEventBuffer<DeathEvent> deathEvents)
     {
-        var query = new QueryDescription()
-          .WithAll<Dead>();
-        state.World.Query(query, (Entity entity, ref Dead dead) =>
+        _msg = msg;
+        _intents = intents;
+        _deathEvents = deathEvents;
+    }
+
+    public void Tick(GameState gameState)
+    {
+        foreach (ref var death in _deathEvents.GetAll())
         {
-            HandleDeath(ctx, state.World, entity, dead.Killer); // TODO: pass killer
-        });
+            HandleDeath(gameState.World, ref death);
+        }
     }
 
-    private static void HandleDeath(SystemContext ctx, World world, Entity victim, Entity killer)
+    private void HandleDeath(World world, ref DeathEvent deathEvent)
     {
-        //TODO: log
-        CreateCorpse(ctx, world, victim, killer);
+        _msg.To(deathEvent.Dead).Send("%RYou have been KILLED%x");
+        _msg.ToRoom(deathEvent.Dead).Act("{0} is dead").With(deathEvent.Dead);
 
-        RemoveFromRoomContents(world, victim);
-        RemoveFromCombat(world, victim);
-        RemoveEffects(world, victim);
+        RemoveFromCombat(world, deathEvent.Dead);
+        CreateCorpse(world, deathEvent.Dead, deathEvent.Killer);
+
+        // TODO
+        //// Queue XP reward
+        //ctx.QueueIntent(new GrantRewardIntent
+        //{
+        //    Target = death.Killer,
+        //    RewardSpec = new RewardSpec { XP = death.ExperienceValue }
+        //});
+        // TODO: RewardSystem
+        //-Applies coins, XP, items
+        //- Pushes messages to players
     }
 
-    private static void RemoveFromRoomContents(World world, Entity victim)
-    {
-        ref var location = ref victim.TryGetRef<Location>(out var hasLocation);
-        if (!hasLocation)
-            return; // can't remove from room contents if we don't know where the victim is
-        ref var roomContents = ref location.Room.Get<RoomContents>();
-        roomContents.Characters.Remove(victim);
-    }
-
+    // TODO: this could be optimized by having a "Targeting" component that lists all entities targeting a given entity, so we don't have to scan everyone in the world for combat state every time someone dies. We would need to maintain this list as combat states are added/removed, but it would make removing combat state on death much more efficient.
+    // mutually remove combat state from victim and anyone targeting the victim in one query if possible
     private static void RemoveFromCombat(World world, Entity victim)
     {
         // remove from combat
@@ -53,35 +73,36 @@ public static class DeathSystem
         });
     }
 
-    private static void RemoveEffects(World world, Entity victim)
-    {
-        // remove all effects on victim
-        ref var characterEffects = ref victim.Get<CharacterEffects>();
-        foreach(var effect in characterEffects.Effects)
-            world.Destroy(effect);
-    }
-
-    // TODO: create a corpse entity that can hold the items instead of dropping items on the floor
-    private static void CreateCorpse(SystemContext ctx, World world, Entity victim, Entity killer)
+    private void CreateCorpse(World world, Entity victim, Entity killer)
     {
         if (!victim.Has<Location, Inventory>())
             return; // can't create a corpse if we don't know where the victim is
-        // TODO: don't do for player ?
         ref var location = ref victim.Get<Location>();
         ref var inventory = ref victim.Get<Inventory>();
-        // for the moment, drop items on the floor
+        // create corpse
+        var corpse = ItemFactory.CreateItemInRoom(world, "corpse", $"the corpse of {victim.DisplayName}", location.Room);
+        corpse.Add(new Container { Capacity = 1000 });
+        var containerContents = new ContainerContents { Items = [] };
         foreach (var item in inventory.Items.ToArray())
         {
             // Unequip if necessary
             ref var equipped = ref item.TryGetRef<Equipped>(out var isEquipped);
             if (isEquipped)
             {
-                EquipmentSystem.Unequip(victim, equipped.Slot);
+                ItemHelpers.TryUnequipItem(victim, equipped.Slot, out _);
             }
 
-            //ContainmentSystem.Move(world, item, victim.Get<Location>().Room);
-            ItemMovementSystem.DropItem(victim, location.Room, item);
-            ctx.Msg.ToRoom(killer).Act("{0} drop{0:v} {1}.").With(victim, item);
+            inventory.Items.Remove(item);
+            ref var containedIn = ref item.Get<ContainedIn>();
+            containedIn.Character = Entity.Null;
+            containedIn.Container = corpse;
+            containerContents.Items.Add(item);
         }
+        corpse.Add(containerContents);
+
+        // trigger autoloot (TODO: only for player and if autoloot enabled)
+        ref var lootIntent = ref _intents.Loot.Add();
+        lootIntent.Looter = killer;
+        lootIntent.Corpse = corpse;
     }
 }

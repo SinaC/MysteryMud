@@ -1,10 +1,10 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.Application.Parsing;
 using MysteryMud.Core;
-using MysteryMud.Core.Command;
 using MysteryMud.Domain.Components;
+using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
@@ -22,6 +22,12 @@ public class SouthCommand : ICommand
 
     public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
     {
+        if (actor.Has<CombatState>())
+        {
+            systemContext.Msg.To(actor).Send("No way! You are still fighting!");
+            return;
+        }
+
         // Get room
         ref var room = ref actor.Get<Location>().Room;
 
@@ -34,7 +40,12 @@ public class SouthCommand : ICommand
             return;
         }
 
-        MovementSystem.Move(systemContext, actor, southExit.TargetRoom, Directions.South);
-        DisplayRoomSystem.DisplayRoom(systemContext, actor, southExit.TargetRoom);
+        // intent to move
+        ref var moveIntent = ref systemContext.Intent.Move.Add();
+        moveIntent.Actor = actor;
+        moveIntent.FromRoom = room;
+        moveIntent.ToRoom = southExit.TargetRoom;
+        moveIntent.Direction = Directions.South;
+        moveIntent.AutoLook = true;
     }
 }

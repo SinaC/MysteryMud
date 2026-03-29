@@ -1,7 +1,7 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
-using MysteryMud.Domain;
 using MysteryMud.Domain.Components.Characters.Players;
+using MysteryMud.Domain.Extensions;
 using MysteryMud.Infrastructure.Network;
 
 namespace MysteryMud.Infrastructure.Services;

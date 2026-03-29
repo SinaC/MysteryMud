@@ -1,3 +1,5 @@
+Project structure
+
 Layer             Role
 GameData          Pure data: positions, enums, spell/effect definitions, constants. No behavior. Immutable.
 Core              Fundamental abstractions for your system: interfaces, command definitions, priorities. Agnostic to runtime ECS.
@@ -5,6 +7,56 @@ Domain            ECS components, systems, factories, domain logic (mutable runt
 Application       Parser and concrete command implementations.
 Infrastructure    Registries, persistence, networking, scheduler, eventing, dispatcher.
 ConsoleApp        Entry point, console I/O, game loop, game server.
+
+Tick pipeline
+
+1. Input → Commands → Intents       // Player commands → may generate manual LookIntent (Mode=Snapshot)
+2. LookSystem(Snapshot)             // Processes all LookIntents with Mode=Snapshot → reads current world state before any effects → produces messages
+3. AISystem                         // NPC behavior → generates intents
+4. AggroSystem                      // Auto-attack intents based on aggro
+5. FleeSystem                       // Convert flee → MoveIntents
+6. ChaseSystem                      // NPC chase movement
+7. MovementSystem                   // Resolves MoveIntents → emits auto-look PostUpdate (Mode=PostUpdate)
+8. InteractionSystem                // Handle get/drop/put/give/...
+9. StatSystem                       // Recalculate stats from DirtyFlags
+10. TimedEffects                    // Apply scheduled effects (damage, heal, buffs/debuffs)
+11. ThreatSystem.UpdateThreat       // Update aggro/threat
+12. NPCTargetSystem.AssignTargets   // Select highest threat targets
+13. GroupCombatSystem.Resolve       // Handle assist/protect/own target attack intents
+14. AbilitySystem                   // Resolve skill/spell usage → may generate Damage/Effect intents
+15. CombatOrchestrator              // Resolve AttackIntents → AttackEvents + reactions, procs, spell effects, damage, heal, etc.
+16. DeathSystem                     // Flag dead entities
+17. RespawnSystem                   // Auto-resurrect players
+18. LootSystem                      // Handle loot & auto-loot
+19. LookSystem(PostUpdate)          // Processes LookIntents with Mode=PostUpdate → reflects final world state after all updates
+20. CleanupSystem                   // Remove destroyed items / dead NPCs / disconnected players
+21. Output → MessageBus             // Send all messages to players
+
+TimedEffects (step 10) details
+    Scheduled events generates DotTriggeredEvent/HotTriggeredEvent at intervals and EffectExpiredEvent when duration ends
+    DotSystem: handles DotTriggeredEvent, generates DamageEvent and reschedules next tick (we don't know if the target will still be alive once damage are done, thus we don't check for that here and always reschedule tick)
+    HotSystem: handles HotTriggeredEvent, generates HealEvent and reschedules next tick
+    DurationSystem: handles EffectExpiredEvent, removes effect and sends wear off message
+
+CombatOrchestrator (step 14) details
+    HitPhase / IntentResolution
+        Determine hit, dodge, parry
+        Generate AttackResolved events
+        Produce messages like “You dodged!”
+    ProduceDamage
+        Converts AttackResolved(Hit) into DamageEvent
+        Sets SourceType = Hit (or Spell, DoT, etc.)
+        No reactions here
+    DamageSystem
+        Applies HP changes
+        Generates death events if HP ≤ 0
+        Sends messages like “You take 5 damage”
+        Does not trigger counterattack
+    ReactionPhase
+        Loops over AttackResolved events (or potentially damage events if needed)
+        Checks conditions: parry -> guaranteed counter, hit -> chance to counter
+        Generates new AttackIntents for counterattacks
+        These intents go into Next buffer, which is processed in the same tick
 
 Entity/Components
 

@@ -1,10 +1,9 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.Application.Parsing;
+using MysteryMud.Application.Queries;
 using MysteryMud.Core;
-using MysteryMud.Core.Command;
-using MysteryMud.Domain;
 using MysteryMud.Domain.Components.Characters;
-using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Definitions;
 
 namespace MysteryMud.Application.Commands;
@@ -29,20 +28,19 @@ public class RemoveCommand : ICommand
 
         ref var equipment = ref actor.Get<Equipment>();
 
-        // TODO: remove all ? remove x.something
         foreach (var kv in equipment.Slots)
         {
+            var slot = kv.Key;
             var item = kv.Value;
 
-            if (TargetingSystem.Matches(item, ctx.Primary.Name))
+            if (EntityFinder.Matches(item, ctx.Primary.Name))
             {
-                EquipmentSystem.Unequip(actor, kv.Key);
-
-                systemContext.Msg.To(actor).Send($"You remove {item.DisplayName}.");
-                return;
+                // intent to remove item
+                ref var removeItemIntent = ref systemContext.Intent.RemoveItem.Add();
+                removeItemIntent.Actor = actor;
+                removeItemIntent.Item = item;
+                removeItemIntent.Slot = slot;
             }
         }
-
-        systemContext.Msg.To(actor).Send("You are not wearing that.");
     }
 }

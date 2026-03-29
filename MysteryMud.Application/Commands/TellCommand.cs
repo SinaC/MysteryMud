@@ -1,10 +1,10 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.Application.Parsing;
+using MysteryMud.Application.Queries;
 using MysteryMud.Core;
-using MysteryMud.Core.Command;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Definitions;
 
 namespace MysteryMud.Application.Commands;
@@ -30,7 +30,7 @@ public class TellCommand : ICommand
         }
 
         var roomContents = actor.Get<Location>().Room.Get<RoomContents>().Characters;
-        foreach (var target in TargetingSystem.SelectTargets(actor, ctx.Primary, roomContents))
+        foreach (var target in EntityFinder.SelectTargets(actor, ctx.Primary, roomContents))
         {
             systemContext.Msg.To([actor, target]).Act("{0} tell{0:v} {1}: {2}").With(actor, target, message.ToString());
         }

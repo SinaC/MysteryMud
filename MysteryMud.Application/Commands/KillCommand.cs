@@ -1,12 +1,11 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.Application.Parsing;
+using MysteryMud.Application.Queries;
 using MysteryMud.Core;
-using MysteryMud.Core.Command;
-using MysteryMud.Domain;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Definitions;
 
 namespace MysteryMud.Application.Commands;
@@ -30,7 +29,7 @@ public class KillCommand : ICommand
         }
 
         var roomContents = actor.Get<Location>().Room.Get<RoomContents>().Characters;
-        var target = TargetingSystem.SelectSingleTarget(actor, ctx.Primary, roomContents);
+        var target = EntityFinder.SelectSingleTarget(actor, ctx.Primary, roomContents);
 
         if (target == default)
         {
@@ -46,7 +45,7 @@ public class KillCommand : ICommand
 
         // TODO: check if already in combat, if so, maybe switch targets? Or maybe not allow switching targets?
 
-        systemContext.Msg.To(actor).Send($"{actor.DisplayName} attacks {target.DisplayName}");
+        // flag both as in combat with each other, with the target striking back after a delay
         actor.Add(new CombatState { Target = target, RoundDelay = 0 });
         target.Add(new CombatState { Target = actor, RoundDelay = 1 }); // strikes back
     }

@@ -58,6 +58,17 @@
 		"Categories": ["information"]
 	},
 	{
+		"Name": "flee",
+		"Aliases": [],
+		"RequiredLevel": "Player",
+		"MinimumPosition": "Fighting",
+		"Priority": 0,
+		"AllowAbbreviation": true,
+		"HelpText": "Once you start a fight, you can't just walk away from it.  If the fight\nis not going well, you can attempt to [cmd], or another character can\nRESCUE you.  (You can also RECALL, but this is less likely to work,\nand costs more experience points, then fleeing).\n\nIf you lose your link during a fight, then your character will keep\nfighting, and will attempt to RECALL from time to time.  Your chances\nof making the recall are reduced, and you will lose much more experience.",
+		"Syntaxes": ["[cmd]"],
+		"Categories": ["combat", "movement"]
+	},
+	{
 		"Name": "get",
 		"Aliases": ["take"],
 		"RequiredLevel": "Player",

@@ -1,13 +1,13 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.Application.Parsing;
+using MysteryMud.Application.Queries;
 using MysteryMud.Core;
-using MysteryMud.Core.Command;
-using MysteryMud.Domain;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Systems;
+using MysteryMud.Domain.Extensions;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
@@ -33,7 +33,7 @@ public class MstatCommand : ICommand
 
         var people = actor.Get<Location>().Room.Get<RoomContents>().Characters;
 
-        var target = TargetingSystem.SelectSingleTarget(actor, ctx.Primary, people);
+        var target = EntityFinder.SelectSingleTarget(actor, ctx.Primary, people);
         if (target == default)
         {
             systemContext.Msg.To(actor).Send("No such target.");

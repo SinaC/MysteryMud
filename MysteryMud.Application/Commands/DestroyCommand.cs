@@ -1,11 +1,9 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.Application.Parsing;
+using MysteryMud.Application.Queries;
 using MysteryMud.Core;
-using MysteryMud.Core.Command;
-using MysteryMud.Domain;
 using MysteryMud.Domain.Components.Characters;
-using MysteryMud.Domain.Components.Items;
-using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Definitions;
 
 namespace MysteryMud.Application.Commands;
@@ -31,18 +29,12 @@ public class DestroyCommand : ICommand
         // search in inventory (equipped items are also in inventory)
         ref var inventory = ref actor.Get<Inventory>();
 
-        foreach (var item in TargetingSystem.SelectTargets(actor, ctx.Primary, inventory.Items))
+        foreach (var item in EntityFinder.SelectTargets(actor, ctx.Primary, inventory.Items))
         {
-            // Unequip if necessary
-            if (item.Has<Equipped>())
-            {
-                var equipped = item.Get<Equipped>();
-                EquipmentSystem.Unequip(actor, equipped.Slot);
-            }
-
-            DestroySystem.DestroyItem(item);
-
-            systemContext.Msg.To(actor).Send($"You destroy {item.DisplayName}.");
+            // intent to destroy item
+            ref var destroyItemIntent = ref systemContext.Intent.DestroyItem.Add();
+            destroyItemIntent.Entity = actor;
+            destroyItemIntent.Item = item;
         }
     }
 }

@@ -1,13 +1,21 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
+using MysteryMud.Application.Services;
 using MysteryMud.Core;
 using MysteryMud.Core.Eventing;
+using MysteryMud.Core.Intent;
 using MysteryMud.Core.Logging;
 using MysteryMud.Core.Scheduler;
 using MysteryMud.Core.Services;
-using MysteryMud.Domain;
+using MysteryMud.Domain.Combat;
+using MysteryMud.Domain.Combat.Resolvers;
+using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Systems;
+using MysteryMud.GameData.Enums;
+using MysteryMud.GameData.Events;
+using MysteryMud.Infrastructure.Eventing;
+using MysteryMud.Infrastructure.Scheduler;
 using MysteryMud.Infrastructure.Services;
 
 namespace MysteryMud.ConsoleApp.Hosting;
@@ -20,9 +28,50 @@ internal class GameLoop
     private readonly IMessageBus _messageBus;
     private readonly IScheduler _scheduler;
     private readonly IGameMessageService _gameMessageService;
+    private readonly IIntentContainer _intentContainer;
     private readonly World _world;
 
-    public GameLoop(ILogger logger, IOutputService putputService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, IGameMessageService gameMessageService, World world)
+    private readonly EventBuffer<FleeBlockedEvent> _fleeBlockedEventBuffer = new();
+    private readonly EventBuffer<MovedEvent> _movedEventBuffer = new();
+    private readonly EventBuffer<ItemGotEvent> _itemGotEventBuffer = new();
+    private readonly EventBuffer<ItemDroppedEvent> _itemDroppedEventBuffer = new();
+    private readonly EventBuffer<ItemGivenEvent> _itemGivenEventBuffer = new();
+    private readonly EventBuffer<ItemPutEvent> _itemPutEventBuffer = new();
+    private readonly EventBuffer<ItemWornEvent> _itemWornEventBuffer = new();
+    private readonly EventBuffer<ItemRemovedEvent> _itemRemovedEventBuffer = new();
+    private readonly EventBuffer<ItemDestroyedEvent> _itemDestroyedEventBuffer = new();
+    private readonly EventBuffer<ItemSacrifiedEvent> _itemSacrifierEventBuffer = new();
+    private readonly EventBuffer<DamageEvent> _damageEventBuffer = new();
+    private readonly EventBuffer<HealEvent> _healEventBuffer = new();
+    private readonly EventBuffer<DeathEvent> _deathEventBuffer = new();
+    private readonly EventBuffer<ItemLootedEvent> _itemLootedEventBuffer = new();
+    private readonly EventBuffer<LookedEvent> _lookedEventBuffer = new();
+    private readonly EventBuffer<DotTriggeredEvent> _dotTriggeredEventBuffer = new();
+    private readonly EventBuffer<HotTriggeredEvent> _hotTriggeredEventBuffer = new();
+    private readonly EventBuffer<EffectExpiredEvent> _effectExpiredEventBuffer = new();
+
+    private readonly ILookService _lookService;
+
+    private readonly AggroResolver _aggroResolver;
+    private readonly DamageResolver _damageResolver;
+    private readonly CombatOrchestrator _combatOrchestrator;
+
+    private readonly FleeSystem _fleeSystem;
+    private readonly MovementSystem _movementSystem;
+    private readonly ItemInteractionSystem _itemInteractionSystem;
+    private readonly StatsSystem _statsSystem;
+    private readonly AutoAttackSystem _autoAttackSystem;
+    private readonly DotSystem _dotSystem;
+    private readonly HotSystem _hotSystem;
+    private readonly DurationSystem _durationSystem;
+    private readonly DamageSystem _damageSystem;
+    private readonly DeathSystem _deathSystem;
+    private readonly RespawnSystem _respawnSystem;
+    private readonly LootSystem _lootSystem;
+    private readonly LookSystem _lookSystem;
+    private readonly CleanupSystem _cleanupSystem;
+
+    public GameLoop(ILogger logger, IOutputService putputService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, IGameMessageService gameMessageService, IIntentContainer intentContainer, World world)
     {
         _logger = logger;
         _outputService = putputService;
@@ -30,23 +79,133 @@ internal class GameLoop
         _messageBus = messageBus;
         _scheduler = scheduler;
         _gameMessageService = gameMessageService;
+        _intentContainer = intentContainer;
         _world = world;
+
+        _lookService = new LookService(_gameMessageService);
+
+        _aggroResolver = new AggroResolver();
+        _damageResolver = new DamageResolver(_aggroResolver, _gameMessageService, _deathEventBuffer);
+        _combatOrchestrator = new CombatOrchestrator(_gameMessageService, _intentContainer, _damageEventBuffer, _damageResolver);
+
+        _fleeSystem = new FleeSystem(_gameMessageService, _intentContainer, _fleeBlockedEventBuffer);
+        _movementSystem = new MovementSystem(_gameMessageService, _intentContainer, _movedEventBuffer);
+        _itemInteractionSystem = new ItemInteractionSystem(_gameMessageService, _intentContainer, _itemGotEventBuffer, _itemDroppedEventBuffer, _itemGivenEventBuffer, _itemPutEventBuffer, _itemWornEventBuffer, _itemRemovedEventBuffer, _itemDestroyedEventBuffer, _itemSacrifierEventBuffer);
+        _statsSystem = new StatsSystem();
+        _autoAttackSystem = new AutoAttackSystem(_intentContainer);
+        _dotSystem = new DotSystem(_logger, _scheduler, _dotTriggeredEventBuffer, _damageEventBuffer);
+        _hotSystem = new HotSystem(_logger, _scheduler, _hotTriggeredEventBuffer, _healEventBuffer);
+        _durationSystem = new DurationSystem(_logger, _gameMessageService, _effectExpiredEventBuffer);
+        _damageSystem = new DamageSystem(_damageResolver, _damageEventBuffer);
+        _deathSystem = new DeathSystem(_gameMessageService, _intentContainer, _deathEventBuffer);
+        _respawnSystem = new RespawnSystem(_gameMessageService);
+        _lootSystem = new LootSystem(_gameMessageService, _intentContainer, _itemLootedEventBuffer);
+        _lookSystem = new LookSystem(_lookService, _intentContainer, _lookedEventBuffer);
+        _cleanupSystem = new CleanupSystem(_logger);
     }
 
     public void Run()
     {
         _logger.LogInformation(LogEvents.System, "Starting game loop");
 
+        var currentTick = 0;
+
         while (true)
         {
             CheckConsoleInput();
 
-            Tick();
+            Tick(currentTick);
 
             Thread.Sleep(100); // tick rate
+
+            currentTick++;
         }
     }
 
+    private void Tick(int currentTick)
+    {
+        var state = new GameState
+        {
+            World = _world,
+            CurrentTick = currentTick
+        };
+
+        var systemContext = new SystemContext
+        {
+            Log = _logger,
+            Msg = _gameMessageService,
+            Scheduler = _scheduler,
+            Intent = _intentContainer,
+        };
+
+        // Player commands → may generate manual LookIntent (Mode=Snapshot)
+        _commandBus.Process(systemContext, state);
+
+        // TODO: stop invalid combat: dead entities, entities in different rooms, ...
+        // Processes all LookIntents with Mode=Snapshot → reads current world state before any effects → produces messages
+        _lookSystem.Tick(state, LookMode.Snapshot);
+        // TODO: AISystem                         // NPC behavior → generates intents
+        // Convert flee → MoveIntents
+        _fleeSystem.Tick(state);
+        // TODO: ChaseSystem                      // NPC chase movement
+        // Resolves MoveIntents → emits auto-look PostUpdate (Mode=PostUpdate)
+        _movementSystem.Tick(state);
+        // Handle get/drop/put/give/...
+        _itemInteractionSystem.Tick(state);
+        // Recalculate stats from DirtyFlags
+        _statsSystem.Tick(state);
+        // Apply scheduled effects (damage, heal, buffs/debuffs)
+        _scheduler.Process(state, _dotTriggeredEventBuffer, _hotTriggeredEventBuffer, _effectExpiredEventBuffer);
+        _dotSystem.Tick(state);
+        _hotSystem.Tick(state);
+        _durationSystem.Tick(state);
+        // TODO: ThreatSystem.UpdateThreat       // Update aggro/threat
+        // TODO: NPCTargetSystem.AssignTargets   // Select highest threat targets
+        // TODO: GroupCombatSystem.Resolve       // Handle assist/protect/own target attack intents
+        // TODO: AbilitySystem                   // Resolve skill/spell usage → may generate Damage/Effect intents
+        // Resolve DamageEvents from DOT and abilities
+        _damageSystem.Tick(state);
+        // Generate AttackIntents for entities in combat
+        _autoAttackSystem.Tick(state);
+        // Resolve AttackIntents → AttackEvents + reactions, procs, spell effects, damage, heal, etc.
+        _combatOrchestrator.Tick(state);
+        // Flag dead entities
+        _deathSystem.Tick(state);
+        // Auto-resurrect players
+        _respawnSystem.Tick(state);
+        // Handle loot & auto-loot
+        _lootSystem.Tick(state);
+        // Processes LookIntents with Mode=PostUpdate → reflects final world state after all updates
+        _lookSystem.Tick(state, LookMode.PostUpdate);
+
+        // Remove destroyed items / dead NPCs / disconnected players
+        _cleanupSystem.Tick(state);
+
+        // Process messages to be sent to players
+        _messageBus.Process(systemContext, state);
+
+        // Send messages to players
+        _outputService.FlushAll();
+
+        // Clear intents of event buffers
+        _intentContainer.ClearAll();
+        _fleeBlockedEventBuffer.Clear();
+        _itemGotEventBuffer.Clear();
+        _itemDroppedEventBuffer.Clear();
+        _itemGivenEventBuffer.Clear();
+        _itemPutEventBuffer.Clear();
+        _itemDestroyedEventBuffer.Clear();
+        _itemSacrifierEventBuffer.Clear();
+        _damageEventBuffer.Clear();
+        _deathEventBuffer.Clear();
+        _itemLootedEventBuffer.Clear();
+        _lookedEventBuffer.Clear();
+        _dotTriggeredEventBuffer.Clear();
+        _hotTriggeredEventBuffer.Clear();
+        _effectExpiredEventBuffer.Clear();
+    }
+
+    /*
     private void Tick()
     {
         TimeSystem.NextTick();
@@ -61,7 +220,8 @@ internal class GameLoop
         {
             Log = _logger,
             Msg = _gameMessageService,
-            Scheduler = _scheduler
+            Scheduler = _scheduler,
+            Intent = _intentContainer,
         };
 
         // process player commands
@@ -94,6 +254,7 @@ internal class GameLoop
         // send output to players
         _outputService.FlushAll();
     }
+    */
 
     private void CheckConsoleInput()
     {

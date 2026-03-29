@@ -1,14 +1,13 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.Application.Parsing;
+using MysteryMud.Application.Queries;
 using MysteryMud.Core;
-using MysteryMud.Core.Command;
-using MysteryMud.Domain;
 using MysteryMud.Domain.Components;
-using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Definitions;
+using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.Commands;
 
@@ -35,15 +34,19 @@ public class GetCommand : ICommand
             // default: room
             var room = actor.Get<Location>().Room;
             var roomContents = room.Get<RoomContents>();
-            foreach (var item in TargetingSystem.SelectTargets(actor, ctx.Primary, roomContents.Items))
+            foreach (var item in EntityFinder.SelectTargets(actor, ctx.Primary, roomContents.Items))
             {
-                ItemMovementSystem.GetItemFromRoom(actor, room, item);
-                systemContext.Msg.To(actor).Send($"You get {item.DisplayName}.");
+                // intent to get item from room
+                ref var getItemFromRoomIntent = ref systemContext.Intent.GetItem.Add();
+                getItemFromRoomIntent.Entity = actor;
+                getItemFromRoomIntent.Item = item;
+                getItemFromRoomIntent.SourceKind = GetSourceKind.Room;
+                getItemFromRoomIntent.Source = room;
             }
         }
         else
         {
-            var container = FindContainer(actor, ctx.Secondary);
+            var container = EntityFinder.FindContainer(actor, ctx.Secondary);
             if (container == default)
             {
                 systemContext.Msg.To(actor).Send("You don't see that here.");
@@ -51,30 +54,15 @@ public class GetCommand : ICommand
             }
 
             var containerContents = container.Get<ContainerContents>();
-            foreach (var item in TargetingSystem.SelectTargets(actor, ctx.Primary, containerContents.Items))
+            foreach (var item in EntityFinder.SelectTargets(actor, ctx.Primary, containerContents.Items))
             {
-                ItemMovementSystem.GetItemFromContainer(actor, container, item);
-                systemContext.Msg.To(actor).Send($"You get {item.DisplayName} from {container.DisplayName}.");
+                // intent to get item from container
+                ref var getItemFromContainerIntent = ref systemContext.Intent.GetItem.Add();
+                getItemFromContainerIntent.Entity = actor;
+                getItemFromContainerIntent.Item = item;
+                getItemFromContainerIntent.SourceKind = GetSourceKind.Container;
+                getItemFromContainerIntent.Source = container;
             }
         }
-    }
-
-    private Entity FindContainer(Entity actor, TargetSpec containerArg)
-    {
-        // Search in room first
-        var room = actor.Get<Location>().Room;
-        var roomContents = room.Get<RoomContents>();
-
-        var container = TargetingSystem.SelectSingleTarget(actor, containerArg, roomContents.Items);
-        if (container != default)
-            return container;
-
-        // Then inventory
-        var inventory = actor.Get<Inventory>();
-        container = TargetingSystem.SelectSingleTarget(actor, containerArg, inventory.Items);
-        if (container != default)
-            return container;
-
-        return default;
     }
 }

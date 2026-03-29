@@ -1,11 +1,10 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.Application.Parsing;
+using MysteryMud.Application.Queries;
 using MysteryMud.Core;
-using MysteryMud.Core.Command;
-using MysteryMud.Domain;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Definitions;
 
 namespace MysteryMud.Application.Commands;
@@ -32,11 +31,12 @@ public class SacrificeCommand : ICommand
         ref var room = ref actor.Get<Location>().Room;
         ref var roomContents = ref room.Get<RoomContents>();
 
-        foreach (var item in TargetingSystem.SelectTargets(actor, ctx.Primary, roomContents.Items))
+        foreach (var item in EntityFinder.SelectTargets(actor, ctx.Primary, roomContents.Items))
         {
-            DestroySystem.DestroyItem(item);
-
-            systemContext.Msg.To(actor).Send($"You sacrifice the {item.DisplayName}.");
+            // intent to sacrifice item
+            ref var intent = ref systemContext.Intent.DestroyItem.Add();
+            intent.Entity = actor;
+            intent.Item = item;
         }
     }
 }

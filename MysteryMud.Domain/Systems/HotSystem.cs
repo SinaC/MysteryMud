@@ -2,16 +2,39 @@
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
+using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Logging;
 using MysteryMud.Core.Scheduler;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
+using MysteryMud.Domain.Extensions;
+using MysteryMud.GameData.Enums;
+using MysteryMud.GameData.Events;
 
 namespace MysteryMud.Domain.Systems;
 
-public static class HotSystem
+public class HotSystem
 {
-    public static void HandleTick(SystemContext ctx, GameState state, Entity effect)
+    private readonly ILogger _logger;
+    private readonly IScheduler _scheduler;
+    private readonly IEventBuffer<HotTriggeredEvent> _hots;
+    private readonly IEventBuffer<HealEvent> _heals;
+
+    public HotSystem(ILogger logger, IScheduler scheduler, IEventBuffer<HotTriggeredEvent> hots, IEventBuffer<HealEvent> heals)
+    {
+        _logger = logger;
+        _scheduler = scheduler;
+        _hots = hots;
+        _heals = heals;
+    }
+
+    public void Tick(GameState state)
+    {
+        foreach (var hot in _hots.GetAll())
+            ProcessOneEffect(state, hot.Effect);
+    }
+
+    public void ProcessOneEffect(GameState state, Entity effect)
     {
         if (!effect.IsAlive())
             return;
@@ -19,7 +42,7 @@ public static class HotSystem
         ref var effectInstance = ref effect.Get<EffectInstance>();
         if (!effectInstance.Target.IsAlive() || effectInstance.Target.Has<Dead>())
         {
-            ctx.Log.LogInformation(LogEvents.Hot,"Ticking HoT for Effect {effectName} on DEAD Target {targetName}", effect.DebugName, effectInstance.Target.DebugName);
+            _logger.LogInformation(LogEvents.Hot,"Ticking HoT for Effect {effectName} on DEAD Target {targetName}", effect.DebugName, effectInstance.Target.DebugName);
             return;
         }
 
@@ -29,20 +52,25 @@ public static class HotSystem
         // too late
         if (hot.NextTick >= duration.ExpirationTick)
         {
-            ctx.Log.LogInformation(LogEvents.Hot,"Ticking HoT for Effect {effectName} on Target {targetName} and tick rate {tickRate} on EXPIRED effect", effect.DebugName, effectInstance.Target.DebugName, hot.TickRate);
+            _logger.LogInformation(LogEvents.Hot,"Ticking HoT for Effect {effectName} on Target {targetName} and tick rate {tickRate} on EXPIRED effect", effect.DebugName, effectInstance.Target.DebugName, hot.TickRate);
             return;
         }
 
-        // perform heal
         var heal = hot.Heal * effectInstance.StackCount;
-        ctx.Log.LogInformation(LogEvents.Hot,"Applying HoT heal for Effect {effectName} on Target {targetName} with heal {heal} and tick rate {tickRate}", effect.DebugName, effectInstance.Target.DebugName, heal, hot.TickRate);
-        HealSystem.ApplyHeal(ctx, effectInstance.Target, heal, effectInstance.Source);
+
+        // queue heal event
+        _logger.LogInformation(LogEvents.Hot, "Applying HoT heal for Effect {effectName} on Target {targetName} with heal {heal} and tick rate {tickRate}", effect.DebugName, effectInstance.Target.DebugName, heal, hot.TickRate);
+        ref var healEvt = ref _heals.Add();
+        healEvt.Source = effectInstance.Source;
+        healEvt.Target = effectInstance.Target;
+        healEvt.Amount = heal;
+        healEvt.SourceType = HealSourceTypes.HoT;
 
         // calcule next tick
-        hot.NextTick = TimeSystem.CurrentTick + hot.TickRate;
+        hot.NextTick = state.CurrentTick + hot.TickRate;
 
         // queue next tick even if after expiration tick to handle effect refresh
-        ctx.Log.LogInformation(LogEvents.Hot,"Scheduling next HoT tick for Effect {effectName} on Target {targetName} at tick {nextTick}", effect.DebugName, effectInstance.Target.DebugName, hot.NextTick);
-        ctx.Scheduler.Schedule(effect, ScheduledEventType.HotTick, hot.NextTick);
+        _logger.LogInformation(LogEvents.Hot,"Scheduling next HoT tick for Effect {effectName} on Target {targetName} at tick {nextTick}", effect.DebugName, effectInstance.Target.DebugName, hot.NextTick);
+        _scheduler.Schedule(effect, ScheduledEventType.HotTick, hot.NextTick);
     }
 }

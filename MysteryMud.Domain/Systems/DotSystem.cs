@@ -2,16 +2,39 @@
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
+using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Logging;
 using MysteryMud.Core.Scheduler;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
+using MysteryMud.Domain.Extensions;
+using MysteryMud.GameData.Enums;
+using MysteryMud.GameData.Events;
 
 namespace MysteryMud.Domain.Systems;
 
-public static class DotSystem
+public class DotSystem
 {
-    public static void HandleTick(SystemContext ctx, GameState state, Entity effect)
+    private readonly ILogger _logger;
+    private readonly IScheduler _scheduler;
+    private readonly IEventBuffer<DotTriggeredEvent> _dots;
+    private readonly IEventBuffer<DamageEvent> _damages;
+
+    public DotSystem(ILogger logger, IScheduler scheduler, IEventBuffer<DotTriggeredEvent> dots, IEventBuffer<DamageEvent> damages)
+    {
+        _logger = logger;
+        _scheduler = scheduler;
+        _dots = dots;
+        _damages = damages;
+    }
+
+    public void Tick(GameState state)
+    {
+        foreach (var dot in _dots.GetAll())
+            ProcessOneEffect(state, dot.Effect);
+    }
+
+    public void ProcessOneEffect(GameState state, Entity effect)
     {
         if (!effect.IsAlive())
             return;
@@ -19,7 +42,7 @@ public static class DotSystem
         ref var effectInstance = ref effect.Get<EffectInstance>();
         if (!effectInstance.Target.IsAlive() || effectInstance.Target.Has<Dead>())
         {
-            ctx.Log.LogInformation(LogEvents.Dot,"Ticking DoT for Effect {effectName} on DEAD Target {targetName}", effect.DebugName, effectInstance.Target.DebugName);
+            _logger.LogInformation(LogEvents.Dot,"Ticking DoT for Effect {effectName} on DEAD Target {targetName}", effect.DebugName, effectInstance.Target.DebugName);
             return;
         }
 
@@ -29,27 +52,26 @@ public static class DotSystem
         // too late
         if (dot.NextTick >= duration.ExpirationTick)
         {
-            ctx.Log.LogInformation(LogEvents.Dot,"Ticking DoT for Effect {effectName} on Target {targetName} and tick rate {tickRate} on EXPIRED effect", effect.DebugName, effectInstance.Target.DebugName, dot.TickRate);
+            _logger.LogInformation(LogEvents.Dot,"Ticking DoT for Effect {effectName} on Target {targetName} and tick rate {tickRate} on EXPIRED effect", effect.DebugName, effectInstance.Target.DebugName, dot.TickRate);
             return;
         }
 
-        // perform damage
         var damage = dot.Damage * effectInstance.StackCount;
-        ctx.Log.LogInformation(LogEvents.Dot,"Applying DoT damage for Effect {effectName} on Target {targetName} with damage {damage} type {damageType} and tick rate {tickRate}", effect.DebugName, effectInstance.Target.DebugName, damage, dot.DamageType, dot.TickRate);
-        DamageSystem.ApplyDamage(ctx, effectInstance.Target, damage, dot.DamageType, effectInstance.Source);
 
-        // killed ?
-        if (effectInstance.Target.Has<Dead>())
-        {
-            ctx.Log.LogInformation(LogEvents.Dot,"Target {targetName} died from DoT damage of Effect {effectName}", effectInstance.Target.DebugName, effect.DebugName);
-            return;
-        }
+        // queue damage event
+        _logger.LogInformation(LogEvents.Dot,"Applying DoT damage for Effect {effectName} on Target {targetName} with damage {damage} type {damageType} and tick rate {tickRate}", effect.DebugName, effectInstance.Target.DebugName, damage, dot.DamageType, dot.TickRate);
+        ref var damageEvt = ref _damages.Add();
+        damageEvt.Source = effectInstance.Source;
+        damageEvt.Target = effectInstance.Target;
+        damageEvt.Amount = damage;
+        damageEvt.DamageType = dot.DamageType;
+        damageEvt.SourceType = DamageSourceTypes.DoT;
 
         // calcule next tick
-        dot.NextTick = TimeSystem.CurrentTick + dot.TickRate;
+        dot.NextTick = state.CurrentTick + dot.TickRate;
 
         // queue next tick even if after expiration tick to handle effect refresh
-        ctx.Log.LogInformation(LogEvents.Dot,"Scheduling next DoT tick for Effect {effectName} on Target {targetName} at tick {nextTick}", effect.DebugName, effectInstance.Target.DebugName, dot.NextTick);
-        ctx.Scheduler.Schedule(effect, ScheduledEventType.DotTick, dot.NextTick);
+        _logger.LogInformation(LogEvents.Dot,"Scheduling next DoT tick for Effect {effectName} on Target {targetName} at tick {nextTick}", effect.DebugName, effectInstance.Target.DebugName, dot.NextTick);
+        _scheduler.Schedule(effect, ScheduledEventType.DotTick, dot.NextTick);
     }
 }

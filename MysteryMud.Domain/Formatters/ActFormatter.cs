@@ -3,6 +3,7 @@ using Arch.Core.Extensions;
 using MysteryMud.Core.Extensions;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
+using MysteryMud.Domain.Extensions;
 using MysteryMud.GameData.Enums;
 using System.Diagnostics;
 using System.Text;
@@ -97,6 +98,9 @@ public static class ActFormatter
 
     private static void FormatActOneArgument(Entity target, StringBuilder sb, int argumentIndex, ReadOnlySpan<char> argumentFormat, object? argument)
     {
+        if (argument is Entity entity && !entity.IsAlive())
+            return;
+
         if (argument is Entity character && character.Has<CharacterTag>())
         {
             var letter = argumentFormat.Length > 0 ? argumentFormat[0] : (argumentIndex == 0 ? 'N' : 'n'); // default to 'N' or 'n' if no format specified
