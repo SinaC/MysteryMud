@@ -8,5 +8,5 @@ public struct HealedEvent
     public Entity Target;
     public Entity Source;
     public int Amount;
-    public HealSourceTypes SourceType;
+    public HealSourceKind SourceKind;
 }

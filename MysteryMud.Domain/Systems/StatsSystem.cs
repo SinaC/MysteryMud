@@ -24,7 +24,7 @@ public class StatsSystem
             effectiveStats.Experience = baseStats.Experience;
 
             // TODO: optimize by only recalculating stats that are dirty, instead of all stats for the character. this would require tracking which stats are dirty, either by having a separate DirtyStats component for each stat, or by having a bitfield in the DirtyStats component that tracks which stats are dirty
-            foreach (var stat in Enum.GetValues<StatTypes>())
+            foreach (var stat in Enum.GetValues<StatKind>())
             {
                 // apply base stat
                 var baseValue = baseStats.Values[stat];
@@ -50,18 +50,18 @@ public class StatsSystem
                             if (modifier.Stat != stat) // TODO: optimize by only iterating modifiers for this stat, instead of all modifiers for all stats -> index modifiers by stat in the StatModifiers component
                                 continue;
                             var modifierValue = modifier.Value * effectInstance.StackCount;
-                            switch (modifier.Type)
+                            switch (modifier.Kind)
                             {
-                                case ModifierTypes.Flat:
+                                case ModifierKind.Flat:
                                     flat += modifierValue;
                                     break;
-                                case ModifierTypes.AddPercent:
+                                case ModifierKind.AddPercent:
                                     percent += modifierValue;
                                     break;
-                                case ModifierTypes.Multiply:
+                                case ModifierKind.Multiply:
                                     multiply *= modifierValue;
                                     break;
-                                case ModifierTypes.Override: // what if multiple overrides? for now, just take the last one, but maybe we should prioritize by source (e.g. gear overrides > buff overrides > debuff overrides) or something like that
+                                case ModifierKind.Override: // what if multiple overrides? for now, just take the last one, but maybe we should prioritize by source (e.g. gear overrides > buff overrides > debuff overrides) or something like that
                                     overriding = modifierValue;
                                     break;
                             }

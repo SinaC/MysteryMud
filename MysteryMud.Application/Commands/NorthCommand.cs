@@ -33,7 +33,7 @@ public class NorthCommand : ICommand
 
         // Get North exit
         ref var roomGraph = ref room.Get<RoomGraph>();
-        var northExit = roomGraph.Exits.SingleOrDefault(e => e.Direction == Directions.North);
+        var northExit = roomGraph.Exits.SingleOrDefault(e => e.Direction == DirectionKind.North);
         if (northExit.Equals(default(Exit)) || northExit.TargetRoom == Entity.Null)
         {
             systemContext.Msg.To(actor).Send("Alas, you cannot go that way.");
@@ -45,7 +45,7 @@ public class NorthCommand : ICommand
         moveIntent.Actor = actor;
         moveIntent.FromRoom = room;
         moveIntent.ToRoom = northExit.TargetRoom;
-        moveIntent.Direction = Directions.North;
+        moveIntent.Direction = DirectionKind.North;
         moveIntent.AutoLook = true;
     }
 }

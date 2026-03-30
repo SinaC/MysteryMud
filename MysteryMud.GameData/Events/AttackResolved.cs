@@ -7,6 +7,6 @@ public struct AttackResolved
 {
     public Entity Source;
     public Entity Target;
-    public AttackResults Result;
-    public DamageSourceTypes SourceType; // Hit, Spell, DoT, etc
+    public AttackResultKind Result;
+    public DamageSourceKind SourceKind; // Hit, Spell, DoT, etc
 }

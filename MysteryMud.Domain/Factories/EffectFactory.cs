@@ -113,12 +113,12 @@ public static class EffectFactory
                 var modifier = new StatModifier
                 {
                     Stat = modifierDefinition.Stat,
-                    Type = modifierDefinition.Type,
+                    Kind = modifierDefinition.Kind,
                     Value = modifierDefinition.Value,
                 };
                 modifiers.Add(modifier);
 
-                ctx.Log.LogInformation(LogEvents.Factory, " - add stat modifier {stat} {value} ({type})", modifierDefinition.Stat, modifierDefinition.Value, modifierDefinition.Type);
+                ctx.Log.LogInformation(LogEvents.Factory, " - add stat modifier {stat} {value} ({type})", modifierDefinition.Stat, modifierDefinition.Value, modifierDefinition.Kind);
             }
             effect.Add(new StatModifiers
             {
@@ -142,13 +142,13 @@ public static class EffectFactory
             effect.Add(new DamageOverTime
             {
                 Damage = damage,
-                DamageType = effectTemplate.Dot.Value.DamageType,
+                DamageType = effectTemplate.Dot.Value.DamageKind,
                 TickRate = effectTemplate.Dot.Value.TickRate,
                 NextTick = nextTick
             });
 
             // queue first tick event
-            ctx.Log.LogInformation(LogEvents.Factory, " - add DoT {damage} damage of type {damageType} with tick rate {tickRate} and next tick {nextTick}", damage, effectTemplate.Dot.Value.DamageType, effectTemplate.Dot.Value.TickRate, nextTick);
+            ctx.Log.LogInformation(LogEvents.Factory, " - add DoT {damage} damage of type {damageType} with tick rate {tickRate} and next tick {nextTick}", damage, effectTemplate.Dot.Value.DamageKind, effectTemplate.Dot.Value.TickRate, nextTick);
             ctx.Scheduler.Schedule(effect, ScheduledEventType.DotTick, nextTick);
         }
 
@@ -190,10 +190,10 @@ public static class EffectFactory
 
         switch (effectTemplate.Stacking)
         {
-            case StackingRules.None:
+            case StackingRule.None:
                 // if the stacking rule is None, do not apply the new effect and do not refresh the duration
                 return true; // handled -> no new effect, existing modified
-            case StackingRules.Refresh:
+            case StackingRule.Refresh:
                 if (hasDuration)
                 {
                     // update Duration
@@ -207,7 +207,7 @@ public static class EffectFactory
                     ctx.Scheduler.Schedule(effect, ScheduledEventType.EffectExpired, expirationTick);
                 }
                 return true; // handled -> no new effect, existing modified
-            case StackingRules.Stack:
+            case StackingRule.Stack:
                 if (effectInstance.StackCount < effectTemplate.MaxStacks)
                     effectInstance.StackCount++;
                 if (hasDuration)
@@ -223,7 +223,7 @@ public static class EffectFactory
                     ctx.Scheduler.Schedule(effect, ScheduledEventType.EffectExpired, expirationTick);
                 }
                 return true; // handled -> no new effect, existing modified
-            case StackingRules.Replace:
+            case StackingRule.Replace:
                 ctx.Log.LogInformation(LogEvents.Factory, "Replacing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration}", effectTemplate.Name, source.DebugName, effectInstance.Target.DebugName, duration);
                 RemoveEffect(state, effect); // destroy current effect (no wear off message because it's a replacement)
                 return false; // no handled -> new effect will be added

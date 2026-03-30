@@ -4,5 +4,5 @@ namespace MysteryMud.Domain.Components.Items;
 
 public struct Equipable
 {
-    public EquipmentSlots Slot; // TODO: replace with WearLocation
+    public EquipmentSlotKind Slot; // TODO: replace with WearLocation
 }

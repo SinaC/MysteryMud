@@ -1,6 +1,6 @@
 ﻿namespace MysteryMud.GameData.Enums;
 
-public enum DamageSourceTypes
+public enum DamageSourceKind
 {
     Hit,
     Spell,

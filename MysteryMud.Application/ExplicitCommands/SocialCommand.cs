@@ -26,8 +26,8 @@ namespace MysteryMud.Application.ExplicitCommands
             {
                 Name = socialDefinition.Name,
                 Aliases = [],
-                RequiredLevel = CommandLevels.Player,
-                MinimumPosition = Positions.Resting,
+                RequiredLevel = CommandLevelKind.Player,
+                MinimumPosition = PositionKind.Resting,
                 Priority = 0, // low priority
                 AllowAbbreviation = true,
                 HelpText = string.Empty,

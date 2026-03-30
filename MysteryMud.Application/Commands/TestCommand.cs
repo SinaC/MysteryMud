@@ -43,21 +43,21 @@ public class TestCommand : ICommand
             {
                 Name = "Poison2",
                 Tag = EffectTagId.Poison,
-                Stacking = StackingRules.Stack,
+                Stacking = StackingRule.Stack,
                 MaxStacks = 3,
                 StatModifiers =
                 [
                     new StatModifierDefinition
                     {
-                        Stat = StatTypes.Strength,
+                        Stat = StatKind.Strength,
                         Value = -2,
-                        Type = ModifierTypes.Flat
+                        Kind = ModifierKind.Flat
                     },
                     new StatModifierDefinition
                     {
-                        Stat = StatTypes.HitRoll,
+                        Stat = StatKind.HitRoll,
                         Value = -3,
-                        Type = ModifierTypes.Flat
+                        Kind = ModifierKind.Flat
                     },
                 ],
                 Flags = AffectFlags.Poison,
@@ -66,7 +66,7 @@ public class TestCommand : ICommand
                 {
                     DamageFunc = (world, source, target) => 45,
                     TickRate = 2,
-                    DamageType = DamageTypes.Poison
+                    DamageKind = DamageKind.Poison
                 },
                 Hot = null // not hot
             };
@@ -79,21 +79,21 @@ public class TestCommand : ICommand
             {
                 Name = "Bless2",
                 Tag = EffectTagId.Bless,
-                Stacking = StackingRules.Replace,
+                Stacking = StackingRule.Replace,
                 MaxStacks = 1,
                 StatModifiers =
                 [
                     new StatModifierDefinition
                     {
-                        Stat = StatTypes.Intelligence,
+                        Stat = StatKind.Intelligence,
                         Value = 2,
-                        Type = ModifierTypes.Flat
+                        Kind = ModifierKind.Flat
                     },
                     new StatModifierDefinition
                     {
-                        Stat = StatTypes.HitRoll,
+                        Stat = StatKind.HitRoll,
                         Value = 10,
-                        Type = ModifierTypes.AddPercent
+                        Kind = ModifierKind.AddPercent
                     },
                 ],
                 Flags = AffectFlags.Bless,

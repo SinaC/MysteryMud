@@ -18,8 +18,8 @@ public class HelpCommand : ICommand
     {
         Name = "help",
         Aliases = ["?"],
-        RequiredLevel = CommandLevels.Player,
-        MinimumPosition = Positions.Dead,
+        RequiredLevel = CommandLevelKind.Player,
+        MinimumPosition = PositionKind.Dead,
         Priority = 0,
         AllowAbbreviation = true,
         HelpText = "[cmd] shows you commands in a category, all categories or all commands starting with a prefix.",
@@ -36,7 +36,7 @@ public class HelpCommand : ICommand
     {
         if (ctx.TargetCount == 0)
         {
-            var commands = _commandRegistry.GetCommandDefinitions(CommandLevels.Player); // TODO: CommandLevel should be determined by actor's actual level, not just Player
+            var commands = _commandRegistry.GetCommandDefinitions(CommandLevelKind.Player); // TODO: CommandLevel should be determined by actor's actual level, not just Player
             systemContext.Msg.To(actor).Send("Available command categories:%W");
             foreach (var chunk in commands.Where(x => x.Categories.Length > 0).SelectMany(cmd => cmd.Categories).Distinct().OrderBy(x => x).Chunk(4))
             {
@@ -52,7 +52,7 @@ public class HelpCommand : ICommand
         else
         {
             var arg = ctx.Primary.Name.ToString();
-            var commandsByCategory = _commandRegistry.GetCommandDefinitions(CommandLevels.Player)
+            var commandsByCategory = _commandRegistry.GetCommandDefinitions(CommandLevelKind.Player)
                 .Where(cmd => cmd.Name.StartsWith(arg, StringComparison.OrdinalIgnoreCase) || cmd.Categories.Contains(arg, StringComparer.OrdinalIgnoreCase))
                 .GroupBy(cmd => cmd.Categories.FirstOrDefault(c => c.Equals(arg, StringComparison.OrdinalIgnoreCase)) ?? "uncategorized");
             foreach (var group in commandsByCategory)

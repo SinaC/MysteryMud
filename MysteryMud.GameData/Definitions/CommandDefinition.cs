@@ -6,8 +6,8 @@ public readonly struct CommandDefinition
 {
     public required string Name { get; init; }
     public required string[] Aliases { get; init; }
-    public required CommandLevels RequiredLevel { get; init; }
-    public required Positions MinimumPosition { get; init; }
+    public required CommandLevelKind RequiredLevel { get; init; }
+    public required PositionKind MinimumPosition { get; init; }
     public required int Priority { get; init; }
     public required bool AllowAbbreviation { get; init; }
     public required string HelpText { get; init; }

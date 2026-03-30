@@ -56,7 +56,7 @@ public class CommandRegistry : ICommandRegistry
             .ToArray();
     }
 
-    public CommandFindResult Find(CommandLevels level, Positions positionType, ReadOnlySpan<char> input, out ICommand? command)
+    public CommandFindResult Find(CommandLevelKind level, PositionKind positionType, ReadOnlySpan<char> input, out ICommand? command)
     {
         var foundPrefix = false;
         var anyPermission = false;
@@ -111,7 +111,7 @@ public class CommandRegistry : ICommandRegistry
         return CommandFindResult.NotFound;
     }
 
-    public IEnumerable<CommandDefinition> GetCommandDefinitions(CommandLevels commandLevel)
+    public IEnumerable<CommandDefinition> GetCommandDefinitions(CommandLevelKind commandLevel)
         => _commands
             .Where(c => c.Definition.RequiredLevel <= commandLevel)
             .Select(c => c.Definition)

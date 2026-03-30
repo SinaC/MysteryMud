@@ -47,6 +47,6 @@ public class HealResolver
         healedEvt.Target = heal.Target;
         healedEvt.Source = heal.Source;
         healedEvt.Amount = heal.Amount;
-        healedEvt.SourceType = heal.SourceType;
+        healedEvt.SourceKind = heal.SourceKind;
     }
 }

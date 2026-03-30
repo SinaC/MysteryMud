@@ -65,7 +65,7 @@ public class HotSystem
             Source = effectInstance.Source,
             Target = effectInstance.Target,
             Amount = totalHeal,
-            SourceType = HealSourceTypes.HoT
+            SourceKind = HealSourceKind.HoT
         };
         _logger.LogInformation(LogEvents.Hot, "Applying HoT heal for Effect {effectName} on Target {targetName} with heal {heal} and tick rate {tickRate}", effect.DebugName, effectInstance.Target.DebugName, totalHeal, hot.TickRate);
         _healResolver.Resolve(healAction);

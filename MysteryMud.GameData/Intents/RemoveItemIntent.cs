@@ -7,5 +7,5 @@ public struct RemoveItemIntent
 {
     public Entity Actor;
     public Entity Item;
-    public EquipmentSlots Slot;
+    public EquipmentSlotKind Slot;
 }

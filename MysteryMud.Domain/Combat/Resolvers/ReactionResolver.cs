@@ -29,10 +29,10 @@ public class ReactionResolver
         var trigger = false;
 
         // Parry -> guaranteed counter
-        if (resolved.Result == AttackResults.Parry)
+        if (resolved.Result == AttackResultKind.Parry)
             trigger = true;
         // Hit -> chance to counter
-        else if (resolved.Result == AttackResults.Hit && resolved.SourceType == DamageSourceTypes.Hit)
+        else if (resolved.Result == AttackResultKind.Hit && resolved.SourceKind == DamageSourceKind.Hit)
         {
             ref var effectiveStats = ref resolved.Target.Get<EffectiveStats>();
 

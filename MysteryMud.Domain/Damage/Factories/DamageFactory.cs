@@ -17,8 +17,8 @@ public class DamageFactory
             Source = resolved.Source,
             Target = resolved.Target,
             Amount = 5, // TODO: calculate damage based on stats, skills, buffs, etc.
-            DamageType = DamageTypes.Physical,
-            SourceType = DamageSourceTypes.Hit
+            DamageKind = DamageKind.Physical,
+            SourceKind = DamageSourceKind.Hit
         };
 
         return damageAction;

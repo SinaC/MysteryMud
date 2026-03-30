@@ -81,23 +81,23 @@ public class FormulaCompiler
                         break;
 
                     case TokenType.CasterStrength:
-                        stack.Push(casterStats.Values[StatTypes.Strength]);
+                        stack.Push(casterStats.Values[StatKind.Strength]);
                         break;
 
                     case TokenType.CasterIntelligence:
-                        stack.Push(casterStats.Values[StatTypes.Intelligence]);
+                        stack.Push(casterStats.Values[StatKind.Intelligence]);
                         break;
 
                     case TokenType.CasterWisdom:
-                        stack.Push(casterStats.Values[StatTypes.Wisdom]);
+                        stack.Push(casterStats.Values[StatKind.Wisdom]);
                         break;
 
                     case TokenType.CasterDexterity:
-                        stack.Push(casterStats.Values[StatTypes.Dexterity]);
+                        stack.Push(casterStats.Values[StatKind.Dexterity]);
                         break;
 
                     case TokenType.CasterConstitution:
-                        stack.Push(casterStats.Values[StatTypes.Constitution]);
+                        stack.Push(casterStats.Values[StatKind.Constitution]);
                         break;
 
                     case TokenType.TargetLevel:
@@ -105,23 +105,23 @@ public class FormulaCompiler
                         break;
 
                     case TokenType.TargetStrength:
-                        stack.Push(targetStats.Values[StatTypes.Strength]);
+                        stack.Push(targetStats.Values[StatKind.Strength]);
                         break;
 
                     case TokenType.TargetIntelligence:
-                        stack.Push(targetStats.Values[StatTypes.Intelligence]);
+                        stack.Push(targetStats.Values[StatKind.Intelligence]);
                         break;
 
                     case TokenType.TargetWisdom:
-                        stack.Push(targetStats.Values[StatTypes.Wisdom]);
+                        stack.Push(targetStats.Values[StatKind.Wisdom]);
                         break;
 
                     case TokenType.TargetDexterity:
-                        stack.Push(targetStats.Values[StatTypes.Dexterity]);
+                        stack.Push(targetStats.Values[StatKind.Dexterity]);
                         break;
 
                     case TokenType.TargetConstitution:
-                        stack.Push(targetStats.Values[StatTypes.Constitution]);
+                        stack.Push(targetStats.Values[StatKind.Constitution]);
                         break;
 
                     case TokenType.Operator:
