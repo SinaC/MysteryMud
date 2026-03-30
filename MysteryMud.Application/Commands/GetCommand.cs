@@ -21,7 +21,7 @@ public class GetCommand : ICommand
         Definition = definition;
     }
 
-    public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
+    public void Execute(SystemContext systemContext, GameState state, Entity actor, CommandContext ctx)
     {
         if (ctx.TargetCount == 0)
         {
@@ -32,8 +32,8 @@ public class GetCommand : ICommand
         if (ctx.Secondary.Name.IsEmpty)
         {
             // default: room
-            var room = actor.Get<Location>().Room;
-            var roomContents = room.Get<RoomContents>();
+            ref var room = ref actor.Get<Location>().Room;
+            ref var roomContents = ref room.Get<RoomContents>();
             foreach (var item in EntityFinder.SelectTargets(actor, ctx.Primary, roomContents.Items))
             {
                 // intent to get item from room
@@ -53,7 +53,7 @@ public class GetCommand : ICommand
                 return;
             }
 
-            var containerContents = container.Get<ContainerContents>();
+            ref var containerContents = ref container.Get<ContainerContents>();
             foreach (var item in EntityFinder.SelectTargets(actor, ctx.Primary, containerContents.Items))
             {
                 // intent to get item from container

@@ -20,7 +20,7 @@ public class KillCommand : ICommand
         Definition = definition;
     }
 
-    public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
+    public void Execute(SystemContext systemContext, GameState state, Entity actor, CommandContext ctx)
     {
         if (ctx.TargetCount == 0)
         {
@@ -28,7 +28,7 @@ public class KillCommand : ICommand
             return;
         }
 
-        var roomContents = actor.Get<Location>().Room.Get<RoomContents>().Characters;
+        ref var roomContents = ref actor.Get<Location>().Room.Get<RoomContents>().Characters;
         var target = EntityFinder.SelectSingleTarget(actor, ctx.Primary, roomContents);
 
         if (target == default)

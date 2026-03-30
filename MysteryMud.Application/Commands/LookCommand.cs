@@ -29,7 +29,7 @@ public class LookCommand : ICommand
     //          - item in container: show container description and contents
     //   - one argument (only for character): prioritize character > item in room > item in inventory > item in equipped slots
     // TODO: handle self, all, indexed targets
-    public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
+    public void Execute(SystemContext systemContext, GameState state, Entity actor, CommandContext ctx)
     {
         // No argument: show room/container overview
         if (ctx.TargetCount == 0)
@@ -64,23 +64,35 @@ public class LookCommand : ICommand
         var targetName = ctx.Primary.Name;
 
         // 1️) Try characters in room
-        foreach (var target in roomCharacters)
+        var target = EntityFinder.SelectSingleTarget(actor, ctx.Primary, roomCharacters);
+        if (target != default)
         {
-            if (EntityFinder.Matches(target, targetName))
-            {
-                // intent to look at character
-                ref var lookCharacterIntent = ref systemContext.Intent.Look.Add();
-                lookCharacterIntent.Viewer = actor;
-                lookCharacterIntent.TargetKind = LookTargetKind.Character;
-                lookCharacterIntent.Target = target;
-                return;
-            }
+            // intent to look at character
+            ref var lookCharacterIntent = ref systemContext.Intent.Look.Add();
+            lookCharacterIntent.Viewer = actor;
+            lookCharacterIntent.TargetKind = LookTargetKind.Character;
+            lookCharacterIntent.Target = target;
+            return;
         }
 
         // 2️) Try items in room
-        foreach (var item in roomItems)
+        var item = EntityFinder.SelectSingleTarget(actor, ctx.Primary, roomItems);
+        if (item != default)
         {
-            if (EntityFinder.Matches(item, targetName))
+            // intent to look at item
+            ref var lookItemIntent = ref systemContext.Intent.Look.Add();
+            lookItemIntent.Viewer = actor;
+            lookItemIntent.TargetKind = LookTargetKind.Item;
+            lookItemIntent.Target = item;
+            return;
+        }
+        
+        // 3️) Try items in actor inventory
+        ref var inventory = ref actor.TryGetRef<Inventory>(out var hasInventory);
+        if (hasInventory)
+        {
+            var inventoryItem = EntityFinder.SelectSingleTarget(actor, ctx.Primary, inventory.Items);
+            if (inventoryItem != default)
             {
                 // intent to look at item
                 ref var lookItemIntent = ref systemContext.Intent.Look.Add();
@@ -91,26 +103,6 @@ public class LookCommand : ICommand
             }
         }
 
-        // 3️) Try items in actor inventory
-        ref var inventory = ref actor.TryGetRef<Inventory>(out var hasInventory);
-        if (hasInventory)
-        {
-            foreach (var item in inventory.Items)
-            {
-                if (EntityFinder.Matches(item, targetName))
-                {
-                    // intent to look at item
-                    ref var lookItemIntent = ref systemContext.Intent.Look.Add();
-                    lookItemIntent.Viewer = actor;
-                    lookItemIntent.TargetKind = LookTargetKind.Item;
-                    lookItemIntent.Target = item;
-                    return;
-                }
-            }
-        }
-
-        // 4) Try items in equipped slots (optional)
-        // For demo, we assume inventory = equipment too
-        systemContext.Msg.To(actor).Send($"You see nothing matching '{ctx.Primary.Name}' here.");
+        systemContext.Msg.To(actor).Send($"You don't see that here.");
     }
 }

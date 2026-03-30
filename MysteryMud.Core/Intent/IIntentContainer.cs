@@ -4,6 +4,10 @@ namespace MysteryMud.Core.Intent;
 
 public interface IIntentContainer: IIntentWriterContainer
 {
+    // Attack intents are a special case, we want to able to have direct access, because CombatOrchestrator add attack intents while iterating them
+    AttackIntent AttackByIndex(int index);
+    int AttackCount { get; }
+
     // FleeSystem
     Span<FleeIntent> FleeSpan { get; }
     // MoveSystem
@@ -18,9 +22,9 @@ public interface IIntentContainer: IIntentWriterContainer
     Span<DestroyItemIntent> DestroyItemSpan { get; }
     Span<SacrificeItemIntent> SacrificeItemSpan { get; }
     // CombatSystem
-    Span<AttackIntent> AttackSpan { get; } // can only iterate on the current attack buffer, not the next buffer
+    Span<AttackIntent> AttackSpan { get; }
     // LootSystem
-    Span<LootIntent> LootSpan { get; }
+    Span <LootIntent> LootSpan { get; }
     // LookSystem
     Span<LookIntent> LookSpan { get; }
 

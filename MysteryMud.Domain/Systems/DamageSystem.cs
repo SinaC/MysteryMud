@@ -16,9 +16,9 @@ public sealed class DamageSystem
         _damages = damages;
     }
 
-    public void Tick(GameState gameState)
+    public void Tick(GameState state)
     {
-        foreach (var dmg in _damages.GetAll())
+        foreach (ref var dmg in _damages.GetAll())
         {
             _damageResolver.Resolve(dmg);
         }

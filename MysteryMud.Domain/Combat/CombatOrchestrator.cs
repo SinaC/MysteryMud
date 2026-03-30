@@ -30,20 +30,13 @@ public sealed class CombatOrchestrator
         _reactionResolver = new ReactionResolver(msg); // TODO: don't create instance, inject it instead
     }
 
-    public void Tick(GameState gameState)
+    // TODO: weapon proc can generate damage/heal/poison effect/...
+    public void Tick(GameState state)
     {
-        // TODO: it would nicer if we could use intentBusContainer instead of this hitQueue
-        // we need to resolve intents in a loop until there are no more intents to properly handle reactions between hits, for example if we have 2 entities A and B, A attacks B with 3 hits and B has a chance to counterattack on hit, we want the flow to be like this:
-        var hitQueue = new Queue<AttackIntent>();
-        foreach (var attackIntent in _intents.AttackSpan)
-        {
-            hitQueue.Enqueue(attackIntent);
-        }
-
         // resolve one combat intent at a time to properly handle reactions between hits
-        while (hitQueue.Count > 0) // TODO: limit max iterations to prevent infinite loops in case of bugs
+        for(int i = 0; i < _intents.AttackCount; i++) // we iterate using index to be able to add intents while iterating
         {
-            var intent = hitQueue.Dequeue();
+            var intent = _intents.AttackByIndex(i);
             if (!CharacterHelpers.IsAlive(intent.Attacker, intent.Target))
                 continue;
 
@@ -56,7 +49,7 @@ public sealed class CombatOrchestrator
             {
                 ref var damageEvent = ref _damageProducer.CreateHit(resolvedHit);
 
-                _damageResolver.Resolve(damageEvent);
+                _damageResolver.Resolve(damageEvent); // TODO: this damage event should be pushed to global damage events but flagged as processed
 
                 // ---------- Weapon procs (immediate on hit) ----------
                 // TODO: handle weapon proc
@@ -67,18 +60,16 @@ public sealed class CombatOrchestrator
                 continue;
 
             // ---------- Phase 3: Reaction Phase ----------
-            _reactionResolver.Handle(hitQueue, resolvedHit);
+            _reactionResolver.Resolve(_intents, resolvedHit);
 
             // ---------- Phase 4: Multi-hit continuation ----------
             if (!intent.IsReaction && resolvedHit.Result != AttackResults.Dodge && intent.RemainingHits > 1) // only continue multi-hit if it's not a reaction (to prevent infinite loops) and if the hit was not dodged (for more interesting combat) and if there are remaining hits
             {
-                hitQueue.Enqueue(new AttackIntent
-                {
-                    Attacker = intent.Attacker,
-                    Target = intent.Target,
-                    RemainingHits = intent.RemainingHits - 1,
-                    IsReaction = intent.IsReaction
-                });
+                ref var nextMultiHitAttackIntent = ref _intents.Attack.Add();
+                nextMultiHitAttackIntent.Attacker = intent.Attacker;
+                nextMultiHitAttackIntent.Target = intent.Target;
+                nextMultiHitAttackIntent.RemainingHits = intent.RemainingHits - 1;
+                nextMultiHitAttackIntent.IsReaction = intent.IsReaction;
             }
         }
     }

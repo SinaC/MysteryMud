@@ -1,10 +1,10 @@
 ﻿using Arch.Core;
-using Arch.Core.Extensions;
+using CommunityToolkit.HighPerformance;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Core;
 using MysteryMud.Domain.Components;
-using MysteryMud.Domain.Components.Rooms;
+using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.GameData.Definitions;
 
 namespace MysteryMud.Application.Commands;
@@ -19,20 +19,27 @@ public class TellCommand : ICommand
         Definition = definition;
     }
 
-    public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
+    public void Execute(SystemContext systemContext, GameState state, Entity actor, CommandContext ctx)
     {
-        var message = ctx.Text;
-
         if (ctx.TargetCount == 0)
         {
             systemContext.Msg.To(actor).Send("Tell whom?");
             return;
         }
 
-        var roomContents = actor.Get<Location>().Room.Get<RoomContents>().Characters;
-        foreach (var target in EntityFinder.SelectTargets(actor, ctx.Primary, roomContents))
+        var found = false;
+        var message = ctx.Text.ToString();
+        var players = new List<Entity>(1024);
+        state.World.GetEntities(new QueryDescription().WithAll < Name, PlayerTag>(), players.AsSpan());
+        foreach (var target in EntityFinder.SelectTargets(actor, ctx.Primary, players))
         {
-            systemContext.Msg.To([actor, target]).Act("{0} tell{0:v} {1}: {2}").With(actor, target, message.ToString());
+            systemContext.Msg.To([actor, target]).Act("{0} tell{0:v} {1}: {2}").With(actor, target, message);
+            found = true;
         }
+
+        if (found)
+            return;
+
+        systemContext.Msg.To(actor).Send("They aren't here.");
     }
 }

@@ -44,21 +44,21 @@ public class ItemInteractionSystem
     public void Tick(GameState state)
     {
         // handle get/drop/give/put/wear/remove/destroy/sacrifice intents
-        foreach (var getIntent in _intentContainer.GetItemSpan)
+        foreach (ref var getIntent in _intentContainer.GetItemSpan)
             HandleGet(state, getIntent);
-        foreach (var dropIntent in _intentContainer.DropItemSpan)
+        foreach (ref var dropIntent in _intentContainer.DropItemSpan)
             HandleDrop(state, dropIntent);
-        foreach (var giveIntent in _intentContainer.GiveItemSpan)
+        foreach (ref var giveIntent in _intentContainer.GiveItemSpan)
             HandleGive(state, giveIntent);
-        foreach (var putIntent in _intentContainer.PutItemSpan)
+        foreach (ref var putIntent in _intentContainer.PutItemSpan)
             HandlePut(state, putIntent);
-        foreach(var wearIntent in _intentContainer.WearItemSpan)
+        foreach(ref var wearIntent in _intentContainer.WearItemSpan)
             HandleWear(state, wearIntent);
-        foreach(var removeIntent in _intentContainer.RemoveItemSpan)
+        foreach(ref var removeIntent in _intentContainer.RemoveItemSpan)
             HandleRemove(state, removeIntent);
-        foreach(var destroyIntent in _intentContainer.DestroyItemSpan)
+        foreach(ref var destroyIntent in _intentContainer.DestroyItemSpan)
             HandleDestroy(state, destroyIntent);
-        foreach (var sacrificeIntent in _intentContainer.SacrificeItemSpan)
+        foreach (ref var sacrificeIntent in _intentContainer.SacrificeItemSpan)
             HandleSacrifice(state, sacrificeIntent);
     }
 

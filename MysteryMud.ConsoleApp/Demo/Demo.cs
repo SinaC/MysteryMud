@@ -98,7 +98,7 @@ static class Demo
             Console.WriteLine($"Message to {entity.DebugName}: {message}");
         }
 
-        public void Process(SystemContext ctx, GameState gameState)
+        public void Process(SystemContext ctx, GameState state)
         {
             // nop for demo
         }

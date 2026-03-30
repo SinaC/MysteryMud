@@ -96,6 +96,25 @@ public static class ActFormatter
         FormatSeparatorFound,
     }
 
+    // Formatting
+    //  Character
+    //      default: same as n, N
+    //      p, P: same as n but you is replaced with your
+    //      n, N: you/argument.name if visible by target, someone otherwise
+    //      e, E: you/he/she/it, depending on argument.sex
+    //      m, M: you/him/her/it, depending on argument.sex
+    //      s, S: your/his/her/its, depending on argument.sex
+    //      f, F: yourself/himself/herself/itself
+    //      y, Y: your/name's
+    //      b, B: are/is
+    //      h, H: have/has
+    //      v, V: add 's' at the end of a verb if argument is different than target (take care of verb ending with y/o/h
+    // Item
+    //      argument.Name if visible by target, something otherwise
+    // TODO Exit
+    //      exit name
+    // TODO Ability
+    //      ability name
     private static void FormatActOneArgument(Entity target, StringBuilder sb, int argumentIndex, ReadOnlySpan<char> argumentFormat, object? argument)
     {
         if (argument is Entity entity && !entity.IsAlive())
@@ -147,6 +166,14 @@ public static class ActFormatter
                 case 'F':
                     sb.Append(target == character ? "your" : genderType.Objective.FirstCharToUpper());
                     sb.Append("self");
+                    break;
+                case 'y':
+                    if (target == character) sb.Append("your");
+                    else sb.Append(character.RelativeDisplayName(target)).Append("'s");
+                    break;
+                case 'Y':
+                    if (target == character) sb.Append("Your");
+                    else sb.Append(character.RelativeDisplayName(target)).Append("'s");
                     break;
                 case 'b':
                     sb.Append(target == character ? "are" : "is");

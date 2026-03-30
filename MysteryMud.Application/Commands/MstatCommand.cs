@@ -23,7 +23,7 @@ public class MstatCommand : ICommand
         Definition = definition;
     }
 
-    public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
+    public void Execute(SystemContext systemContext, GameState state, Entity actor, CommandContext ctx)
     {
         if (ctx.TargetCount == 0)
         {
@@ -83,7 +83,7 @@ public class MstatCommand : ICommand
             var sourceName = effectInstance.Source.DisplayName;
             if (hasDuration)
             {
-                var remainingTicks = duration.ExpirationTick - gameState.CurrentTick;
+                var remainingTicks = duration.ExpirationTick - state.CurrentTick;
                 systemContext.Msg.To(actor).Send($"- {effectName} Source: {sourceName} Stacks: {stackCount} Remaining ticks: {remainingTicks}");
             }
             else

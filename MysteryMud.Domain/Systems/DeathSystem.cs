@@ -11,8 +11,6 @@ using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Factories;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.GameData.Events;
-using System.Drawing;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MysteryMud.Domain.Systems;
 
@@ -29,11 +27,11 @@ public sealed class DeathSystem
         _deathEvents = deathEvents;
     }
 
-    public void Tick(GameState gameState)
+    public void Tick(GameState state)
     {
         foreach (ref var death in _deathEvents.GetAll())
         {
-            HandleDeath(gameState.World, ref death);
+            HandleDeath(state.World, ref death);
         }
     }
 

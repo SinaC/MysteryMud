@@ -20,9 +20,9 @@ public class InventoryCommand : ICommand
         Definition = definition;
     }
 
-    public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
+    public void Execute(SystemContext systemContext, GameState state, Entity actor, CommandContext ctx)
     {
-        var inventory = actor.Get<Inventory>();
+        ref var inventory = ref actor.Get<Inventory>();
         if (inventory.Items.Count == 0)
         {
             systemContext.Msg.To(actor).Send("Your inventory is empty.");

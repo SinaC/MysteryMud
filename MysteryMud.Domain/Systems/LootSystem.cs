@@ -23,9 +23,9 @@ public sealed class LootSystem
         _itemLootedEvents = itemLootedEvents;
     }
 
-    public void Tick(GameState gameState)
+    public void Tick(GameState state)
     {
-        foreach (var intent in _intents.LootSpan)
+        foreach (ref var intent in _intents.LootSpan)
         {
             ref var containerContent = ref intent.Corpse.Get<ContainerContents>();
             foreach (var content in containerContent.Items.ToArray())

@@ -27,7 +27,7 @@ public sealed class FleeSystem
     public void Tick(GameState state)
     {
         // TODO: message $"You cannot flee: {e.Reason}."
-        foreach (var flee in _intents.FleeSpan)
+        foreach (ref var flee in _intents.FleeSpan)
         {
             // TODO: check if still in the same room, if not, block flee
 

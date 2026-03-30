@@ -21,7 +21,7 @@ public class MessageBus : IMessageBus
         _queue.Enqueue(new MessageEvent { Entity = entity, Message = message });
     }
 
-    public void Process(SystemContext ctx, GameState gameState)
+    public void Process(SystemContext ctx, GameState state)
     {
         while (_queue.TryDequeue(out var evt))
         {

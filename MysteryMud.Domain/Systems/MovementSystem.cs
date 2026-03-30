@@ -26,7 +26,7 @@ public class MovementSystem
 
     public void Tick(GameState state)
     {
-        foreach(var intent in _intentContainer.MoveSpan)
+        foreach(ref var intent in _intentContainer.MoveSpan)
         {
             Move(intent);
         }
@@ -39,8 +39,8 @@ public class MovementSystem
         ref var location = ref intent.Actor.TryGetRef<Location>(out var hasLocation);
         if (hasLocation)
         {
-            var oldRoomContents = intent.FromRoom.Get<RoomContents>();
-            var newRoomContents = intent.ToRoom.Get<RoomContents>();
+            ref var oldRoomContents = ref intent.FromRoom.Get<RoomContents>();
+            ref var newRoomContents = ref intent.ToRoom.Get<RoomContents>();
 
             oldRoomContents.Characters.Remove(intent.Actor);
             _msg.To(oldRoomContents.Characters).Act("{0} leaves {1}").With(intent.Actor, intent.Direction); // entity will not receive the msg, but the other characters in the room will

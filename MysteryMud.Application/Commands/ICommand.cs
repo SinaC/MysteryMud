@@ -10,5 +10,5 @@ public interface ICommand
     CommandParseOptions ParseOptions { get; }
     CommandDefinition Definition { get; }
 
-    void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx);
+    void Execute(SystemContext systemContext, GameState state, Entity actor, CommandContext ctx);
 }
