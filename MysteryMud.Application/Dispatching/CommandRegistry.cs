@@ -14,7 +14,7 @@ public class CommandRegistry : ICommandRegistry
 {
     private ICommand[] _commands = [];
 
-    public void RegisterCommands(IEnumerable<CommandDefinition> definitions, IEnumerable<Assembly> assemblies, params ICommand[] explicitCommands)
+    public void RegisterCommands(IEnumerable<CommandDefinition> definitions, IEnumerable<Assembly> assemblies, IEnumerable<ICommand> explicitCommands)
     {
         var list = new List<ICommand>();
 
@@ -116,6 +116,12 @@ public class CommandRegistry : ICommandRegistry
             .Where(c => c.Definition.RequiredLevel <= commandLevel)
             .Select(c => c.Definition)
             .DistinctBy(d => d.Name); // Aliases share the same definition, so distinct by name
+
+    public IEnumerable<CommandDefinition> GetCommandDefinitions<TCommand>()
+        where TCommand : ICommand
+        => _commands
+            .OfType<TCommand>()
+            .Select(x => x.Definition);
 
     private sealed class AliasCommand : ICommand
     {

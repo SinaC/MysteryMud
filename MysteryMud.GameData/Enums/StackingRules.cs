@@ -4,5 +4,6 @@ public enum StackingRules
 {
     None,
     Refresh,
-    Stack
+    Stack,
+    Replace
 }

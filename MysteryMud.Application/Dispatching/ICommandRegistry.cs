@@ -7,7 +7,9 @@ namespace MysteryMud.Application.Dispatching;
 
 public interface ICommandRegistry
 {
-    void RegisterCommands(IEnumerable<CommandDefinition> commandDefinitions, IEnumerable<Assembly> assemblies, params ICommand[] explicitCommands);
+    void RegisterCommands(IEnumerable<CommandDefinition> commandDefinitions, IEnumerable<Assembly> assemblies, IEnumerable<ICommand> explicitCommands);
     CommandFindResult Find(CommandLevels level, Positions positionType, ReadOnlySpan<char> cmdSpan, out ICommand? command);
     IEnumerable<CommandDefinition> GetCommandDefinitions(CommandLevels commandLevel);
+    IEnumerable<CommandDefinition> GetCommandDefinitions<TCommand>()
+        where TCommand : ICommand;
 }

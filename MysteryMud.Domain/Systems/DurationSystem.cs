@@ -5,10 +5,9 @@ using MysteryMud.Core;
 using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Logging;
 using MysteryMud.Core.Services;
-using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Extensions;
-using MysteryMud.GameData.Enums;
+using MysteryMud.Domain.Factories;
 using MysteryMud.GameData.Events;
 
 namespace MysteryMud.Domain.Systems;
@@ -56,29 +55,13 @@ public class DurationSystem
         _logger.LogInformation(LogEvents.Duration,"Expiring Duration for Effect {effectName} on Target {targetName}", effect.DebugName, effectInstance.Target.DebugName);
 
         // remove the effect from the target's CharacterEffects
-        ref var characterEffects = ref effectInstance.Target.Get<CharacterEffects>();
-        characterEffects.Effects.Remove(effect);
-        if (effectInstance.Template.Tag != EffectTagId.None)
-        {
-            int tagIndex = (int)effectInstance.Template.Tag;
-            if (characterEffects.EffectsByTag[tagIndex] == effect)
-            {
-                characterEffects.EffectsByTag[tagIndex] = null;
-                characterEffects.ActiveTags &= ~(1UL << tagIndex);
-            }
-        }
+        EffectFactory.RemoveEffect(state, effect);
 
-        // flag the target's stats as dirty so they will be recalculated without this effect
-        ref var statModifiers = ref effect.TryGetRef<StatModifiers>(out var hasStatModifiers);
-        if (hasStatModifiers && !effectInstance.Target.Has<DirtyStats>())
-            effectInstance.Target.Add<DirtyStats>();
-
+        // display wear off message if any
         if (effectInstance.Template.WearOffMessage != null)
         {
             // TODO: in room ?
             _msg.To(effectInstance.Target).Send(effectInstance.Template.WearOffMessage);
         }
-
-        state.World.Destroy(effect);
     }
 }

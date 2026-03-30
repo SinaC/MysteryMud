@@ -14,6 +14,36 @@ namespace MysteryMud.Domain.Factories;
 
 public static class EffectFactory
 {
+    public static void RemoveEffect(GameState state, Entity effect)
+    {
+        if (!effect.IsAlive())
+            return;
+
+        ref var effectInstance = ref effect.Get<EffectInstance>();
+        if (!effectInstance.Target.IsAlive())
+            return;
+
+        // remove the effect from the target's CharacterEffects
+        ref var characterEffects = ref effectInstance.Target.Get<CharacterEffects>();
+        characterEffects.Effects.Remove(effect);
+        if (effectInstance.Template.Tag != EffectTagId.None)
+        {
+            int tagIndex = (int)effectInstance.Template.Tag;
+            if (characterEffects.EffectsByTag[tagIndex] == effect)
+            {
+                characterEffects.EffectsByTag[tagIndex] = null;
+                characterEffects.ActiveTags &= ~(1UL << tagIndex);
+            }
+        }
+
+        // flag the target's stats as dirty so they will be recalculated without this effect
+        ref var statModifiers = ref effect.TryGetRef<StatModifiers>(out var hasStatModifiers);
+        if (hasStatModifiers && !effectInstance.Target.Has<DirtyStats>())
+            effectInstance.Target.Add<DirtyStats>();
+
+        state.World.Destroy(effect);
+    }
+
     public static void ApplyEffect(SystemContext ctx, GameState state, EffectTemplate effectTemplate, Entity source, Entity target)
     {
         ref var targetEffects = ref target.Get<CharacterEffects>();
@@ -144,6 +174,7 @@ public static class EffectFactory
             ctx.Msg.To(source).Send(effectTemplate.ApplyMessage);
     }
 
+    // return true if a new effect has to be applied
     private static bool HandleStacking(SystemContext ctx, GameState state, EffectTemplate effectTemplate, Entity effect, Entity source)
     {
         ref var effectInstance = ref state.World.Get<EffectInstance>(effect);
@@ -161,7 +192,7 @@ public static class EffectFactory
         {
             case StackingRules.None:
                 // if the stacking rule is None, do not apply the new effect and do not refresh the duration
-                return true; // handled
+                return true; // handled -> no new effect, existing modified
             case StackingRules.Refresh:
                 if (hasDuration)
                 {
@@ -175,7 +206,7 @@ public static class EffectFactory
                     ctx.Log.LogInformation(LogEvents.Factory, "Refreshing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration} Expiration {expirationTick}", effectTemplate.Name, source.DebugName, effectInstance.Target.DebugName, duration, expirationTick);
                     ctx.Scheduler.Schedule(effect, ScheduledEventType.EffectExpired, expirationTick);
                 }
-                return true; // handled
+                return true; // handled -> no new effect, existing modified
             case StackingRules.Stack:
                 if (effectInstance.StackCount < effectTemplate.MaxStacks)
                     effectInstance.StackCount++;
@@ -191,7 +222,11 @@ public static class EffectFactory
                     ctx.Log.LogInformation(LogEvents.Factory, "Stacking/Refreshing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration} Expiration {expirationTick} New Stack Count {newStackCount}", effectTemplate.Name, source.DebugName, effectInstance.Target.DebugName, duration, expirationTick, effectInstance.StackCount);
                     ctx.Scheduler.Schedule(effect, ScheduledEventType.EffectExpired, expirationTick);
                 }
-                return true; // handled
+                return true; // handled -> no new effect, existing modified
+            case StackingRules.Replace:
+                ctx.Log.LogInformation(LogEvents.Factory, "Replacing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration}", effectTemplate.Name, source.DebugName, effectInstance.Target.DebugName, duration);
+                RemoveEffect(state, effect); // destroy current effect (no wear off message because it's a replacement)
+                return false; // no handled -> new effect will be added
         }
 
         return true; // default to handled to prevent new effect application if stacking rule is not recognized
