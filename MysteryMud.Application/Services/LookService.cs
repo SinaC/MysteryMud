@@ -62,7 +62,7 @@ public class LookService : ILookService
         _msg.To(viewer).Send($"{target.DisplayName}");
 
         ref var targetEquipment = ref target.TryGetRef<Equipment>(out var hasEquipment);
-        foreach (var slot in Enum.GetValues<EquipmentSlots>())
+        foreach (var slot in Enum.GetValues<EquipmentSlotKind>())
         {
             if (targetEquipment.Slots.TryGetValue(slot, out var item))
                 _msg.To(viewer).Send($"{slot}: {item.DisplayName}");

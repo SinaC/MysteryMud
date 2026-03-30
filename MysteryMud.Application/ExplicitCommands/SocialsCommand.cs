@@ -18,8 +18,8 @@ namespace MysteryMud.Application.ExplicitCommands
         {
             Name = "socials",
             Aliases = [],
-            RequiredLevel = CommandLevels.Player,
-            MinimumPosition = Positions.Dead,
+            RequiredLevel = CommandLevelKind.Player,
+            MinimumPosition = PositionKind.Dead,
             Priority = 0,
             AllowAbbreviation = true,
             HelpText = "Display list of available socials.",

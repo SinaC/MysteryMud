@@ -1,6 +1,6 @@
 ﻿namespace MysteryMud.GameData.Enums;
 
-public enum HealSourceTypes
+public enum HealSourceKind
 {
     Hit,
     Spell,

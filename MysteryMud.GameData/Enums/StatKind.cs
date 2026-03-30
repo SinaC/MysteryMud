@@ -1,6 +1,6 @@
 ﻿namespace MysteryMud.GameData.Enums;
 
-public enum StatTypes
+public enum StatKind
 {
     Strength,
     Intelligence,

@@ -124,7 +124,7 @@ public static class ActFormatter
         {
             var letter = argumentFormat.Length > 0 ? argumentFormat[0] : (argumentIndex == 0 ? 'N' : 'n'); // default to 'N' or 'n' if no format specified
             ref var gender = ref character.TryGetRef<Gender>(out var hasGender);
-            var genderType = hasGender ? gender.Value : Genders.Neutral;
+            var genderType = hasGender ? gender.Value : GenderKind.Neutral;
             switch (letter)
             {
                 case 'p':

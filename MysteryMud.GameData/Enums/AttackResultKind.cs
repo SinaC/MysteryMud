@@ -1,6 +1,6 @@
 ﻿namespace MysteryMud.GameData.Enums;
 
-public enum AttackResults
+public enum AttackResultKind
 {
     Hit,
     Dodge,

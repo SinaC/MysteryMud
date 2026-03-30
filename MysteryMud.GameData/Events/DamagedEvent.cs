@@ -8,6 +8,6 @@ public struct DamagedEvent
     public Entity Target;
     public Entity Source;
     public int Amount;
-    public DamageTypes DamageType;
-    public DamageSourceTypes SourceType;
+    public DamageKind DamageKind;
+    public DamageSourceKind SourceKind;
 }

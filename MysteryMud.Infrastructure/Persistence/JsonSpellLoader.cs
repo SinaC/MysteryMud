@@ -27,13 +27,13 @@ public class JsonSpellLoader
             {
                 Name = e.Name,
                 Tag = Enum.Parse<EffectTagId>(e.Tag),
-                Stacking = Enum.Parse<StackingRules>(e.Stacking, ignoreCase: true),
+                Stacking = Enum.Parse<StackingRule>(e.Stacking, ignoreCase: true),
                 MaxStacks = Math.Max(1, e.MaxStacks),
                 //TODO: Flags = Enum.Parse<AffectFlags>(e.Flags),
                 StatModifiers = e.StatModifiers.Select(sm => new StatModifierDefinition
                 {
-                    Stat = Enum.Parse<StatTypes>(sm.Stat, ignoreCase: true),
-                    Type = Enum.Parse<ModifierTypes>(sm.Type, ignoreCase: true),
+                    Stat = Enum.Parse<StatKind>(sm.Stat, ignoreCase: true),
+                    Kind = Enum.Parse<ModifierKind>(sm.Type, ignoreCase: true),
                     Value = sm.Value
                 }).ToArray(),
                 ApplyMessage = e.ApplyMessage,
@@ -49,7 +49,7 @@ public class JsonSpellLoader
                 template.Dot = new DotDefinition
                 {
                     DamageFunc = formulaCompiler.Compile(e.Dot.DamageFormula),
-                    DamageType = Enum.Parse<DamageTypes>(e.Dot.DamageType, ignoreCase: true),
+                    DamageKind = Enum.Parse<DamageKind>(e.Dot.DamageType, ignoreCase: true),
                     TickRate = e.Dot.TickRate,
                 };
             }

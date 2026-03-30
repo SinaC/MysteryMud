@@ -123,32 +123,32 @@ public class GameServer
         {
             Level = 1,
             Experience = 0,
-            Values = new Dictionary<StatTypes, int>
+            Values = new Dictionary<StatKind, int>
             {
-                [StatTypes.Strength] = 15,
-                [StatTypes.Intelligence] = 10,
-                [StatTypes.Wisdom] = 15,
-                [StatTypes.Dexterity] = 12,
-                [StatTypes.Constitution] = 15,
-                [StatTypes.HitRoll] = 0,
-                [StatTypes.DamRoll] = 0,
-                [StatTypes.Armor] = 0
+                [StatKind.Strength] = 15,
+                [StatKind.Intelligence] = 10,
+                [StatKind.Wisdom] = 15,
+                [StatKind.Dexterity] = 12,
+                [StatKind.Constitution] = 15,
+                [StatKind.HitRoll] = 0,
+                [StatKind.DamRoll] = 0,
+                [StatKind.Armor] = 0
             }
         });
         player.Add(new EffectiveStats
         {
             Level = 1,
             Experience = 0,
-            Values = new Dictionary<StatTypes, int>
+            Values = new Dictionary<StatKind, int>
             {
-                [StatTypes.Strength] = 15,
-                [StatTypes.Intelligence] = 10,
-                [StatTypes.Wisdom] = 15,
-                [StatTypes.Dexterity] = 12,
-                [StatTypes.Constitution] = 15,
-                [StatTypes.HitRoll] = 0,
-                [StatTypes.DamRoll] = 0,
-                [StatTypes.Armor] = 0
+                [StatKind.Strength] = 15,
+                [StatKind.Intelligence] = 10,
+                [StatKind.Wisdom] = 15,
+                [StatKind.Dexterity] = 12,
+                [StatKind.Constitution] = 15,
+                [StatKind.HitRoll] = 0,
+                [StatKind.DamRoll] = 0,
+                [StatKind.Armor] = 0
             }
         });
         player.Add(new Health { Current = 100, Max = 100 });
@@ -160,7 +160,7 @@ public class GameServer
             EffectsByTag = new Entity?[32]
         });
         player.Add(new Location { Room = RoomFactory.StartingRoomEntity });
-        player.Add(new Position { Value = Positions.Standing });
+        player.Add(new Position { Value = PositionKind.Standing });
         player.Add<DirtyStats>(); // ensure stats are recomputed
         RoomFactory.StartingRoomEntity.Get<RoomContents>().Characters.Add(player); // move to starting room
 

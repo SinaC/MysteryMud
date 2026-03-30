@@ -1,6 +1,6 @@
 ﻿namespace MysteryMud.GameData.Enums;
 
-public enum CommandLevels
+public enum CommandLevelKind
 {
     Player = 0,
     Immortal = 50,

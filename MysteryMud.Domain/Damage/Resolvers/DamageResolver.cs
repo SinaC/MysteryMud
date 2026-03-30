@@ -35,7 +35,7 @@ public class DamageResolver
         ref var health = ref dmg.Target.Get<Health>();
 
         // apply damage type modifiers, resistances, vulnerabilities, etc.
-        var modifiedDamage = DamageCalculator.ModifyDamage(dmg.Target, dmg.Amount, dmg.DamageType, dmg.Source);
+        var modifiedDamage = DamageCalculator.ModifyDamage(dmg.Target, dmg.Amount, dmg.DamageKind, dmg.Source);
 
         _msg.ToAll(dmg.Source).Act("%G{0} deal{0:v} %r{1}%g damage to {2}.%x").With(dmg.Source, modifiedDamage, dmg.Target);
 
@@ -43,7 +43,7 @@ public class DamageResolver
         health.Current -= modifiedDamage;
 
         // generate aggro
-        _aggroResolver.ResolveFromDamage(dmg.Target, dmg.Source, modifiedDamage, dmg.DamageType);
+        _aggroResolver.ResolveFromDamage(dmg.Target, dmg.Source, modifiedDamage, dmg.DamageKind);
 
         // check for death
         if (health.Current <= 0)
@@ -62,8 +62,8 @@ public class DamageResolver
         damagedEvt.Target = dmg.Target;
         damagedEvt.Source = dmg.Source;
         damagedEvt.Amount = modifiedDamage;
-        damagedEvt.DamageType = dmg.DamageType;
-        damagedEvt.SourceType = dmg.SourceType;
+        damagedEvt.DamageKind = dmg.DamageKind;
+        damagedEvt.SourceKind = dmg.SourceKind;
     }
 
     private static void AddDeadTags(Entity victim)

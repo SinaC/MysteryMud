@@ -25,7 +25,7 @@ public class EquipmentCommand : ICommand
 
         systemContext.Msg.To(actor).Send("You are wearing:");
 
-        foreach (var slot in Enum.GetValues<EquipmentSlots>())
+        foreach (var slot in Enum.GetValues<EquipmentSlotKind>())
         {
             if (equipment.Slots.TryGetValue(slot, out var item))
                 systemContext.Msg.To(actor).Send($"{slot}: {item.DisplayName}");

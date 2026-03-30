@@ -27,7 +27,7 @@ public class CommandDispatcher : ICommandDispatcher
         _commandParser.SplitCommand(input, out var cmdSpan, out var argsSpan);
 
         // search command in registry
-        var findResult = _commandRegistry.Find(CommandLevels.Immortal, Positions.Standing, cmdSpan, out var command); // TODO: command level and position should be determined based on actor's state, not hardcoded
+        var findResult = _commandRegistry.Find(CommandLevelKind.Immortal, PositionKind.Standing, cmdSpan, out var command); // TODO: command level and position should be determined based on actor's state, not hardcoded
         switch(findResult)
         {
             case CommandFindResult.NotFound:

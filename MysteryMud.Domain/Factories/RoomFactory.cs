@@ -31,7 +31,7 @@ public static class RoomFactory
         );
     }
 
-    public static bool LinkRoom(World world, Entity sourceRoom, Entity targetRoom, Directions direction)
+    public static bool LinkRoom(World world, Entity sourceRoom, Entity targetRoom, DirectionKind direction)
     {
         var sourceRoomGraph = sourceRoom.Get<RoomGraph>();
         if (sourceRoomGraph.Exits.Any(x => x.Direction == direction))

@@ -7,5 +7,5 @@ public struct WearItemIntent
 {
     public Entity Actor;
     public Entity Item;
-    public EquipmentSlots Slot;
+    public EquipmentSlotKind Slot;
 }

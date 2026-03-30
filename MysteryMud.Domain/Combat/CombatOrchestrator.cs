@@ -43,7 +43,7 @@ public sealed class CombatOrchestrator
 
             // ---------- Phase 2: Produce Damage ----------
             // if hit is successful, produce damage and handle reactions before resolving next hit, this way we can properly handle counterattacks between hits instead of waiting for all hits to be resolved and then handling reactions which can lead to unrealistic scenarios like player attacking 3 times and then monster counterattacking 3 times even if the player is already dead after the first hit
-            if (resolvedHit.Result == AttackResults.Hit)
+            if (resolvedHit.Result == AttackResultKind.Hit)
             {
                 var damageAction = _damageProducer.CreateHitDamage(resolvedHit);
 
@@ -61,7 +61,7 @@ public sealed class CombatOrchestrator
             _reactionResolver.Resolve(_intents, resolvedHit);
 
             // ---------- Phase 4: Multi-hit continuation ----------
-            if (!intent.IsReaction && resolvedHit.Result != AttackResults.Dodge && intent.RemainingHits > 1) // only continue multi-hit if it's not a reaction (to prevent infinite loops) and if the hit was not dodged (for more interesting combat) and if there are remaining hits
+            if (!intent.IsReaction && resolvedHit.Result != AttackResultKind.Dodge && intent.RemainingHits > 1) // only continue multi-hit if it's not a reaction (to prevent infinite loops) and if the hit was not dodged (for more interesting combat) and if there are remaining hits
             {
                 ref var nextMultiHitAttackIntent = ref _intents.Attack.Add();
                 nextMultiHitAttackIntent.Attacker = intent.Attacker;

@@ -1,9 +1,8 @@
 ﻿namespace MysteryMud.GameData.Enums;
 
-public enum Genders
+public enum GenderKind
 {
     Male,
     Female,
     Neutral
 }
-

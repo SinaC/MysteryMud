@@ -65,8 +65,8 @@ public class DotSystem
             Source = effectInstance.Source,
             Target = effectInstance.Target,
             Amount = totalDamage,
-            DamageType = dot.DamageType,
-            SourceType = DamageSourceTypes.DoT
+            DamageKind = dot.DamageType,
+            SourceKind = DamageSourceKind.DoT
         };
         _logger.LogInformation(LogEvents.Dot, "Applying DoT damage for Effect {effectName} on Target {targetName} with damage {damage} type {damageType} and tick rate {tickRate}", effect.DebugName, effectInstance.Target.DebugName, totalDamage, dot.DamageType, dot.TickRate);
         _damageResolver.Resolve(in damageAction);

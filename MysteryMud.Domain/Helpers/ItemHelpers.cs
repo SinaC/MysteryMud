@@ -113,7 +113,7 @@ public static class ItemHelpers
         return true;
     }
 
-    public static void TryUnequipItem(Entity actor, EquipmentSlots slot, out string? reason)
+    public static void TryUnequipItem(Entity actor, EquipmentSlotKind slot, out string? reason)
     {
         reason = null;
 

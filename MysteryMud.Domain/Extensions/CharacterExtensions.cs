@@ -9,6 +9,6 @@ public static class CharacterExtensions
 {
     extension(Entity entity)
     {
-        public Positions Position => entity.TryGet<Position>(out var position) ? position.Value : Positions.Dead;
+        public PositionKind Position => entity.TryGet<Position>(out var position) ? position.Value : PositionKind.Dead;
     }
 }

@@ -32,32 +32,32 @@ public static class PlayerFactory
             {
                 Level = 1,
                 Experience = 0,
-                Values = new Dictionary<StatTypes, int>
+                Values = new Dictionary<StatKind, int>
                 {
-                    [StatTypes.Strength] = 15,
-                    [StatTypes.Intelligence] = 10,
-                    [StatTypes.Wisdom] = 15,
-                    [StatTypes.Dexterity] = 12,
-                    [StatTypes.Constitution] = 15,
-                    [StatTypes.HitRoll] = 0,
-                    [StatTypes.DamRoll] = 0,
-                    [StatTypes.Armor] = 0
+                    [StatKind.Strength] = 15,
+                    [StatKind.Intelligence] = 10,
+                    [StatKind.Wisdom] = 15,
+                    [StatKind.Dexterity] = 12,
+                    [StatKind.Constitution] = 15,
+                    [StatKind.HitRoll] = 0,
+                    [StatKind.DamRoll] = 0,
+                    [StatKind.Armor] = 0
                 }
             },
             new EffectiveStats
             {
                 Level = 1,
                 Experience = 0,
-                Values = new Dictionary<StatTypes, int>
+                Values = new Dictionary<StatKind, int>
                 {
-                    [StatTypes.Strength] = 15,
-                    [StatTypes.Intelligence] = 10,
-                    [StatTypes.Wisdom] = 15,
-                    [StatTypes.Dexterity] = 12,
-                    [StatTypes.Constitution] = 15,
-                    [StatTypes.HitRoll] = 0,
-                    [StatTypes.DamRoll] = 0,
-                    [StatTypes.Armor] = 0
+                    [StatKind.Strength] = 15,
+                    [StatKind.Intelligence] = 10,
+                    [StatKind.Wisdom] = 15,
+                    [StatKind.Dexterity] = 12,
+                    [StatKind.Constitution] = 15,
+                    [StatKind.HitRoll] = 0,
+                    [StatKind.DamRoll] = 0,
+                    [StatKind.Armor] = 0
                 }
             },
             new Health { Current = 10, Max = 100 },
@@ -68,7 +68,7 @@ public static class PlayerFactory
                 Effects = [],
                 EffectsByTag = new Entity?[32]
             },
-            new Position { Value = Positions.Standing },
+            new Position { Value = PositionKind.Standing },
             new Location { Room = room },
             new DirtyStats() // dirty by default
         );

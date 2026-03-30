@@ -51,7 +51,7 @@ public class MstatCommand : ICommand
         ref var mana = ref target.TryGetRef<Mana>(out var hasMana);
         if (hasMana)
             systemContext.Msg.To(actor).Send($"Mana: {mana.Current}/{mana.Max}");
-        foreach (var stat in Enum.GetValues<StatTypes>())
+        foreach (var stat in Enum.GetValues<StatKind>())
         {
             systemContext.Msg.To(actor).Send($"{stat}: {effectiveStats.Values[stat]}/{baseStats.Values[stat]}");
         }
@@ -62,7 +62,7 @@ public class MstatCommand : ICommand
         foreach (var item in inventory.Items)
             systemContext.Msg.To(actor).Send($"- {item.DisplayName}");
         systemContext.Msg.To(actor).Send($"Equipment:");
-        foreach (var slot in Enum.GetValues<EquipmentSlots>())
+        foreach (var slot in Enum.GetValues<EquipmentSlotKind>())
         {
             if (equipment.Slots.TryGetValue(slot, out var item))
                 systemContext.Msg.To(actor).Send($"{slot}: {item.DisplayName}");
@@ -91,7 +91,7 @@ public class MstatCommand : ICommand
             if (hasStatModifiers)
             {
                 foreach (var modifier in statModifiers.Values)
-                    systemContext.Msg.To(actor).Send($"  - {modifier.Type} {modifier.Value} {modifier.Stat}");
+                    systemContext.Msg.To(actor).Send($"  - {modifier.Kind} {modifier.Value} {modifier.Stat}");
             }
             if (hasDamageOverTime)
                 systemContext.Msg.To(actor).Send($"  - Damage over time: {damageOverTime.Damage} every {damageOverTime.TickRate} ticks");

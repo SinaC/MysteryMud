@@ -8,9 +8,9 @@ namespace MysteryMud.Domain.Combat.Resolvers;
 
 public class AggroResolver
 {
-    public void ResolveFromDamage(Entity target, Entity source, int damageAmount, DamageTypes damageType)
+    public void ResolveFromDamage(Entity target, Entity source, int damageAmount, DamageKind damageKind)
     {
-        var aggro = AggroCalculator.CalculateDamageAggro(target, source, damageAmount, damageType);
+        var aggro = AggroCalculator.CalculateDamageAggro(target, source, damageAmount, damageKind);
         AddAggro(target, source, aggro);
     }
 

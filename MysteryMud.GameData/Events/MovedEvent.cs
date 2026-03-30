@@ -8,6 +8,6 @@ public struct MovedEvent
     public Entity Actor;
     public Entity FromRoom;
     public Entity ToRoom;
-    public Directions Direction;
+    public DirectionKind Direction;
     public bool AutoLook;
 }
