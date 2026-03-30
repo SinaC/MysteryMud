@@ -3,7 +3,7 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.GameData.Events;
 
-public struct DamageEvent
+public struct DamagedEvent
 {
     public Entity Target;
     public Entity Source;

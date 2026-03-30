@@ -7,7 +7,9 @@ using MysteryMud.Core.Logging;
 using MysteryMud.Core.Scheduler;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
+using MysteryMud.Domain.Damage.Resolvers;
 using MysteryMud.Domain.Extensions;
+using MysteryMud.GameData.Actions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
 
@@ -17,15 +19,15 @@ public class DotSystem
 {
     private readonly ILogger _logger;
     private readonly IScheduler _scheduler;
+    private readonly DamageResolver _damageResolver;
     private readonly IEventBuffer<DotTriggeredEvent> _dots;
-    private readonly IEventBuffer<DamageEvent> _damages;
 
-    public DotSystem(ILogger logger, IScheduler scheduler, IEventBuffer<DotTriggeredEvent> dots, IEventBuffer<DamageEvent> damages)
+    public DotSystem(ILogger logger, IScheduler scheduler, DamageResolver damageResolver, IEventBuffer<DotTriggeredEvent> dots)
     {
         _logger = logger;
         _scheduler = scheduler;
+        _damageResolver = damageResolver;
         _dots = dots;
-        _damages = damages;
     }
 
     public void Tick(GameState state)
@@ -56,16 +58,18 @@ public class DotSystem
             return;
         }
 
-        var damage = dot.Damage * effectInstance.StackCount;
-
-        // queue damage event
-        _logger.LogInformation(LogEvents.Dot,"Applying DoT damage for Effect {effectName} on Target {targetName} with damage {damage} type {damageType} and tick rate {tickRate}", effect.DebugName, effectInstance.Target.DebugName, damage, dot.DamageType, dot.TickRate);
-        ref var damageEvt = ref _damages.Add();
-        damageEvt.Source = effectInstance.Source;
-        damageEvt.Target = effectInstance.Target;
-        damageEvt.Amount = damage;
-        damageEvt.DamageType = dot.DamageType;
-        damageEvt.SourceType = DamageSourceTypes.DoT;
+        // resolve damage
+        var totalDamage = dot.Damage * effectInstance.StackCount;
+        var damageAction = new DamageAction
+        {
+            Source = effectInstance.Source,
+            Target = effectInstance.Target,
+            Amount = totalDamage,
+            DamageType = dot.DamageType,
+            SourceType = DamageSourceTypes.DoT
+        };
+        _logger.LogInformation(LogEvents.Dot, "Applying DoT damage for Effect {effectName} on Target {targetName} with damage {damage} type {damageType} and tick rate {tickRate}", effect.DebugName, effectInstance.Target.DebugName, totalDamage, dot.DamageType, dot.TickRate);
+        _damageResolver.Resolve(in damageAction);
 
         // calcule next tick
         dot.NextTick = state.CurrentTick + dot.TickRate;

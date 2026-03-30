@@ -8,6 +8,8 @@ using MysteryMud.Core.Scheduler;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Extensions;
+using MysteryMud.Domain.Heal;
+using MysteryMud.GameData.Actions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
 
@@ -17,15 +19,15 @@ public class HotSystem
 {
     private readonly ILogger _logger;
     private readonly IScheduler _scheduler;
+    private readonly HealResolver _healResolver;
     private readonly IEventBuffer<HotTriggeredEvent> _hots;
-    private readonly IEventBuffer<HealEvent> _heals;
 
-    public HotSystem(ILogger logger, IScheduler scheduler, IEventBuffer<HotTriggeredEvent> hots, IEventBuffer<HealEvent> heals)
+    public HotSystem(ILogger logger, IScheduler scheduler, HealResolver healResolver, IEventBuffer<HotTriggeredEvent> hots)
     {
         _logger = logger;
         _scheduler = scheduler;
+        _healResolver = healResolver;
         _hots = hots;
-        _heals = heals;
     }
 
     public void Tick(GameState state)
@@ -56,15 +58,17 @@ public class HotSystem
             return;
         }
 
-        var heal = hot.Heal * effectInstance.StackCount;
-
-        // queue heal event
-        _logger.LogInformation(LogEvents.Hot, "Applying HoT heal for Effect {effectName} on Target {targetName} with heal {heal} and tick rate {tickRate}", effect.DebugName, effectInstance.Target.DebugName, heal, hot.TickRate);
-        ref var healEvt = ref _heals.Add();
-        healEvt.Source = effectInstance.Source;
-        healEvt.Target = effectInstance.Target;
-        healEvt.Amount = heal;
-        healEvt.SourceType = HealSourceTypes.HoT;
+        // resolve heal
+        var totalHeal = hot.Heal * effectInstance.StackCount;
+        var healAction = new HealAction
+        {
+            Source = effectInstance.Source,
+            Target = effectInstance.Target,
+            Amount = totalHeal,
+            SourceType = HealSourceTypes.HoT
+        };
+        _logger.LogInformation(LogEvents.Hot, "Applying HoT heal for Effect {effectName} on Target {targetName} with heal {heal} and tick rate {tickRate}", effect.DebugName, effectInstance.Target.DebugName, totalHeal, hot.TickRate);
+        _healResolver.Resolve(healAction);
 
         // calcule next tick
         hot.NextTick = state.CurrentTick + hot.TickRate;

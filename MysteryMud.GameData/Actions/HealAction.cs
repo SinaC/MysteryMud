@@ -1,9 +1,9 @@
 ﻿using Arch.Core;
 using MysteryMud.GameData.Enums;
 
-namespace MysteryMud.GameData.Events;
+namespace MysteryMud.GameData.Actions;
 
-public struct HealEvent
+public struct HealAction
 {
     public Entity Target;
     public Entity Source;

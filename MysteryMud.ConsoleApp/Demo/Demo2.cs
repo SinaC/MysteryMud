@@ -11,6 +11,7 @@ using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
+using MysteryMud.Domain.Damage.Resolvers;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Services;
 using MysteryMud.Domain.Systems;
@@ -63,7 +64,7 @@ static class Demo2
         var itemRemovedEventBuffer = new EventBuffer<ItemRemovedEvent>();
         var itemDestroyedEventBuffer = new EventBuffer<ItemDestroyedEvent>();
         var itemSacrifierEventBuffer = new EventBuffer<ItemSacrifiedEvent>();
-        var damageEventBuffer = new EventBuffer<DamageEvent>();
+        var damagedEventBuffer = new EventBuffer<DamagedEvent>();
         var deathEventBuffer = new EventBuffer<DeathEvent>();
         var itemLootedEventBuffer = new EventBuffer<ItemLootedEvent>();
         var lookedEventBuffer = new EventBuffer<LookedEvent>();
@@ -74,15 +75,14 @@ static class Demo2
         // TODO: we should replace all these eventbuffers with a more generic event system
 
         var aggroResolver = new AggroResolver();
-        var damageResolver = new DamageResolver(aggroResolver, gameMessageService, deathEventBuffer);
-        var combatOrchestrator = new CombatOrchestrator(gameMessageService, intentBusContainer, damageEventBuffer, damageResolver);
+        var damageResolver = new DamageResolver(aggroResolver, gameMessageService, damagedEventBuffer, deathEventBuffer);
+        var combatOrchestrator = new CombatOrchestrator(gameMessageService, intentBusContainer, damageResolver);
 
         var fleeSystem = new FleeSystem(gameMessageService, intentBusContainer, fleeBlockedEventBuffer);
         var movementSystem = new MovementSystem(gameMessageService, intentBusContainer, movedEventBuffer);
         var itemInteractionSystem = new ItemInteractionSystem(gameMessageService, intentBusContainer, itemGotEventBuffer, itemDroppedEventBuffer, itemGivenEventBuffer, itemPutEventBuffer, itemWornEventBuffer, itemRemovedEventBuffer, itemDestroyedEventBuffer, itemSacrifierEventBuffer);
         var statsSystem = new StatsSystem();
         var autoAttackSystem = new AutoAttackSystem(intentBusContainer);
-        var damageSystem = new DamageSystem(damageResolver, damageEventBuffer);
         var deathSystem = new DeathSystem(gameMessageService, intentBusContainer, deathEventBuffer);
         var lootSystem = new LootSystem(gameMessageService, intentBusContainer, itemLootedEventBuffer);
         var lookSystem = new LookSystem(lookService, intentBusContainer, lookedEventBuffer);
@@ -183,7 +183,7 @@ static class Demo2
         itemPutEventBuffer.Clear();
         itemDestroyedEventBuffer.Clear();
         itemSacrifierEventBuffer.Clear();
-        damageEventBuffer.Clear();
+        damagedEventBuffer.Clear();
         deathEventBuffer.Clear();
         itemLootedEventBuffer.Clear();
         lookedEventBuffer.Clear();

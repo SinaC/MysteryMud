@@ -1,23 +1,28 @@
 ﻿using Arch.Core.Extensions;
+using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Calculators;
+using MysteryMud.Domain.Combat.Resolvers;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.GameData.Actions;
 using MysteryMud.GameData.Events;
 
-namespace MysteryMud.Domain.Combat.Resolvers;
+namespace MysteryMud.Domain.Heal;
 
 public class HealResolver
 {
     private readonly AggroResolver _aggroResolver;
     private readonly IGameMessageService _msg;
+    private readonly IEventBuffer<HealedEvent> _healed;
 
-    public HealResolver(AggroResolver aggroResolver, IGameMessageService msg)
+    public HealResolver(AggroResolver aggroResolver, IGameMessageService msg, IEventBuffer<HealedEvent> healed)
     {
         _aggroResolver = aggroResolver;
         _msg = msg;
+        _healed = healed;
     }
 
-    public void Resolve(HealEvent heal) // to be used during combat process
+    public void Resolve(HealAction heal) // to be used during combat process
     {
         if (heal.Target.Has<Dead>()) // already dead
             return;
@@ -36,5 +41,12 @@ public class HealResolver
 
         // generate aggro for healing
         _aggroResolver.ResolveFromHeal(heal.Target, heal.Source, modifiedHeal);
+
+        // healed event
+        ref var healedEvt = ref _healed.Add();
+        healedEvt.Target = heal.Target;
+        healedEvt.Source = heal.Source;
+        healedEvt.Amount = heal.Amount;
+        healedEvt.SourceType = heal.SourceType;
     }
 }
