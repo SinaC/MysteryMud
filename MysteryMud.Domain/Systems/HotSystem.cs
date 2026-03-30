@@ -30,7 +30,7 @@ public class HotSystem
 
     public void Tick(GameState state)
     {
-        foreach (var hot in _hots.GetAll())
+        foreach (ref var hot in _hots.GetAll())
             ProcessOneEffect(state, hot.Effect);
     }
 

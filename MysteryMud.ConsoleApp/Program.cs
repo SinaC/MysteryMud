@@ -7,6 +7,7 @@ using MysteryMud.Application.Dispatching;
 using MysteryMud.Application.ExplicitCommands;
 using MysteryMud.Application.Parsing;
 using MysteryMud.ConsoleApp;
+using MysteryMud.ConsoleApp.Demo;
 using MysteryMud.ConsoleApp.Hosting;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
@@ -110,7 +111,7 @@ var commandDispatcher = new CommandDispatcher(commandRegistry, commandParser);
 
 // run demo
 //Demo.Run(logger, world, commandDispatcher);
-//Demo2.Run(logger, world, commandDispatcher);
+Demo2.Run(logger, world, commandDispatcher);
 
 // start game server
 var gameServer = new GameServer(logger, world, commandDispatcher);

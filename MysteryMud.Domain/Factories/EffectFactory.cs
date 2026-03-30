@@ -14,7 +14,7 @@ namespace MysteryMud.Domain.Factories;
 
 public static class EffectFactory
 {
-    public static void ApplyEffect(SystemContext ctx, GameState gameState, EffectTemplate effectTemplate, Entity source, Entity target)
+    public static void ApplyEffect(SystemContext ctx, GameState state, EffectTemplate effectTemplate, Entity source, Entity target)
     {
         ref var targetEffects = ref target.Get<CharacterEffects>();
 
@@ -22,14 +22,14 @@ public static class EffectFactory
         int tagIndex = (int)effectTemplate.Tag;
         if (effectTemplate.Tag != EffectTagId.None && targetEffects.EffectsByTag[tagIndex] is Entity existing)
         {
-            var handled = HandleStacking(ctx, gameState, effectTemplate, existing, source);
+            var handled = HandleStacking(ctx, state, effectTemplate, existing, source);
             if (handled)
                 return;
             // not handled: apply new effect
         }
 
         // no tag or no existing effect with the same tag, create a new one
-        var effect = gameState.World.Create(new EffectInstance
+        var effect = state.World.Create(new EffectInstance
         {
             Source = source,
             Target = target,
@@ -57,14 +57,14 @@ public static class EffectFactory
         }
 
         // duration ?
-        var duration = effectTemplate.DurationFunc?.Invoke(gameState.World, source, target);
+        var duration = effectTemplate.DurationFunc?.Invoke(state.World, source, target);
         if (duration is not null)
         {
             // add Duration component to effect
-            var expirationTick = gameState.CurrentTick + duration.Value;
+            var expirationTick = state.CurrentTick + duration.Value;
             effect.Add(new Duration
             {
-                StartTick = gameState.CurrentTick,
+                StartTick = state.CurrentTick,
                 ExpirationTick = expirationTick
             });
 
@@ -107,8 +107,8 @@ public static class EffectFactory
         if (effectTemplate.Dot is not null)
         {
             // add DamageOverTime component to effect
-            var nextTick = gameState.CurrentTick + effectTemplate.Dot.Value.TickRate;
-            var damage = effectTemplate.Dot.Value.DamageFunc.Invoke(gameState.World, source, target);
+            var nextTick = state.CurrentTick + effectTemplate.Dot.Value.TickRate;
+            var damage = effectTemplate.Dot.Value.DamageFunc.Invoke(state.World, source, target);
             effect.Add(new DamageOverTime
             {
                 Damage = damage,
@@ -126,8 +126,8 @@ public static class EffectFactory
         if (effectTemplate.Hot is not null)
         {
             // add HealOverTime component to effect
-            var nextTick = gameState.CurrentTick + effectTemplate.Hot.Value.TickRate;
-            var heal = effectTemplate.Hot.Value.HealFunc.Invoke(gameState.World, source, target);
+            var nextTick = state.CurrentTick + effectTemplate.Hot.Value.TickRate;
+            var heal = effectTemplate.Hot.Value.HealFunc.Invoke(state.World, source, target);
             effect.Add(new HealOverTime
             {
                 Heal = heal,
@@ -144,9 +144,9 @@ public static class EffectFactory
             ctx.Msg.To(source).Send(effectTemplate.ApplyMessage);
     }
 
-    private static bool HandleStacking(SystemContext ctx, GameState gameState, EffectTemplate effectTemplate, Entity effect, Entity source)
+    private static bool HandleStacking(SystemContext ctx, GameState state, EffectTemplate effectTemplate, Entity effect, Entity source)
     {
-        ref var effectInstance = ref gameState.World.Get<EffectInstance>(effect);
+        ref var effectInstance = ref state.World.Get<EffectInstance>(effect);
 
         if (source != effectInstance.Source)
         {
@@ -166,9 +166,9 @@ public static class EffectFactory
                 if (hasDuration)
                 {
                     // update Duration
-                    var durationValue = effectTemplate.DurationFunc?.Invoke(gameState.World, effectInstance.Source, effectInstance.Target) ?? 0;
-                    var expirationTick = gameState.CurrentTick + durationValue;
-                    duration.LastRefreshTick = gameState.CurrentTick;
+                    var durationValue = effectTemplate.DurationFunc?.Invoke(state.World, effectInstance.Source, effectInstance.Target) ?? 0;
+                    var expirationTick = state.CurrentTick + durationValue;
+                    duration.LastRefreshTick = state.CurrentTick;
                     duration.ExpirationTick = expirationTick;
 
                     // schedule a new expiration event (don't remove the old one, just add a new one with the new expiration tick - when the old one executes it will check the current expiration tick and do nothing if it's different)
@@ -182,9 +182,9 @@ public static class EffectFactory
                 if (hasDuration)
                 {
                     // update Duration
-                    var durationValue = effectTemplate.DurationFunc?.Invoke(gameState.World, effectInstance.Source, effectInstance.Target) ?? 0;
-                    var expirationTick = gameState.CurrentTick + durationValue;
-                    duration.LastRefreshTick = gameState.CurrentTick;
+                    var durationValue = effectTemplate.DurationFunc?.Invoke(state.World, effectInstance.Source, effectInstance.Target) ?? 0;
+                    var expirationTick = state.CurrentTick + durationValue;
+                    duration.LastRefreshTick = state.CurrentTick;
                     duration.ExpirationTick = expirationTick;
 
                     // schedule a new expiration event (don't remove the old one, just add a new one with the new expiration tick - when the old one executes it will check the current expiration tick and do nothing if it's different)

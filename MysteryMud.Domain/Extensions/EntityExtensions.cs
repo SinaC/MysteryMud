@@ -1,7 +1,6 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.Domain.Components;
-using MysteryMud.Domain.Components.Rooms;
 
 namespace MysteryMud.Domain.Extensions;
 
@@ -36,17 +35,6 @@ public static class EntityExtensions
             if (nameExists)
                 return $"{name.Value}[{entity.Id}]";
             return $"[{entity.Id}]";
-        }
-
-        private RoomContents? InternalRoomContents()
-        {
-            ref var location = ref entity.TryGetRef<Location>(out var hasLocation);
-            if (!hasLocation)
-                return null;
-            ref var roomContents = ref location.Room.TryGetRef<RoomContents>(out var hasRoomContents);
-            if (!hasRoomContents)
-                return null;
-            return roomContents;
         }
     }
 }

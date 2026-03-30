@@ -145,7 +145,7 @@ public class CommandRegistry : ICommandRegistry
 
         public CommandParseOptions ParseOptions => _inner.ParseOptions;
 
-        public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx) => _inner.Execute(systemContext, gameState, actor, ctx);
+        public void Execute(SystemContext systemContext, GameState state, Entity actor, CommandContext ctx) => _inner.Execute(systemContext, state, actor, ctx);
     }
 }
 

@@ -21,7 +21,7 @@ public class TestCommand : ICommand
         Definition = definition;
     }
 
-    public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
+    public void Execute(SystemContext systemContext, GameState state, Entity actor, CommandContext ctx)
     {
         ref var roomContents = ref actor.Get<Location>().Room.Get<RoomContents>().Characters;
         var target = EntityFinder.SelectSingleTarget(actor, ctx.Primary, roomContents);
@@ -71,7 +71,7 @@ public class TestCommand : ICommand
                 Hot = null // not hot
             };
 
-            EffectFactory.ApplyEffect(systemContext, gameState, effectTemplate, actor, target);
+            EffectFactory.ApplyEffect(systemContext, state, effectTemplate, actor, target);
         }
         else if (ctx.Text.Equals("bless".AsSpan(), StringComparison.OrdinalIgnoreCase))
         {
@@ -106,7 +106,7 @@ public class TestCommand : ICommand
                 },
             };
 
-            EffectFactory.ApplyEffect(systemContext, gameState, effectTemplate, actor, target);
+            EffectFactory.ApplyEffect(systemContext, state, effectTemplate, actor, target);
         }
     }
 }

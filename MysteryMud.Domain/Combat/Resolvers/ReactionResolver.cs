@@ -1,13 +1,12 @@
 ﻿using Arch.Core.Extensions;
+using MysteryMud.Core.Intent;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
-using MysteryMud.GameData.Intents;
 
 namespace MysteryMud.Domain.Combat.Resolvers;
 
-// TODO: pass hitQueue in ctor ?
 public class ReactionResolver
 {
     private readonly IGameMessageService _msg;
@@ -17,7 +16,7 @@ public class ReactionResolver
         _msg = msg;
     }
 
-    public void Handle(Queue<AttackIntent> hitQueue, AttackResolved resolved)
+    public void Resolve(IIntentContainer intentContainer, AttackResolved resolved)
     {
         // Buff procs reacting to the hit
         //TODO: HandleBuffProcs(world, resolved, ctx);
@@ -44,13 +43,11 @@ public class ReactionResolver
             return;
 
         //budget.Remaining--;
-        _msg.ToRoom(resolved.Target).Act("{0} counterattacks {1}'s attack.").With(resolved.Target, resolved.Source);
-        hitQueue.Enqueue(new AttackIntent
-        {
-            Attacker = resolved.Target,
-            Target = resolved.Source,
-            RemainingHits = 1,
-            IsReaction = true
-        });
+        _msg.ToRoom(resolved.Target).Act("{0} counterattacks {1:y} attack.").With(resolved.Target, resolved.Source);
+        ref var attackIntent = ref intentContainer.Attack.Add();
+        attackIntent.Attacker = resolved.Target;
+        attackIntent.Target = resolved.Source;
+        attackIntent.RemainingHits = 1;
+        attackIntent.IsReaction = true;
     }
 }

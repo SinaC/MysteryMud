@@ -20,7 +20,7 @@ public class NorthCommand : ICommand
         Definition = definition;
     }
 
-    public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
+    public void Execute(SystemContext systemContext, GameState state, Entity actor, CommandContext ctx)
     {
         if (actor.Has<CombatState>())
         {

@@ -22,7 +22,7 @@ public class LookSystem
 
     public void Tick(GameState state, LookMode lookMode)
     {
-        foreach (var intent in _intents.LookSpan)
+        foreach (ref var intent in _intents.LookSpan)
         {
             if (intent.Mode != lookMode)
                 continue;

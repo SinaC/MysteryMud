@@ -19,7 +19,7 @@ public class EquipmentCommand : ICommand
         Definition = definition;
     }
 
-    public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
+    public void Execute(SystemContext systemContext, GameState state, Entity actor, CommandContext ctx)
     {
         ref var equipment = ref actor.Get<Equipment>();
 

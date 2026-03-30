@@ -20,7 +20,7 @@ public class GiveCommand : ICommand
         Definition = definition;
     }
 
-    public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
+    public void Execute(SystemContext systemContext, GameState state, Entity actor, CommandContext ctx)
     {
         if (ctx.TargetCount < 2)
         {
@@ -28,9 +28,9 @@ public class GiveCommand : ICommand
             return;
         }
 
-        var inventory = actor.Get<Inventory>();
-        var room = actor.Get<Location>().Room;
-        var roomContents = room.Get<RoomContents>();
+        ref var inventory = ref actor.Get<Inventory>();
+        ref var room = ref actor.Get<Location>().Room;
+        ref var roomContents = ref room.Get<RoomContents>();
 
         // Find target character in room
         var target = EntityFinder.SelectSingleTarget(actor, ctx.Secondary, roomContents.Characters);

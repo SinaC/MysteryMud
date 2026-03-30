@@ -19,7 +19,7 @@ public class CommandDispatcher : ICommandDispatcher
         _commandParser = commandParser;
     }
 
-    public void Dispatch(SystemContext systemContext, GameState gameState, Entity actor, ReadOnlySpan<char> input)
+    public void Dispatch(SystemContext systemContext, GameState state, Entity actor, ReadOnlySpan<char> input)
     {
         systemContext.Log.LogInformation(LogEvents.System, "*** [{name}] EXECUTING [{input}]", actor.DebugName, input.ToString());
 
@@ -45,6 +45,6 @@ public class CommandDispatcher : ICommandDispatcher
         _commandParser.Parse(cmdSpan, argsSpan, command!.ParseOptions.ArgumentCount, command!.ParseOptions.LastIsText, out var ctx);
 
         // execute command
-        command.Execute(systemContext, gameState, actor, ctx);
+        command.Execute(systemContext, state, actor, ctx);
     }
 }

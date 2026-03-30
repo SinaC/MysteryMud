@@ -32,7 +32,7 @@ public class RespawnSystem
                 location.Room = respawnState.RespawnRoom;
 
                 // Add player back to RoomContents
-                var roomContents = respawnState.RespawnRoom.Get<RoomContents>();
+                ref var roomContents = ref respawnState.RespawnRoom.Get<RoomContents>();
                 roomContents.Characters.Add(player);
 
                 // Reset health

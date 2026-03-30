@@ -28,7 +28,7 @@ public class DurationSystem
 
     public void Tick(GameState state)
     {
-        foreach (var expired in _expired.GetAll())
+        foreach (ref var expired in _expired.GetAll())
             ProcessOneEffect(state, expired.Effect);
     }
 
@@ -49,7 +49,7 @@ public class DurationSystem
 
         if (duration.ExpirationTick != state.CurrentTick)
         {
-            _logger.LogInformation(LogEvents.Duration,"Rescheduled Duration for Effect {effectName} on Target {targetName} with Expiration Tick {expirationTick}", effect.DebugName, effectInstance.Target.DebugName, duration.ExpirationTick);
+            _logger.LogInformation(LogEvents.Duration,"Rescheduled Duration for Effect {effectName} on Target {targetName} with Expiration Tick {expirationTick} but Current Tick {currentTick}", effect.DebugName, effectInstance.Target.DebugName, duration.ExpirationTick, state.CurrentTick);
             return;
         }
 

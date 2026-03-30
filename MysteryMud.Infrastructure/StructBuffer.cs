@@ -23,6 +23,9 @@ public sealed class StructBuffer<T>
         return ref _items[_count++];
     }
 
+    public T this[int index]
+        => _items[index];
+
     public Span<T> AsSpan() => _items.AsSpan(0, _count);
 
     public void Clear() => _count = 0;

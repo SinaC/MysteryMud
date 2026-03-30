@@ -31,7 +31,7 @@ public class CommandBus : ICommandBus
         });
     }
 
-    public void Process(SystemContext ctx, GameState gameState)
+    public void Process(SystemContext ctx, GameState state)
     {
         // TOOD: we should process commands received since the last tick,
         // but with this loop, we will continue processing commands until the queue is empty, which could lead to starvation of other systems if a lot of commands are received.
@@ -40,7 +40,7 @@ public class CommandBus : ICommandBus
             var span = cmd.Buffer.AsSpan(0, cmd.Length);
 
             // TODO: check min position
-            _dispatcher.Dispatch(ctx, gameState, cmd.Player, span);
+            _dispatcher.Dispatch(ctx, state, cmd.Player, span);
 
             ArrayPool<char>.Shared.Return(cmd.Buffer);
         }

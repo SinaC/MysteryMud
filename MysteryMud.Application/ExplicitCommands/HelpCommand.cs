@@ -32,7 +32,7 @@ public class HelpCommand : ICommand
         _commandRegistry = commandRegistry;
     }
 
-    public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
+    public void Execute(SystemContext systemContext, GameState state, Entity actor, CommandContext ctx)
     {
         if (ctx.TargetCount == 0)
         {

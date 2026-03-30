@@ -5,5 +5,5 @@ namespace MysteryMud.Application.Dispatching;
 
 public interface ICommandDispatcher
 {
-    void Dispatch(SystemContext systemContext, GameState gameState, Entity actor, ReadOnlySpan<char> input);
+    void Dispatch(SystemContext systemContext, GameState state, Entity actor, ReadOnlySpan<char> input);
 }

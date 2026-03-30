@@ -48,6 +48,10 @@ public sealed class IntentBusContainer : IIntentContainer
         Look = new IntentWriter<LookIntent>(_look);
     }
 
+    // Attack intents are a special case, we want to able to have direct access, because CombatOrchestrator add attack intents while iterating them
+    public AttackIntent AttackByIndex(int index) => _attack[index];
+    public int AttackCount => _attack.Count;
+
     // FleeSystem
     public IIntentWriter<FleeIntent> Flee { get; }
     public Span<FleeIntent> FleeSpan => _flee.AsSpan();

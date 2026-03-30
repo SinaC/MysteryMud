@@ -20,7 +20,7 @@ public class SouthCommand : ICommand
         Definition = definition;
     }
 
-    public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
+    public void Execute(SystemContext systemContext, GameState state, Entity actor, CommandContext ctx)
     {
         if (actor.Has<CombatState>())
         {
@@ -32,7 +32,7 @@ public class SouthCommand : ICommand
         ref var room = ref actor.Get<Location>().Room;
 
         // Get south exit
-        var roomGraph = room.Get<RoomGraph>();
+        ref var roomGraph = ref room.Get<RoomGraph>();
         var southExit = roomGraph.Exits.SingleOrDefault(e => e.Direction == Directions.South);
         if (southExit.Equals(default(Exit)) || southExit.TargetRoom == Entity.Null)
         {

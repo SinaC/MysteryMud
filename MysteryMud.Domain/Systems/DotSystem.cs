@@ -30,7 +30,7 @@ public class DotSystem
 
     public void Tick(GameState state)
     {
-        foreach (var dot in _dots.GetAll())
+        foreach (ref var dot in _dots.GetAll())
             ProcessOneEffect(state, dot.Effect);
     }
 

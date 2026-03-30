@@ -18,7 +18,7 @@ public class PutCommand : ICommand
         Definition = definition;
     }
 
-    public void Execute(SystemContext systemContext, GameState gameState, Entity actor, CommandContext ctx)
+    public void Execute(SystemContext systemContext, GameState state, Entity actor, CommandContext ctx)
     {
         if (ctx.TargetCount < 2)
         {
@@ -26,7 +26,7 @@ public class PutCommand : ICommand
             return;
         }
 
-        var inventory = actor.Get<Inventory>();
+        ref var inventory = ref actor.Get<Inventory>();
 
         var container = EntityFinder.FindContainer(actor, ctx.Secondary);
         if (container == default)
