@@ -79,7 +79,7 @@ public class TestCommand : ICommand
             {
                 Name = "Bless2",
                 Tag = EffectTagId.Bless,
-                Stacking = StackingRules.None,
+                Stacking = StackingRules.Replace,
                 MaxStacks = 1,
                 StatModifiers =
                 [
@@ -97,7 +97,7 @@ public class TestCommand : ICommand
                     },
                 ],
                 Flags = AffectFlags.Bless,
-                DurationFunc = (world, source, target) => 30,
+                DurationFunc = (world, source, target) => 60,
                 Dot = null, // no dot
                 Hot = new HotDefinition
                 {

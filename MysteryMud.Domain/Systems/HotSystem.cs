@@ -72,9 +72,10 @@ public class HotSystem
 
         // calcule next tick
         hot.NextTick = state.CurrentTick + hot.TickRate;
+        var remainingTicks = duration.ExpirationTick - state.CurrentTick;
 
         // queue next tick even if after expiration tick to handle effect refresh
-        _logger.LogInformation(LogEvents.Hot,"Scheduling next HoT tick for Effect {effectName} on Target {targetName} at tick {nextTick}", effect.DebugName, effectInstance.Target.DebugName, hot.NextTick);
+        _logger.LogInformation(LogEvents.Hot, "Scheduling next HoT tick for Effect {effectName} on Target {targetName} and Remaining Tick {remainingTicks} at tick {nextTick}", effect.DebugName, effectInstance.Target.DebugName, remainingTicks, hot.NextTick);
         _scheduler.Schedule(effect, ScheduledEventType.HotTick, hot.NextTick);
     }
 }

@@ -99,10 +99,27 @@ var spellDatabase = spellLoader.LoadSpells(Path.Combine(basePath, gamePaths.Spel
 var commandLoader = new JsonCommandLoader();
 var commandDefinitions = commandLoader.Load(Path.Combine(basePath, gamePaths.CommandsJson));
 
-// initialize coimmand registry (Infrastructure)
+// load social definitions
+var socialLoader = new JsonSocialLoader();
+var socialDefinitions = socialLoader.Load(Path.Combine(basePath, gamePaths.SocialsJson));
+
+// initialize command registry (Infrastructure)
 var commandRegistry = new CommandRegistry();
+var explicitCommands = new List<ICommand>();
+// help command
 var helpCommand = new HelpCommand(commandRegistry); // special case for help command since it needs registry reference
-commandRegistry.RegisterCommands(commandDefinitions, [typeof(TestCommand).Assembly], helpCommand);
+explicitCommands.Add(helpCommand);
+// socials command (display all socials)
+var socialsCommand = new SocialsCommand(commandRegistry);
+explicitCommands.Add(socialsCommand);
+// social commands (one by social definition)
+foreach (var socialDefinition in socialDefinitions)
+{
+    var socialCommand = new SocialCommand(socialDefinition);
+    explicitCommands.Add(socialCommand);
+}
+// commands from assemblies
+commandRegistry.RegisterCommands(commandDefinitions, [typeof(TestCommand).Assembly], explicitCommands);
 
 // initialize dispatcher and parser (Application)
 var commandParser = new CommandParser();
