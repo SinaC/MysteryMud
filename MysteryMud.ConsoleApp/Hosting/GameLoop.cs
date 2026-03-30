@@ -10,7 +10,9 @@ using MysteryMud.Core.Scheduler;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Combat;
 using MysteryMud.Domain.Combat.Resolvers;
+using MysteryMud.Domain.Damage.Resolvers;
 using MysteryMud.Domain.Extensions;
+using MysteryMud.Domain.Heal;
 using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
@@ -66,8 +68,8 @@ internal class GameLoop
     private readonly EventBuffer<ItemRemovedEvent> _itemRemovedEventBuffer = new();
     private readonly EventBuffer<ItemDestroyedEvent> _itemDestroyedEventBuffer = new();
     private readonly EventBuffer<ItemSacrifiedEvent> _itemSacrifiedEventBuffer = new();
-    private readonly EventBuffer<DamageEvent> _damageEventBuffer = new();
-    private readonly EventBuffer<HealEvent> _healEventBuffer = new();
+    private readonly EventBuffer<DamagedEvent> _damagedEventBuffer = new();
+    private readonly EventBuffer<HealedEvent> _healedEventBuffer = new();
     private readonly EventBuffer<DeathEvent> _deathEventBuffer = new();
     private readonly EventBuffer<ItemLootedEvent> _itemLootedEventBuffer = new();
     private readonly EventBuffer<LookedEvent> _lookedEventBuffer = new();
@@ -90,8 +92,6 @@ internal class GameLoop
     private readonly DotSystem _dotSystem;
     private readonly HotSystem _hotSystem;
     private readonly DurationSystem _durationSystem;
-    private readonly DamageSystem _damageSystem;
-    private readonly HealSystem _healSystem;
     private readonly DeathSystem _deathSystem;
     private readonly RespawnSystem _respawnSystem;
     private readonly LootSystem _lootSystem;
@@ -112,20 +112,18 @@ internal class GameLoop
         _lookService = new LookService(_gameMessageService);
 
         _aggroResolver = new AggroResolver();
-        _damageResolver = new DamageResolver(_aggroResolver, _gameMessageService, _deathEventBuffer);
-        _healResolver = new HealResolver(_aggroResolver, gameMessageService);
-        _combatOrchestrator = new CombatOrchestrator(_gameMessageService, _intentContainer, _damageEventBuffer, _damageResolver);
+        _damageResolver = new DamageResolver(_aggroResolver, _gameMessageService, _damagedEventBuffer, _deathEventBuffer);
+        _healResolver = new HealResolver(_aggroResolver, _gameMessageService, _healedEventBuffer);
+        _combatOrchestrator = new CombatOrchestrator(_gameMessageService, _intentContainer, _damageResolver);
 
         _fleeSystem = new FleeSystem(_gameMessageService, _intentContainer, _fleeBlockedEventBuffer);
         _movementSystem = new MovementSystem(_gameMessageService, _intentContainer, _movedEventBuffer);
         _itemInteractionSystem = new ItemInteractionSystem(_gameMessageService, _intentContainer, _itemGotEventBuffer, _itemDroppedEventBuffer, _itemGivenEventBuffer, _itemPutEventBuffer, _itemWornEventBuffer, _itemRemovedEventBuffer, _itemDestroyedEventBuffer, _itemSacrifiedEventBuffer);
         _statsSystem = new StatsSystem();
         _autoAttackSystem = new AutoAttackSystem(_intentContainer);
-        _dotSystem = new DotSystem(_logger, _scheduler, _dotTriggeredEventBuffer, _damageEventBuffer);
-        _hotSystem = new HotSystem(_logger, _scheduler, _hotTriggeredEventBuffer, _healEventBuffer);
+        _dotSystem = new DotSystem(_logger, _scheduler, _damageResolver, _dotTriggeredEventBuffer);
+        _hotSystem = new HotSystem(_logger, _scheduler, _healResolver, _hotTriggeredEventBuffer);
         _durationSystem = new DurationSystem(_logger, _gameMessageService, _effectExpiredEventBuffer);
-        _damageSystem = new DamageSystem(_damageResolver, _damageEventBuffer);
-        _healSystem = new HealSystem(_healResolver, _healEventBuffer);
         _deathSystem = new DeathSystem(_gameMessageService, _intentContainer, _deathEventBuffer);
         _respawnSystem = new RespawnSystem(_gameMessageService);
         _lootSystem = new LootSystem(_gameMessageService, _intentContainer, _itemLootedEventBuffer);
@@ -191,10 +189,7 @@ internal class GameLoop
         // TODO: ThreatSystem.UpdateThreat       // Update aggro/threat
         // TODO: NPCTargetSystem.AssignTargets   // Select highest threat targets
         // TODO: GroupCombatSystem.Resolve       // Handle assist/protect/own target attack intents
-        // TODO: AbilitySystem                   // Resolve skill/spell usage → may generate Damage/Effect intents
-        // Resolve DamageEvents from DOT and abilities
-        _damageSystem.Tick(state);
-        _healSystem.Tick(state);
+        // TODO: AbilitySystem                   // Resolve skill/spell usage → may generate DamageAction/HealAction/EffectActions
         // Generate AttackIntents for entities in combat
         _autoAttackSystem.Tick(state);
         // Resolve AttackIntents → AttackEvents + reactions, procs, spell effects, damage, heal, etc.
@@ -229,8 +224,8 @@ internal class GameLoop
         _itemRemovedEventBuffer.Clear();
         _itemDestroyedEventBuffer.Clear();
         _itemSacrifiedEventBuffer.Clear();
-        _damageEventBuffer.Clear();
-        _healEventBuffer.Clear();
+        _damagedEventBuffer.Clear();
+        _healedEventBuffer.Clear();
         _deathEventBuffer.Clear();
         _itemLootedEventBuffer.Clear();
         _lookedEventBuffer.Clear();

@@ -1,13 +1,11 @@
 ﻿using MysteryMud.Core;
-using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Intent;
 using MysteryMud.Core.Services;
-using MysteryMud.Domain.Combat.Factories;
 using MysteryMud.Domain.Combat.Resolvers;
+using MysteryMud.Domain.Damage.Factories;
+using MysteryMud.Domain.Damage.Resolvers;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.GameData.Enums;
-using MysteryMud.GameData.Events;
-using MysteryMud.GameData.Intents;
 
 namespace MysteryMud.Domain.Combat;
 
@@ -20,12 +18,12 @@ public sealed class CombatOrchestrator
     private readonly WeaponProcResolver _weaponProcResolver;
     private readonly ReactionResolver _reactionResolver;
 
-    public CombatOrchestrator(IGameMessageService msg, IIntentContainer intents, IEventBuffer<DamageEvent> damages, DamageResolver damageResolver)
+    public CombatOrchestrator(IGameMessageService msg, IIntentContainer intents, DamageResolver damageResolver)
     {
         _intents = intents;
         _damageResolver = damageResolver;
         _hitResolver = new HitResolver(msg); // TODO: don't create instance, inject it instead
-        _damageProducer = new DamageFactory(damages); // TODO: don't create instance, inject it instead
+        _damageProducer = new DamageFactory(); // TODO: don't create instance, inject it instead
         _weaponProcResolver = new WeaponProcResolver(); // TODO: don't create instance, inject it instead
         _reactionResolver = new ReactionResolver(msg); // TODO: don't create instance, inject it instead
     }
@@ -47,9 +45,9 @@ public sealed class CombatOrchestrator
             // if hit is successful, produce damage and handle reactions before resolving next hit, this way we can properly handle counterattacks between hits instead of waiting for all hits to be resolved and then handling reactions which can lead to unrealistic scenarios like player attacking 3 times and then monster counterattacking 3 times even if the player is already dead after the first hit
             if (resolvedHit.Result == AttackResults.Hit)
             {
-                ref var damageEvent = ref _damageProducer.CreateHit(resolvedHit);
+                var damageAction = _damageProducer.CreateHitDamage(resolvedHit);
 
-                _damageResolver.Resolve(damageEvent); // TODO: this damage event should be pushed to global damage events but flagged as processed
+                _damageResolver.Resolve(damageAction);
 
                 // ---------- Weapon procs (immediate on hit) ----------
                 // TODO: handle weapon proc

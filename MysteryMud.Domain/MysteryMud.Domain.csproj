@@ -9,4 +9,8 @@
   <ItemGroup>
     <ProjectReference Include="..\MysteryMud.Core\MysteryMud.Core.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Combat\Factories\" />
+  </ItemGroup>
 </Project>

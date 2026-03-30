@@ -3,27 +3,31 @@ using Arch.Core.Extensions;
 using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Calculators;
+using MysteryMud.Domain.Combat.Resolvers;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Factories;
+using MysteryMud.GameData.Actions;
 using MysteryMud.GameData.Events;
 
-namespace MysteryMud.Domain.Combat.Resolvers;
+namespace MysteryMud.Domain.Damage.Resolvers;
 
 public class DamageResolver
 {
     private readonly AggroResolver _aggroResolver;
     private readonly IGameMessageService _msg;
+    private readonly IEventBuffer<DamagedEvent> _damaged;
     private readonly IEventBuffer<DeathEvent> _deaths;
 
-    public DamageResolver(AggroResolver aggroResolver, IGameMessageService msg, IEventBuffer<DeathEvent> deaths)
+    public DamageResolver(AggroResolver aggroResolver, IGameMessageService msg, IEventBuffer<DamagedEvent> damaged, IEventBuffer<DeathEvent> deaths)
     {
         _aggroResolver = aggroResolver;
         _msg = msg;
+        _damaged = damaged;
         _deaths = deaths;
     }
 
-    public void Resolve(DamageEvent dmg) // to be used during combat process
+    public void Resolve(in DamageAction dmg) // to be used during combat process
     {
         if (dmg.Target.Has<Dead>()) // already dead
             return;
@@ -52,6 +56,14 @@ public class DamageResolver
             deathEvt.Dead = dmg.Target;
             deathEvt.Killer = dmg.Source;
         }
+
+        // damaged event
+        ref var damagedEvt = ref _damaged.Add();
+        damagedEvt.Target = dmg.Target;
+        damagedEvt.Source = dmg.Source;
+        damagedEvt.Amount = modifiedDamage;
+        damagedEvt.DamageType = dmg.DamageType;
+        damagedEvt.SourceType = dmg.SourceType;
     }
 
     private static void AddDeadTags(Entity victim)
