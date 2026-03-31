@@ -24,6 +24,8 @@ public sealed class IntentBusContainer : IIntentContainer
     private readonly StructBuffer<LootIntent> _loot = new(128);
     // LookSystem
     private readonly StructBuffer<LookIntent> _look = new(128);
+    // ScheduleSystem
+    private readonly StructBuffer<ScheduleIntent> _schedule = new(512);
 
     public IntentBusContainer()
     {
@@ -46,6 +48,8 @@ public sealed class IntentBusContainer : IIntentContainer
         Loot = new IntentWriter<LootIntent>(_loot);
         // LookSystem
         Look = new IntentWriter<LookIntent>(_look);
+        // ScheduleSystem
+        Schedule = new IntentWriter<ScheduleIntent>(_schedule);
     }
 
     // Attack intents are a special case, we want to able to have direct access, because CombatOrchestrator add attack intents while iterating them
@@ -84,6 +88,9 @@ public sealed class IntentBusContainer : IIntentContainer
     // LootSystem
     public IIntentWriter<LookIntent> Look { get; }
     public Span<LookIntent> LookSpan => _look.AsSpan();
+    // ScheduleSystem
+    public IIntentWriter<ScheduleIntent> Schedule { get; }
+    public Span<ScheduleIntent> ScheduleSpan => _schedule.AsSpan();
 
     public void ClearAll()
     {
@@ -106,5 +113,7 @@ public sealed class IntentBusContainer : IIntentContainer
         _loot.Clear();
         // LookSystem
         _look.Clear();
+        // ScheduleSystem
+        _schedule.Clear();
     }
 }

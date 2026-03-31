@@ -26,10 +26,10 @@ public class TestCommand : ICommand
         ref var roomContents = ref actor.Get<Location>().Room.Get<RoomContents>().Characters;
         var target = EntityFinder.SelectSingleTarget(actor, ctx.Primary, roomContents);
 
-        systemContext.Msg.To(actor).Send("Ansi16: %RR%GG%YY%BB%MM%CC%WW%rr%gg%yy%bb%mm%cc%ww%xnocolor");
-        systemContext.Msg.To(actor).Send("Ansi256: %=214orange%xnocolor");
-        systemContext.Msg.To(actor).Send("RGB: %#FFA500orange%xnocolor");
-        systemContext.Msg.To(actor).Send("GRADIENT: %#FFA500>#00FFA5orange-2-cyan%xnocolor");
+        //systemContext.Msg.To(actor).Send("Ansi16: %RR%GG%YY%BB%MM%CC%WW%rr%gg%yy%bb%mm%cc%ww%xnocolor");
+        //systemContext.Msg.To(actor).Send("Ansi256: %=214orange%xnocolor");
+        //systemContext.Msg.To(actor).Send("RGB: %#FFA500orange%xnocolor");
+        //systemContext.Msg.To(actor).Send("GRADIENT: %#FFA500>#00FFA5orange-2-cyan%xnocolor");
 
         if (target == default)
         {
@@ -62,10 +62,10 @@ public class TestCommand : ICommand
                 ],
                 Flags = AffectFlags.Poison,
                 DurationFunc = (world, source, target) => 5,
+                TickRate = 2,
                 Dot = new DotDefinition
                 {
                     DamageFunc = (world, source, target) => 45,
-                    TickRate = 2,
                     DamageKind = DamageKind.Poison
                 },
                 Hot = null // not hot
@@ -98,11 +98,11 @@ public class TestCommand : ICommand
                 ],
                 Flags = AffectFlags.Bless,
                 DurationFunc = (world, source, target) => 60,
+                TickRate = 2,
                 Dot = null, // no dot
                 Hot = new HotDefinition
                 {
                     HealFunc = (world, source, target) => 5,
-                    TickRate = 2
                 },
             };
 

@@ -2,7 +2,7 @@
 
 namespace MysteryMud.GameData.Events;
 
-public struct HotTriggeredEvent
+public struct EffectTickedEvent
 {
     public Entity Effect;
 }

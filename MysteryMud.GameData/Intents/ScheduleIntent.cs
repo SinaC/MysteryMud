@@ -1,11 +1,11 @@
 ﻿using Arch.Core;
 using MysteryMud.GameData.Enums;
 
-namespace MysteryMud.Infrastructure.Scheduler;
+namespace MysteryMud.GameData.Intents;
 
-public struct ScheduledEvent
+public struct ScheduleIntent
 {
-    public Entity Target;
+    public Entity Effect;
     public ScheduledEventKind Kind;
     public long ExecuteAt;
 }

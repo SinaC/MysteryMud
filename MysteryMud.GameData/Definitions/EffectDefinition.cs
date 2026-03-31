@@ -12,6 +12,8 @@ public class EffectDefinition
     public AffectFlags Flags; // TODO
     public StatModifierDefinition[] StatModifiers = []; // formula ?
     public Func<World, Entity, Entity, int>? DurationFunc;
+    public int TickRate; // in ticks (0: pure duration effect)
+    public bool TickOnApply; // true: tick immediately
     public DotDefinition? Dot;
     public HotDefinition? Hot;
     public string? ApplyMessage; // TODO: on spell ?

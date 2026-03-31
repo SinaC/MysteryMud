@@ -73,9 +73,9 @@ internal class GameLoop
     private readonly EventBuffer<DeathEvent> _deathEventBuffer = new();
     private readonly EventBuffer<ItemLootedEvent> _itemLootedEventBuffer = new();
     private readonly EventBuffer<LookedEvent> _lookedEventBuffer = new();
-    private readonly EventBuffer<DotTriggeredEvent> _dotTriggeredEventBuffer = new();
-    private readonly EventBuffer<HotTriggeredEvent> _hotTriggeredEventBuffer = new();
+    private readonly EventBuffer<TriggeredScheduledEvent> _triggeredScheduledEventBuffer = new();
     private readonly EventBuffer<EffectExpiredEvent> _effectExpiredEventBuffer = new();
+    private readonly EventBuffer<EffectTickedEvent> _effectTickedEventBuffer = new();
 
     private readonly ILookService _lookService;
 
@@ -89,9 +89,8 @@ internal class GameLoop
     private readonly ItemInteractionSystem _itemInteractionSystem;
     private readonly StatsSystem _statsSystem;
     private readonly AutoAttackSystem _autoAttackSystem;
-    private readonly DotSystem _dotSystem;
-    private readonly HotSystem _hotSystem;
-    private readonly DurationSystem _durationSystem;
+    private readonly TimedEffectSystem _timedEffectSystem;
+    private readonly ScheduleSystem _scheduleSystem;
     private readonly DeathSystem _deathSystem;
     private readonly RespawnSystem _respawnSystem;
     private readonly LootSystem _lootSystem;
@@ -121,9 +120,8 @@ internal class GameLoop
         _itemInteractionSystem = new ItemInteractionSystem(_gameMessageService, _intentContainer, _itemGotEventBuffer, _itemDroppedEventBuffer, _itemGivenEventBuffer, _itemPutEventBuffer, _itemWornEventBuffer, _itemRemovedEventBuffer, _itemDestroyedEventBuffer, _itemSacrifiedEventBuffer);
         _statsSystem = new StatsSystem();
         _autoAttackSystem = new AutoAttackSystem(_intentContainer);
-        _dotSystem = new DotSystem(_logger, _scheduler, _damageResolver, _dotTriggeredEventBuffer);
-        _hotSystem = new HotSystem(_logger, _scheduler, _healResolver, _hotTriggeredEventBuffer);
-        _durationSystem = new DurationSystem(_logger, _gameMessageService, _effectExpiredEventBuffer);
+        _timedEffectSystem = new TimedEffectSystem(_logger, _gameMessageService, _intentContainer, _damageResolver, _healResolver, _triggeredScheduledEventBuffer, _effectExpiredEventBuffer, _effectTickedEventBuffer);
+        _scheduleSystem = new ScheduleSystem(scheduler, intentContainer);
         _deathSystem = new DeathSystem(_gameMessageService, _intentContainer, _deathEventBuffer);
         _respawnSystem = new RespawnSystem(_gameMessageService);
         _lootSystem = new LootSystem(_gameMessageService, _intentContainer, _itemLootedEventBuffer);
@@ -161,7 +159,6 @@ internal class GameLoop
         {
             Log = _logger,
             Msg = _gameMessageService,
-            Scheduler = _scheduler,
             Intent = _intentContainer,
         };
 
@@ -175,17 +172,16 @@ internal class GameLoop
         // Convert flee → MoveIntents
         _fleeSystem.Tick(state);
         // TODO: ChaseSystem                      // NPC chase movement
-        // Resolves MoveIntents → emits auto-look PostUpdate (Mode=PostUpdate)
+        // Resolve MoveIntents → emits auto-look PostUpdate (Mode=PostUpdate)
         _movementSystem.Tick(state);
         // Handle get/drop/put/give/...
         _itemInteractionSystem.Tick(state);
         // Recalculate stats from DirtyFlags
         _statsSystem.Tick(state);
-        // Apply scheduled effects (damage, heal, buffs/debuffs)
-        _scheduler.Process(state, _dotTriggeredEventBuffer, _hotTriggeredEventBuffer, _effectExpiredEventBuffer);
-        _dotSystem.Tick(state);
-        _hotSystem.Tick(state);
-        _durationSystem.Tick(state);
+        // Generate triggered scheduled event (tick or expired)
+        _scheduler.Process(state, _triggeredScheduledEventBuffer);
+        // Resolve triggered scheduled event and generates scheduleIntent (for next tick), effectExpiredEvent (to inform), effectTickedEvent (to inform)
+        _timedEffectSystem.Tick(state);
         // TODO: ThreatSystem.UpdateThreat       // Update aggro/threat
         // TODO: NPCTargetSystem.AssignTargets   // Select highest threat targets
         // TODO: GroupCombatSystem.Resolve       // Handle assist/protect/own target attack intents
@@ -202,6 +198,8 @@ internal class GameLoop
         _lootSystem.Tick(state);
         // Processes LookIntents with Mode=PostUpdate → reflects final world state after all updates
         _lookSystem.Tick(state, LookMode.PostUpdate);
+        // Handle scheduleIntents (which can be generated from IA, abilities, TimedEffectSytem, CombatOrchestrator)
+        _scheduleSystem.Tick(state);
 
         // Remove destroyed items / dead NPCs / disconnected players
         _cleanupSystem.Tick(state);
@@ -229,9 +227,9 @@ internal class GameLoop
         _deathEventBuffer.Clear();
         _itemLootedEventBuffer.Clear();
         _lookedEventBuffer.Clear();
-        _dotTriggeredEventBuffer.Clear();
-        _hotTriggeredEventBuffer.Clear();
+        _triggeredScheduledEventBuffer.Clear();
         _effectExpiredEventBuffer.Clear();
+        _effectTickedEventBuffer.Clear();
     }
 
     /*

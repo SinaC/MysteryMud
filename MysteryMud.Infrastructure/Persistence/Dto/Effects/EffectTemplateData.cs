@@ -8,6 +8,8 @@ public record EffectTemplateData(
     string[] Flags,
     StatModifierDefinitionData[] StatModifiers,
     string DurationFormula,
+    int TickRate, // in ticks (0: pure duration effect)
+    bool TickOnApply, // true: tick immediately
     DotData Dot,
     HotData Hot,
     string ApplyMessage,
