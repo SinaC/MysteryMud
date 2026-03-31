@@ -26,13 +26,16 @@ public static class EffectFactory
         // remove the effect from the target's CharacterEffects
         ref var characterEffects = ref effectInstance.Target.Get<CharacterEffects>();
         characterEffects.Effects.Remove(effect);
-        if (effectInstance.Template.Tag != EffectTagId.None)
+        // remove tag if applicable
+        if (effectInstance.Definition.Tag != EffectTagId.None)
         {
-            int tagIndex = (int)effectInstance.Template.Tag;
-            if (characterEffects.EffectsByTag[tagIndex] == effect)
+            int tagIndex = (int)effectInstance.Definition.Tag;
+            var effectsByTag = characterEffects.EffectsByTag[tagIndex];
+            if (effectsByTag != null)
             {
-                characterEffects.EffectsByTag[tagIndex] = null;
-                characterEffects.ActiveTags &= ~(1UL << tagIndex);
+                effectsByTag.Remove(effect);
+                if (effectsByTag.Count == 0)
+                    characterEffects.ActiveTags &= ~(1UL << tagIndex); // remove tag from active tags when last effect on that tag is removed
             }
         }
 
@@ -44,15 +47,15 @@ public static class EffectFactory
         state.World.Destroy(effect);
     }
 
-    public static void ApplyEffect(SystemContext ctx, GameState state, EffectTemplate effectTemplate, Entity source, Entity target)
+    public static void ApplyEffect(SystemContext ctx, GameState state, EffectDefinition effectDefinition, Entity source, Entity target)
     {
         ref var targetEffects = ref target.Get<CharacterEffects>();
 
         // if effect has a tag, check for an existing effect with the same tag and apply stacking rules if found
-        int tagIndex = (int)effectTemplate.Tag;
-        if (effectTemplate.Tag != EffectTagId.None && targetEffects.EffectsByTag[tagIndex] is Entity existing)
+        var existing = FindEffect(ref targetEffects, effectDefinition);
+        if (existing is not null)
         {
-            var handled = HandleStacking(ctx, state, effectTemplate, existing, source);
+            var handled = HandleStacking(ctx, state, effectDefinition, existing.Value, source);
             if (handled)
                 return;
             // not handled: apply new effect
@@ -64,30 +67,35 @@ public static class EffectFactory
             Source = source,
             Target = target,
             StackCount = 1,
-            Template = effectTemplate,
+            Definition = effectDefinition,
         });
 
         // add effect to target effect cache
         targetEffects.Effects.Add(effect);
 
-        ctx.Log.LogInformation(LogEvents.Factory, "Creating Effect from Template {effectTemplateName} Source {sourceName} Target {targetName}", effectTemplate.Name, source.DebugName, target.DebugName);
+        ctx.Log.LogInformation(LogEvents.Factory, "Creating Effect from Template {effectTemplateName} Source {sourceName} Target {targetName}", effectDefinition.Id, source.DebugName, target.DebugName);
 
         // add tag if applicable
-        if (effectTemplate.Tag != EffectTagId.None)
+        if (effectDefinition.Tag != EffectTagId.None)
         {
+            var tagIndex = (int)effectDefinition.Tag;
             // add EffectTag component to effect
             effect.Add(new EffectTag
             {
-                Id = effectTemplate.Tag
+                Id = effectDefinition.Tag
             });
-            targetEffects.EffectsByTag[tagIndex] = effect;
+            // add effect to target's CharacterEffects
+            if (targetEffects.EffectsByTag[tagIndex] == null)
+                targetEffects.EffectsByTag[tagIndex] = [effect];
+            else
+                targetEffects.EffectsByTag[tagIndex]!.Add(effect);
             targetEffects.ActiveTags |= 1UL << tagIndex;
 
-            ctx.Log.LogInformation(LogEvents.Factory, " - add tag {tag}", effectTemplate.Tag);
+            ctx.Log.LogInformation(LogEvents.Factory, " - add tag {tag}", effectDefinition.Tag);
         }
 
         // duration ?
-        var duration = effectTemplate.DurationFunc?.Invoke(state.World, source, target);
+        var duration = effectDefinition.DurationFunc?.Invoke(state.World, source, target);
         if (duration is not null)
         {
             // add Duration component to effect
@@ -104,11 +112,11 @@ public static class EffectFactory
         }
 
         // stat modifiers ?
-        if (effectTemplate.StatModifiers is not null && effectTemplate.StatModifiers.Length > 0)
+        if (effectDefinition.StatModifiers is not null && effectDefinition.StatModifiers.Length > 0)
         {
             // add StatModifiers component to effect
             var modifiers = new List<StatModifier>();
-            foreach (var modifierDefinition in effectTemplate.StatModifiers)
+            foreach (var modifierDefinition in effectDefinition.StatModifiers)
             {
                 var modifier = new StatModifier
                 {
@@ -134,48 +142,48 @@ public static class EffectFactory
         ref var casterStats = ref source.Get<EffectiveStats>();
 
         // dot ?
-        if (effectTemplate.Dot is not null)
+        if (effectDefinition.Dot is not null)
         {
             // add DamageOverTime component to effect
-            var nextTick = state.CurrentTick + effectTemplate.Dot.Value.TickRate;
-            var damage = effectTemplate.Dot.Value.DamageFunc.Invoke(state.World, source, target);
+            var nextTick = state.CurrentTick + effectDefinition.Dot.Value.TickRate;
+            var damage = effectDefinition.Dot.Value.DamageFunc.Invoke(state.World, source, target);
             effect.Add(new DamageOverTime
             {
                 Damage = damage,
-                DamageType = effectTemplate.Dot.Value.DamageKind,
-                TickRate = effectTemplate.Dot.Value.TickRate,
+                DamageType = effectDefinition.Dot.Value.DamageKind,
+                TickRate = effectDefinition.Dot.Value.TickRate,
                 NextTick = nextTick
             });
 
             // queue first tick event
-            ctx.Log.LogInformation(LogEvents.Factory, " - add DoT {damage} damage of type {damageType} with tick rate {tickRate} and next tick {nextTick}", damage, effectTemplate.Dot.Value.DamageKind, effectTemplate.Dot.Value.TickRate, nextTick);
+            ctx.Log.LogInformation(LogEvents.Factory, " - add DoT {damage} damage of type {damageType} with tick rate {tickRate} and next tick {nextTick}", damage, effectDefinition.Dot.Value.DamageKind, effectDefinition.Dot.Value.TickRate, nextTick);
             ctx.Scheduler.Schedule(effect, ScheduledEventType.DotTick, nextTick);
         }
 
         // hot ?
-        if (effectTemplate.Hot is not null)
+        if (effectDefinition.Hot is not null)
         {
             // add HealOverTime component to effect
-            var nextTick = state.CurrentTick + effectTemplate.Hot.Value.TickRate;
-            var heal = effectTemplate.Hot.Value.HealFunc.Invoke(state.World, source, target);
+            var nextTick = state.CurrentTick + effectDefinition.Hot.Value.TickRate;
+            var heal = effectDefinition.Hot.Value.HealFunc.Invoke(state.World, source, target);
             effect.Add(new HealOverTime
             {
                 Heal = heal,
-                TickRate = effectTemplate.Hot.Value.TickRate,
+                TickRate = effectDefinition.Hot.Value.TickRate,
                 NextTick = nextTick
             });
             // queue first tick event
-            ctx.Log.LogInformation(LogEvents.Factory, " - add HoT {heal} heal with tick rate {tickRate} and next tick {nextTick}", heal, effectTemplate.Hot.Value.TickRate, nextTick);
+            ctx.Log.LogInformation(LogEvents.Factory, " - add HoT {heal} heal with tick rate {tickRate} and next tick {nextTick}", heal, effectDefinition.Hot.Value.TickRate, nextTick);
             ctx.Scheduler.Schedule(effect, ScheduledEventType.HotTick, nextTick);
         }
 
         // apply message
-        if (effectTemplate.ApplyMessage != null)
-            ctx.Msg.To(source).Send(effectTemplate.ApplyMessage);
+        if (effectDefinition.ApplyMessage != null)
+            ctx.Msg.To(source).Send(effectDefinition.ApplyMessage);
     }
 
     // return true if a new effect has to be applied
-    private static bool HandleStacking(SystemContext ctx, GameState state, EffectTemplate effectTemplate, Entity effect, Entity source)
+    private static bool HandleStacking(SystemContext ctx, GameState state, EffectDefinition effectDefinition, Entity effect, Entity source)
     {
         ref var effectInstance = ref state.World.Get<EffectInstance>(effect);
 
@@ -186,9 +194,9 @@ public static class EffectFactory
         }
 
         ref var duration = ref effect.TryGetRef<Duration>(out var hasDuration);
-        int idx = (int)effectTemplate.Tag;
+        int idx = (int)effectDefinition.Tag;
 
-        switch (effectTemplate.Stacking)
+        switch (effectDefinition.Stacking)
         {
             case StackingRule.None:
                 // if the stacking rule is None, do not apply the new effect and do not refresh the duration
@@ -197,38 +205,55 @@ public static class EffectFactory
                 if (hasDuration)
                 {
                     // update Duration
-                    var durationValue = effectTemplate.DurationFunc?.Invoke(state.World, effectInstance.Source, effectInstance.Target) ?? 0;
+                    var durationValue = effectDefinition.DurationFunc?.Invoke(state.World, effectInstance.Source, effectInstance.Target) ?? 0;
                     var expirationTick = state.CurrentTick + durationValue;
                     duration.LastRefreshTick = state.CurrentTick;
                     duration.ExpirationTick = expirationTick;
 
                     // schedule a new expiration event (don't remove the old one, just add a new one with the new expiration tick - when the old one executes it will check the current expiration tick and do nothing if it's different)
-                    ctx.Log.LogInformation(LogEvents.Factory, "Refreshing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration} Expiration {expirationTick}", effectTemplate.Name, source.DebugName, effectInstance.Target.DebugName, duration, expirationTick);
+                    ctx.Log.LogInformation(LogEvents.Factory, "Refreshing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration} Expiration {expirationTick}", effectDefinition.Id, source.DebugName, effectInstance.Target.DebugName, duration, expirationTick);
                     ctx.Scheduler.Schedule(effect, ScheduledEventType.EffectExpired, expirationTick);
                 }
                 return true; // handled -> no new effect, existing modified
             case StackingRule.Stack:
-                if (effectInstance.StackCount < effectTemplate.MaxStacks)
+                if (effectInstance.StackCount < effectDefinition.MaxStacks)
                     effectInstance.StackCount++;
                 if (hasDuration)
                 {
                     // update Duration
-                    var durationValue = effectTemplate.DurationFunc?.Invoke(state.World, effectInstance.Source, effectInstance.Target) ?? 0;
+                    var durationValue = effectDefinition.DurationFunc?.Invoke(state.World, effectInstance.Source, effectInstance.Target) ?? 0;
                     var expirationTick = state.CurrentTick + durationValue;
                     duration.LastRefreshTick = state.CurrentTick;
                     duration.ExpirationTick = expirationTick;
 
                     // schedule a new expiration event (don't remove the old one, just add a new one with the new expiration tick - when the old one executes it will check the current expiration tick and do nothing if it's different)
-                    ctx.Log.LogInformation(LogEvents.Factory, "Stacking/Refreshing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration} Expiration {expirationTick} New Stack Count {newStackCount}", effectTemplate.Name, source.DebugName, effectInstance.Target.DebugName, duration, expirationTick, effectInstance.StackCount);
+                    ctx.Log.LogInformation(LogEvents.Factory, "Stacking/Refreshing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration} Expiration {expirationTick} New Stack Count {newStackCount}", effectDefinition.Id, source.DebugName, effectInstance.Target.DebugName, duration, expirationTick, effectInstance.StackCount);
                     ctx.Scheduler.Schedule(effect, ScheduledEventType.EffectExpired, expirationTick);
                 }
                 return true; // handled -> no new effect, existing modified
             case StackingRule.Replace:
-                ctx.Log.LogInformation(LogEvents.Factory, "Replacing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration}", effectTemplate.Name, source.DebugName, effectInstance.Target.DebugName, duration);
+                ctx.Log.LogInformation(LogEvents.Factory, "Replacing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration}", effectDefinition.Id, source.DebugName, effectInstance.Target.DebugName, duration);
                 RemoveEffect(state, effect); // destroy current effect (no wear off message because it's a replacement)
                 return false; // no handled -> new effect will be added
         }
 
         return true; // default to handled to prevent new effect application if stacking rule is not recognized
+    }
+
+    public static Entity? FindEffect(ref CharacterEffects characterEffects, EffectDefinition effectDefinition)
+    {
+        if (effectDefinition.Tag == EffectTagId.None)
+            return null;
+        var tagIndex = (int)effectDefinition.Tag;
+        ref var effectsByTag = ref characterEffects.EffectsByTag[tagIndex];
+        if (effectsByTag == null)
+            return null;
+        foreach(var effectByTag in effectsByTag)
+        {
+            ref var effectInstance = ref effectByTag.Get<EffectInstance>();
+            if (effectInstance.Definition.Id == effectDefinition.Id)
+                return effectByTag;
+        }
+        return null;
     }
 }

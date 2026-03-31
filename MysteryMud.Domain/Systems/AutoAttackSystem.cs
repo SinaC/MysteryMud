@@ -51,7 +51,7 @@ public class AutoAttackSystem
             attackIntent.RemainingHits = hits;
             attackIntent.IsReaction = false; // autoattack, not a reaction
             attackIntent.IgnoreDefense = false; // autoattacks are affected by defense
-            attackIntent.SourceType = DamageSourceKind.Hit;
+            attackIntent.SourceKind = DamageSourceKind.Hit;
 
             // Apply lag before next attack
             combat.RoundDelay = 2; // example: 2 ticks

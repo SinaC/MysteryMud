@@ -19,51 +19,51 @@ public class JsonSpellLoader
         var json = File.ReadAllText(filePath);
         var data = JsonSerializer.Deserialize<SpellAndEffectRootData>(json, options)!;
 
-        // load templates first so spells can reference them
-        var templates = new Dictionary<string, EffectTemplate>();
-        foreach (var e in data.Effects)
+        // load effect definitions first so spells can reference them
+        var effectDefinitions = new Dictionary<string, EffectDefinition>();
+        foreach (var effect in data.Effects)
         {
-            var template = new EffectTemplate
+            var definition = new EffectDefinition
             {
-                Name = e.Name,
-                Tag = Enum.Parse<EffectTagId>(e.Tag),
-                Stacking = Enum.Parse<StackingRule>(e.Stacking, ignoreCase: true),
-                MaxStacks = Math.Max(1, e.MaxStacks),
+                Id = effect.Name,
+                Tag = Enum.Parse<EffectTagId>(effect.Tag),
+                Stacking = Enum.Parse<StackingRule>(effect.Stacking, ignoreCase: true),
+                MaxStacks = Math.Max(1, effect.MaxStacks),
                 //TODO: Flags = Enum.Parse<AffectFlags>(e.Flags),
-                StatModifiers = e.StatModifiers.Select(sm => new StatModifierDefinition
+                StatModifiers = effect.StatModifiers.Select(sm => new StatModifierDefinition
                 {
                     Stat = Enum.Parse<StatKind>(sm.Stat, ignoreCase: true),
                     Kind = Enum.Parse<ModifierKind>(sm.Type, ignoreCase: true),
                     Value = sm.Value
                 }).ToArray(),
-                ApplyMessage = e.ApplyMessage,
-                WearOffMessage = e.WearOffMessage
+                ApplyMessage = effect.ApplyMessage,
+                WearOffMessage = effect.WearOffMessage
             };
 
             // Dynamic formulas evaluated at cast time
-            if (e.DurationFormula != null)
-                template.DurationFunc = formulaCompiler.Compile(e.DurationFormula);
+            if (effect.DurationFormula != null)
+                definition.DurationFunc = formulaCompiler.Compile(effect.DurationFormula);
 
-            if (e.Dot != null && e.Dot.DamageFormula != null)
+            if (effect.Dot != null && effect.Dot.DamageFormula != null)
             {
-                template.Dot = new DotDefinition
+                definition.Dot = new DotDefinition
                 {
-                    DamageFunc = formulaCompiler.Compile(e.Dot.DamageFormula),
-                    DamageKind = Enum.Parse<DamageKind>(e.Dot.DamageType, ignoreCase: true),
-                    TickRate = e.Dot.TickRate,
+                    DamageFunc = formulaCompiler.Compile(effect.Dot.DamageFormula),
+                    DamageKind = Enum.Parse<DamageKind>(effect.Dot.DamageType, ignoreCase: true),
+                    TickRate = effect.Dot.TickRate,
                 };
             }
 
-            if (e.Hot != null && e.Hot.HealFormula != null)
+            if (effect.Hot != null && effect.Hot.HealFormula != null)
             {
-                template.Hot = new HotDefinition
+                definition.Hot = new HotDefinition
                 {
-                    HealFunc = formulaCompiler.Compile(e.Hot.HealFormula),
-                    TickRate = e.Hot.TickRate,
+                    HealFunc = formulaCompiler.Compile(effect.Hot.HealFormula),
+                    TickRate = effect.Hot.TickRate,
                 };
             }
 
-            templates[e.Name] = template;
+            effectDefinitions[effect.Name] = definition;
         }
 
         // load spells
@@ -73,13 +73,13 @@ public class JsonSpellLoader
             spells[s.Name] = new SpellDefinition
             {
                 Name = s.Name,
-                Effects = s.Effects.Select(name => templates[name]).ToArray()
+                Effects = s.Effects.Select(name => effectDefinitions[name]).ToArray()
             };
         }
 
         var spellDatabase = new SpellDatabase
         {
-            EffectTemplates = templates,
+            EffectDefinitions = effectDefinitions,
             Spells = spells
         };
 

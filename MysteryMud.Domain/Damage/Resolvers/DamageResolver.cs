@@ -37,7 +37,9 @@ public class DamageResolver
         // apply damage type modifiers, resistances, vulnerabilities, etc.
         var modifiedDamage = DamageCalculator.ModifyDamage(dmg.Target, dmg.Amount, dmg.DamageKind, dmg.Source);
 
-        _msg.ToAll(dmg.Source).Act("%G{0} deal{0:v} %r{1}%g damage to {2}.%x").With(dmg.Source, modifiedDamage, dmg.Target);
+        // we have to split sending to source and sending to room because source may not be in the same room
+        _msg.To(dmg.Source).Act("%G{0} deal{0:v} %r{1}%g damage to {2}.%x").With(dmg.Source, modifiedDamage, dmg.Target);
+        _msg.ToRoom(dmg.Target).Act("%G{0} deal{0:v} %r{1}%g damage to {2}.%x").With(dmg.Source, modifiedDamage, dmg.Target);
 
         // apply damage
         health.Current -= modifiedDamage;

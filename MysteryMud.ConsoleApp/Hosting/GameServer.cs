@@ -157,7 +157,7 @@ public class GameServer
         player.Add(new CharacterEffects
         {
             Effects = [],
-            EffectsByTag = new Entity?[32]
+            EffectsByTag = new List<Entity>?[32]
         });
         player.Add(new Location { Room = RoomFactory.StartingRoomEntity });
         player.Add(new Position { Value = PositionKind.Standing });

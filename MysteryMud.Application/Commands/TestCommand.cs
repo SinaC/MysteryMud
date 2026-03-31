@@ -39,9 +39,9 @@ public class TestCommand : ICommand
 
         if (ctx.Text.Equals("poison".AsSpan(), StringComparison.OrdinalIgnoreCase))
         {
-            var effectTemplate = new EffectTemplate
+            var effectDefinition = new EffectDefinition
             {
-                Name = "Poison2",
+                Id = "Poison2",
                 Tag = EffectTagId.Poison,
                 Stacking = StackingRule.Stack,
                 MaxStacks = 3,
@@ -71,13 +71,13 @@ public class TestCommand : ICommand
                 Hot = null // not hot
             };
 
-            EffectFactory.ApplyEffect(systemContext, state, effectTemplate, actor, target);
+            EffectFactory.ApplyEffect(systemContext, state, effectDefinition, actor, target);
         }
         else if (ctx.Text.Equals("bless".AsSpan(), StringComparison.OrdinalIgnoreCase))
         {
-            var effectTemplate = new EffectTemplate
+            var effectDefinition = new EffectDefinition
             {
-                Name = "Bless2",
+                Id = "Bless2",
                 Tag = EffectTagId.Bless,
                 Stacking = StackingRule.Replace,
                 MaxStacks = 1,
@@ -106,7 +106,7 @@ public class TestCommand : ICommand
                 },
             };
 
-            EffectFactory.ApplyEffect(systemContext, state, effectTemplate, actor, target);
+            EffectFactory.ApplyEffect(systemContext, state, effectDefinition, actor, target);
         }
     }
 }
