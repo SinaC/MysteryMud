@@ -3,9 +3,9 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.GameData.Definitions;
 
-public class EffectTemplate
+public class EffectDefinition
 {
-    public string Name = default!;
+    public string Id = default!;
     public EffectTagId Tag;
     public StackingRule Stacking;
     public int MaxStacks = 1;

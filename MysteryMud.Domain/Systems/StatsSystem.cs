@@ -70,6 +70,9 @@ public class StatsSystem
                 }
 
                 var finalValue = overriding ?? ((baseValue + flat) * (100 + percent) * multiply / 100);
+
+                // TODO: capping
+
                 effectiveStats.Values[stat] = finalValue;
             }
 

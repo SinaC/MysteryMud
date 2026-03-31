@@ -34,7 +34,9 @@ public class HealResolver
         // apply heal modifiers
         var modifiedHeal = HealCalculator.ModifyHeal(heal.Target, heal.Amount, heal.Source);
 
-        _msg.ToRoom(heal.Source).Act("%G{0} heal %g{1} for %g{2}%g health.%x").With(heal.Source, heal.Target, modifiedHeal);
+        // we have to split sending to source and sending to room because source may not be in the same room
+        _msg.To(heal.Source).Act("%G{0} heal{0:v} %g{1} for %g{2}%g health.%x").With(heal.Source, heal.Target, modifiedHeal);
+        _msg.ToRoom(heal.Target).Act("%G{0} heal{0:v} %g{1} for %g{2}%g health.%x").With(heal.Source, heal.Target, modifiedHeal);
 
         // apply heal
         health.Current += modifiedHeal;

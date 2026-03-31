@@ -58,10 +58,10 @@ public class DurationSystem
         EffectFactory.RemoveEffect(state, effect);
 
         // display wear off message if any
-        if (effectInstance.Template.WearOffMessage != null)
+        if (effectInstance.Definition.WearOffMessage != null)
         {
             // TODO: in room ?
-            _msg.To(effectInstance.Target).Send(effectInstance.Template.WearOffMessage);
+            _msg.To(effectInstance.Target).Send(effectInstance.Definition.WearOffMessage);
         }
     }
 }

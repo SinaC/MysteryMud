@@ -66,7 +66,7 @@ public static class PlayerFactory
             new CharacterEffects
             {
                 Effects = [],
-                EffectsByTag = new Entity?[32]
+                EffectsByTag = new List<Entity>?[32]
             },
             new Position { Value = PositionKind.Standing },
             new Location { Room = room },

@@ -4,5 +4,5 @@ public class SpellDefinition
 {
     public required string Name { get; init; }
     // TODO: direct damage/heal
-    public required EffectTemplate[] Effects { get; init; }
+    public required EffectDefinition[] Effects { get; init; }
 }
