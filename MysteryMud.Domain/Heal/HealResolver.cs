@@ -24,7 +24,7 @@ public class HealResolver
 
     public void Resolve(HealAction heal) // to be used during combat process
     {
-        if (heal.Target.Has<Dead>()) // already dead
+        if (!heal.Target.IsAlive() || heal.Target.Has<Dead>()) // already dead
             return;
 
         ref var health = ref heal.Target.TryGetRef<Health>(out var hasHealth);
@@ -36,7 +36,7 @@ public class HealResolver
 
         // we have to split sending to source and sending to room because source may not be in the same room
         _msg.To(heal.Source).Act("%G{0} heal{0:v} %g{1} for %g{2}%g health.%x").With(heal.Source, heal.Target, modifiedHeal);
-        _msg.ToRoom(heal.Target).Act("%G{0} heal{0:v} %g{1} for %g{2}%g health.%x").With(heal.Source, heal.Target, modifiedHeal);
+        _msg.ToRoomExcept(heal.Target, heal.Source).Act("%G{0} heal{0:v} %g{1} for %g{2}%g health.%x").With(heal.Source, heal.Target, modifiedHeal);
 
         // apply heal
         health.Current += modifiedHeal;

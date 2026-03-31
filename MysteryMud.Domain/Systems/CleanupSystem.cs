@@ -7,9 +7,12 @@ using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.Domain.Components.Characters.Players;
+using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Extensions;
+using MysteryMud.Domain.Factories;
+using System.Numerics;
 
 namespace MysteryMud.Domain.Systems;
 
@@ -29,6 +32,17 @@ public class CleanupSystem
     // check Equipped for items
     public void Tick(GameState state)
     {
+        // destroy expired effects
+        var expiredEffectsQuery = new QueryDescription()
+            .WithAll<ExpiredTag>();
+        state.World.Query(expiredEffectsQuery, (Entity effect, ref ExpiredTag expiredTag) =>
+        {
+            _logger.LogInformation(LogEvents.Cleanup, "Cleaning up expired effect {effectName}", effect.DebugName);
+
+            // remove the effect from the target's CharacterEffects
+            EffectFactory.RemoveEffect(state, effect);
+        });
+
         // destroy disconnected players
         var disconnectedPlayersQuery = new QueryDescription()
                 .WithAll<DisconnectedTag>();

@@ -23,4 +23,6 @@ public interface IIntentWriterContainer
     IIntentWriter<LootIntent> Loot { get; }
     // LookSystem
     IIntentWriter<LookIntent> Look { get; }
+    // ScheduleSystem
+    IIntentWriter<ScheduleIntent> Schedule { get; }
 }

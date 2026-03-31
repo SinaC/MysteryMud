@@ -19,7 +19,6 @@ using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
 using MysteryMud.Infrastructure.Eventing;
 using MysteryMud.Infrastructure.Intent;
-using MysteryMud.Infrastructure.Scheduler;
 using MysteryMud.Infrastructure.Services;
 
 namespace MysteryMud.ConsoleApp.Demo;
@@ -69,7 +68,7 @@ static class Demo2
         var itemLootedEventBuffer = new EventBuffer<ItemLootedEvent>();
         var lookedEventBuffer = new EventBuffer<LookedEvent>();
 
-        var systemContext = new SystemContext { Log = logger, Msg = gameMessageService, Scheduler = new Scheduler(), Intent = intentBusContainer };
+        var systemContext = new SystemContext { Log = logger, Msg = gameMessageService, Intent = intentBusContainer };
 
         // TODO: deathEvent and damageEvent are purely combat events and should probably remains the only event passed to systems, other events like itemGotEvent, itemDroppedEvent, itemGivenEvent, itemPutEvent can be directly sent to message service without going through event buffer since they are only used for messaging and no system needs to react to them, this way we can avoid the complexity of managing multiple event buffers and also avoid the issue of events being processed in the wrong order (like damage events being processed before attack intents)
         // TODO: we should replace all these eventbuffers with a more generic event system

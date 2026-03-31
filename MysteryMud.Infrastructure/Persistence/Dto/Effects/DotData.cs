@@ -2,6 +2,5 @@
 
 public record DotData(
     string DamageFormula,
-    string DamageType,
-    int TickRate // in ticks
+    string DamageKind
 );

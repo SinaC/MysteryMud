@@ -29,7 +29,7 @@ public class DamageResolver
 
     public void Resolve(in DamageAction dmg) // to be used during combat process
     {
-        if (dmg.Target.Has<Dead>()) // already dead
+        if (!dmg.Target.IsAlive() || dmg.Target.Has<Dead>()) // already dead
             return;
 
         ref var health = ref dmg.Target.Get<Health>();
@@ -39,7 +39,7 @@ public class DamageResolver
 
         // we have to split sending to source and sending to room because source may not be in the same room
         _msg.To(dmg.Source).Act("%G{0} deal{0:v} %r{1}%g damage to {2}.%x").With(dmg.Source, modifiedDamage, dmg.Target);
-        _msg.ToRoom(dmg.Target).Act("%G{0} deal{0:v} %r{1}%g damage to {2}.%x").With(dmg.Source, modifiedDamage, dmg.Target);
+        _msg.ToRoomExcept(dmg.Target, dmg.Source).Act("%G{0} deal{0:v} %r{1}%g damage to {2}.%x").With(dmg.Source, modifiedDamage, dmg.Target);
 
         // apply damage
         health.Current -= modifiedDamage;

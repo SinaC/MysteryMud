@@ -73,18 +73,23 @@ public class MstatCommand : ICommand
         systemContext.Msg.To(actor).Send($"Effects:");
         foreach (var effect in characterEffects.Effects)
         {
+            if (!effect.IsAlive() || effect.Has<ExpiredTag>())
+                continue;
             ref var effectInstance = ref effect.Get<EffectInstance>();
-            ref var duration = ref effect.TryGetRef<Duration>(out var hasDuration);
+            ref var timedEffect = ref effect.TryGetRef<TimedEffect>(out var isTimedEffect);
             ref var statModifiers = ref effect.TryGetRef<StatModifiers>(out var hasStatModifiers);
-            ref var damageOverTime = ref effect.TryGetRef<DamageOverTime>(out var hasDamageOverTime);
-            ref var healOverTime = ref effect.TryGetRef<HealOverTime>(out var hasHealOverTime);
+            ref var damageEffect = ref effect.TryGetRef<DamageEffect>(out var hasDamageEffect);
+            ref var healEffect = ref effect.TryGetRef<HealEffect>(out var hasHealEffect);
             var effectName = effectInstance.Definition.Id;
             var stackCount = effectInstance.StackCount;
             var sourceName = effectInstance.Source.DisplayName;
-            if (hasDuration)
+            if (isTimedEffect)
             {
-                var remainingTicks = duration.ExpirationTick - state.CurrentTick;
-                systemContext.Msg.To(actor).Send($"- {effectName} Source: {sourceName} Stacks: {stackCount} Remaining ticks: {remainingTicks}");
+                var remainingTicks = timedEffect.ExpirationTick - state.CurrentTick;
+                if (timedEffect.TickRate > 0)
+                    systemContext.Msg.To(actor).Send($"- {effectName} Source: {sourceName} Stacks: {stackCount} Remaining ticks: {remainingTicks} Tick rate: {timedEffect.TickRate}");
+                else
+                    systemContext.Msg.To(actor).Send($"- {effectName} Source: {sourceName} Stacks: {stackCount} Remaining ticks: {remainingTicks}");
             }
             else
                 systemContext.Msg.To(actor).Send($"- {effectName} Source: {sourceName} Stacks: {stackCount} Permanent");
@@ -93,10 +98,10 @@ public class MstatCommand : ICommand
                 foreach (var modifier in statModifiers.Values)
                     systemContext.Msg.To(actor).Send($"  - {modifier.Kind} {modifier.Value} {modifier.Stat}");
             }
-            if (hasDamageOverTime)
-                systemContext.Msg.To(actor).Send($"  - Damage over time: {damageOverTime.Damage} every {damageOverTime.TickRate} ticks");
-            if (hasHealOverTime)
-                systemContext.Msg.To(actor).Send($"  - Heal over time: {healOverTime.Heal} every {healOverTime.TickRate} ticks");
+            if (hasDamageEffect)
+                systemContext.Msg.To(actor).Send($"  - Damage over time: {damageEffect.Damage} by stack");
+            if (hasHealEffect)
+                systemContext.Msg.To(actor).Send($"  - Heal over time: {healEffect.Heal} by stack");
         }
     }
 }

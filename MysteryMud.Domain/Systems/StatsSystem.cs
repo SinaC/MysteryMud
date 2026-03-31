@@ -3,6 +3,7 @@ using Arch.Core.Extensions;
 using MysteryMud.Core;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
+using MysteryMud.Domain.Helpers;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Systems;
@@ -40,6 +41,8 @@ public class StatsSystem
                 ref var characterEffects = ref character.Get<CharacterEffects>();
                 foreach (var effect in characterEffects.Effects)
                 {
+                    if (!EffectHelpers.IsAlive(effect))
+                        continue;
                     ref var statModifiers = ref effect.TryGetRef<StatModifiers>(out var hasStatModifiers);
                     if (hasStatModifiers)
                     {

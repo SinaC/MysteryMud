@@ -10,10 +10,10 @@
       ],
       "Flags": ["Poison"],
       "DurationFormula": "4 * caster.Strength",
+      "TickRate": 2,
       "Dot": {
          "DamageFormula": "1",
-         "DamageType": "Poison",
-         "TickRate": 2
+         "DamageKind": "Poison"
       }
     },
     {
@@ -27,9 +27,9 @@
       ],
       "Flags": ["Bless"],
       "DurationFormula": "60",
+      "TickRate": 3,
       "Hot": {
-         "HealFormula": "3 + caster.Level / 2",
-         "TickRate": 3
+         "HealFormula": "3 + caster.Level / 2"
       }
     }
   ],

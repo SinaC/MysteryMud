@@ -27,6 +27,8 @@ public interface IIntentContainer: IIntentWriterContainer
     Span <LootIntent> LootSpan { get; }
     // LookSystem
     Span<LookIntent> LookSpan { get; }
+    // ScheduleSystem
+    Span<ScheduleIntent> ScheduleSpan { get; }
 
     void ClearAll();
 }

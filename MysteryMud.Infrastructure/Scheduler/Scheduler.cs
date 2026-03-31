@@ -2,56 +2,53 @@
 using MysteryMud.Core;
 using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Scheduler;
+using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
 
 namespace MysteryMud.Infrastructure.Scheduler;
 
 public class Scheduler : IScheduler
 {
-    private readonly PriorityQueue<ScheduledEvent, (long time, ScheduledEventType eventType)> _queue = new();
+    private readonly PriorityQueue<ScheduledEvent, (long time, ScheduledEventKind eventKind)> _queue = new();
 
-    public void Schedule(Entity entity, ScheduledEventType type, long executedAt)
+    public void Schedule(Entity entity, ScheduledEventKind kind, long executedAt)
     {
         var scheduledEvent = new ScheduledEvent
         {
             Target = entity,
-            Type = type,
+            Kind = kind,
             ExecuteAt = executedAt
         };
-        _queue.Enqueue(scheduledEvent, (scheduledEvent.ExecuteAt, scheduledEvent.Type));
+        _queue.Enqueue(scheduledEvent, (scheduledEvent.ExecuteAt, scheduledEvent.Kind));
     }
 
-    public void Process(GameState state, IEventBuffer<DotTriggeredEvent> dots, IEventBuffer<HotTriggeredEvent> hots, IEventBuffer<EffectExpiredEvent> expired)
+    public void Process(GameState state, IEventBuffer<TriggeredScheduledEvent> triggeredScheduledEvents)
     {
         // Process all events that are due to execute at or before the current time
         // priority is determined first by execution time, then by event type (to ensure consistent ordering of events scheduled for the same time)
         while (_queue.TryPeek(out var ev, out var priority) && priority.time <= state.CurrentTick)
         {
             _queue.Dequeue();
-            Execute(dots, hots, expired, ref ev);
+            Execute(triggeredScheduledEvents, ref ev);
         }
     }
 
-    private static void Execute(IEventBuffer<DotTriggeredEvent> dots, IEventBuffer<HotTriggeredEvent> hots, IEventBuffer<EffectExpiredEvent> expired, ref ScheduledEvent ev)
+    private static void Execute(IEventBuffer<TriggeredScheduledEvent> triggeredScheduledEvents, ref ScheduledEvent ev)
     {
-        switch (ev.Type)
+        switch (ev.Kind)
         {
-            case ScheduledEventType.DotTick:
-                // emit dot triggered event
-                ref var dotEvt = ref dots.Add();
-                dotEvt.Effect = ev.Target;
+            case ScheduledEventKind.Tick:
+                // emit triggered scheduled event
+                ref var tickEvt = ref triggeredScheduledEvents.Add();
+                tickEvt.Effect = ev.Target;
+                tickEvt.Kind = ScheduledEventKind.Tick;
                 break;
 
-            case ScheduledEventType.HotTick:
-                // emit hot triggered event
-                ref var hotEvt = ref hots.Add();
-                hotEvt.Effect = ev.Target;
-                break;
-
-            case ScheduledEventType.EffectExpired:
-                // emit expired event
-                ref var expiredEvt = ref expired.Add();
+            case ScheduledEventKind.Expire:
+                // emit triggered scheduled event
+                ref var expiredEvt = ref triggeredScheduledEvents.Add();
                 expiredEvt.Effect = ev.Target;
+                expiredEvt.Kind = ScheduledEventKind.Expire;
                 break;
         }
     }
