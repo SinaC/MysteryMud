@@ -16,7 +16,7 @@ namespace MysteryMud.Domain.Systems;
 
 public sealed class DeathSystem
 {
-    private IGameMessageService _msg;
+    private readonly IGameMessageService _msg;
     private readonly IIntentContainer _intents;
     private readonly IEventBuffer<DeathEvent> _deathEvents;
 

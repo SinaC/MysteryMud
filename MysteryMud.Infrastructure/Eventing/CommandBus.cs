@@ -9,7 +9,8 @@ namespace MysteryMud.Infrastructure.Eventing;
 
 public class CommandBus : ICommandBus
 {
-    private ICommandDispatcher _dispatcher;
+    private readonly ICommandDispatcher _dispatcher;
+
     private readonly ConcurrentQueue<CommandEvent> _queue = new();
 
     public CommandBus(ICommandDispatcher dispatcher)

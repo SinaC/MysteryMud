@@ -9,9 +9,9 @@ namespace MysteryMud.Domain.Systems;
 
 public class LookSystem
 {
-    private ILookService _lookService;
-    private IIntentContainer _intents;
-    private IEventBuffer<LookedEvent> _lookedEvents;
+    private readonly ILookService _lookService;
+    private readonly IIntentContainer _intents;
+    private readonly IEventBuffer<LookedEvent> _lookedEvents;
 
     public LookSystem(ILookService lookService, IIntentContainer intents, IEventBuffer<LookedEvent> lookedEvents)
     {

@@ -9,6 +9,7 @@ using MysteryMud.Core.Logging;
 using MysteryMud.Core.Scheduler;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Combat;
+using MysteryMud.Domain.Combat.Factories;
 using MysteryMud.Domain.Combat.Resolvers;
 using MysteryMud.Domain.Damage.Resolvers;
 using MysteryMud.Domain.Extensions;
@@ -82,6 +83,10 @@ internal class GameLoop
     private readonly AggroResolver _aggroResolver;
     private readonly DamageResolver _damageResolver;
     private readonly HealResolver _healResolver;
+    private readonly HitResolver _hitResolver;
+    private readonly HitDamageFactory _hitDamageFactory;
+    private readonly WeaponProcResolver _weaponProcResolver;
+    private readonly ReactionResolver _reactionResolver;
     private readonly CombatOrchestrator _combatOrchestrator;
 
     private readonly FleeSystem _fleeSystem;
@@ -113,7 +118,11 @@ internal class GameLoop
         _aggroResolver = new AggroResolver();
         _damageResolver = new DamageResolver(_aggroResolver, _gameMessageService, _damagedEventBuffer, _deathEventBuffer);
         _healResolver = new HealResolver(_aggroResolver, _gameMessageService, _healedEventBuffer);
-        _combatOrchestrator = new CombatOrchestrator(_gameMessageService, _intentContainer, _damageResolver);
+        _hitResolver = new HitResolver(_gameMessageService);
+        _hitDamageFactory = new HitDamageFactory();
+        _weaponProcResolver = new WeaponProcResolver();
+        _reactionResolver = new ReactionResolver(_gameMessageService);
+        _combatOrchestrator = new CombatOrchestrator(_gameMessageService, _intentContainer, _hitResolver, _hitDamageFactory, _damageResolver, _weaponProcResolver, _reactionResolver);
 
         _fleeSystem = new FleeSystem(_gameMessageService, _intentContainer, _fleeBlockedEventBuffer);
         _movementSystem = new MovementSystem(_gameMessageService, _intentContainer, _movedEventBuffer);

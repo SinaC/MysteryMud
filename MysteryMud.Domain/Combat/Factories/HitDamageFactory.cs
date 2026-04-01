@@ -2,9 +2,9 @@
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
 
-namespace MysteryMud.Domain.Damage.Factories;
+namespace MysteryMud.Domain.Combat.Factories;
 
-public class DamageFactory
+public class HitDamageFactory
 {
     public DamageAction CreateHitDamage(AttackResolved resolved) // no need to check if source/target is alive
     {
