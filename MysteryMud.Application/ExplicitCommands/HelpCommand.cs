@@ -1,8 +1,8 @@
 ﻿using Arch.Core;
-using MysteryMud.Application.Commands;
 using MysteryMud.Application.Dispatching;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Core;
+using MysteryMud.Core.Commands;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
@@ -11,9 +11,10 @@ namespace MysteryMud.Application.ExplicitCommands;
 // this is a special case
 public class HelpCommand : ICommand
 {
+    private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.Target;
+
     private readonly ICommandRegistry _commandRegistry;
 
-    public CommandParseOptions ParseOptions => CommandParseOptions.Target;
     public CommandDefinition Definition { get; } = new CommandDefinition
     {
         Name = "help",
@@ -32,8 +33,10 @@ public class HelpCommand : ICommand
         _commandRegistry = commandRegistry;
     }
 
-    public void Execute(SystemContext systemContext, GameState state, Entity actor, CommandContext ctx)
+    public void Execute(SystemContext systemContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
+        CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
+
         if (ctx.TargetCount == 0)
         {
             var commands = _commandRegistry.GetCommandDefinitions(CommandLevelKind.Player); // TODO: CommandLevel should be determined by actor's actual level, not just Player
@@ -58,9 +61,9 @@ public class HelpCommand : ICommand
             foreach (var group in commandsByCategory)
             {
                 systemContext.Msg.To(actor).Send($"Category: {group.Key}");
-                foreach (var cmd in group)
+                foreach (var item in group)
                 {
-                    systemContext.Msg.To(actor).Send($"  {cmd.Name} -  %#FA8640>#0486FA{cmd.HelpText}");
+                    systemContext.Msg.To(actor).Send($"  {item.Name} -  %#FA8640>#0486FA{item.HelpText}");
                 }
             }
         }

@@ -1,7 +1,7 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
-using MysteryMud.Application.Parsing;
 using MysteryMud.Core;
+using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.GameData.Definitions;
@@ -10,8 +10,6 @@ namespace MysteryMud.Application.Commands;
 
 public class FleeCommand : ICommand
 {
-    public CommandParseOptions ParseOptions => CommandParseOptions.None;
-
     public CommandDefinition Definition { get; }
 
     public FleeCommand(CommandDefinition definition)
@@ -19,7 +17,7 @@ public class FleeCommand : ICommand
         Definition = definition;
     }
 
-    public void Execute(SystemContext systemContext, GameState state, Entity actor, CommandContext ctx)
+    public void Execute(SystemContext systemContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         if (!actor.Has<CombatState>())
         {

@@ -1,10 +1,10 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
-using MysteryMud.Application.Commands;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Core;
+using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.GameData.Definitions;
@@ -14,9 +14,10 @@ namespace MysteryMud.Application.ExplicitCommands;
 
 public class SocialCommand : ICommand
 {
+    private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.Target;
+
     private readonly SocialDefinition _socialDefinition;
 
-    public CommandParseOptions ParseOptions => CommandParseOptions.Target;
     public CommandDefinition Definition { get; }
 
     public SocialCommand(SocialDefinition socialDefinition)
@@ -36,8 +37,10 @@ public class SocialCommand : ICommand
         };
     }
 
-    public void Execute(SystemContext systemContext, GameState state, Entity actor, CommandContext ctx)
+    public void Execute(SystemContext systemContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
+        CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
+
         var useCharacterNotFound = false;
         Entity victim = default;
 

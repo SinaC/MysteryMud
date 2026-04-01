@@ -1,8 +1,8 @@
 ﻿namespace MysteryMud.Application.Parsing;
 
-public class CommandParser : ICommandParser
+public static class CommandParser
 {
-    public void Parse(ReadOnlySpan<char> cmd, ReadOnlySpan<char> args, int argumentCount, bool lastIsText, out CommandContext ctx)
+    public static void Parse(ReadOnlySpan<char> cmd, ReadOnlySpan<char> args, int argumentCount, bool lastIsText, out CommandContext ctx)
     {
         ctx = default;
         ctx.Command = cmd;
@@ -36,7 +36,7 @@ public class CommandParser : ICommandParser
         ctx.TargetCount = parsed;
     }
 
-    public void SplitCommand(ReadOnlySpan<char> input, out ReadOnlySpan<char> command, out ReadOnlySpan<char> args)
+    public static void SplitCommand(ReadOnlySpan<char> input, out ReadOnlySpan<char> command, out ReadOnlySpan<char> args)
     {
         input = input.Trim();
         int space = input.IndexOf(' ');

@@ -1,8 +1,7 @@
 ﻿using Arch.Core;
-using MysteryMud.Application.Commands;
 using MysteryMud.Application.Dispatching;
-using MysteryMud.Application.Parsing;
 using MysteryMud.Core;
+using MysteryMud.Core.Commands;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
@@ -11,8 +10,6 @@ namespace MysteryMud.Application.ExplicitCommands;
 public class SocialsCommand : ICommand
 {
     private readonly ICommandRegistry _commandRegistry;
-
-    public CommandParseOptions ParseOptions => CommandParseOptions.None;
 
     public CommandDefinition Definition { get; } = new CommandDefinition
     {
@@ -32,7 +29,7 @@ public class SocialsCommand : ICommand
         _commandRegistry = commandRegistry;
     }
 
-    public void Execute(SystemContext systemContext, GameState state, Entity actor, CommandContext ctx)
+    public void Execute(SystemContext systemContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         var socialCommandDefinitions = _commandRegistry.GetCommandDefinitions<SocialCommand>();
         foreach (var chunk in socialCommandDefinitions.OrderBy(x => x.Name).Chunk(4))

@@ -34,9 +34,8 @@ public class CommandBus : ICommandBus
 
     public void Process(SystemContext ctx, GameState state)
     {
-        // TOOD: we should process commands received since the last tick,
-        // but with this loop, we will continue processing commands until the queue is empty, which could lead to starvation of other systems if a lot of commands are received.
-        while (_queue.TryDequeue(out var cmd)) // TODO: consider processing a batch of commands instead of one at a time
+        int maxCommands = 100; // Prevent global starvation
+        while (maxCommands-- > 0 && _queue.TryDequeue(out var cmd))
         {
             var span = cmd.Buffer.AsSpan(0, cmd.Length);
 

@@ -118,6 +118,8 @@ public class GameServer
         // TODO: fill in with actual character creation data, load from file, etc
         player.Add(new CharacterTag());
         player.Add(new PlayerTag());
+        player.Add(new CommandBuffer());
+        player.Add(new CommandThrottle());
         player.Add(new Name { Value = "joel" }); // RODO: implement character creation and loading from file, for now just use a placeholder name
         player.Add(new BaseStats
         {
