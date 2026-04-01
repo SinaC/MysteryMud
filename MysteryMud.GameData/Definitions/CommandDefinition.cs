@@ -4,6 +4,7 @@ namespace MysteryMud.GameData.Definitions;
 
 public readonly struct CommandDefinition
 {
+    public required int Id { get; init; }
     public required string Name { get; init; }
     public required string[] Aliases { get; init; }
     public required bool CannotBeForced { get; init; }

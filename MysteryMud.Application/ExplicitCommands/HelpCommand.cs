@@ -3,6 +3,7 @@ using MysteryMud.Application.Dispatching;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
+using MysteryMud.Core.Extensions;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
@@ -11,13 +12,15 @@ namespace MysteryMud.Application.ExplicitCommands;
 // this is a special case
 public class HelpCommand : ICommand
 {
+    private const string Name = "help";
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.Target;
 
     private readonly ICommandRegistry _commandRegistry;
 
     public CommandDefinition Definition { get; } = new CommandDefinition
     {
-        Name = "help",
+        Id = Name.ComputeCommandId(),
+        Name = Name,
         Aliases = ["?"],
         CannotBeForced = true, // TODO: test
         RequiredLevel = CommandLevelKind.Player,

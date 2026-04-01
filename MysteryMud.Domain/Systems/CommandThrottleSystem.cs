@@ -203,7 +203,7 @@ public class CommandThrottleSystem
     // Config (you can externalize later)
     // =========================
 
-    private static long GetGlobalDelay(int commandId)
+    private static long GetGlobalDelay(int commandId) // TODO: use command category instead of commandId ?
     {
         return commandId switch
         {

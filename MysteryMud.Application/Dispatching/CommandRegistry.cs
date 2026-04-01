@@ -11,6 +11,7 @@ namespace MysteryMud.Application.Dispatching;
 
 public class CommandRegistry : ICommandRegistry
 {
+    private readonly Dictionary<int, ICommand> _commandById = [];
     private ICommand[] _commands = [];
 
     public void RegisterCommands(IEnumerable<CommandDefinition> definitions, IEnumerable<Assembly> assemblies, IEnumerable<ICommand> explicitCommands)
@@ -25,7 +26,9 @@ public class CommandRegistry : ICommandRegistry
 
             // Aliases become separate entries (important!)
             foreach (var alias in explicitCommand.Definition.Aliases)
+            {
                 list.Add(new AliasCommand(alias, explicitCommand));
+            }
         }
 
         // Then register convention-based commands from assemblies
@@ -38,14 +41,16 @@ public class CommandRegistry : ICommandRegistry
             if (type == null)
                 continue;
 
-            var cmd = (ICommand)Activator.CreateInstance(type, def)!;
+            var cmd = (ICommand)Activator.CreateInstance(type, def)!; // use ctor(CommandDefinition, int)
 
             // Add command for main name
             list.Add(cmd);
 
             // Aliases become separate entries (important!)
             foreach (var alias in def.Aliases)
+            {
                 list.Add(new AliasCommand(alias, cmd));
+            }
         }
 
         // Critical: ordering defines behavior
@@ -53,6 +58,14 @@ public class CommandRegistry : ICommandRegistry
             .OrderByDescending(c => c.Definition.Priority)
             .ThenBy(c => c.Definition.Name.Length) // ROM-like feel
             .ToArray();
+
+        // register command by id
+        foreach (var cmd in _commands)
+        {
+            if (_commandById.ContainsKey(cmd.Definition.Id))
+                throw new Exception("Command ID collision");
+            _commandById.Add(cmd.Definition.Id, cmd);
+        }
     }
 
     public CommandFindResult Find(CommandLevelKind level, PositionKind positionType, ReadOnlySpan<char> input, out ICommand? command)
@@ -122,6 +135,9 @@ public class CommandRegistry : ICommandRegistry
             .OfType<TCommand>()
             .Select(x => x.Definition);
 
+    public bool TryGetById(int id, out ICommand? command)
+        => _commandById.TryGetValue(id, out command);
+
     private sealed class AliasCommand : ICommand
     {
         private readonly string _alias;
@@ -134,6 +150,7 @@ public class CommandRegistry : ICommandRegistry
             _inner = inner;
             _definition = new CommandDefinition
             {
+                Id = _alias.ComputeCommandId(),
                 Name = _alias,
                 Aliases = [],
                 CannotBeForced = _inner.Definition.CannotBeForced,

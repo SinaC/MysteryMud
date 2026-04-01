@@ -6,6 +6,7 @@ using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
+using MysteryMud.Core.Extensions;
 using MysteryMud.Domain.Commands;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
@@ -18,13 +19,15 @@ namespace MysteryMud.Application.ExplicitCommands;
 
 public class ForceCommand : ICommand
 {
+    private const string Name = "force";
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetAndText;
 
     private readonly ICommandRegistry _commandRegistry;
 
     public CommandDefinition Definition { get; } = new CommandDefinition
     {
-        Name = "force",
+        Id = Name.ComputeCommandId(),
+        Name = Name,
         Aliases = [],
         CannotBeForced = true,
         RequiredLevel = CommandLevelKind.Admin,
@@ -115,7 +118,7 @@ This is typically used for 'force all save'.",
         buffer.Items[buffer.Count++] = new CommandRequest
         {
             Command = forcedCommand,
-            // TODO: CommandId = commandId,
+            CommandId = forcedCommand.Definition.Id,
             
             RawCommand = forcedCmd.ToString(),
             RawArgs = forcedArgs.ToString(),

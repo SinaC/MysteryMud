@@ -12,4 +12,5 @@ public interface ICommandRegistry
     IEnumerable<CommandDefinition> GetCommandDefinitions(CommandLevelKind commandLevel);
     IEnumerable<CommandDefinition> GetCommandDefinitions<TCommand>()
         where TCommand : ICommand;
+    bool TryGetById(int id, out ICommand? command);
 }

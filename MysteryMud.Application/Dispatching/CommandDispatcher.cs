@@ -66,7 +66,7 @@ public class CommandDispatcher : ICommandDispatcher
             buffer.Items[buffer.Count++] = new CommandRequest
             {
                 Command = command!,
-                // TODO: CommandId = commandId,
+                CommandId = command!.Definition.Id,
 
                 RawCommand = cmdSpan.ToString(),
                 RawArgs = argsSpan.ToString(),
