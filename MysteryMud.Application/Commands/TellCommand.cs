@@ -3,6 +3,7 @@ using CommunityToolkit.HighPerformance;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Core;
+using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.GameData.Definitions;
@@ -11,7 +12,7 @@ namespace MysteryMud.Application.Commands;
 
 public class TellCommand : ICommand
 {
-    public CommandParseOptions ParseOptions => CommandParseOptions.TargetAndText;
+    private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetAndText;
     public CommandDefinition Definition { get; }
 
     public TellCommand(CommandDefinition definition)
@@ -19,8 +20,10 @@ public class TellCommand : ICommand
         Definition = definition;
     }
 
-    public void Execute(SystemContext systemContext, GameState state, Entity actor, CommandContext ctx)
+    public void Execute(SystemContext systemContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
+        CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
+
         if (ctx.TargetCount == 0)
         {
             systemContext.Msg.To(actor).Send("Tell whom?");

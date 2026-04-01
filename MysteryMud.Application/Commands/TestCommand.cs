@@ -3,6 +3,7 @@ using Arch.Core.Extensions;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Core;
+using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Factories;
@@ -13,7 +14,8 @@ namespace MysteryMud.Application.Commands;
 
 public class TestCommand : ICommand
 {
-    public CommandParseOptions ParseOptions => CommandParseOptions.TargetAndText;
+    private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetAndText;
+
     public CommandDefinition Definition { get; }
 
     public TestCommand(CommandDefinition definition)
@@ -21,8 +23,10 @@ public class TestCommand : ICommand
         Definition = definition;
     }
 
-    public void Execute(SystemContext systemContext, GameState state, Entity actor, CommandContext ctx)
+    public void Execute(SystemContext systemContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
+        CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
+
         ref var roomContents = ref actor.Get<Location>().Room.Get<RoomContents>().Characters;
         var target = EntityFinder.SelectSingleTarget(actor, ctx.Primary, roomContents);
 

@@ -1,7 +1,7 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
-using MysteryMud.Application.Parsing;
 using MysteryMud.Core;
+using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Extensions;
@@ -12,7 +12,6 @@ namespace MysteryMud.Application.Commands;
 // important note: even when worn item stays in inventory
 public class InventoryCommand : ICommand
 {
-    public CommandParseOptions ParseOptions => CommandParseOptions.None;
     public CommandDefinition Definition { get; }
 
     public InventoryCommand(CommandDefinition definition)
@@ -20,7 +19,7 @@ public class InventoryCommand : ICommand
         Definition = definition;
     }
 
-    public void Execute(SystemContext systemContext, GameState state, Entity actor, CommandContext ctx)
+    public void Execute(SystemContext systemContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         ref var inventory = ref actor.Get<Inventory>();
         if (inventory.Items.Count == 0)

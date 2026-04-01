@@ -3,6 +3,7 @@ using Arch.Core.Extensions;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Core;
+using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Rooms;
@@ -13,7 +14,8 @@ namespace MysteryMud.Application.Commands;
 
 public class LookCommand : ICommand
 {
-    public CommandParseOptions ParseOptions => CommandParseOptions.TargetPair;
+    private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetPair;
+
     public CommandDefinition Definition { get; }
 
     public LookCommand(CommandDefinition definition)
@@ -29,8 +31,10 @@ public class LookCommand : ICommand
     //          - item in container: show container description and contents
     //   - one argument (only for character): prioritize character > item in room > item in inventory > item in equipped slots
     // TODO: handle self, all, indexed targets
-    public void Execute(SystemContext systemContext, GameState state, Entity actor, CommandContext ctx)
+    public void Execute(SystemContext systemContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
+        CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
+
         // No argument: show room/container overview
         if (ctx.TargetCount == 0)
         {

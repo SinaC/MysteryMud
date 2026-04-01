@@ -36,7 +36,7 @@ static class Demo
         var gem = items.ToArray().First(x => x.Get<Name>().Value == "gem");
 
         // game state for testing
-        var gameState = new GameState { World = world, CurrentTick = 0 };
+        var gameState = new GameState { World = world, CurrentTick = 0, CurrentTimeMs = 0 };
         // system context for testing
         var messageBus = new DemoMessageBus();
         var actService = new ActService();

@@ -1,8 +1,7 @@
 ﻿using Arch.Core;
 using CommunityToolkit.HighPerformance;
-using MysteryMud.Application.Commands;
-using MysteryMud.Application.Parsing;
 using MysteryMud.Core;
+using MysteryMud.Core.Commands;
 using MysteryMud.Core.Extensions;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
@@ -149,9 +148,7 @@ public class CommandRegistry : ICommandRegistry
 
         public CommandDefinition Definition => _definition;
 
-        public CommandParseOptions ParseOptions => _inner.ParseOptions;
-
-        public void Execute(SystemContext systemContext, GameState state, Entity actor, CommandContext ctx) => _inner.Execute(systemContext, state, actor, ctx);
+        public void Execute(SystemContext systemContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args) => _inner.Execute(systemContext, state, actor, cmd, args);
     }
 }
 

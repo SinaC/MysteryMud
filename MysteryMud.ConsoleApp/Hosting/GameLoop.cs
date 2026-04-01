@@ -24,6 +24,8 @@ namespace MysteryMud.ConsoleApp.Hosting;
 
 internal class GameLoop
 {
+    private const int TickRateMs = 100;
+
     private readonly ILogger _logger;
     private readonly IOutputService _outputService;
     private readonly ICommandBus _commandBus;
@@ -89,6 +91,8 @@ internal class GameLoop
     private readonly ReactionResolver _reactionResolver;
     private readonly CombatOrchestrator _combatOrchestrator;
 
+    private readonly CommandExecutionSystem _commandExecutionSystem;
+    private readonly AntiSpamSystem _antiSpamSystem;
     private readonly FleeSystem _fleeSystem;
     private readonly MovementSystem _movementSystem;
     private readonly ItemInteractionSystem _itemInteractionSystem;
@@ -124,6 +128,8 @@ internal class GameLoop
         _reactionResolver = new ReactionResolver(_gameMessageService);
         _combatOrchestrator = new CombatOrchestrator(_gameMessageService, _intentContainer, _hitResolver, _hitDamageFactory, _damageResolver, _weaponProcResolver, _reactionResolver);
 
+        _commandExecutionSystem = new CommandExecutionSystem();
+        _antiSpamSystem = new AntiSpamSystem(_gameMessageService);
         _fleeSystem = new FleeSystem(_gameMessageService, _intentContainer, _fleeBlockedEventBuffer);
         _movementSystem = new MovementSystem(_gameMessageService, _intentContainer, _movedEventBuffer);
         _itemInteractionSystem = new ItemInteractionSystem(_gameMessageService, _intentContainer, _itemGotEventBuffer, _itemDroppedEventBuffer, _itemGivenEventBuffer, _itemPutEventBuffer, _itemWornEventBuffer, _itemRemovedEventBuffer, _itemDestroyedEventBuffer, _itemSacrifiedEventBuffer);
@@ -150,7 +156,7 @@ internal class GameLoop
 
             Tick(currentTick);
 
-            Thread.Sleep(100); // tick rate
+            Thread.Sleep(TickRateMs); // tick rate
 
             currentTick++;
         }
@@ -161,7 +167,8 @@ internal class GameLoop
         var state = new GameState
         {
             World = _world,
-            CurrentTick = currentTick
+            CurrentTick = currentTick,
+            CurrentTimeMs = currentTick * TickRateMs
         };
 
         var systemContext = new SystemContext
@@ -171,8 +178,12 @@ internal class GameLoop
             Intent = _intentContainer,
         };
 
-        // Player commands → may generate manual LookIntent (Mode=Snapshot)
+        // Player commands 
         _commandBus.Process(systemContext, state);
+        // check spam, can cancel command
+        _antiSpamSystem.Execute(state);
+        // execute command (if not cancelled) → may generate manual LookIntent(Mode= Snapshot)
+        _commandExecutionSystem.Execute(systemContext, state);
 
         // TODO: stop invalid combat: dead entities, entities in different rooms, ...
         // Processes all LookIntents with Mode=Snapshot → reads current world state before any effects → produces messages

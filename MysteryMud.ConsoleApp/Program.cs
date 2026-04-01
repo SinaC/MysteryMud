@@ -5,10 +5,10 @@ using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Commands;
 using MysteryMud.Application.Dispatching;
 using MysteryMud.Application.ExplicitCommands;
-using MysteryMud.Application.Parsing;
 using MysteryMud.ConsoleApp;
 using MysteryMud.ConsoleApp.Demo;
 using MysteryMud.ConsoleApp.Hosting;
+using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
@@ -122,9 +122,7 @@ foreach (var socialDefinition in socialDefinitions)
 commandRegistry.RegisterCommands(commandDefinitions, [typeof(TestCommand).Assembly], explicitCommands);
 
 // initialize dispatcher and parser (Application)
-var commandParser = new CommandParser();
-var commandDispatcher = new CommandDispatcher(commandRegistry, commandParser);
-
+var commandDispatcher = new CommandDispatcher(commandRegistry);
 
 // run demo
 //Demo.Run(logger, world, commandDispatcher);

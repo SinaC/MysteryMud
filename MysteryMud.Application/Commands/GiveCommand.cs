@@ -3,6 +3,7 @@ using Arch.Core.Extensions;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Core;
+using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Rooms;
@@ -12,7 +13,8 @@ namespace MysteryMud.Application.Commands;
 
 public class GiveCommand : ICommand
 {
-    public CommandParseOptions ParseOptions => CommandParseOptions.TargetPair;
+    private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetPair;
+
     public CommandDefinition Definition { get; }
 
     public GiveCommand(CommandDefinition definition)
@@ -20,8 +22,10 @@ public class GiveCommand : ICommand
         Definition = definition;
     }
 
-    public void Execute(SystemContext systemContext, GameState state, Entity actor, CommandContext ctx)
+    public void Execute(SystemContext systemContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
+        CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
+
         if (ctx.TargetCount < 2)
         {
             systemContext.Msg.To(actor).Send("Give what to whom ?");
