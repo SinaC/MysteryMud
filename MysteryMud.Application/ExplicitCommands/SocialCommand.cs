@@ -5,6 +5,7 @@ using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
+using MysteryMud.Core.Extensions;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.GameData.Definitions;
@@ -25,6 +26,7 @@ public class SocialCommand : ICommand
         _socialDefinition = socialDefinition;
         Definition = new CommandDefinition
         {
+            Id = socialDefinition.Name.ComputeCommandId(),
             Name = socialDefinition.Name,
             Aliases = [],
             CannotBeForced = false,

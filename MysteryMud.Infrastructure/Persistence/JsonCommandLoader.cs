@@ -1,4 +1,5 @@
-﻿using MysteryMud.GameData.Definitions;
+﻿using MysteryMud.Core.Extensions;
+using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.Infrastructure.Persistence.Dto;
 using System.Text.Json;
@@ -22,6 +23,7 @@ public class JsonCommandLoader
         {
             var command = new CommandDefinition
             {
+                Id = c.Name.ComputeCommandId(),
                 Name = c.Name,
                 Aliases = c.Aliases,
                 CannotBeForced = c.CannotBeForced,

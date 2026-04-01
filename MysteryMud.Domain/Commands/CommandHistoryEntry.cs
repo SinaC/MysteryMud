@@ -2,6 +2,6 @@
 
 public struct CommandHistoryEntry
 {
-    public int CommandId; // TODO
+    public int CommandId;
     public long Timestamp;
 }

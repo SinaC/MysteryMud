@@ -2,6 +2,7 @@
 using MysteryMud.Application.Dispatching;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
+using MysteryMud.Core.Extensions;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
@@ -9,11 +10,13 @@ namespace MysteryMud.Application.ExplicitCommands;
 
 public class SocialsCommand : ICommand
 {
+    private const string Name = "socials";
     private readonly ICommandRegistry _commandRegistry;
 
     public CommandDefinition Definition { get; } = new CommandDefinition
     {
-        Name = "socials",
+        Id = Name.ComputeCommandId(),
+        Name = Name,
         Aliases = [],
         CannotBeForced = false,
         RequiredLevel = CommandLevelKind.Player,
