@@ -61,11 +61,33 @@ public class TestCommand : ICommand
                     },
                 ],
                 Flags = AffectFlags.Poison,
-                DurationFunc = (world, source, target) => 5,
+                DurationFunc = (world, source, target) => 15,
                 TickRate = 2,
                 Dot = new DotDefinition
                 {
                     DamageFunc = (world, source, target) => 45,
+                    DamageKind = DamageKind.Poison
+                },
+                Hot = null // not hot
+            };
+
+            EffectFactory.ApplyEffect(systemContext, state, effectDefinition, actor, target);
+        }
+        else if (ctx.Text.Equals("poison2".AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
+            var effectDefinition = new EffectDefinition
+            {
+                Id = "Poison3",
+                Tag = EffectTagId.Poison,
+                Stacking = StackingRule.Refresh,
+                MaxStacks = 3,
+                StatModifiers = [],
+                Flags = AffectFlags.Poison,
+                DurationFunc = (world, source, target) => 60,
+                TickRate = 2,
+                Dot = new DotDefinition
+                {
+                    DamageFunc = (world, source, target) => 5,
                     DamageKind = DamageKind.Poison
                 },
                 Hot = null // not hot

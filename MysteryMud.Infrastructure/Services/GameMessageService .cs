@@ -44,5 +44,5 @@ public class GameMessageService : IGameMessageService
     {
         var targets = ActTargetResolver.GetAllTargets(entity);
         return new MessageTargetBuilder(_messageBus, _actService, targets);
-}
+    }
 }

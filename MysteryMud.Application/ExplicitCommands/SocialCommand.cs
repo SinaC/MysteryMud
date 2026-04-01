@@ -10,89 +10,88 @@ using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
-namespace MysteryMud.Application.ExplicitCommands
+namespace MysteryMud.Application.ExplicitCommands;
+
+public class SocialCommand : ICommand
 {
-    public class SocialCommand : ICommand
+    private readonly SocialDefinition _socialDefinition;
+
+    public CommandParseOptions ParseOptions => CommandParseOptions.Target;
+    public CommandDefinition Definition { get; }
+
+    public SocialCommand(SocialDefinition socialDefinition)
     {
-        private readonly SocialDefinition _socialDefinition;
-
-        public CommandParseOptions ParseOptions => CommandParseOptions.Target;
-        public CommandDefinition Definition { get; }
-
-        public SocialCommand(SocialDefinition socialDefinition)
+        _socialDefinition = socialDefinition;
+        Definition = new CommandDefinition
         {
-            _socialDefinition = socialDefinition;
-            Definition = new CommandDefinition
-            {
-                Name = socialDefinition.Name,
-                Aliases = [],
-                RequiredLevel = CommandLevelKind.Player,
-                MinimumPosition = PositionKind.Resting,
-                Priority = 0, // low priority
-                AllowAbbreviation = true,
-                HelpText = string.Empty,
-                Syntaxes = ["[cmd]", "[cmd] <character>"],
-                Categories = ["social"]
-            };
-        }
+            Name = socialDefinition.Name,
+            Aliases = [],
+            RequiredLevel = CommandLevelKind.Player,
+            MinimumPosition = PositionKind.Resting,
+            Priority = 0, // low priority
+            AllowAbbreviation = true,
+            HelpText = string.Empty,
+            Syntaxes = ["[cmd]", "[cmd] <character>"],
+            Categories = ["social"]
+        };
+    }
 
-        public void Execute(SystemContext systemContext, GameState state, Entity actor, CommandContext ctx)
+    public void Execute(SystemContext systemContext, GameState state, Entity actor, CommandContext ctx)
+    {
+        var useCharacterNotFound = false;
+        Entity victim = default;
+
+        if (ctx.TargetCount > 0)
         {
-            var useCharacterNotFound = false;
-            Entity victim = default;
+            ref var room = ref actor.Get<Location>().Room;
+            ref var roomContents = ref room.Get<RoomContents>();
 
-            if (ctx.TargetCount > 0)
+            victim = EntityFinder.SelectSingleTarget(actor, ctx.Primary, roomContents.Characters);
+            if (victim == default)
             {
-                ref var room = ref actor.Get<Location>().Room;
-                ref var roomContents = ref room.Get<RoomContents>();
-
-                victim = EntityFinder.SelectSingleTarget(actor, ctx.Primary, roomContents.Characters);
-                if (victim == default)
+                if (_socialDefinition.CharacterNotFound is null)
+                    systemContext.Msg.To(actor).Send("They aren't here.");
+                else
                 {
-                    if (_socialDefinition.CharacterNotFound is null)
-                        systemContext.Msg.To(actor).Send("They aren't here.");
-                    else
+                    if (_socialDefinition.CharacterNotFound.Contains("{0"))
                     {
-                        if (_socialDefinition.CharacterNotFound.Contains("{0"))
-                        {
-                            systemContext.Log.LogError("Social {name} CharacterNotFound phrase contains arguments.", _socialDefinition.Name);
-                            systemContext.Msg.To(actor).Send("They aren't here.");
-                        }
-                        useCharacterNotFound = true;
+                        systemContext.Log.LogError("Social {name} CharacterNotFound phrase contains arguments.", _socialDefinition.Name);
+                        systemContext.Msg.To(actor).Send("They aren't here.");
                     }
+                    useCharacterNotFound = true;
                 }
             }
+        }
 
-            //
-            if (useCharacterNotFound)
-                systemContext.Msg.To(actor).Act(_socialDefinition.CharacterNotFound!).With(actor);
-            else if (victim == default)
-            {
-                if (_socialDefinition.CharacterNoArg is not null)
-                   systemContext.Msg.To(actor).Act(_socialDefinition.CharacterNoArg).With(actor);
-                if (_socialDefinition.OthersNoArg is not null)
-                    systemContext.Msg.ToRoomExcept(actor, actor).Act(_socialDefinition.OthersNoArg).With(actor);
-            }
-            else if (victim == actor)
-            {
-                if (_socialDefinition.CharacterAuto is not null)
-                   systemContext.Msg.To(actor).Act(_socialDefinition.CharacterAuto).With(actor);
-                if (_socialDefinition.OthersAuto is not null)
-                    systemContext.Msg.ToRoomExcept(actor, actor).Act(_socialDefinition.OthersAuto).With(actor);
-            }
-            else
-            {
-                if (_socialDefinition.CharacterFound is not null)
-                   systemContext.Msg.To(actor).Act(_socialDefinition.CharacterFound).With(actor, victim);
-                if (_socialDefinition.VictimFound is not null)
-                    systemContext.Msg.To(victim).Act(_socialDefinition.VictimFound).With(actor, victim);
-                if (_socialDefinition.OthersFound is not null)
-                    systemContext.Msg.ToRoomExcept(actor, victim).Act(_socialDefinition.OthersFound).With(actor, victim);
+        //
+        if (useCharacterNotFound)
+            systemContext.Msg.To(actor).Act(_socialDefinition.CharacterNotFound!).With(actor);
+        else if (victim == default)
+        {
+            if (_socialDefinition.CharacterNoArg is not null)
+               systemContext.Msg.To(actor).Act(_socialDefinition.CharacterNoArg).With(actor);
+            if (_socialDefinition.OthersNoArg is not null)
+                systemContext.Msg.ToRoomExcept(actor, actor).Act(_socialDefinition.OthersNoArg).With(actor);
+        }
+        else if (victim == actor)
+        {
+            if (_socialDefinition.CharacterAuto is not null)
+               systemContext.Msg.To(actor).Act(_socialDefinition.CharacterAuto).With(actor);
+            if (_socialDefinition.OthersAuto is not null)
+                systemContext.Msg.ToRoomExcept(actor, actor).Act(_socialDefinition.OthersAuto).With(actor);
+        }
+        else
+        {
+            if (_socialDefinition.CharacterFound is not null)
+               systemContext.Msg.To(actor).Act(_socialDefinition.CharacterFound).With(actor, victim);
+            if (_socialDefinition.VictimFound is not null)
+                systemContext.Msg.To(victim).Act(_socialDefinition.VictimFound).With(actor, victim);
+            if (_socialDefinition.OthersFound is not null)
+                systemContext.Msg.ToRoomExcept(actor, victim).Act(_socialDefinition.OthersFound).With(actor, victim);
 
-                // TODO
-                // trigger mob program
-                //(Victim as INonPlayableCharacter)?.OnSocial(Actor, SocialDefinition);
-            }
+            // TODO
+            // trigger mob program
+            //(Victim as INonPlayableCharacter)?.OnSocial(Actor, SocialDefinition);
         }
     }
 }

@@ -5,7 +5,9 @@ using MysteryMud.Application.Dispatching;
 using MysteryMud.Application.Services;
 using MysteryMud.Core;
 using MysteryMud.Core.Eventing;
+using MysteryMud.Core.Services;
 using MysteryMud.Domain.Combat;
+using MysteryMud.Domain.Combat.Factories;
 using MysteryMud.Domain.Combat.Resolvers;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
@@ -13,6 +15,7 @@ using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Damage.Resolvers;
 using MysteryMud.Domain.Extensions;
+using MysteryMud.Domain.Heal;
 using MysteryMud.Domain.Services;
 using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Enums;
@@ -64,6 +67,7 @@ static class Demo2
         var itemDestroyedEventBuffer = new EventBuffer<ItemDestroyedEvent>();
         var itemSacrifierEventBuffer = new EventBuffer<ItemSacrifiedEvent>();
         var damagedEventBuffer = new EventBuffer<DamagedEvent>();
+        var healedEventBuffer = new EventBuffer<HealedEvent>();
         var deathEventBuffer = new EventBuffer<DeathEvent>();
         var itemLootedEventBuffer = new EventBuffer<ItemLootedEvent>();
         var lookedEventBuffer = new EventBuffer<LookedEvent>();
@@ -75,7 +79,12 @@ static class Demo2
 
         var aggroResolver = new AggroResolver();
         var damageResolver = new DamageResolver(aggroResolver, gameMessageService, damagedEventBuffer, deathEventBuffer);
-        var combatOrchestrator = new CombatOrchestrator(gameMessageService, intentBusContainer, damageResolver);
+        var healResolver = new HealResolver(aggroResolver, gameMessageService, healedEventBuffer);
+        var hitResolver = new HitResolver(gameMessageService);
+        var hitDamageFactory = new HitDamageFactory();
+        var weaponProcResolver = new WeaponProcResolver();
+        var reactionResolver = new ReactionResolver(gameMessageService);
+        var combatOrchestrator = new CombatOrchestrator(gameMessageService, intentBusContainer, hitResolver, hitDamageFactory, damageResolver, weaponProcResolver, reactionResolver);
 
         var fleeSystem = new FleeSystem(gameMessageService, intentBusContainer, fleeBlockedEventBuffer);
         var movementSystem = new MovementSystem(gameMessageService, intentBusContainer, movedEventBuffer);

@@ -13,9 +13,9 @@ namespace MysteryMud.Domain.Systems;
 
 public class MovementSystem
 {
-    private IGameMessageService _msg;
-    private IIntentContainer _intentContainer;
-    private IEventBuffer<MovedEvent> _movedEvents;
+    private readonly IGameMessageService _msg;
+    private readonly IIntentContainer _intentContainer;
+    private readonly IEventBuffer<MovedEvent> _movedEvents;
 
     public MovementSystem(IGameMessageService msg, IIntentContainer intentContainer, IEventBuffer<MovedEvent> movedEvents)
     {
