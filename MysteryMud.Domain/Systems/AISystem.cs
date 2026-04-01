@@ -1,29 +1,55 @@
-﻿using MysteryMud.Core;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Arch.Core;
+using Arch.Core.Extensions;
+using MysteryMud.Core;
+using MysteryMud.Domain.Commands;
+using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Components.Characters.Mobiles;
 
 namespace MysteryMud.Domain.Systems;
 
 public class AISystem
 {
-//    public void Execute(GameState state)
-//    {
-//        long now = state.CurrentTimeMs;
+    public void Execute(GameState state)
+    {
+        long now = state.CurrentTimeMs;
 
-//        foreach (var entity in state.World.Query<CommandBuffer, AIComponent>())
-//        {
-//            ref var ai = ref entity.Get<AIComponent>();
+        var query = new QueryDescription()
+            .WithAll<CommandBuffer, AutoCommand>();
+        state.World.Query(query, (Entity entity, ref CommandBuffer buffer, ref AutoCommand autoCommand) =>
+        {
+            // Skip if AI tick rate not reached
+            if (now - autoCommand.LastCommandTick < autoCommand.CommandTickRate)
+                return;
 
-//            // Skip NPCs that aren’t due for an AI tick
-//            if (now - ai.LastAITick < ai.TickRate)
-//                continue;
+            // Decide AI commands for this NPC
+            var commands = DecideNextCommands(entity, autoCommand);
 
-//            // Generate commands for this NPC
-//            GenerateCommands(entity, ref ai, now);
+            // Push commands into NPC buffer
+            foreach (var cmd in commands)
+            {
+                if (buffer.Items == null)
+                    buffer.Items = new CommandRequest[4]; // small start size
 
-//            // Update last tick
-//            ai.LastAITick = now;
-//        }
-//    }
+                if (buffer.Count == buffer.Items.Length)
+                    Array.Resize(ref buffer.Items, buffer.Items.Length * 2);
+
+                buffer.Items[buffer.Count++] = cmd;
+            }
+
+            // Mark entity for processing
+            entity.Add<HasCommandTag>();
+
+            // Update last AI tick
+            autoCommand.LastCommandTick = now;
+        });
+    }
+
+    private IEnumerable<CommandRequest> DecideNextCommands(Entity npc, AutoCommand autoCommand)
+    {
+        // TODO
+        //// Example: move or attack
+        //yield return new CommandRequest { CommandId = 1, RawCommand = "move", RawArgs = "north" };
+        //yield return new CommandRequest { CommandId = 2, RawCommand = "kill", RawArgs= "player" };
+        yield break;
+    }
 }

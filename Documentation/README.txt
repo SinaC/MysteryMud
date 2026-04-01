@@ -18,7 +18,7 @@ Tick pipeline
 6. MovementSystem                   // Resolves MoveIntents → emits auto-look PostUpdate (Mode=PostUpdate)
 7. InteractionSystem                // Handle get/drop/put/give/...
 8. StatSystem                       // Recalculate stats from DirtyFlags
-9. TimedEffects                     // Apply scheduled effects (damage, heal, buffs/debuffs)
+9. TimedEffectSystem                // Apply scheduled effects (damage, heal, buffs/debuffs)
 10. ThreatSystem.UpdateThreat       // Update aggro/threat
 11. NPCTargetSystem.AssignTargets   // Select highest threat targets
 12. GroupCombatSystem.Resolve       // Handle assist/protect/own target attack intents
@@ -30,12 +30,6 @@ Tick pipeline
 18. LookSystem(PostUpdate)          // Processes LookIntents with Mode=PostUpdate → reflects final world state after all updates
 19. CleanupSystem                   // Remove destroyed items / dead NPCs / disconnected players
 20. Output → MessageBus             // Send all messages to players
-
-TimedEffects (step 10) details
-    Scheduled events generates DotTriggeredEvent/HotTriggeredEvent at intervals and EffectExpiredEvent when duration ends
-    DotSystem: handles DotTriggeredEvent, generates DamageEvent and reschedules next tick (we don't know if the target will still be alive once damage are done, thus we don't check for that here and always reschedule tick)
-    HotSystem: handles HotTriggeredEvent, generates HealEvent and reschedules next tick
-    DurationSystem: handles EffectExpiredEvent, removes effect and sends wear off message
 
 CombatOrchestrator (step 14) details
     HitPhase / IntentResolution
@@ -56,6 +50,26 @@ CombatOrchestrator (step 14) details
         Checks conditions: parry -> guaranteed counter, hit -> chance to counter
         Generates new AttackIntents for counterattacks
         These intents go into Next buffer, which is processed in the same tick
+
+Players ──┐
+          │
+NPCs   ──> CommandBuffer + HasCommand
+          │
+          v
+   CommandThrottleSystem
+          │
+          v
+   CommandExecutionSystem
+   (Batch limited: MaxEntitiesPerTick)
+          │
+          v
+      IntentComponent(s)
+          │
+          v
+  Domain Systems (Combat / Move / Spell)
+          │
+          v
+   rest of tick pipeline
 
 Tick Start
 │
@@ -95,6 +109,8 @@ Tick Start
 Entity/Components
 
 Character
+  ├Name
+  ├CommandBuffer: list of pending commands
   ├Location: room
   ├BaseStats: level, experience, dictionary stat/value
   ├EffectiveStats: dictionary stat/value
@@ -103,9 +119,10 @@ Character
   ├Equipment: list of equipped items
   └Health: current and max health
   optional
+    HasCommandTag: a command (or more) is waiting in CommandBuffer
     DirtyStats: needs effective stats recalculated
     CombatState: in combat
-    DeadTag: is dead
+    DeadTag: is dead will be removed by cleanup system
     Gender: male|female|neutral
     Mana: current and max mana
 
@@ -115,6 +132,7 @@ Npc(character+)
 
 Player(character+)
   ├PlayerTag
+  ├CommandThrottle
   └Connection
   optional
     RespawnState: respawn timer and location when a player dies
@@ -128,23 +146,33 @@ Zone
     todo
 
 Effect (not stacking if difference source)
- ├ EffectInstance: Source, Target, Template, StackCount
- ├ Duration: StartTick, ExpiredTick
- ├ EffectTag: EffectTagId
+ ├ EffectInstance: Source, Target, Definition, StackCount
+ ├ TimedEffect: TickRate (= 0 means pure duration effect), NextTick, StartTick, ExpirationTick, LastRefreshTick
+ ├ EffectTag: EffectTagId (bit fields)
  ├ StatModifiers: StatModifier list
- ├ DamageOverTime: Damage, DamageType, TickRate, NextTick;
- └ HealOverTime: Heal, TickRate, NextTick;
+ ├ DamageEffect: Damage, DamageKind
+ └ HealEffect: Heal
+ optional
+    ExpiredTag: expired will be removed by cleanup system
 
 Datas
 
-EffectTemplate:
-    Name: name of the effect template (e.g. "Strength Buff")
+EffectDefinition:
+    Id: name of the effect template (e.g. "Strength Buff")
     EffectTag: EffectTagId
     StackingRule: None|Replace|ExtendDuration|ReplaceIfStronger
-    AffectFlags: bitflags for quick checks (e.g. is buff, is debuff, is dispellable) (TODO)
     MaxStacks: maximum number of stacks (if stacking is allowed)
+    AffectFlags: bitflags for quick checks (e.g. is buff, is debuff, is dispellable) (TODO)
+    DurationFunc: function to calculate duration of the effect (in tick)
+    TickRate: if 0 -> pure duration effect
+    TickOnApply: if true -> apply immediately first tick
     StatModifiers: StatModifierDefinition list
-    DotFunction: function to calculate damage for damage over time effects (returns DotDefinition)
-    HotFunction: function to calculate healing for heal over time effects (returns HotDefinition)
+    DotDefinition: dot definition if any
+    HotDefinition: hot definition if any
     ApplyMessage: message to show when the effect is applied
     WearOffMessage: message to show when the effect wears off
+DotDefinition
+    DamageFunc: function to calculate damage
+    DamageKind: kind of damage
+HotDefinition
+    HealFunc: function to calculate heal

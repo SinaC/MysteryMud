@@ -27,6 +27,7 @@ public static class PlayerFactory
         var player = world.Create(
             new CharacterTag(),
             new PlayerTag(),
+            new CommandLevel { Value = CommandLevelKind.Player },
             new CommandBuffer(),
             new CommandThrottle(),
             new Name { Value = name },

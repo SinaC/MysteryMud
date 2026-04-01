@@ -2,6 +2,7 @@
 	{
 		"Name": "test",
 		"Aliases": [],
+		"CannotBeForced": true,
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 0,
@@ -14,6 +15,7 @@
 	{
 		"Name": "cast",
 		"Aliases": [],
+		"CannotBeForced": false,
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 500,
@@ -25,6 +27,7 @@
 	{
 		"Name": "destroy",
 		"Aliases": [],
+		"CannotBeForced": false,
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 0,
@@ -36,6 +39,7 @@
 	{
 		"Name": "drop",
 		"Aliases": [],
+		"CannotBeForced": false,
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 0,
@@ -49,6 +53,7 @@
 	{
 		"Name": "equipment",
 		"Aliases": [],
+		"CannotBeForced": false,
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 0,
@@ -60,6 +65,7 @@
 	{
 		"Name": "flee",
 		"Aliases": [],
+		"CannotBeForced": false,
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Fighting",
 		"Priority": 0,
@@ -71,6 +77,7 @@
 	{
 		"Name": "get",
 		"Aliases": ["take"],
+		"CannotBeForced": false,
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 100,
@@ -83,6 +90,7 @@
 	{
 		"Name": "give",
 		"Aliases": [],
+		"CannotBeForced": false,
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 0,
@@ -95,6 +103,7 @@
 	{
 		"Name": "inventory",
 		"Aliases": [],
+		"CannotBeForced": false,
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 0,
@@ -106,6 +115,7 @@
 	{
 		"Name": "kill",
 		"Aliases": [],
+		"CannotBeForced": false,
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 1000,
@@ -117,6 +127,7 @@
 	{
 		"Name": "look",
 		"Aliases": ["read"],
+		"CannotBeForced": false,
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 0,
@@ -134,6 +145,7 @@
 	{
 		"Name": "mstat",
 		"Aliases": ["cstat"],
+		"CannotBeForced": false,
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 0,
@@ -145,6 +157,7 @@
 	{
 		"Name": "north",
 		"Aliases": [],
+		"CannotBeForced": false,
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 10000,
@@ -156,6 +169,7 @@
 	{
 		"Name": "put",
 		"Aliases": [],
+		"CannotBeForced": false,
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 0,
@@ -167,6 +181,7 @@
 	{
 		"Name": "remove",
 		"Aliases": [],
+		"CannotBeForced": false,
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 0,
@@ -178,6 +193,7 @@
 	{
 		"Name": "sacrifice",
 		"Aliases": ["tap", "junk"],
+		"CannotBeForced": false,
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 0,
@@ -189,6 +205,7 @@
 	{
 		"Name": "say",
 		"Aliases": ["'"],
+		"CannotBeForced": false,
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 0,
@@ -200,6 +217,7 @@
 	{
 		"Name": "south",
 		"Aliases": [],
+		"CannotBeForced": false,
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 1000,
@@ -211,6 +229,7 @@
 	{
 		"Name": "tell",
 		"Aliases": [],
+		"CannotBeForced": false,
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 0,
@@ -222,6 +241,7 @@
 	{
 		"Name": "wear",
 		"Aliases": [],
+		"CannotBeForced": false,
 		"RequiredLevel": "Player",
 		"MinimumPosition": "Standing",
 		"Priority": 1500,

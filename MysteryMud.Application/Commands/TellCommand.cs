@@ -33,7 +33,7 @@ public class TellCommand : ICommand
         var found = false;
         var message = ctx.Text.ToString();
         var players = new List<Entity>(1024);
-        state.World.GetEntities(new QueryDescription().WithAll < Name, PlayerTag>(), players.AsSpan());
+        state.World.GetEntities(new QueryDescription().WithAll<Name, PlayerTag>(), players.AsSpan()); // TODO: issue with this line
         foreach (var target in EntityFinder.SelectTargets(actor, ctx.Primary, players))
         {
             systemContext.Msg.To([actor, target]).Act("{0} tell{0:v} {1}: {2}").With(actor, target, message);

@@ -118,6 +118,9 @@ foreach (var socialDefinition in socialDefinitions)
     var socialCommand = new SocialCommand(socialDefinition);
     explicitCommands.Add(socialCommand);
 }
+// force command
+var forceCommand = new ForceCommand(commandRegistry);
+explicitCommands.Add(forceCommand);
 // commands from assemblies
 commandRegistry.RegisterCommands(commandDefinitions, [typeof(TestCommand).Assembly], explicitCommands);
 

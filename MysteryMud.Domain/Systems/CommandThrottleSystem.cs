@@ -1,4 +1,5 @@
 ﻿using Arch.Core;
+using CommunityToolkit.HighPerformance;
 using MysteryMud.Core;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Commands;
@@ -47,6 +48,9 @@ public class CommandThrottleSystem
 
                 if (request.Cancelled)
                     continue;
+
+                if (request.Force)
+                    continue; // skip throttle checks
 
                 // =====================================
                 // 1. WAIT STATE (global delay)

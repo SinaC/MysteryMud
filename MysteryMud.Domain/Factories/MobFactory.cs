@@ -15,6 +15,7 @@ public static class MobFactory
         var player = world.Create(
             new CharacterTag(),
             new NpcTag(),
+            new CommandLevel { Value = CommandLevelKind.Player },
             new CommandBuffer(),
             new Name { Value = name },
             new Description { Value = description },

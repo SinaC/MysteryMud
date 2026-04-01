@@ -27,6 +27,6 @@ public class SayCommand : ICommand
             return;
         }
 
-        systemContext.Msg.ToAll(actor).Act($"{0} say{0:v}: {1}").With(actor, ctx.Text.ToString());
+        systemContext.Msg.ToAll(actor).Act("{0} say{0:v}: {1}").With(actor, ctx.Text.ToString());
     }
 }

@@ -24,6 +24,7 @@ public class JsonCommandLoader
             {
                 Name = c.Name,
                 Aliases = c.Aliases,
+                CannotBeForced = c.CannotBeForced,
                 RequiredLevel = Enum.Parse<CommandLevelKind>(c.RequiredLevel, ignoreCase: true),
                 MinimumPosition = Enum.Parse<PositionKind>(c.MinimumPosition, ignoreCase: true),
                 Priority = c.Priority,

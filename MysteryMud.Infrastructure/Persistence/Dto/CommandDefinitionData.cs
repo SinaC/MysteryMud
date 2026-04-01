@@ -3,6 +3,7 @@
 public record CommandDefinitionData(
     string Name,
     string[] Aliases,
+    bool CannotBeForced,
     string RequiredLevel,
     string MinimumPosition,
     int Priority,
