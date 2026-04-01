@@ -57,7 +57,7 @@ This is typically used for 'force all save'.",
             return;
         }
 
-        // TODO: force all
+        // TODO: force all (see TellCommand)
 
         // search target
         ref var people = ref actor.Get<Location>().Room.Get<RoomContents>().Characters;  // TODO: in world
