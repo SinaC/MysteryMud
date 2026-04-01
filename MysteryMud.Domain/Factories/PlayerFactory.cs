@@ -28,8 +28,7 @@ public static class PlayerFactory
             new CharacterTag(),
             new PlayerTag(),
             new CommandBuffer(),
-            new CommandHistory(),
-            new Violation(),
+            new CommandThrottle(),
             new Name { Value = name },
             new BaseStats
             {

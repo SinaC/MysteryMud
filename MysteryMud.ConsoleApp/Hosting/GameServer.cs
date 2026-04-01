@@ -119,8 +119,7 @@ public class GameServer
         player.Add(new CharacterTag());
         player.Add(new PlayerTag());
         player.Add(new CommandBuffer());
-        player.Add(new CommandHistory());
-        player.Add(new Violation());
+        player.Add(new CommandThrottle());
         player.Add(new Name { Value = "joel" }); // RODO: implement character creation and loading from file, for now just use a placeholder name
         player.Add(new BaseStats
         {

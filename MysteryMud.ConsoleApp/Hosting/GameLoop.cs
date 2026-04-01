@@ -92,7 +92,7 @@ internal class GameLoop
     private readonly CombatOrchestrator _combatOrchestrator;
 
     private readonly CommandExecutionSystem _commandExecutionSystem;
-    private readonly AntiSpamSystem _antiSpamSystem;
+    private readonly CommandThrottleSystem _commandThrottleSystem;
     private readonly FleeSystem _fleeSystem;
     private readonly MovementSystem _movementSystem;
     private readonly ItemInteractionSystem _itemInteractionSystem;
@@ -129,7 +129,7 @@ internal class GameLoop
         _combatOrchestrator = new CombatOrchestrator(_gameMessageService, _intentContainer, _hitResolver, _hitDamageFactory, _damageResolver, _weaponProcResolver, _reactionResolver);
 
         _commandExecutionSystem = new CommandExecutionSystem();
-        _antiSpamSystem = new AntiSpamSystem(_gameMessageService);
+        _commandThrottleSystem = new CommandThrottleSystem(_gameMessageService);
         _fleeSystem = new FleeSystem(_gameMessageService, _intentContainer, _fleeBlockedEventBuffer);
         _movementSystem = new MovementSystem(_gameMessageService, _intentContainer, _movedEventBuffer);
         _itemInteractionSystem = new ItemInteractionSystem(_gameMessageService, _intentContainer, _itemGotEventBuffer, _itemDroppedEventBuffer, _itemGivenEventBuffer, _itemPutEventBuffer, _itemWornEventBuffer, _itemRemovedEventBuffer, _itemDestroyedEventBuffer, _itemSacrifiedEventBuffer);
@@ -180,8 +180,8 @@ internal class GameLoop
 
         // Player commands 
         _commandBus.Process(systemContext, state);
-        // check spam, can cancel command
-        _antiSpamSystem.Execute(state);
+        // check spam, wait state, can cancel command
+        _commandThrottleSystem.Execute(state);
         // execute command (if not cancelled) → may generate manual LookIntent(Mode= Snapshot)
         _commandExecutionSystem.Execute(systemContext, state);
 

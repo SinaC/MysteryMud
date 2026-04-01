@@ -1,6 +1,12 @@
-﻿namespace MysteryMud.Domain.Systems;
+﻿using Arch.Core;
+using MysteryMud.Core;
+using MysteryMud.Core.Services;
+using MysteryMud.Domain.Commands;
+using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Components.Characters.Players;
 
-/*
+namespace MysteryMud.Domain.Systems;
+
 public class CommandThrottleSystem
 {
     private const long SPAM_WINDOW = 10_000;
@@ -9,16 +15,21 @@ public class CommandThrottleSystem
     private const int MAX_IDENTICAL = 2;
     private const int MAX_VIOLATIONS = 3;
 
+    private readonly IGameMessageService _msg;
+
+    public CommandThrottleSystem(IGameMessageService msg)
+    {
+        _msg = msg;
+    }
+
     public void Execute(GameState state)
     {
         long now = state.CurrentTimeMs;
 
         var query = new QueryDescription()
-           .WithAll<CommandBuffer, CommandHistory, Violation, PlayerTag, HasCommandTag>();
-        state.World.Query(query, (Entity player, ref CommandBuffer buffer, ref CommandHistory history, ref Violation violations, ref PlayerTag _, ref HasCommandTag _) =>
+           .WithAll<CommandBuffer, CommandThrottle, PlayerTag, HasCommandTag>();
+        state.World.Query(query, (Entity player, ref CommandBuffer buffer, ref CommandThrottle throttle, ref PlayerTag _, ref HasCommandTag _) =>
         {
-            ref var throttle = ref player.Get<CommandThrottleComponent>();
-
             EnsureBuffers(ref throttle);
 
             // ---- reset violations over time ----
@@ -43,7 +54,7 @@ public class CommandThrottleSystem
                 if (now < throttle.NextAllowedTime)
                 {
                     request.Cancelled = true;
-                    Notify(entity, "You must wait before acting again.");
+                    Notify(player, "You must wait before acting again.");
                     continue;
                 }
 
@@ -53,7 +64,7 @@ public class CommandThrottleSystem
                 if (IsOnCooldown(ref throttle, request.CommandId, now))
                 {
                     request.Cancelled = true;
-                    Notify(entity, "That command is not ready yet.");
+                    Notify(player, "That command is not ready yet.");
                     continue;
                 }
 
@@ -69,7 +80,7 @@ public class CommandThrottleSystem
 
                     request.Cancelled = true;
 
-                    Notify(entity, GetSpamMessage(throttle.Violations));
+                    Notify(player, GetSpamMessage(throttle.Violations));
                     continue;
                 }
 
@@ -77,7 +88,7 @@ public class CommandThrottleSystem
                 {
                     request.Cancelled = true;
 
-                    Notify(entity, "You are sending commands too fast.");
+                    Notify(player, "You are sending commands too fast.");
                     continue;
                 }
 
@@ -93,23 +104,20 @@ public class CommandThrottleSystem
                 // Apply cooldown if needed
                 ApplyCooldown(ref throttle, request.CommandId, now);
             }
-        }
+        });
     }
 
     // =========================
     // Helpers
     // =========================
 
-    private static void EnsureBuffers(ref CommandThrottleComponent t)
+    private static void EnsureBuffers(ref CommandThrottle t)
     {
-        if (t.History == null)
-            t.History = new CommandHistoryEntry[10];
-
-        if (t.Cooldowns == null)
-            t.Cooldowns = new CooldownEntry[5];
+        t.History ??= new CommandHistoryEntry[10];
+        t.Cooldowns ??= new CooldownEntry[5];
     }
 
-    private static void PruneHistory(ref CommandThrottleComponent t, long now)
+    private static void PruneHistory(ref CommandThrottle t, long now)
     {
         int write = 0;
 
@@ -124,7 +132,7 @@ public class CommandThrottleSystem
         t.HistoryCount = write;
     }
 
-    private static int CountIdentical(ref CommandThrottleComponent t, int commandId)
+    private static int CountIdentical(ref CommandThrottle t, int commandId)
     {
         int count = 0;
 
@@ -137,7 +145,7 @@ public class CommandThrottleSystem
         return count;
     }
 
-    private static void AddHistory(ref CommandThrottleComponent t, int commandId, long now)
+    private static void AddHistory(ref CommandThrottle t, int commandId, long now)
     {
         if (t.HistoryCount == t.History.Length)
             Array.Resize(ref t.History, t.History.Length * 2);
@@ -149,7 +157,7 @@ public class CommandThrottleSystem
         };
     }
 
-    private static bool IsOnCooldown(ref CommandThrottleComponent t, int commandId, long now)
+    private static bool IsOnCooldown(ref CommandThrottle t, int commandId, long now)
     {
         for (int i = 0; i < t.CooldownCount; i++)
         {
@@ -162,7 +170,7 @@ public class CommandThrottleSystem
         return false;
     }
 
-    private static void ApplyCooldown(ref CommandThrottleComponent t, int commandId, long now)
+    private static void ApplyCooldown(ref CommandThrottle t, int commandId, long now)
     {
         long delay = GetCooldown(commandId);
         if (delay <= 0)
@@ -221,9 +229,8 @@ public class CommandThrottleSystem
         };
     }
 
-    private static void Notify(Entity entity, string msg)
+    private void Notify(Entity entity, string msg)
     {
-        // hook messaging system
+        _msg.To(entity).Send(msg);
     }
 }
-*/
