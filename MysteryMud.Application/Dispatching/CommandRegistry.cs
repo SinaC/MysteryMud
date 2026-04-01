@@ -136,6 +136,7 @@ public class CommandRegistry : ICommandRegistry
             {
                 Name = _alias,
                 Aliases = [],
+                CannotBeForced = _inner.Definition.CannotBeForced,
                 RequiredLevel = _inner.Definition.RequiredLevel,
                 MinimumPosition = _inner.Definition.MinimumPosition,
                 Priority = _inner.Definition.Priority,

@@ -5,6 +5,7 @@ using MysteryMud.Application.Parsing;
 using MysteryMud.Core;
 using MysteryMud.Core.Logging;
 using MysteryMud.Domain.Commands;
+using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.GameData.Enums;
@@ -29,8 +30,11 @@ public class CommandDispatcher : ICommandDispatcher
         // extract command and arguments
         CommandParser.SplitCommand(input, out var cmdSpan, out var argsSpan);
 
+        // get command level
+        ref var commandLevel = ref actor.Get<CommandLevel>();
+
         // search command in registry
-        var findResult = _commandRegistry.Find(CommandLevelKind.Immortal, PositionKind.Standing, cmdSpan, out var command); // TODO: command level and position should be determined based on actor's state, not hardcoded
+        var findResult = _commandRegistry.Find(commandLevel.Value, PositionKind.Standing, cmdSpan, out var command); // TODO: position should be determined based on actor's state, not hardcoded
         switch (findResult)
         {
             case CommandFindResult.NotFound:
@@ -55,25 +59,23 @@ public class CommandDispatcher : ICommandDispatcher
             // TODO: message ?
             // drop or ignore new commands
         }
-        else if (buffer.Count < buffer.Items.Length) // add command to command buffer
+        else
         {
+            if (buffer.Count == buffer.Items.Length)
+                Array.Resize(ref buffer.Items, buffer.Items.Length * 2); // expand if needed
             buffer.Items[buffer.Count++] = new CommandRequest
             {
-                Command = command!, // TODO: commandId
+                Command = command!,
+                // TODO: CommandId = commandId,
 
                 RawCommand = cmdSpan.ToString(),
                 RawArgs = argsSpan.ToString(),
 
-                Cancelled = false
+                Cancelled = false,
+                Force = false
             };
             if (!actor.Has<HasCommandTag>())
                 actor.Add<HasCommandTag>();
-        }
-        else
-        {
-            // TODO
-            // optional: drop, overwrite, or expand
-            //Array.Resize(ref commandBuffer.Items, commandBuffer.Items.Length * 2);
         }
     }
 }

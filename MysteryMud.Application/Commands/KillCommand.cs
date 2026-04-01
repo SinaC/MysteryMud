@@ -32,12 +32,12 @@ public class KillCommand : ICommand
             return;
         }
 
-        ref var roomContents = ref actor.Get<Location>().Room.Get<RoomContents>().Characters;
-        var target = EntityFinder.SelectSingleTarget(actor, ctx.Primary, roomContents);
+        ref var people = ref actor.Get<Location>().Room.Get<RoomContents>().Characters;
+        var target = EntityFinder.SelectSingleTarget(actor, ctx.Primary, people);
 
         if (target == default)
         {
-            systemContext.Msg.To(actor).Send("You don't see that here.");
+            systemContext.Msg.To(actor).Send("They aren't here.");
             return;
         }
 

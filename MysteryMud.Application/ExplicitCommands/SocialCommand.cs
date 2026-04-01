@@ -27,6 +27,7 @@ public class SocialCommand : ICommand
         {
             Name = socialDefinition.Name,
             Aliases = [],
+            CannotBeForced = false,
             RequiredLevel = CommandLevelKind.Player,
             MinimumPosition = PositionKind.Resting,
             Priority = 0, // low priority

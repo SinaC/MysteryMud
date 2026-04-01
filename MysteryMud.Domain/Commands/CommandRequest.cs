@@ -11,4 +11,5 @@ public struct CommandRequest
     public string RawArgs;
 
     public bool Cancelled;
+    public bool Force; // skip spam/cooldown/wait
 }

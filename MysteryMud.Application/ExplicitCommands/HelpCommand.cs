@@ -19,6 +19,7 @@ public class HelpCommand : ICommand
     {
         Name = "help",
         Aliases = ["?"],
+        CannotBeForced = true, // TODO: test
         RequiredLevel = CommandLevelKind.Player,
         MinimumPosition = PositionKind.Dead,
         Priority = 0,

@@ -15,6 +15,7 @@ public class SocialsCommand : ICommand
     {
         Name = "socials",
         Aliases = [],
+        CannotBeForced = false,
         RequiredLevel = CommandLevelKind.Player,
         MinimumPosition = PositionKind.Dead,
         Priority = 0,
