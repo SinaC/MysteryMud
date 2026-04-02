@@ -1,6 +1,6 @@
 ﻿using Arch.Core;
-using MysteryMud.Application.Dispatching;
 using MysteryMud.Application.Parsing;
+using MysteryMud.Application.Registry;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Core.Extensions;

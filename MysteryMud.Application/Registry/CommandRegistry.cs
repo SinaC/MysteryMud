@@ -1,5 +1,6 @@
 ﻿using Arch.Core;
 using CommunityToolkit.HighPerformance;
+using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Core.Extensions;
@@ -7,12 +8,19 @@ using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using System.Reflection;
 
-namespace MysteryMud.Application.Dispatching;
+namespace MysteryMud.Application.Registry;
 
 public class CommandRegistry : ICommandRegistry
 {
+    private readonly ILogger _logger;
+
     private readonly Dictionary<int, ICommand> _commandById = [];
     private ICommand[] _commands = [];
+
+    public CommandRegistry(ILogger logger)
+    {
+        _logger = logger;
+    }
 
     public void RegisterCommands(IEnumerable<CommandDefinition> definitions, IEnumerable<Assembly> assemblies, IEnumerable<ICommand> explicitCommands)
     {
@@ -39,7 +47,10 @@ public class CommandRegistry : ICommandRegistry
             var type = commandTypes.FirstOrDefault(t => t.Name == typeName && typeof(ICommand).IsAssignableFrom(t));
 
             if (type == null)
+            {
+                _logger.LogError("No matching command implementation ({typeName}) found for command definition: {commandDefinitionName}", typeName, def.Name);
                 continue;
+            }
 
             var cmd = (ICommand)Activator.CreateInstance(type, def)!; // use ctor(CommandDefinition, int)
 

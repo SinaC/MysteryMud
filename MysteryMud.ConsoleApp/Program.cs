@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Commands;
 using MysteryMud.Application.Dispatching;
 using MysteryMud.Application.ExplicitCommands;
+using MysteryMud.Application.Registry;
 using MysteryMud.ConsoleApp;
 using MysteryMud.ConsoleApp.Demo;
 using MysteryMud.ConsoleApp.Hosting;
@@ -104,7 +105,7 @@ var socialLoader = new JsonSocialLoader();
 var socialDefinitions = socialLoader.Load(Path.Combine(basePath, gamePaths.SocialsJson));
 
 // initialize command registry (Infrastructure)
-var commandRegistry = new CommandRegistry();
+var commandRegistry = new CommandRegistry(logger);
 var explicitCommands = new List<ICommand>();
 // help command
 var helpCommand = new HelpCommand(commandRegistry); // special case for help command since it needs registry reference
