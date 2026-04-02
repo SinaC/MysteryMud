@@ -19,7 +19,7 @@ Tick pipeline
 7. InteractionSystem                // Handle get/drop/put/give/...
 8. StatSystem                       // Recalculate stats from DirtyFlags
 9. TimedEffectSystem                // Apply scheduled effects (damage, heal, buffs/debuffs)
-10. ThreatSystem.UpdateThreat       // Update aggro/threat
+10. ThreatDecaySystem               // Decay threat
 11. NPCTargetSystem.AssignTargets   // Select highest threat targets
 12. GroupCombatSystem.Resolve       // Handle assist/protect/own target attack intents
 13. AbilitySystem                   // Resolve skill/spell usage → may generate Damage/Effect intents
@@ -129,6 +129,9 @@ Character
 Npc(character+)
   ├NpcTag
   └ThreatTable: list of characters and threat values for aggro
+  optional
+    AutoCommand: last command from Npc
+    ActiveThreatTag: set while there is an active entry in ThreatTable
 
 Player(character+)
   ├PlayerTag

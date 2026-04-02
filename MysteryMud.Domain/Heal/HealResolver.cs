@@ -1,4 +1,5 @@
 ﻿using Arch.Core.Extensions;
+using MysteryMud.Core;
 using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Calculators;
@@ -22,7 +23,7 @@ public class HealResolver
         _healed = healed;
     }
 
-    public void Resolve(HealAction heal) // to be used during combat process
+    public void Resolve(GameState state, HealAction heal) // to be used during combat process
     {
         if (!heal.Target.IsAlive() || heal.Target.Has<Dead>()) // already dead
             return;
@@ -42,7 +43,7 @@ public class HealResolver
         health.Current += modifiedHeal;
 
         // generate aggro for healing
-        _aggroResolver.ResolveFromHeal(heal.Target, heal.Source, modifiedHeal);
+        _aggroResolver.ResolveFromHeal(state, heal.Target, heal.Source, modifiedHeal);
 
         // healed event
         ref var healedEvt = ref _healed.Add();

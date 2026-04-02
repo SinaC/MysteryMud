@@ -83,7 +83,7 @@ public class TimedEffectSystem
                     continue;
 
                 ref var instance = ref effect.Get<EffectInstance>();
-                ApplyEffect(effect, ref instance);
+                ApplyEffect(state, effect, ref instance);
 
                 // intent for next tick
                 timed.NextTick = state.CurrentTick + timed.TickRate;
@@ -100,7 +100,7 @@ public class TimedEffectSystem
         }
     }
 
-    private void ApplyEffect(Entity effect, ref EffectInstance instance)
+    private void ApplyEffect(GameState state, Entity effect, ref EffectInstance instance)
     {
         ref var healEffect = ref effect.TryGetRef<HealEffect>(out var hasHealEffect);
         if (hasHealEffect)
@@ -114,7 +114,7 @@ public class TimedEffectSystem
                 SourceKind = HealSourceKind.HoT
             };
             _logger.LogInformation(LogEvents.Hot, "Applying HoT heal for Effect {effectName} on Target {targetName} with heal {heal}", effect.DebugName, instance.Target.DebugName, totalHeal);
-            _healResolver.Resolve(healAction);
+            _healResolver.Resolve(state, healAction);
         }
 
         ref var damageEffect = ref effect.TryGetRef<DamageEffect>(out var hasDamageEffect);
@@ -130,7 +130,7 @@ public class TimedEffectSystem
                 SourceKind = DamageSourceKind.DoT
             };
             _logger.LogInformation(LogEvents.Dot, "Applying DoT damage for Effect {effectName} on Target {targetName} with damage {damage} type {damageKind}", effect.DebugName, instance.Target.DebugName, totalDamage, damageEffect.DamageKind);
-            _damageResolver.Resolve(in damageAction);
+            _damageResolver.Resolve(state, damageAction);
         }
 
         // TOOD: other
