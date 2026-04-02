@@ -3,7 +3,7 @@ using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using System.Reflection;
 
-namespace MysteryMud.Application.Dispatching;
+namespace MysteryMud.Application.Registry;
 
 public interface ICommandRegistry
 {
