@@ -12,7 +12,6 @@ using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Factories;
-using System.Numerics;
 
 namespace MysteryMud.Domain.Systems;
 
@@ -52,6 +51,7 @@ public class CleanupSystem
 
             RemoveFromCombat(state.World, player);
             RemoveFromRoomContents(player);
+            RemoveFromThreatTable(state.World, player);
             RemoveEffects(state.World, player);
 
             // TODO: destroy any items the character is carrying or equipped with
@@ -70,6 +70,7 @@ public class CleanupSystem
 
             RemoveFromCombat(state.World, npc);
             RemoveFromRoomContents(npc);
+            RemoveFromThreatTable(state.World, npc);
             RemoveEffects(state.World, npc);
 
             // TODO: destroy any items the character is carrying or equipped with
@@ -154,6 +155,16 @@ public class CleanupSystem
         {
             if (combat.Target == victim)
                 actor.Remove<CombatState>();
+        });
+    }
+
+    private void RemoveFromThreatTable(World world, Entity character) // TODO: optimize, this will loop on every NPC
+    {
+        var query = new QueryDescription()
+            .WithAll<ThreatTable, ActiveThreatTag>();
+        world.Query(query, (Entity actor, ref ThreatTable threatTable) =>
+        {
+            threatTable.Threat.Remove(character);
         });
     }
 

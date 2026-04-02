@@ -99,6 +99,7 @@ internal class GameLoop
     private readonly StatsSystem _statsSystem;
     private readonly AutoAttackSystem _autoAttackSystem;
     private readonly TimedEffectSystem _timedEffectSystem;
+    private readonly ThreatDecaySystem _threatDecaySystem;
     private readonly ScheduleSystem _scheduleSystem;
     private readonly DeathSystem _deathSystem;
     private readonly RespawnSystem _respawnSystem;
@@ -136,6 +137,7 @@ internal class GameLoop
         _statsSystem = new StatsSystem();
         _autoAttackSystem = new AutoAttackSystem(_intentContainer);
         _timedEffectSystem = new TimedEffectSystem(_logger, _gameMessageService, _intentContainer, _damageResolver, _healResolver, _triggeredScheduledEventBuffer, _effectExpiredEventBuffer, _effectTickedEventBuffer);
+        _threatDecaySystem = new ThreatDecaySystem();
         _scheduleSystem = new ScheduleSystem(scheduler, intentContainer);
         _deathSystem = new DeathSystem(_gameMessageService, _intentContainer, _deathEventBuffer);
         _respawnSystem = new RespawnSystem(_gameMessageService);
@@ -202,7 +204,8 @@ internal class GameLoop
         _scheduler.Process(state, _triggeredScheduledEventBuffer);
         // Resolve triggered scheduled event and generates scheduleIntent (for next tick), effectExpiredEvent (to inform), effectTickedEvent (to inform)
         _timedEffectSystem.Tick(state);
-        // TODO: ThreatSystem.UpdateThreat       // Update aggro/threat
+        // Decay threat by 2%
+        _threatDecaySystem.Tick(state);
         // TODO: NPCTargetSystem.AssignTargets   // Select highest threat targets
         // TODO: GroupCombatSystem.Resolve       // Handle assist/protect/own target attack intents
         // TODO: AbilitySystem                   // Resolve skill/spell usage → may generate DamageAction/HealAction/EffectActions

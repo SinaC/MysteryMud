@@ -47,7 +47,7 @@ public sealed class CombatOrchestrator
             {
                 var damageAction = _hitDamageFactory.CreateHitDamage(resolvedHit);
 
-                _damageResolver.Resolve(damageAction);
+                _damageResolver.Resolve(state, damageAction);
 
                 // ---------- Weapon procs (immediate on hit) ----------
                 // TODO: handle weapon proc

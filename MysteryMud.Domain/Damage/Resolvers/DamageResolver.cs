@@ -1,5 +1,6 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.Core;
 using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Calculators;
@@ -27,7 +28,7 @@ public class DamageResolver
         _deaths = deaths;
     }
 
-    public void Resolve(in DamageAction dmg) // to be used during combat process
+    public void Resolve(GameState state, DamageAction dmg) // to be used during combat process
     {
         if (!dmg.Target.IsAlive() || dmg.Target.Has<Dead>()) // already dead
             return;
@@ -45,7 +46,7 @@ public class DamageResolver
         health.Current -= modifiedDamage;
 
         // generate aggro
-        _aggroResolver.ResolveFromDamage(dmg.Target, dmg.Source, modifiedDamage, dmg.DamageKind);
+        _aggroResolver.ResolveFromDamage(state, dmg.Target, dmg.Source, modifiedDamage, dmg.DamageKind);
 
         // check for death
         if (health.Current <= 0)
