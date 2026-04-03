@@ -3,7 +3,8 @@
 public enum DamageSourceKind
 {
     Hit,
-    Ability,
+    Spell,
+    Skill,
     DoT,
     Environment
 }

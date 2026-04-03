@@ -10,66 +10,97 @@ ConsoleApp        Entry point, console I/O, game loop, game server.
 
 Tick pipeline
 
-1. Input → Commands → Intents       // Player commands → may generate manual LookIntent (Mode=Snapshot)
-2. LookSystem(Snapshot)             // Processes all LookIntents with Mode=Snapshot → reads current world state before any effects → produces messages
+1. Input → Commands → Intents       // Player commands → may generate manual LookIntent (Mode=Snapshot) and other intents
+2. LookSystem(Snapshot)             // Process all LookIntents with Mode=Snapshot → reads current world state before any effects → produces messages
 3. AISystem                         // NPC behavior → generates intents
 4. FleeSystem                       // Convert flee → MoveIntents
 5. ChaseSystem                      // NPC chase movement
-6. MovementSystem                   // Resolves MoveIntents → emits auto-look PostUpdate (Mode=PostUpdate)
-7. InteractionSystem                // Handle get/drop/put/give/...
+6. MovementSystem                   // Process MoveIntents → emits auto-look PostUpdate (Mode=PostUpdate)
+7. InteractionSystem                // Process get/drop/put/give/... intents
 8. StatSystem                       // Recalculate stats from DirtyFlags
-9. TimedEffectSystem                // Apply scheduled effects (damage, heal, buffs/debuffs)
-10. ThreatDecaySystem               // Decay threat
-11. NPCTargetSystem.AssignTargets   // Select highest threat targets
-12. GroupCombatSystem.Resolve       // Handle assist/protect/own target attack intents
-13. AbilitySystem                   // Resolve skill/spell usage → may generate Damage/Effect intents
-14. CombatOrchestrator              // Resolve AttackIntents → AttackEvents + reactions, procs, spell effects, damage, heal, etc.
-15. DeathSystem                     // Flag dead entities
-16. RespawnSystem                   // Auto-resurrect players
-17. LootSystem                      // Handle loot & auto-loot
-18. LookSystem(PostUpdate)          // Processes LookIntents with Mode=PostUpdate → reflects final world state after all updates
-19. CleanupSystem                   // Remove destroyed items / dead NPCs / disconnected players
-20. Output → MessageBus             // Send all messages to players
+9. Scheduler.Process                // Generate triggered scheduled event (tick or expired)
+10. TimedEffectSystem               // Resolve triggered scheduled event and generates scheduleIntent, effectExpiredEvent (to inform), effectTickedEvent (to inform)
+11. ThreatDecaySystem               // Decay threat
+12. NPCTargetSystem                 // Select highest threat targets
+13. GroupCombatSystem.Resolve       // Process assist/protect/own target attack intents
+14. AutoAttackSystem                // Generate attack intents for every entity in combat (CombatState component set)
+15. CombatOrchestrator              // Process AttackIntents (resolve damage/heal/aggro) → AttackEvents + reactions
+16. DeathSystem                     // Flag dead entities
+17. RespawnSystem                   // Auto-resurrect players
+18. LootSystem                      // Process loot & auto-loot
+19. LookSystem(PostUpdate)          // Process LookIntents with Mode=PostUpdate → reflects final world state after all updates
+20. ScheduleSystem                  // Process scheduleIntents (which can be generated from IA, abilities, TimedEffectSytem, AttackOrchestrator)
+21. CleanupSystem                   // Remove destroyed items / dead NPCs / disconnected players
+22. Output → MessageBus             // Send all messages to players
 
-CombatOrchestrator (step 14) details
-    HitPhase / IntentResolution
-        Determine hit, dodge, parry
-        Generate AttackResolved events
-        Produce messages like “You dodged!”
-    DamageProducer
-        Converts AttackResolved(Hit) into DamageEvent
-        Sets SourceType = Hit (or Spell, DoT, etc.)
-        No reactions here
-    DamageResolver
-        Applies HP changes
-        Generates death events if HP ≤ 0
-        Sends messages like “You take 5 damage”
-        Does not trigger counterattack
-    ReactionPhase
-        Loops over AttackResolved events (or potentially damage events if needed)
-        Checks conditions: parry -> guaranteed counter, hit -> chance to counter
-        Generates new AttackIntents for counterattacks
-        These intents go into Next buffer, which is processed in the same tick
+CombatOrchestrator (step 15) details
+   loop on attack intents
+        ResolveHit 
+             Determine hit, dodge, parry -> ResolvedHit 
+             Generate AttackResolvedEvent
+             Produce messages like “You dodged!”
+         ResolveDamage (if hit)
+             Applies HP/Threat changes
+             Generates death events if HP ≤ 0
+             Sends messages like “You take 5 damage”
+             Does not trigger counterattack
+         ReactionPhase (if victim is still alive)
+             Checks conditions: parry -> guaranteed counterattack, hit -> chance to counterattack
+             Generates new AttackIntents for counterattacks
+         MultiHitPhase
+             Generate one AttackIntent (with one less remaining hit) if there are remaining hits for this attack round
 
-Players ──┐
-          │
-NPCs   ──> CommandBuffer + HasCommand
-          │
-          v
-   CommandThrottleSystem
-          │
-          v
-   CommandExecutionSystem
-   (Batch limited: MaxEntitiesPerTick)
-          │
-          v
-      IntentComponent(s)
-          │
-          v
-  Domain Systems (Combat / Move / Spell)
-          │
-          v
-   rest of tick pipeline
+ ┌─────────────────────────┐
+ │   Player inputs command │
+ └─────────────┬───────-───┘
+               │
+               ▼
+ ┌─────────────────────────┐
+ │  CommandBus             │
+ │  - Enqueue player input │
+ └─────────────┬────────-──┘
+               │
+               ▼
+ ┌─────────────────────────┐
+ │  CommandDispatcher      │
+ │  - Parses input         │
+ │  - Looks up command     │
+ │  - Enqueues into        │
+ │    CommandBuffer        │
+ │  - Adds HasCommandTag   │
+ └─────────────┬────────-──┘
+               │
+               ▼
+ ┌─────────────────────--------────┐
+ │  CommandThrottleSystem          │
+ │  - Prune old history            │
+ │  - Refill per-category          │
+ │    token buckets                │
+ │  - Spam detection               │
+ │    (MAX_IDENTICAL)              │
+ │  - WAIT_STATE (NextAllowedTime) │
+ │  - Cancel commands if blocked   │
+ │  - Otherwise set ExecuteAt      │
+ └─────────────┬─────---------─────┘
+               │
+               ▼
+ ┌───────────────────────---------──┐
+ │  CommandExecutionSystem          │
+ │  - Iterates buffer               │
+ │  - Skip cancelled                │
+ │  - Skip ExecuteAt > now          │
+ │  - Execute allowed cmds          │
+ │  - Compact buffer for            │
+ │    remaining commands            │
+ │  - Remove HasCommandTag if empty │
+ └─────────────┬──────────----------┘
+               │
+               ▼
+ ┌─────────────────────────┐
+ │ Command executed effects│
+ │ (Combat, Movement, Chat │
+ │  etc.)                  │
+ └─────────────────────────┘
 
 Tick Start
 │

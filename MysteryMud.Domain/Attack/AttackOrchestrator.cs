@@ -1,11 +1,12 @@
 ﻿using MysteryMud.Core;
 using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Intent;
-using MysteryMud.Core.Services;
 using MysteryMud.Domain.Attack.Factories;
 using MysteryMud.Domain.Attack.Resolvers;
 using MysteryMud.Domain.Damage.Resolvers;
+using MysteryMud.Domain.Factories;
 using MysteryMud.Domain.Helpers;
+using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
 using MysteryMud.GameData.Intents;
@@ -16,16 +17,20 @@ public sealed class AttackOrchestrator
 {
     private readonly IIntentContainer _intents;
     private readonly IEventBuffer<AttackResolvedEvent> _attackResolved;
+    private readonly SpellDatabase _spellDatabase;
+    private readonly EffectFactory _effectFactory;
     private readonly DamageResolver _damageResolver;
     private readonly HitResolver _hitResolver;
     private readonly HitDamageFactory _hitDamageFactory;
     private readonly WeaponProcResolver _weaponProcResolver;
     private readonly ReactionResolver _reactionResolver;
 
-    public AttackOrchestrator(IGameMessageService msg, IIntentContainer intents, IEventBuffer<AttackResolvedEvent> attackResolved, HitResolver hitResolver, HitDamageFactory hitDamageFactory, DamageResolver damageResolver, WeaponProcResolver weaponProcResolver, ReactionResolver reactionResolver)
+    public AttackOrchestrator(IIntentContainer intents, IEventBuffer<AttackResolvedEvent> attackResolved, SpellDatabase spellDatabase, EffectFactory effectFactory, HitResolver hitResolver, HitDamageFactory hitDamageFactory, DamageResolver damageResolver, WeaponProcResolver weaponProcResolver, ReactionResolver reactionResolver)
     {
         _intents = intents;
         _attackResolved = attackResolved;
+        _spellDatabase = spellDatabase;
+        _effectFactory = effectFactory;
         _damageResolver = damageResolver;
         _hitResolver = hitResolver;
         _hitDamageFactory = hitDamageFactory;
@@ -43,35 +48,33 @@ public sealed class AttackOrchestrator
                 continue;
             switch (intent.Kind)
             {
-                case AttackIntentKind.Hit:
+                case AttackKind.Hit:
                     ResolveAttack(state, ref intent);
                     break;
-                case AttackIntentKind.Ability:
+                case AttackKind.Ability:
                     ResolveAbility(state, ref intent);
                     break;
-                    // TODO
-                //case OffensiveIntentKind.ChannelingAbility:
-                //    ResolveChanneling(intent);
-                //    break;
-                //case AttackIntentKind.Reaction:
-                //    ResolveReaction(ref intent);
-                //    break;
-                //case AttackIntentKind.Interrupt:
-                //    ResolveInterrupt(ref intent);
-                //    break;
             }
         }
     }
 
     private void ResolveAttack(GameState state, ref AttackIntent intent)
     {
-        ref var attack = ref intent.Attack;
+        ref var attack = ref intent.Hit;
 
         if (!CharacterHelpers.IsAlive(attack.Attacker, attack.Target))
             return;
 
+        // resolve hit
         var resolvedHit = _hitResolver.Resolve(attack);
 
+        // attack resolved event
+        ref var attackResolvedEvt = ref _attackResolved.Add();
+        attackResolvedEvt.Source = resolvedHit.Source;
+        attackResolvedEvt.Target = resolvedHit.Target;
+        attackResolvedEvt.Result = resolvedHit.Result;
+
+        // if hit, resolve damage
         if (resolvedHit.Result == AttackResultKind.Hit)
         {
             var damageAction = _hitDamageFactory.CreateHitDamage(resolvedHit);
@@ -82,17 +85,18 @@ public sealed class AttackOrchestrator
         if (!CharacterHelpers.IsAlive(attack.Target))
             return;
 
+        // if still alive after damage, check reaction (such as counterattack)
         _reactionResolver.Resolve(_intents, resolvedHit);
 
-        // Multi-hit continuation
+        // multi-hit continuation
         if (!attack.IsReaction && resolvedHit.Result != AttackResultKind.Dodge && attack.RemainingHits > 1)
         {
             ref var nextMultiHitAttackIntent = ref _intents.Attack.Add();
-            nextMultiHitAttackIntent.Attack.Attacker = attack.Attacker;
-            nextMultiHitAttackIntent.Attack.Target = attack.Target;
-            nextMultiHitAttackIntent.Attack.RemainingHits = attack.RemainingHits - 1;
-            nextMultiHitAttackIntent.Attack.IsReaction = attack.IsReaction;
-            nextMultiHitAttackIntent.Attack.IgnoreDefense = attack.IgnoreDefense;
+            nextMultiHitAttackIntent.Hit.Attacker = attack.Attacker;
+            nextMultiHitAttackIntent.Hit.Target = attack.Target;
+            nextMultiHitAttackIntent.Hit.RemainingHits = attack.RemainingHits - 1;
+            nextMultiHitAttackIntent.Hit.IsReaction = attack.IsReaction;
+            nextMultiHitAttackIntent.Hit.IgnoreDefense = attack.IgnoreDefense;
         }
     }
 
@@ -103,85 +107,29 @@ public sealed class AttackOrchestrator
         if (!CharacterHelpers.IsAlive(ability.Caster))
             return;
 
-        // TODO
-        //var def = GetAbility(ability.AbilityId);
+        if (!_spellDatabase.Spells.TryGetValue(ability.AbilityId, out var def))
+            return; // spell not found
 
-        //foreach (var target in ability.Targets.Where(t => CharacterHelpers.IsAlive(t)))
-        //{
-        //    foreach (var eff in def.Effects)
-        //    {
-        //        _effectFactory.CreateEffect(GetEffect(eff.EffectId), ability.Caster, target, _state);
-        //    }
+        foreach (var target in ability.Targets.Where(t => CharacterHelpers.IsAlive(t)))
+        {
+            foreach (var eff in def.Effects) // TODO: saves vs spell
+            {
+                _effectFactory.ApplyEffect(state, eff, ability.Caster, target); // TODO: effect intent ?
+            }
 
-        //    _reactionResolver.Resolve(_intents, new HitInfo
-        //    {
-        //        Source = ability.Caster,
-        //        Target = target,
-        //        Result = AttackResultKind.Hit
-        //    });
-        //}
+            // attack resolved event
+            ref var attackResolvedEvt = ref _attackResolved.Add();
+            attackResolvedEvt.Source = ability.Caster;
+            attackResolvedEvt.Target = target;
+            attackResolvedEvt.Result = AttackResultKind.Hit; // TODO
+
+            // TODO
+            //_reactionResolver.Resolve(_intents, new HitInfo
+            //{
+            //    Source = ability.Caster,
+            //    Target = target,
+            //    Result = AttackResultKind.Hit
+            //});
+        }
     }
-
-    //void ResolveChanneling(Intent intent)
-    //    {
-    //        var chan = intent.AsChanneling();
-    
-    //        if (!CharacterHelpers.IsAlive(chan.Caster))
-    //            return;
-    
-    //        var abilityDef = GetAbility(chan.AbilityId);
-    
-    //        // Recompute targets each tick or use stored
-    //        var targets = chan.Targets.Where(t => CharacterHelpers.IsAlive(t) && CharacterHelpers.IsAttackable(chan.Caster, t)).ToList();
-    
-    //        foreach (var target in targets)
-    //        {
-    //            foreach (var eff in abilityDef.Effects)
-    //            {
-    //                _effectFactory.CreateEffect(GetEffect(eff.EffectId), chan.Caster, target, _state);
-    //            }
-    
-    //            _reactionResolver.Resolve(_nextQueue, new HitInfo
-    //            {
-    //                Source = chan.Caster,
-    //                Target = target,
-    //                Result = AttackResultKind.Hit
-    //            });
-    //        }
-    
-    //        chan.RemainingTicks--;
-    
-    //        if (chan.RemainingTicks > 0)
-    //        {
-    //            // Schedule the next tick for **next game tick**
-    //            var nextTick = new Intent
-    //            {
-    //                Kind = IntentKind.ChannelingAbility,
-    //                Channeling = chan
-    //            };
-    //            EnqueueNextTick(nextTick);
-    //        }
-    //    }
-
-    //private void ResolveInterrupt(AttackIntent intent)
-    //{
-    //    ref var interrupt = ref intent.Interrupt;
-
-    //    foreach (var pending in _nextQueue)
-    //    {
-    //        if (pending.Cancelled)
-    //            continue;
-
-    //        // Interrupt channeling or abilities
-    //        if ((pending.Kind == IntentKind.ChannelingAbility && pending.AsChanneling().Caster == interrupt.Target) ||
-    //            (pending.Kind == IntentKind.Ability && pending.AsAbility().Caster == interrupt.Target))
-    //        {
-    //            pending.Cancelled = true;
-    //            _state.Log($"{interrupt.Target} was interrupted due to {interrupt.Reason}");
-    //        }
-    //    }
-    //}
 }
-
-
-

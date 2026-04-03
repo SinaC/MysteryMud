@@ -14,9 +14,11 @@ using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Damage.Resolvers;
 using MysteryMud.Domain.Extensions;
+using MysteryMud.Domain.Factories;
 using MysteryMud.Domain.Heal;
 using MysteryMud.Domain.Services;
 using MysteryMud.Domain.Systems;
+using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
 using MysteryMud.Infrastructure.Eventing;
@@ -27,7 +29,7 @@ namespace MysteryMud.ConsoleApp.Demo;
 
 static class Demo2
 {
-    public static void Run(ILogger logger, World world, ICommandDispatcher commandDispatcher)
+    public static void Run(ILogger logger, World world, ICommandDispatcher commandDispatcher, SpellDatabase spellDatabase)
     {
         // get entities for testing
         Span<Entity> characters = stackalloc Entity[10];
@@ -72,11 +74,12 @@ static class Demo2
         var lookedEventBuffer = new EventBuffer<LookedEvent>();
         var attackResolvedEventBuffer = new EventBuffer<AttackResolvedEvent>();
 
-        var systemContext = new SystemContext { Log = logger, Msg = gameMessageService, Intent = intentBusContainer };
+        var systemContext = new SystemContext { Msg = gameMessageService, Intent = intentBusContainer };
 
         // TODO: deathEvent and damageEvent are purely combat events and should probably remains the only event passed to systems, other events like itemGotEvent, itemDroppedEvent, itemGivenEvent, itemPutEvent can be directly sent to message service without going through event buffer since they are only used for messaging and no system needs to react to them, this way we can avoid the complexity of managing multiple event buffers and also avoid the issue of events being processed in the wrong order (like damage events being processed before attack intents)
         // TODO: we should replace all these eventbuffers with a more generic event system
 
+        var effectFactory = new EffectFactory(logger, gameMessageService, intentBusContainer);
         var aggroResolver = new AggroResolver();
         var damageResolver = new DamageResolver(aggroResolver, gameMessageService, damagedEventBuffer, deathEventBuffer);
         var healResolver = new HealResolver(aggroResolver, gameMessageService, healedEventBuffer);
@@ -84,7 +87,7 @@ static class Demo2
         var hitDamageFactory = new HitDamageFactory();
         var weaponProcResolver = new WeaponProcResolver();
         var reactionResolver = new ReactionResolver(gameMessageService);
-        var attackOrchestrator = new AttackOrchestrator(gameMessageService, intentBusContainer, attackResolvedEventBuffer, hitResolver, hitDamageFactory, damageResolver, weaponProcResolver, reactionResolver);
+        var attackOrchestrator = new AttackOrchestrator(intentBusContainer, attackResolvedEventBuffer, spellDatabase, effectFactory, hitResolver, hitDamageFactory, damageResolver, weaponProcResolver, reactionResolver);
 
         var fleeSystem = new FleeSystem(gameMessageService, intentBusContainer, fleeBlockedEventBuffer);
         var movementSystem = new MovementSystem(gameMessageService, intentBusContainer, movedEventBuffer);
@@ -94,7 +97,7 @@ static class Demo2
         var deathSystem = new DeathSystem(gameMessageService, intentBusContainer, deathEventBuffer);
         var lootSystem = new LootSystem(gameMessageService, intentBusContainer, itemLootedEventBuffer);
         var lookSystem = new LookSystem(lookService, intentBusContainer, lookedEventBuffer);
-        var cleanupSystem = new CleanupSystem(logger);
+        var cleanupSystem = new CleanupSystem(logger, effectFactory);
 
         //// subscribe to events for demo purposes
         //var fleeBlockedEventDispatcher = new EventDispatcher<FleeBlockedEvent>();

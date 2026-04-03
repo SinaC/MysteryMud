@@ -17,13 +17,16 @@ public class SocialCommand : ICommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.Target;
 
+    private readonly ILogger _logger;
     private readonly SocialDefinition _socialDefinition;
 
     public CommandDefinition Definition { get; }
 
-    public SocialCommand(SocialDefinition socialDefinition)
+    public SocialCommand(ILogger logger, SocialDefinition socialDefinition)
     {
+        _logger = logger;
         _socialDefinition = socialDefinition;
+
         Definition = new CommandDefinition
         {
             Id = socialDefinition.Name.ComputeCommandId(),
@@ -62,7 +65,7 @@ public class SocialCommand : ICommand
                 {
                     if (_socialDefinition.CharacterNotFound.Contains("{0"))
                     {
-                        systemContext.Log.LogError("Social {name} CharacterNotFound phrase contains arguments.", _socialDefinition.Name);
+                        _logger.LogError("Social {name} CharacterNotFound phrase contains arguments.", _socialDefinition.Name);
                         systemContext.Msg.To(actor).Send("They aren't here.");
                     }
                     useCharacterNotFound = true;

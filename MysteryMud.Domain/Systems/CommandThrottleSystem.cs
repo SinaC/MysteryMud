@@ -29,9 +29,7 @@ public class CommandThrottleSystem
 
         var query = new QueryDescription()
             .WithAll<CommandBuffer, CommandThrottle, PlayerTag, HasCommandTag>();
-
-        state.World.Query(query,
-            (Entity player, ref CommandBuffer buffer, ref CommandThrottle throttle, ref PlayerTag _, ref HasCommandTag _) =>
+        state.World.Query(query, (Entity player, ref CommandBuffer buffer, ref CommandThrottle throttle, ref PlayerTag _, ref HasCommandTag _) =>
             {
                 // --- refill all category buckets ---
                 Refill(ref throttle.Movement, now);
@@ -143,7 +141,7 @@ public class CommandThrottleSystem
             return;
         }
 
-        float delta = (now - b.LastRefillTime) / 1000f;
+        float delta = (now - b.LastRefillTime) / 1000f; // seconds
         b.LastRefillTime = now;
         b.Tokens = Math.Min(b.MaxTokens, b.Tokens + delta * b.RefillRate);
     }

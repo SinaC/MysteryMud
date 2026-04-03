@@ -2,12 +2,10 @@
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using MysteryMud.Application.Commands;
 using MysteryMud.Application.Dispatching;
 using MysteryMud.Application.ExplicitCommands;
 using MysteryMud.Application.Registry;
 using MysteryMud.ConsoleApp;
-using MysteryMud.ConsoleApp.Demo;
 using MysteryMud.ConsoleApp.Hosting;
 using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Components;
@@ -63,6 +61,10 @@ var goblin = MobFactory.CreateMob(world, "goblin", "a goblin", market);
 var troll = MobFactory.CreateMob(world, "troll", "a troll", market);
 troll.Get<Health>().Current = 10000;
 troll.Get<Health>().Max = 10000;
+ref var trollEffectiveStats = ref troll.Get<EffectiveStats>();
+trollEffectiveStats.Dodge = 0; // for testing, make sure all hits land so we can see the counterattack in action
+trollEffectiveStats.Parry = 0; // for testing, make sure all hits land so we can see the counterattack in action
+trollEffectiveStats.CounterAttack = 100; // for testing, make sure all we counterattack every time so we can see the counterattack in action
 var sword = ItemFactory.CreateItemInRoom(world, "sword", "a %#FFFFFF>#FFFF00shiny sword%x", market);
 sword.Add(new Equipable { Slot = EquipmentSlotKind.MainHand });
 var chest = world.Create(
@@ -116,12 +118,14 @@ explicitCommands.Add(socialsCommand);
 // social commands (one by social definition)
 foreach (var socialDefinition in socialDefinitions)
 {
-    var socialCommand = new SocialCommand(socialDefinition);
+    var socialCommand = new SocialCommand(logger, socialDefinition);
     explicitCommands.Add(socialCommand);
 }
 // force command
-var forceCommand = new ForceCommand(commandRegistry);
+var forceCommand = new ForceCommand(logger, commandRegistry);
 explicitCommands.Add(forceCommand);
+// test command
+var testCommand = new TestCommand();
 // commands from assemblies
 commandRegistry.RegisterCommands(commandDefinitions, [typeof(TestCommand).Assembly], explicitCommands);
 
@@ -133,5 +137,5 @@ var commandDispatcher = new CommandDispatcher(commandRegistry);
 //Demo2.Run(logger, world, commandDispatcher);
 
 // start game server
-var gameServer = new GameServer(logger, world, commandDispatcher);
+var gameServer = new GameServer(logger, world, commandDispatcher, spellDatabase);
 gameServer.Start();
