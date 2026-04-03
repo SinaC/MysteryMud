@@ -22,6 +22,7 @@ public class ForceCommand : ICommand
     private const string Name = "force";
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetAndText;
 
+    private readonly ILogger _logger;
     private readonly ICommandRegistry _commandRegistry;
 
     public CommandDefinition Definition { get; } = new CommandDefinition
@@ -43,8 +44,9 @@ This is typically used for 'force all save'.",
         ThrottlingCategories = CommandThrottlingCategories.Admin,
     };
 
-    public ForceCommand(ICommandRegistry commandRegistry)
+    public ForceCommand(ILogger logger, ICommandRegistry commandRegistry)
     {
+        _logger = logger;
         _commandRegistry = commandRegistry;
     }
 
@@ -101,8 +103,8 @@ This is typically used for 'force all save'.",
         }
         else if (forcedCommand is null)
         {
+            _logger.LogError("ForceCommand: command registry returned null command when trying to find {cmd}", ctx.Text.ToString());
             systemContext.Msg.To(actor).Send("Something goes wrong.");
-            systemContext.Log.LogError("ForceCommand: command registry returned null command when trying to find {cmd}", ctx.Text.ToString());
             return;
         }
         else if (forcedCommand!.Definition.CannotBeForced)

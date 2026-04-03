@@ -2,7 +2,9 @@
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
+using MysteryMud.Core.Intent;
 using MysteryMud.Core.Logging;
+using MysteryMud.Core.Services;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Extensions;
@@ -11,9 +13,21 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Factories;
 
-public static class EffectFactory
+// TODO: handle damage/heal/... effect
+public class EffectFactory
 {
-    public static void RemoveEffect(GameState state, Entity effect)
+    private readonly ILogger _logger;
+    private readonly IGameMessageService _msg;
+    private readonly IIntentWriterContainer _intent;
+
+    public EffectFactory(ILogger logger, IGameMessageService msg, IIntentWriterContainer intent)
+    {
+        _logger = logger;
+        _msg = msg;
+        _intent = intent;
+    }
+
+    public void RemoveEffect(GameState state, Entity effect)
     {
         if (!effect.IsAlive()) // don't use helpers, effect with ExpiredTag should be removable
             return;
@@ -46,7 +60,7 @@ public static class EffectFactory
         state.World.Destroy(effect);
     }
 
-    public static void ApplyEffect(SystemContext ctx, GameState state, EffectDefinition effectDefinition, Entity source, Entity target)
+    public void ApplyEffect(GameState state, EffectDefinition effectDefinition, Entity source, Entity target)
     {
         ref var targetEffects = ref target.Get<CharacterEffects>();
 
@@ -54,7 +68,7 @@ public static class EffectFactory
         var existing = FindEffect(ref targetEffects, effectDefinition);
         if (existing is not null)
         {
-            var handled = HandleStacking(ctx, state, effectDefinition, existing.Value, source);
+            var handled = HandleStacking(state, effectDefinition, existing.Value, source);
             if (handled)
                 return;
             // not handled: apply new effect
@@ -72,7 +86,7 @@ public static class EffectFactory
         // add effect to target effect cache
         targetEffects.Effects.Add(effect);
 
-        ctx.Log.LogInformation(LogEvents.Factory, "Creating Effect from Template {effectTemplateName} Source {sourceName} Target {targetName}", effectDefinition.Id, source.DebugName, target.DebugName);
+        _logger.LogInformation(LogEvents.Factory, "Creating Effect from Template {effectTemplateName} Source {sourceName} Target {targetName}", effectDefinition.Id, source.DebugName, target.DebugName);
 
         // add tag if applicable
         if (effectDefinition.Tag != EffectTagId.None)
@@ -90,7 +104,7 @@ public static class EffectFactory
                 targetEffects.EffectsByTag[tagIndex]!.Add(effect);
             targetEffects.ActiveTags |= 1UL << tagIndex;
 
-            ctx.Log.LogInformation(LogEvents.Factory, " - add tag {tag}", effectDefinition.Tag);
+            _logger.LogInformation(LogEvents.Factory, " - add tag {tag}", effectDefinition.Tag);
         }
 
         // timed effect ?
@@ -112,8 +126,8 @@ public static class EffectFactory
             });
 
             // expiration intent
-            ctx.Log.LogInformation(LogEvents.Factory, " - add duration {duration} ticks (expires at {expirationTick})", duration, expirationTick);
-            ref var expireScheduleIntent = ref ctx.Intent.Schedule.Add();
+            _logger.LogInformation(LogEvents.Factory, " - add duration {duration} ticks (expires at {expirationTick})", duration, expirationTick);
+            ref var expireScheduleIntent = ref _intent.Schedule.Add();
             expireScheduleIntent.Effect = effect;
             expireScheduleIntent.Kind = ScheduledEventKind.Expire;
             expireScheduleIntent.ExecuteAt = expirationTick;
@@ -121,8 +135,8 @@ public static class EffectFactory
             // first tick intent (if periodic)
             if (tickRate > 0)
             {
-                ctx.Log.LogInformation(LogEvents.Factory, " - add tick rate {tickRate} (next tick {nextTick})", effectDefinition.TickRate, nextTick);
-                ref var tickScheduleIntent = ref ctx.Intent.Schedule.Add();
+                _logger.LogInformation(LogEvents.Factory, " - add tick rate {tickRate} (next tick {nextTick})", effectDefinition.TickRate, nextTick);
+                ref var tickScheduleIntent = ref _intent.Schedule.Add();
                 tickScheduleIntent.Effect = effect;
                 tickScheduleIntent.Kind |= ScheduledEventKind.Tick;
                 tickScheduleIntent.ExecuteAt = nextTick;
@@ -144,7 +158,7 @@ public static class EffectFactory
                 };
                 modifiers.Add(modifier);
 
-                ctx.Log.LogInformation(LogEvents.Factory, " - add stat modifier {stat} {value} ({type})", modifierDefinition.Stat, modifierDefinition.Value, modifierDefinition.Kind);
+                _logger.LogInformation(LogEvents.Factory, " - add stat modifier {stat} {value} ({type})", modifierDefinition.Stat, modifierDefinition.Value, modifierDefinition.Kind);
             }
             effect.Add(new StatModifiers
             {
@@ -184,11 +198,11 @@ public static class EffectFactory
 
         // apply message
         if (effectDefinition.ApplyMessage != null)
-            ctx.Msg.To(source).Send(effectDefinition.ApplyMessage);
+            _msg.To(source).Send(effectDefinition.ApplyMessage);
     }
 
     // return true if a new effect has to be applied
-    private static bool HandleStacking(SystemContext ctx, GameState state, EffectDefinition effectDefinition, Entity effect, Entity source)
+    private bool HandleStacking(GameState state, EffectDefinition effectDefinition, Entity effect, Entity source)
     {
         ref var instance = ref state.World.Get<EffectInstance>(effect);
 
@@ -216,10 +230,10 @@ public static class EffectFactory
                     timedEffect.ExpirationTick = expirationTick;
 
                     // schedule a new expiration event (don't remove the old one, just add a new one with the new expiration tick - when the old one executes it will check the current expiration tick and do nothing if it's different)
-                    ctx.Log.LogInformation(LogEvents.Factory, "Refreshing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration} Expiration {expirationTick}", effectDefinition.Id, source.DebugName, instance.Target.DebugName, timedEffect, expirationTick);
+                    _logger.LogInformation(LogEvents.Factory, "Refreshing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration} Expiration {expirationTick}", effectDefinition.Id, source.DebugName, instance.Target.DebugName, timedEffect, expirationTick);
 
                     // expire schedule intent
-                    ref var expireScheduleIntent = ref ctx.Intent.Schedule.Add();
+                    ref var expireScheduleIntent = ref _intent.Schedule.Add();
                     expireScheduleIntent.Effect = effect;
                     expireScheduleIntent.Kind = ScheduledEventKind.Tick;
                     expireScheduleIntent.ExecuteAt = expirationTick;
@@ -237,17 +251,17 @@ public static class EffectFactory
                     timedEffect.ExpirationTick = expirationTick;
 
                     // schedule a new expiration event (don't remove the old one, just add a new one with the new expiration tick - when the old one executes it will check the current expiration tick and do nothing if it's different)
-                    ctx.Log.LogInformation(LogEvents.Factory, "Stacking/Refreshing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration} Expiration {expirationTick} New Stack Count {newStackCount}", effectDefinition.Id, source.DebugName, instance.Target.DebugName, timedEffect, expirationTick, instance.StackCount);
+                    _logger.LogInformation(LogEvents.Factory, "Stacking/Refreshing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration} Expiration {expirationTick} New Stack Count {newStackCount}", effectDefinition.Id, source.DebugName, instance.Target.DebugName, timedEffect, expirationTick, instance.StackCount);
 
                     // expire schedule intent
-                    ref var expireScheduleIntent = ref ctx.Intent.Schedule.Add();
+                    ref var expireScheduleIntent = ref _intent.Schedule.Add();
                     expireScheduleIntent.Effect = effect;
                     expireScheduleIntent.Kind = ScheduledEventKind.Tick;
                     expireScheduleIntent.ExecuteAt = expirationTick;
                 }
                 return true; // handled -> no new effect, existing modified
             case StackingRule.Replace:
-                ctx.Log.LogInformation(LogEvents.Factory, "Replacing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration}", effectDefinition.Id, source.DebugName, instance.Target.DebugName, timedEffect);
+                _logger.LogInformation(LogEvents.Factory, "Replacing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration}", effectDefinition.Id, source.DebugName, instance.Target.DebugName, timedEffect);
                 RemoveEffect(state, effect); // destroy current effect (no wear off message because it's a replacement)
                 return false; // no handled -> new effect will be added
         }
@@ -255,7 +269,7 @@ public static class EffectFactory
         return true; // default to handled to prevent new effect application if stacking rule is not recognized
     }
 
-    public static Entity? FindEffect(ref CharacterEffects characterEffects, EffectDefinition effectDefinition)
+    public Entity? FindEffect(ref CharacterEffects characterEffects, EffectDefinition effectDefinition)
     {
         if (effectDefinition.Tag == EffectTagId.None)
             return null;

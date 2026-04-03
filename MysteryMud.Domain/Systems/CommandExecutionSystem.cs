@@ -1,99 +1,64 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Extensions;
 
 namespace MysteryMud.Domain.Systems;
 
 public class CommandExecutionSystem
 {
+    private readonly ILogger _logger;
+
+    public CommandExecutionSystem(ILogger logger)
+    {
+        _logger = logger;
+    }
+
     public void Execute(SystemContext ctx, GameState state)
     {
         long now = state.CurrentTimeMs;
 
         var query = new QueryDescription()
             .WithAll<CommandBuffer, HasCommandTag>();
-
         state.World.Query(query, (Entity entity, ref CommandBuffer buffer, ref HasCommandTag _) =>
         {
             if (!entity.IsAlive())
                 return;
 
+            int writeIndex = 0; // keep commands not ready yet
+
             for (int i = 0; i < buffer.Count; i++)
             {
-                ref var req = ref buffer.Items[i];
+                ref var request = ref buffer.Items[i];
 
-                if (req.Cancelled)
+                // Skip cancelled commands
+                if (request.Cancelled)
                     continue;
 
-                // not ready yet
-                if (req.ExecuteAt > now)
+                // Only execute if throttling allows
+                if (request.ExecuteAt > now)
+                {
+                    // keep for next tick
+                    buffer.Items[writeIndex++] = request;
                     continue;
+                }
 
-                req.Command.Execute(
-                    ctx,
-                    state,
-                    entity,
-                    req.CommandSpan,
-                    req.ArgsSpan
-                );
+                try
+                {
+                    request.Command.Execute(ctx, state, entity, request.CommandSpan, request.ArgsSpan);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error executing command {Command} for {Entity}", request.CommandSpan.ToString(), entity.DebugName);
+                }
             }
 
+            // clear buffer after execution
             buffer.Clear();
+            // remove has active command tag
             entity.Remove<HasCommandTag>();
         });
     }
 }
-// related to complex throttling
-//public class CommandExecutionSystem
-//{
-//    //private const int MaxEntitiesPerTick = 100;
-
-//    public void Execute(SystemContext systemContext, GameState state)
-//    {
-//        //var processed = 0;
-
-//        var query = new QueryDescription()
-//            .WithAll<CommandBuffer, HasCommandTag>();
-//        state.World.Query(query, (Entity entity, ref CommandBuffer buffer, ref HasCommandTag hasCommandTag) =>
-//        {
-//            if (!entity.IsAlive())
-//                return;
-
-//            for (int i = 0; i < buffer.Count; i++)
-//            {
-//                ref var request = ref buffer.Items[i];
-
-//                if (request.Cancelled)
-//                    continue;
-
-//                //var command = _registry.Get(request.CommandId);
-
-//                var cmd = request.CommandSpan;
-//                var args = request.ArgsSpan;
-
-//                // TODO: should be commandId and use CommandRegistry to get the command
-//                // execute command
-//                request.Command.Execute(
-//                    systemContext,
-//                    state,
-//                    entity,
-//                    cmd,
-//                    args
-//                );
-//            }
-
-//            // clear buffer after execution
-//            Array.Clear(buffer.Items, 0, buffer.Count);
-//            buffer.Count = 0;
-
-//            // remove has active command tag
-//            entity.Remove<HasCommandTag>();
-
-//            // TODO
-//            //processed++;
-//            //if (processed >= MaxEntitiesPerTick)
-//            //    break; // defer remaining entities to next tick
-//        });
-//    }
-//}

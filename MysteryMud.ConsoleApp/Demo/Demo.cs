@@ -40,7 +40,7 @@ static class Demo
         var messageBus = new DemoMessageBus();
         var actService = new ActService();
         var gameMessageService = new GameMessageService(messageBus, actService);
-        var systemContext = new SystemContext { Log = logger, Msg = gameMessageService, Intent = new IntentBusContainer() };
+        var systemContext = new SystemContext { Msg = gameMessageService, Intent = new IntentBusContainer() };
 
         // test commands
         commandDispatcher.Dispatch(systemContext, gameState, player, "look".AsSpan());

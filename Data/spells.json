@@ -1,6 +1,6 @@
 {
   "Effects": [
-    {
+      {
       "Name": "Poison",
       "Tag": "Poison",
       "Stacking": "Stack",
@@ -13,6 +13,39 @@
       "TickRate": 2,
       "Dot": {
          "DamageFormula": "1",
+         "DamageKind": "Poison"
+      }
+    },
+    {
+      "Name": "Poison2",
+      "Tag": "Poison",
+      "Stacking": "Stack",
+      "MaxStacks": 3,
+      "StatModifiers": [
+        { "Stat": "Strength", "Type": "Flat", "Value": -2 },
+		{ "Stat": "Hit", "Type": "Flat", "Value": -3 }
+      ],
+      "Flags": ["Poison"],
+      "DurationFormula": "15",
+      "TickRate": 2,
+      "Dot": {
+         "DamageFormula": "45",
+         "DamageKind": "Poison"
+      }
+    },
+	{
+      "Name": "Poison3",
+      "Tag": "Poison",
+      "Stacking": "Refresh",
+      "MaxStacks": 3,
+      "StatModifiers": [
+        { "Stat": "Strength", "Type": "Flat", "Value": -3 }
+      ],
+      "Flags": ["Poison"],
+      "DurationFormula": "60",
+      "TickRate": 2,
+      "Dot": {
+         "DamageFormula": "5",
          "DamageKind": "Poison"
       }
     },
@@ -30,6 +63,22 @@
       "TickRate": 3,
       "Hot": {
          "HealFormula": "3 + caster.Level / 2"
+      }
+    },
+	{
+      "Name": "Bless2",
+      "Tag": "Bless",
+      "Stacking": "Replace",
+      "MaxStacks": 1,
+      "StatModifiers": [
+        { "Stat": "Intelligence", "Type": "Flat", "Value": 2 },
+        { "Stat": "HitRoll", "Type": "AddPercent", "Value": 10 }
+      ],
+      "Flags": ["Bless"],
+      "DurationFormula": "60",
+      "TickRate": 2,
+      "Hot": {
+         "HealFormula": "5"
       }
     }
   ],

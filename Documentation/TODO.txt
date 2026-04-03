@@ -59,11 +59,6 @@ tick evolution
 5       expired damage not done because expired
 
 ===============
-= HOT SYSTEM
-===============
-new FullHealthTag to avoid scanning hot if already at full health (will also be used by regen system)
-
-===============
 = EFFECT SYSTEM
 ===============
 

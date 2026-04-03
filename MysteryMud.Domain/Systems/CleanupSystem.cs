@@ -18,10 +18,12 @@ namespace MysteryMud.Domain.Systems;
 public class CleanupSystem
 {
     private readonly ILogger _logger;
+    private readonly EffectFactory _effectFactory;
 
-    public CleanupSystem(ILogger logger)
+    public CleanupSystem(ILogger logger, EffectFactory effectFactory)
     {
         _logger = logger;
+        _effectFactory = effectFactory;
     }
 
     // check disconnected players and remove them from the world
@@ -39,7 +41,7 @@ public class CleanupSystem
             _logger.LogInformation(LogEvents.Cleanup, "Cleaning up expired effect {effectName}", effect.DebugName);
 
             // remove the effect from the target's CharacterEffects
-            EffectFactory.RemoveEffect(state, effect);
+            _effectFactory.RemoveEffect(state, effect);
         });
 
         // destroy disconnected players

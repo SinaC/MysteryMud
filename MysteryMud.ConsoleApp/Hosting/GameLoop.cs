@@ -13,8 +13,10 @@ using MysteryMud.Domain.Attack.Factories;
 using MysteryMud.Domain.Attack.Resolvers;
 using MysteryMud.Domain.Damage.Resolvers;
 using MysteryMud.Domain.Extensions;
+using MysteryMud.Domain.Factories;
 using MysteryMud.Domain.Heal;
 using MysteryMud.Domain.Systems;
+using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
 using MysteryMud.Infrastructure.Eventing;
@@ -33,6 +35,7 @@ internal class GameLoop
     private readonly IScheduler _scheduler;
     private readonly IGameMessageService _gameMessageService;
     private readonly IIntentContainer _intentContainer;
+    private readonly SpellDatabase _spellDatabase;
     private readonly World _world;
 
     /*
@@ -83,6 +86,7 @@ internal class GameLoop
 
     private readonly ILookService _lookService;
 
+    private readonly EffectFactory _effectFactory;
     private readonly AggroResolver _aggroResolver;
     private readonly DamageResolver _damageResolver;
     private readonly HealResolver _healResolver;
@@ -108,7 +112,7 @@ internal class GameLoop
     private readonly LookSystem _lookSystem;
     private readonly CleanupSystem _cleanupSystem;
 
-    public GameLoop(ILogger logger, IOutputService putputService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, IGameMessageService gameMessageService, IIntentContainer intentContainer, World world)
+    public GameLoop(ILogger logger, IOutputService putputService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, IGameMessageService gameMessageService, IIntentContainer intentContainer, SpellDatabase spellDatabase, World world)
     {
         _logger = logger;
         _outputService = putputService;
@@ -117,10 +121,12 @@ internal class GameLoop
         _scheduler = scheduler;
         _gameMessageService = gameMessageService;
         _intentContainer = intentContainer;
+        _spellDatabase = spellDatabase;
         _world = world;
 
         _lookService = new LookService(_gameMessageService);
 
+        _effectFactory = new EffectFactory(_logger, _gameMessageService, _intentContainer);
         _aggroResolver = new AggroResolver();
         _damageResolver = new DamageResolver(_aggroResolver, _gameMessageService, _damagedEventBuffer, _deathEventBuffer);
         _healResolver = new HealResolver(_aggroResolver, _gameMessageService, _healedEventBuffer);
@@ -128,9 +134,9 @@ internal class GameLoop
         _hitDamageFactory = new HitDamageFactory();
         _weaponProcResolver = new WeaponProcResolver();
         _reactionResolver = new ReactionResolver(_gameMessageService);
-        _attackOrchestrator = new AttackOrchestrator(_gameMessageService, _intentContainer, _attackResolvedEventBuffer, _hitResolver, _hitDamageFactory, _damageResolver, _weaponProcResolver, _reactionResolver);
+        _attackOrchestrator = new AttackOrchestrator(_intentContainer, _attackResolvedEventBuffer, _spellDatabase, _effectFactory, _hitResolver, _hitDamageFactory, _damageResolver, _weaponProcResolver, _reactionResolver);
 
-        _commandExecutionSystem = new CommandExecutionSystem();
+        _commandExecutionSystem = new CommandExecutionSystem(_logger);
         _commandThrottleSystem = new CommandThrottleSystem(_gameMessageService);
         _fleeSystem = new FleeSystem(_gameMessageService, _intentContainer, _fleeBlockedEventBuffer);
         _movementSystem = new MovementSystem(_gameMessageService, _intentContainer, _movedEventBuffer);
@@ -139,12 +145,12 @@ internal class GameLoop
         _autoAttackSystem = new AutoAttackSystem(_intentContainer);
         _timedEffectSystem = new TimedEffectSystem(_logger, _gameMessageService, _intentContainer, _damageResolver, _healResolver, _triggeredScheduledEventBuffer, _effectExpiredEventBuffer, _effectTickedEventBuffer);
         _threatDecaySystem = new ThreatDecaySystem();
-        _scheduleSystem = new ScheduleSystem(scheduler, intentContainer);
+        _scheduleSystem = new ScheduleSystem(_scheduler, _intentContainer);
         _deathSystem = new DeathSystem(_gameMessageService, _intentContainer, _deathEventBuffer);
         _respawnSystem = new RespawnSystem(_gameMessageService);
         _lootSystem = new LootSystem(_gameMessageService, _intentContainer, _itemLootedEventBuffer);
         _lookSystem = new LookSystem(_lookService, _intentContainer, _lookedEventBuffer);
-        _cleanupSystem = new CleanupSystem(_logger);
+        _cleanupSystem = new CleanupSystem(_logger, _effectFactory);
     }
 
     public void Run()
@@ -176,7 +182,6 @@ internal class GameLoop
 
         var systemContext = new SystemContext
         {
-            Log = _logger,
             Msg = _gameMessageService,
             Intent = _intentContainer,
         };
@@ -187,17 +192,16 @@ internal class GameLoop
         _commandThrottleSystem.Execute(state);
         // execute command (if not cancelled) → may generate manual LookIntent(Mode= Snapshot)
         _commandExecutionSystem.Execute(systemContext, state);
-
         // TODO: stop invalid combat: dead entities, entities in different rooms, ...
-        // Processes all LookIntents with Mode=Snapshot → reads current world state before any effects → produces messages
+        // Process all LookIntents with Mode=Snapshot → reads current world state before any effects → produces messages
         _lookSystem.Tick(state, LookMode.Snapshot);
         // TODO: AISystem                         // NPC behavior → generates intents
         // Convert flee → MoveIntents
         _fleeSystem.Tick(state);
         // TODO: ChaseSystem                      // NPC chase movement
-        // Resolve MoveIntents → emits auto-look PostUpdate (Mode=PostUpdate)
+        // Process MoveIntents → emits auto-look PostUpdate (Mode=PostUpdate)
         _movementSystem.Tick(state);
-        // Handle get/drop/put/give/...
+        // Process get/drop/put/give/... intents
         _itemInteractionSystem.Tick(state);
         // Recalculate stats from DirtyFlags
         _statsSystem.Tick(state);
@@ -212,17 +216,17 @@ internal class GameLoop
         // TODO: AbilitySystem                   // Resolve skill/spell usage → may generate DamageAction/HealAction/EffectActions
         // Generate AttackIntents for entities in combat
         _autoAttackSystem.Tick(state);
-        // Resolve AttackIntents → AttackEvents + reactions, procs, spell effects, damage, heal, etc.
+        // Process AttackIntents (resolve damage/heal/aggro) → AttackEvents + reactions
         _attackOrchestrator.Tick(state);
         // Flag dead entities
         _deathSystem.Tick(state);
         // Auto-resurrect players
         _respawnSystem.Tick(state);
-        // Handle loot & auto-loot
+        // Process loot & auto-loot
         _lootSystem.Tick(state);
         // Processes LookIntents with Mode=PostUpdate → reflects final world state after all updates
         _lookSystem.Tick(state, LookMode.PostUpdate);
-        // Handle scheduleIntents (which can be generated from IA, abilities, TimedEffectSytem, AttackOrchestrator)
+        // Process scheduleIntents (which can be generated from IA, abilities, TimedEffectSytem, AttackOrchestrator)
         _scheduleSystem.Tick(state);
 
         // Remove destroyed items / dead NPCs / disconnected players

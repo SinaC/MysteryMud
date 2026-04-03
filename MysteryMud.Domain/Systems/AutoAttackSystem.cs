@@ -3,7 +3,6 @@ using Arch.Core.Extensions;
 using MysteryMud.Core;
 using MysteryMud.Core.Intent;
 using MysteryMud.Domain.Components.Characters;
-using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Systems;
 
@@ -46,11 +45,11 @@ public class AutoAttackSystem
             int hits = Math.Max(defaultHits, stats.AttackCount); // TODO
 
             ref var attackIntent = ref _intentContainer.Attack.Add();
-            attackIntent.Attack.Attacker = actor;
-            attackIntent.Attack.Target = target;
-            attackIntent.Attack.RemainingHits = hits;
-            attackIntent.Attack.IsReaction = false; // autoattack, not a reaction
-            attackIntent.Attack.IgnoreDefense = false; // autoattacks are affected by defense
+            attackIntent.Hit.Attacker = actor;
+            attackIntent.Hit.Target = target;
+            attackIntent.Hit.RemainingHits = hits;
+            attackIntent.Hit.IsReaction = false; // autoattack, not a reaction
+            attackIntent.Hit.IgnoreDefense = false; // autoattacks are affected by defense
 
             // Apply lag before next attack
             combat.RoundDelay = 2; // example: 2 ticks

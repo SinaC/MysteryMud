@@ -1,12 +1,11 @@
 ﻿using MysteryMud.GameData.Actions;
 using MysteryMud.GameData.Enums;
-using MysteryMud.GameData.Events;
 
 namespace MysteryMud.Domain.Attack.Factories;
 
 public class HitDamageFactory
 {
-    public DamageAction CreateHitDamage(AttackResolvedEvent resolved) // no need to check if source/target is alive
+    public DamageAction CreateHitDamage(AttackResult attackResult) // no need to check if source/target is alive
     {
         //ref var effectiveStats = ref resolved.Source.Get<EffectiveStats>();
         // TODO: calculate damage based on stats, skills, buffs, etc.
@@ -14,8 +13,8 @@ public class HitDamageFactory
 
         var damageAction = new DamageAction
         {
-            Source = resolved.Source,
-            Target = resolved.Target,
+            Source = attackResult.Source,
+            Target = attackResult.Target,
             Amount = 5, // TODO: calculate damage based on stats, skills, buffs, etc.
             DamageKind = DamageKind.Physical,
             SourceKind = DamageSourceKind.Hit

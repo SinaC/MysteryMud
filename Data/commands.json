@@ -1,18 +1,5 @@
 [
     {
-        "Name": "test",
-        "Aliases": [],
-        "CannotBeForced": true,
-        "RequiredLevel": "Player",
-        "MinimumPosition": "Standing",
-        "Priority": 0,
-        "AllowAbbreviation": false,
-        "HelpText": "",
-        "Syntaxes": ["cmd"],
-        "Categories": ["test"],
-		"ThrottlingCategories": ["utility"]
-    },
-    {
         "Name": "cast",
         "Aliases": [],
         "CannotBeForced": false,

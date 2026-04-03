@@ -5,11 +5,9 @@ namespace MysteryMud.GameData.Intents;
 
 public struct AttackIntent
 {
-    public AttackIntentKind Kind;
+    public AttackKind Kind;
     public bool Cancelled;
 
-    public HitAction Attack;
+    public HitAction Hit;
     public AbilityAction Ability;
-    //TODO: public ChannelingAbilityIntent Channeling;
-    //TODO: public InterruptIntent Interrupt;
 }

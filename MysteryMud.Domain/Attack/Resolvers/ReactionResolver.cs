@@ -3,7 +3,6 @@ using MysteryMud.Core.Intent;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.GameData.Enums;
-using MysteryMud.GameData.Events;
 
 namespace MysteryMud.Domain.Attack.Resolvers;
 
@@ -16,7 +15,7 @@ public class ReactionResolver
         _msg = msg;
     }
 
-    public void Resolve(IIntentContainer intentContainer, AttackResolvedEvent resolved)
+    public void Resolve(IIntentContainer intentContainer, AttackResult result)
     {
         // Buff procs reacting to the hit
         //TODO: HandleBuffProcs(world, resolved, ctx);
@@ -29,12 +28,12 @@ public class ReactionResolver
         var trigger = false;
 
         // Parry -> guaranteed counter
-        if (resolved.Result == AttackResultKind.Parry)
+        if (result.Result == AttackResultKind.Parry)
             trigger = true;
         // Hit -> chance to counter
-        else if (resolved.Result == AttackResultKind.Hit && resolved.SourceKind == DamageSourceKind.Hit)
+        else if (result.Result == AttackResultKind.Hit && result.Kind == AttackKind.Hit)
         {
-            ref var effectiveStats = ref resolved.Target.Get<EffectiveStats>();
+            ref var effectiveStats = ref result.Target.Get<EffectiveStats>();
 
             trigger = Random.Shared.NextDouble() < effectiveStats.CounterAttack;
         }
@@ -43,12 +42,14 @@ public class ReactionResolver
             return;
 
         //budget.Remaining--;
-        _msg.ToRoom(resolved.Target).Act("{0} counterattacks {1:y} attack.").With(resolved.Target, resolved.Source);
+        _msg.ToRoom(result.Target).Act("{0} counterattacks {1:y} attack.").With(result.Target, result.Source);
         ref var attackIntent = ref intentContainer.Attack.Add();
-        attackIntent.Attack.Attacker = resolved.Target;
-        attackIntent.Attack.Target = resolved.Source;
-        attackIntent.Attack.RemainingHits = 1;
-        attackIntent.Attack.IsReaction = true;
-        attackIntent.Attack.IgnoreDefense = false;
+        attackIntent.Kind = AttackKind.Hit;
+        attackIntent.Cancelled = false;
+        attackIntent.Hit.Attacker = result.Target;
+        attackIntent.Hit.Target = result.Source;
+        attackIntent.Hit.RemainingHits = 1;
+        attackIntent.Hit.IsReaction = true;
+        attackIntent.Hit.IgnoreDefense = false;
     }
 }

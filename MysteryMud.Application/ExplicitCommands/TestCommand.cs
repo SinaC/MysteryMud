@@ -4,23 +4,40 @@ using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
+using MysteryMud.Core.Extensions;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Factories;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
-namespace MysteryMud.Application.Commands;
+namespace MysteryMud.Application.ExplicitCommands;
 
 public class TestCommand : ICommand
 {
+    private const string Name = "test";
+
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetAndText;
 
     public CommandDefinition Definition { get; }
 
-    public TestCommand(CommandDefinition definition)
+    public TestCommand()
     {
-        Definition = definition;
+        Definition = new CommandDefinition
+        {
+            Id = Name.ComputeCommandId(),
+            Name = Name,
+            Aliases = [],
+            CannotBeForced = true,
+            RequiredLevel = CommandLevelKind.Admin,
+            MinimumPosition = PositionKind.Dead,
+            Priority = 0,
+            AllowAbbreviation = false,
+            HelpText = "",
+            Syntaxes = ["[cmd]"],
+            Categories = ["test"],
+            ThrottlingCategories = CommandThrottlingCategories.Admin
+        };
     }
 
     public void Execute(SystemContext systemContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
@@ -75,7 +92,7 @@ public class TestCommand : ICommand
                 Hot = null // not hot
             };
 
-            EffectFactory.ApplyEffect(systemContext, state, effectDefinition, actor, target);
+            //TODO: EffectFactory.ApplyEffect(systemContext, state, effectDefinition, actor, target);
         }
         else if (ctx.Text.Equals("poison2".AsSpan(), StringComparison.OrdinalIgnoreCase))
         {
@@ -97,7 +114,7 @@ public class TestCommand : ICommand
                 Hot = null // not hot
             };
 
-            EffectFactory.ApplyEffect(systemContext, state, effectDefinition, actor, target);
+            //TODO: EffectFactory.ApplyEffect(systemContext, state, effectDefinition, actor, target);
         }
         else if (ctx.Text.Equals("bless".AsSpan(), StringComparison.OrdinalIgnoreCase))
         {
@@ -132,7 +149,7 @@ public class TestCommand : ICommand
                 },
             };
 
-            EffectFactory.ApplyEffect(systemContext, state, effectDefinition, actor, target);
+            //TODO: EffectFactory.ApplyEffect(systemContext, state, effectDefinition, actor, target);
         }
     }
 }
