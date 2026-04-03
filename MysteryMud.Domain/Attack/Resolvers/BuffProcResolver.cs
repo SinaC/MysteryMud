@@ -1,4 +1,4 @@
-﻿namespace MysteryMud.Domain.Combat.Resolvers;
+﻿namespace MysteryMud.Domain.Attack.Resolvers;
 
 public class BuffProcResolver
 {

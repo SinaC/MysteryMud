@@ -11,7 +11,6 @@ using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Services;
 using MysteryMud.Infrastructure.Intent;
-using MysteryMud.Infrastructure.Scheduler;
 using MysteryMud.Infrastructure.Services;
 
 namespace MysteryMud.ConsoleApp.Demo;

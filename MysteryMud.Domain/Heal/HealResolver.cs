@@ -2,8 +2,8 @@
 using MysteryMud.Core;
 using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Services;
+using MysteryMud.Domain.Attack.Resolvers;
 using MysteryMud.Domain.Calculators;
-using MysteryMud.Domain.Combat.Resolvers;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.GameData.Actions;
 using MysteryMud.GameData.Events;

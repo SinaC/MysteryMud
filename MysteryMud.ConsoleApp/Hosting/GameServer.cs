@@ -154,7 +154,7 @@ public class GameServer
                 [StatKind.Armor] = 0
             }
         });
-        player.Add(new Health { Current = 100, Max = 100 });
+        player.Add(new Health { Current = 100000, Max = 100000 });
         player.Add(new Inventory { Items = [] });
         player.Add(new Equipment { Slots = [] });
         player.Add(new CharacterEffects

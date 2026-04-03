@@ -1,11 +1,11 @@
 ﻿using Arch.Core.Extensions;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.GameData.Actions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
-using MysteryMud.GameData.Intents;
 
-namespace MysteryMud.Domain.Combat.Resolvers;
+namespace MysteryMud.Domain.Attack.Resolvers;
 
 public class HitResolver
 {
@@ -16,7 +16,7 @@ public class HitResolver
         _msg = msg;
     }
 
-    public AttackResolved Resolve(AttackIntent intent)
+    public AttackResolvedEvent Resolve(HitAction intent)
     {
         ref var stats = ref intent.Target.Get<EffectiveStats>();
         var roll = Random.Shared.NextDouble();
@@ -31,7 +31,7 @@ public class HitResolver
             else result = AttackResultKind.Hit;
         }
 
-        var resolved = new AttackResolved
+        var resolved = new AttackResolvedEvent
         {
             Source = intent.Attacker,
             Target = intent.Target,

@@ -4,6 +4,9 @@ namespace MysteryMud.Core.Intent;
 
 public interface IIntentWriterContainer
 {
+    // AttackOrchestrator
+    IIntentWriter<AttackIntent> Attack { get; }
+
     // FleeSystem
     IIntentWriter<FleeIntent> Flee { get; }
     // MoveSystem
@@ -17,8 +20,6 @@ public interface IIntentWriterContainer
     IIntentWriter<RemoveItemIntent> RemoveItem { get; }
     IIntentWriter<DestroyItemIntent> DestroyItem { get; }
     IIntentWriter<SacrificeItemIntent> SacrificeItem { get; }
-    // CombatSystem
-    IIntentWriter<AttackIntent> Attack { get; } // can write to current attack buffer
     // LootSystem
     IIntentWriter<LootIntent> Loot { get; }
     // LookSystem
