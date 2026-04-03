@@ -5,6 +5,9 @@ namespace MysteryMud.Infrastructure.Intent;
 
 public sealed class IntentBusContainer : IIntentContainer
 {
+    // AttackOrchestrator
+    private readonly StructBuffer<AttackIntent> _attack = new(1024);
+
     // FleeSystem
     private readonly StructBuffer<FleeIntent> _flee = new(128);
     // MoveSystem
@@ -18,8 +21,6 @@ public sealed class IntentBusContainer : IIntentContainer
     private readonly StructBuffer<RemoveItemIntent> _removeItem = new(128);
     private readonly StructBuffer<DestroyItemIntent> _destroyItem = new(128);
     private readonly StructBuffer<SacrificeItemIntent> _sacrificeItem = new(128);
-    // CombatSystem
-    private readonly StructBuffer<AttackIntent> _attack = new(1024); // 2 buffers for double buffering
     // LootSystem
     private readonly StructBuffer<LootIntent> _loot = new(128);
     // LookSystem
@@ -29,6 +30,9 @@ public sealed class IntentBusContainer : IIntentContainer
 
     public IntentBusContainer()
     {
+        // CombatOrchestrator
+        Attack = new IntentWriter<AttackIntent>(_attack);
+
         // FleeSystem
         Flee = new IntentWriter<FleeIntent>(_flee);
         // MoveSystem
@@ -42,8 +46,6 @@ public sealed class IntentBusContainer : IIntentContainer
         RemoveItem = new IntentWriter<RemoveItemIntent>(_removeItem);
         DestroyItem = new IntentWriter<DestroyItemIntent>(_destroyItem);
         SacrificeItem = new IntentWriter<SacrificeItemIntent>(_sacrificeItem);
-        // CombatSystem
-        Attack = new IntentWriter<AttackIntent>(_attack);
         // LootSystem
         Loot = new IntentWriter<LootIntent>(_loot);
         // LookSystem
@@ -52,9 +54,10 @@ public sealed class IntentBusContainer : IIntentContainer
         Schedule = new IntentWriter<ScheduleIntent>(_schedule);
     }
 
-    // Attack intents are a special case, we want to able to have direct access, because CombatOrchestrator add attack intents while iterating them
+    // Attack intents are a special case, we want to able to have direct access, because AttackOrchestrator add attack intents while iterating them
     public AttackIntent AttackByIndex(int index) => _attack[index];
     public int AttackCount => _attack.Count;
+    public IIntentWriter<AttackIntent> Attack { get; }
 
     // FleeSystem
     public IIntentWriter<FleeIntent> Flee { get; }
@@ -79,9 +82,6 @@ public sealed class IntentBusContainer : IIntentContainer
     public Span<DestroyItemIntent> DestroyItemSpan => _destroyItem.AsSpan();
     public IIntentWriter<SacrificeItemIntent> SacrificeItem { get; }
     public Span<SacrificeItemIntent> SacrificeItemSpan => _sacrificeItem.AsSpan();
-    // CombatSystem
-    public IIntentWriter<AttackIntent> Attack { get; }
-    public Span<AttackIntent> AttackSpan => _attack.AsSpan();
     // LootSystem
     public IIntentWriter<LootIntent> Loot { get; }
     public Span<LootIntent> LootSpan => _loot.AsSpan();

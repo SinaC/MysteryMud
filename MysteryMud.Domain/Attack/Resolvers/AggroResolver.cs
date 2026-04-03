@@ -5,7 +5,7 @@ using MysteryMud.Domain.Calculators;
 using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.GameData.Enums;
 
-namespace MysteryMud.Domain.Combat.Resolvers;
+namespace MysteryMud.Domain.Attack.Resolvers;
 
 public class AggroResolver
 {

@@ -112,7 +112,7 @@ This is typically used for 'force all save'.",
 
         // add forced command to target command buffer
         ref var buffer = ref target.Get<CommandBuffer>();
-        buffer.Items ??= new CommandRequest[16];
+        buffer.Items ??= new CommandRequest[8]; // small initial capacity
         if (buffer.Count == buffer.Items.Length)
             Array.Resize(ref buffer.Items, buffer.Items.Length * 2); // expand if needed
         buffer.Items[buffer.Count++] = new CommandRequest

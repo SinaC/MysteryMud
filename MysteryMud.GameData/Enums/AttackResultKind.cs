@@ -2,7 +2,7 @@
 
 public enum AttackResultKind
 {
-    Hit,
+    Hit, // by hit we mean that the attack intent has not been dodged, parried, ...
     Dodge,
-    Parry
+    Parry,
 }

@@ -5,7 +5,7 @@ using MysteryMud.Domain.Components.Characters;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
 
-namespace MysteryMud.Domain.Combat.Resolvers;
+namespace MysteryMud.Domain.Attack.Resolvers;
 
 public class ReactionResolver
 {
@@ -16,7 +16,7 @@ public class ReactionResolver
         _msg = msg;
     }
 
-    public void Resolve(IIntentContainer intentContainer, AttackResolved resolved)
+    public void Resolve(IIntentContainer intentContainer, AttackResolvedEvent resolved)
     {
         // Buff procs reacting to the hit
         //TODO: HandleBuffProcs(world, resolved, ctx);
@@ -45,9 +45,10 @@ public class ReactionResolver
         //budget.Remaining--;
         _msg.ToRoom(resolved.Target).Act("{0} counterattacks {1:y} attack.").With(resolved.Target, resolved.Source);
         ref var attackIntent = ref intentContainer.Attack.Add();
-        attackIntent.Attacker = resolved.Target;
-        attackIntent.Target = resolved.Source;
-        attackIntent.RemainingHits = 1;
-        attackIntent.IsReaction = true;
+        attackIntent.Attack.Attacker = resolved.Target;
+        attackIntent.Attack.Target = resolved.Source;
+        attackIntent.Attack.RemainingHits = 1;
+        attackIntent.Attack.IsReaction = true;
+        attackIntent.Attack.IgnoreDefense = false;
     }
 }

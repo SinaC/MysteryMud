@@ -46,12 +46,11 @@ public class AutoAttackSystem
             int hits = Math.Max(defaultHits, stats.AttackCount); // TODO
 
             ref var attackIntent = ref _intentContainer.Attack.Add();
-            attackIntent.Attacker = actor;
-            attackIntent.Target = target;
-            attackIntent.RemainingHits = hits;
-            attackIntent.IsReaction = false; // autoattack, not a reaction
-            attackIntent.IgnoreDefense = false; // autoattacks are affected by defense
-            attackIntent.SourceKind = DamageSourceKind.Hit;
+            attackIntent.Attack.Attacker = actor;
+            attackIntent.Attack.Target = target;
+            attackIntent.Attack.RemainingHits = hits;
+            attackIntent.Attack.IsReaction = false; // autoattack, not a reaction
+            attackIntent.Attack.IgnoreDefense = false; // autoattacks are affected by defense
 
             // Apply lag before next attack
             combat.RoundDelay = 2; // example: 2 ticks

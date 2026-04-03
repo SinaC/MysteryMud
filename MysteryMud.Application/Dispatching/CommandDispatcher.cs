@@ -53,7 +53,7 @@ public class CommandDispatcher : ICommandDispatcher
         ref var buffer = ref actor.Get<CommandBuffer>();
 
         // create items array if needed
-        buffer.Items ??= new CommandRequest[16]; // small initial capacity
+        buffer.Items ??= new CommandRequest[8]; // small initial capacity
 
         if (buffer.Count >= MAX_COMMANDS_PER_TICK)
         {

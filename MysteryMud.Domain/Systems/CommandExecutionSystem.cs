@@ -44,8 +44,10 @@ public class CommandExecutionSystem
             }
 
             // clear buffer after execution
+            Array.Clear(buffer.Items, 0, buffer.Count);
             buffer.Count = 0;
-            // remove tag
+
+            // remove has active command tag
             entity.Remove<HasCommandTag>();
 
             // TODO

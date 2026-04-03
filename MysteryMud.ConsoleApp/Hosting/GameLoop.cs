@@ -8,9 +8,9 @@ using MysteryMud.Core.Intent;
 using MysteryMud.Core.Logging;
 using MysteryMud.Core.Scheduler;
 using MysteryMud.Core.Services;
-using MysteryMud.Domain.Combat;
-using MysteryMud.Domain.Combat.Factories;
-using MysteryMud.Domain.Combat.Resolvers;
+using MysteryMud.Domain.Attack;
+using MysteryMud.Domain.Attack.Factories;
+using MysteryMud.Domain.Attack.Resolvers;
 using MysteryMud.Domain.Damage.Resolvers;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Heal;
@@ -79,6 +79,7 @@ internal class GameLoop
     private readonly EventBuffer<TriggeredScheduledEvent> _triggeredScheduledEventBuffer = new();
     private readonly EventBuffer<EffectExpiredEvent> _effectExpiredEventBuffer = new();
     private readonly EventBuffer<EffectTickedEvent> _effectTickedEventBuffer = new();
+    private readonly EventBuffer<AttackResolvedEvent> _attackResolvedEventBuffer = new();
 
     private readonly ILookService _lookService;
 
@@ -89,7 +90,7 @@ internal class GameLoop
     private readonly HitDamageFactory _hitDamageFactory;
     private readonly WeaponProcResolver _weaponProcResolver;
     private readonly ReactionResolver _reactionResolver;
-    private readonly CombatOrchestrator _combatOrchestrator;
+    private readonly AttackOrchestrator _attackOrchestrator;
 
     private readonly CommandExecutionSystem _commandExecutionSystem;
     private readonly CommandThrottleSystem _commandThrottleSystem;
@@ -127,7 +128,7 @@ internal class GameLoop
         _hitDamageFactory = new HitDamageFactory();
         _weaponProcResolver = new WeaponProcResolver();
         _reactionResolver = new ReactionResolver(_gameMessageService);
-        _combatOrchestrator = new CombatOrchestrator(_gameMessageService, _intentContainer, _hitResolver, _hitDamageFactory, _damageResolver, _weaponProcResolver, _reactionResolver);
+        _attackOrchestrator = new AttackOrchestrator(_gameMessageService, _intentContainer, _attackResolvedEventBuffer, _hitResolver, _hitDamageFactory, _damageResolver, _weaponProcResolver, _reactionResolver);
 
         _commandExecutionSystem = new CommandExecutionSystem();
         _commandThrottleSystem = new CommandThrottleSystem(_gameMessageService);
@@ -212,7 +213,7 @@ internal class GameLoop
         // Generate AttackIntents for entities in combat
         _autoAttackSystem.Tick(state);
         // Resolve AttackIntents → AttackEvents + reactions, procs, spell effects, damage, heal, etc.
-        _combatOrchestrator.Tick(state);
+        _attackOrchestrator.Tick(state);
         // Flag dead entities
         _deathSystem.Tick(state);
         // Auto-resurrect players
@@ -221,7 +222,7 @@ internal class GameLoop
         _lootSystem.Tick(state);
         // Processes LookIntents with Mode=PostUpdate → reflects final world state after all updates
         _lookSystem.Tick(state, LookMode.PostUpdate);
-        // Handle scheduleIntents (which can be generated from IA, abilities, TimedEffectSytem, CombatOrchestrator)
+        // Handle scheduleIntents (which can be generated from IA, abilities, TimedEffectSytem, AttackOrchestrator)
         _scheduleSystem.Tick(state);
 
         // Remove destroyed items / dead NPCs / disconnected players

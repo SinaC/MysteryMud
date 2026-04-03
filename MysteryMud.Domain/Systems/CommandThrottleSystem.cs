@@ -1,5 +1,4 @@
 ﻿using Arch.Core;
-using CommunityToolkit.HighPerformance;
 using MysteryMud.Core;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Commands;
@@ -205,22 +204,24 @@ public class CommandThrottleSystem
 
     private static long GetGlobalDelay(int commandId) // TODO: use command category instead of commandId ?
     {
-        return commandId switch
-        {
-            // e.g. attack → slower
-            1 => 1000,
-            _ => 300
-        };
+        //return commandId switch
+        //{
+        //    // e.g. attack → slower
+        //    1 => 1000,
+        //    _ => 300
+        //};
+        return 300;
     }
 
     private static long GetCooldown(int commandId)
     {
-        return commandId switch
-        {
-            // e.g. "cast spell"
-            2 => 5000,
-            _ => 0
-        };
+        //return commandId switch
+        //{
+        //    // e.g. "cast spell"
+        //    2 => 5000,
+        //    _ => 0
+        //};
+        return 0;
     }
 
     private static string GetSpamMessage(int violations)
