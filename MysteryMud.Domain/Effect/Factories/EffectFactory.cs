@@ -11,7 +11,7 @@ using MysteryMud.Domain.Extensions;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
-namespace MysteryMud.Domain.Factories;
+namespace MysteryMud.Domain.Effect.Factories;
 
 // TODO: handle damage/heal/... effect
 public class EffectFactory
@@ -86,7 +86,7 @@ public class EffectFactory
         // add effect to target effect cache
         targetEffects.Effects.Add(effect);
 
-        _logger.LogInformation(LogEvents.Factory, "Creating Effect from Template {effectTemplateName} Source {sourceName} Target {targetName}", effectDefinition.Id, source.DebugName, target.DebugName);
+        _logger.LogInformation(LogEvents.Factory, "Creating Effect from Template {effectTemplateName} Source {sourceName} Target {targetName}", effectDefinition.Name, source.DebugName, target.DebugName);
 
         // add tag if applicable
         if (effectDefinition.Tag != EffectTagId.None)
@@ -138,7 +138,7 @@ public class EffectFactory
                 _logger.LogInformation(LogEvents.Factory, " - add tick rate {tickRate} (next tick {nextTick})", effectDefinition.TickRate, nextTick);
                 ref var tickScheduleIntent = ref _intent.Schedule.Add();
                 tickScheduleIntent.Effect = effect;
-                tickScheduleIntent.Kind |= ScheduledEventKind.Tick;
+                tickScheduleIntent.Kind = ScheduledEventKind.Tick;
                 tickScheduleIntent.ExecuteAt = nextTick;
             }
         }
@@ -230,12 +230,12 @@ public class EffectFactory
                     timedEffect.ExpirationTick = expirationTick;
 
                     // schedule a new expiration event (don't remove the old one, just add a new one with the new expiration tick - when the old one executes it will check the current expiration tick and do nothing if it's different)
-                    _logger.LogInformation(LogEvents.Factory, "Refreshing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration} Expiration {expirationTick}", effectDefinition.Id, source.DebugName, instance.Target.DebugName, timedEffect, expirationTick);
+                    _logger.LogInformation(LogEvents.Factory, "Refreshing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration} Expiration {expirationTick}", effectDefinition.Name, source.DebugName, instance.Target.DebugName, durationValue, expirationTick);
 
                     // expire schedule intent
                     ref var expireScheduleIntent = ref _intent.Schedule.Add();
                     expireScheduleIntent.Effect = effect;
-                    expireScheduleIntent.Kind = ScheduledEventKind.Tick;
+                    expireScheduleIntent.Kind = ScheduledEventKind.Expire;
                     expireScheduleIntent.ExecuteAt = expirationTick;
                 }
                 return true; // handled -> no new effect, existing modified
@@ -251,17 +251,17 @@ public class EffectFactory
                     timedEffect.ExpirationTick = expirationTick;
 
                     // schedule a new expiration event (don't remove the old one, just add a new one with the new expiration tick - when the old one executes it will check the current expiration tick and do nothing if it's different)
-                    _logger.LogInformation(LogEvents.Factory, "Stacking/Refreshing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration} Expiration {expirationTick} New Stack Count {newStackCount}", effectDefinition.Id, source.DebugName, instance.Target.DebugName, timedEffect, expirationTick, instance.StackCount);
+                    _logger.LogInformation(LogEvents.Factory, "Stacking/Refreshing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration} Expiration {expirationTick} New Stack Count {newStackCount}", effectDefinition.Name, source.DebugName, instance.Target.DebugName, durationValue, expirationTick, instance.StackCount);
 
                     // expire schedule intent
                     ref var expireScheduleIntent = ref _intent.Schedule.Add();
                     expireScheduleIntent.Effect = effect;
-                    expireScheduleIntent.Kind = ScheduledEventKind.Tick;
+                    expireScheduleIntent.Kind = ScheduledEventKind.Expire;
                     expireScheduleIntent.ExecuteAt = expirationTick;
                 }
                 return true; // handled -> no new effect, existing modified
             case StackingRule.Replace:
-                _logger.LogInformation(LogEvents.Factory, "Replacing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration}", effectDefinition.Id, source.DebugName, instance.Target.DebugName, timedEffect);
+                _logger.LogInformation(LogEvents.Factory, "Replacing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName}", effectDefinition.Name, source.DebugName, instance.Target.DebugName);
                 RemoveEffect(state, effect); // destroy current effect (no wear off message because it's a replacement)
                 return false; // no handled -> new effect will be added
         }
@@ -280,7 +280,7 @@ public class EffectFactory
         foreach(var effectByTag in effectsByTag)
         {
             ref var effectInstance = ref effectByTag.Get<EffectInstance>();
-            if (effectInstance.Definition.Id == effectDefinition.Id)
+            if (effectInstance.Definition.Name == effectDefinition.Name)
                 return effectByTag;
         }
         return null;

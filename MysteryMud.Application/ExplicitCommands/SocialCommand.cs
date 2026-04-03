@@ -29,7 +29,7 @@ public class SocialCommand : ICommand
 
         Definition = new CommandDefinition
         {
-            Id = socialDefinition.Name.ComputeCommandId(),
+            Id = socialDefinition.Name.ComputeUniqueId(),
             Name = socialDefinition.Name,
             Aliases = [],
             CannotBeForced = false,
@@ -81,14 +81,14 @@ public class SocialCommand : ICommand
             if (_socialDefinition.CharacterNoArg is not null)
                systemContext.Msg.To(actor).Act(_socialDefinition.CharacterNoArg).With(actor);
             if (_socialDefinition.OthersNoArg is not null)
-                systemContext.Msg.ToRoomExcept(actor, actor).Act(_socialDefinition.OthersNoArg).With(actor);
+                systemContext.Msg.ToRoom(actor).Act(_socialDefinition.OthersNoArg).With(actor);
         }
         else if (victim == actor)
         {
             if (_socialDefinition.CharacterAuto is not null)
                systemContext.Msg.To(actor).Act(_socialDefinition.CharacterAuto).With(actor);
             if (_socialDefinition.OthersAuto is not null)
-                systemContext.Msg.ToRoomExcept(actor, actor).Act(_socialDefinition.OthersAuto).With(actor);
+                systemContext.Msg.ToRoom(actor).Act(_socialDefinition.OthersAuto).With(actor);
         }
         else
         {

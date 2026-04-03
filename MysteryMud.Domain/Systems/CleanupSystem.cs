@@ -10,8 +10,8 @@ using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
+using MysteryMud.Domain.Effect.Factories;
 using MysteryMud.Domain.Extensions;
-using MysteryMud.Domain.Factories;
 
 namespace MysteryMud.Domain.Systems;
 

@@ -8,6 +8,7 @@ using MysteryMud.Application.Registry;
 using MysteryMud.ConsoleApp;
 using MysteryMud.ConsoleApp.Hosting;
 using MysteryMud.Core.Commands;
+using MysteryMud.Core.Extensions;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
@@ -25,9 +26,10 @@ var configuration = new ConfigurationBuilder()
 
 // initialize logger
 Log.Logger = new LoggerConfiguration()
-  .MinimumLevel.Debug() // Set the minimum level
-  .ReadFrom.Configuration(configuration)
-  .CreateLogger();
+    .Enrich.FromLogContext()
+    .MinimumLevel.Verbose()
+    .ReadFrom.Configuration(configuration)
+    .CreateLogger();
 var factory = LoggerFactory.Create(builder =>
 {
     builder.AddSerilog(); // Use Serilog as provider
@@ -67,6 +69,7 @@ trollEffectiveStats.Parry = 0; // for testing, make sure all hits land so we can
 trollEffectiveStats.CounterAttack = 100; // for testing, make sure all we counterattack every time so we can see the counterattack in action
 var sword = ItemFactory.CreateItemInRoom(world, "sword", "a %#FFFFFF>#FFFF00shiny sword%x", market);
 sword.Add(new Equipable { Slot = EquipmentSlotKind.MainHand });
+sword.Add(new Weapon { ProcEffectId = "FlamingWeapon".ComputeUniqueId() }); // add flaming
 var chest = world.Create(
             new ItemTag(),
             new Name { Value = "chest" },
@@ -108,24 +111,20 @@ var socialDefinitions = socialLoader.Load(Path.Combine(basePath, gamePaths.Socia
 
 // initialize command registry (Infrastructure)
 var commandRegistry = new CommandRegistry(logger);
-var explicitCommands = new List<ICommand>();
-// help command
-var helpCommand = new HelpCommand(commandRegistry); // special case for help command since it needs registry reference
-explicitCommands.Add(helpCommand);
-// socials command (display all socials)
-var socialsCommand = new SocialsCommand(commandRegistry);
-explicitCommands.Add(socialsCommand);
+var explicitCommands = new List<ICommand>
+{
+    new HelpCommand(commandRegistry),
+    new SocialsCommand(commandRegistry),
+    new ForceCommand(logger, commandRegistry),
+    new TestCommand(spellDatabase)
+};
 // social commands (one by social definition)
 foreach (var socialDefinition in socialDefinitions)
 {
     var socialCommand = new SocialCommand(logger, socialDefinition);
     explicitCommands.Add(socialCommand);
 }
-// force command
-var forceCommand = new ForceCommand(logger, commandRegistry);
-explicitCommands.Add(forceCommand);
-// test command
-var testCommand = new TestCommand();
+
 // commands from assemblies
 commandRegistry.RegisterCommands(commandDefinitions, [typeof(TestCommand).Assembly], explicitCommands);
 

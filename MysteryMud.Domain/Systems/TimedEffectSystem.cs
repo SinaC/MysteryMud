@@ -7,13 +7,14 @@ using MysteryMud.Core.Intent;
 using MysteryMud.Core.Logging;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Components.Effects;
-using MysteryMud.Domain.Damage.Resolvers;
+using MysteryMud.Domain.Damage;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Heal;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.GameData.Actions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
+using System.Runtime.CompilerServices;
 
 namespace MysteryMud.Domain.Systems;
 
@@ -44,20 +45,42 @@ public class TimedEffectSystem
     {
         foreach (var evt in _triggeredScheduledEvents.GetAll())
         {
+            _logger.LogDebug("[{system}]", nameof(TimedEffectSystem));
+
             if (evt.Kind != ScheduledEventKind.Tick && evt.Kind != ScheduledEventKind.Expire)
+            {
+                _logger.LogDebug("[{system}]: invalid scheduled event kind {kind}", nameof(TimedEffectSystem), evt.Kind);
                 continue;
+            }
 
             var effect = evt.Effect;
             if (!EffectHelpers.IsAlive(effect))
+            {
+                _logger.LogDebug("[{system}]: effect {effectName} is not alive", nameof(TimedEffectSystem), effect.DebugName);
                 continue;
+            }
 
             ref var timed = ref effect.TryGetRef<TimedEffect>(out var isTimedEffect);
             if (!isTimedEffect)
+            {
+                _logger.LogDebug("[{system}]: effect {effectName} without TimedEffect", nameof(TimedEffectSystem), effect.DebugName);
                 continue;
+            }
 
-            // expire -> add expired tag
+            // expire -> add expired tag if not rescheduled
             if (evt.Kind == ScheduledEventKind.Expire && !effect.Has<ExpiredTag>())
             {
+                _logger.LogDebug("[{system}]: effect {effectName} EXPIRE {expirationTick}", nameof(TimedEffectSystem), effect.DebugName, timed.ExpirationTick);
+
+                // TODO
+                // rescheduled (stacking Refresh or Stack)
+                if (timed.ExpirationTick != state.CurrentTick)
+                {
+                    _logger.LogDebug("[{system}]: effect {effectName} RESCHEDULED {lastRefresh} EXPIRE {expirationTick}", nameof(TimedEffectSystem), effect.DebugName, timed.LastRefreshTick, timed.ExpirationTick);
+
+                    continue;
+                }
+
                 // flag as expired
                 effect.Add<ExpiredTag>();
 
@@ -80,13 +103,18 @@ public class TimedEffectSystem
             {
                 // tick after expiration
                 if (state.CurrentTick >= timed.ExpirationTick)
+                {
+                    _logger.LogDebug("[{system}]: effect {effectName} TICK after expiration tick {expirationTick}", nameof(TimedEffectSystem), effect.DebugName, timed.ExpirationTick);
                     continue;
+                }
 
                 ref var instance = ref effect.Get<EffectInstance>();
                 ApplyEffect(state, effect, ref instance);
 
                 // intent for next tick
                 timed.NextTick = state.CurrentTick + timed.TickRate;
+
+                _logger.LogDebug("[{system}]: effect {effectName} TICK {expirationTick} NEXT {nextTick}", nameof(TimedEffectSystem), effect.DebugName, timed.ExpirationTick, timed.NextTick);
 
                 ref var scheduleIntent = ref _intentContainer.Schedule.Add();
                 scheduleIntent.Effect = effect;

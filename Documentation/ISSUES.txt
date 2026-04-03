@@ -1,4 +1,6 @@
-﻿
+﻿big issue with timed effect refresh
+
+
 dot/hot/... should we remove them when source is dead ?
 
 in CharacterEffects

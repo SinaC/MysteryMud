@@ -11,7 +11,7 @@ using MysteryMud.Domain.Factories;
 using MysteryMud.GameData.Actions;
 using MysteryMud.GameData.Events;
 
-namespace MysteryMud.Domain.Damage.Resolvers;
+namespace MysteryMud.Domain.Damage;
 
 public class DamageResolver
 {
@@ -39,8 +39,9 @@ public class DamageResolver
         var modifiedDamage = DamageCalculator.ModifyDamage(dmg.Target, dmg.Amount, dmg.DamageKind, dmg.Source);
 
         // we have to split sending to source and sending to room because source may not be in the same room
-        _msg.To(dmg.Source).Act("%G{0} deal{0:v} %r{1}%g damage to {2}.%x").With(dmg.Source, modifiedDamage, dmg.Target);
-        _msg.ToRoomExcept(dmg.Target, dmg.Source).Act("%G{0} deal{0:v} %r{1}%g damage to {2}.%x").With(dmg.Source, modifiedDamage, dmg.Target);
+        _msg.To(dmg.Source).Act("%gYou deal {0} damage to {1}.%x").With(modifiedDamage, dmg.Target);
+        _msg.To(dmg.Target).Act("%r{0} deal{0:v} {1} damage to you.%x").With(dmg.Source, modifiedDamage);
+        _msg.ToRoomExcept(dmg.Target, dmg.Source).Act("%y{0} deal{0:v} {1} damage to {2}.%x").With(dmg.Source, modifiedDamage, dmg.Target);
 
         // apply damage
         health.Current -= modifiedDamage;

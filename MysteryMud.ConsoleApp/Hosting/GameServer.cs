@@ -49,10 +49,10 @@ public class GameServer
             onConnected: HandleConnected,
             onDisconnected: HandleDisconnected
         );
-        _outputService = new OutputService(_telnet);
+        _outputService = new OutputService(_logger, _telnet);
         _commandBus = new CommandBus(_commandDispatcher);
         _messageBus = new MessageBus(_outputService);
-        _scheduler = new Scheduler();
+        _scheduler = new Scheduler(_logger);
         _actService = new ActService();
         _gameMessageService = new GameMessageService(_messageBus, _actService);
         _intentBusContainer = new IntentBusContainer();

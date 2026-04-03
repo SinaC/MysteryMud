@@ -47,4 +47,16 @@ public static class ActTargetResolver
 
         return roomContents.Characters; // TODO: add position check if needed, but it may not be needed for all cases, so maybe add it as an optional parameter to the method
     }
+
+    public static IEnumerable<Entity> GetAllTargetsExcept(Entity actor, Entity except)
+    {
+        ref var location = ref actor.TryGetRef<Location>(out var hasLocation);
+        if (!hasLocation)
+            return [];
+        ref var roomContents = ref location.Room.TryGetRef<RoomContents>(out var hasRoomContents);
+        if (!hasRoomContents)
+            return [];
+
+        return roomContents.Characters.Where(x => x != except); // TODO: add position check if needed, but it may not be needed for all cases, so maybe add it as an optional parameter to the method
+    }
 }

@@ -13,6 +13,6 @@ public static class StringExtensions
         return char.ToUpper(input[0]) + input.Substring(1);
     }
 
-    public static int ComputeCommandId(this string name)
-        => name.AsSpan().ComputeCommandId();
+    public static int ComputeUniqueId(this string name)
+        => name.AsSpan().ComputeUniqueId();
 }

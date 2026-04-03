@@ -1,5 +1,6 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using Microsoft.Extensions.Logging;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Infrastructure.Network;
@@ -8,10 +9,12 @@ namespace MysteryMud.Infrastructure.Services;
 
 public class OutputService : IOutputService
 {
+    private readonly ILogger _logger;
     private readonly TelnetServer _telnet;
 
-    public OutputService(TelnetServer telnet)
+    public OutputService(ILogger logger, TelnetServer telnet)
     {
+        _logger = logger;
         _telnet = telnet;
     }
 
@@ -23,10 +26,11 @@ public class OutputService : IOutputService
         ref var connection = ref entity.TryGetRef<Connection>(out var hasConnection);
         if (!hasConnection)
         {
-            Console.WriteLine($"[{entity.DebugName}]: {message}");
+            _logger.LogInformation("[{entityName}]: {message}", entity.DebugName, message);
             return;
         }
 
+        _logger.LogInformation("[{entityName}]: {message}", entity.DebugName, message);
         _telnet.Write(connection.ConnectionId, message);
         _telnet.Write(connection.ConnectionId, "\r\n");
     }

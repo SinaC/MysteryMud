@@ -7,7 +7,6 @@ using MysteryMud.Core.Commands;
 using MysteryMud.Core.Extensions;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Factories;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
@@ -19,13 +18,17 @@ public class TestCommand : ICommand
 
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetAndText;
 
+    private readonly SpellDatabase _spellDatabase;
+
     public CommandDefinition Definition { get; }
 
-    public TestCommand()
+    public TestCommand(SpellDatabase spellDatabase)
     {
+        _spellDatabase = spellDatabase;
+
         Definition = new CommandDefinition
         {
-            Id = Name.ComputeCommandId(),
+            Id = Name.ComputeUniqueId(),
             Name = Name,
             Aliases = [],
             CannotBeForced = true,
@@ -58,98 +61,19 @@ public class TestCommand : ICommand
             return;
         }
 
-        if (ctx.Text.Equals("poison".AsSpan(), StringComparison.OrdinalIgnoreCase))
+        // search effect and add effect intent if found
+        int? effectId = null;
+        if (_spellDatabase.Effects.TryGetValue(ctx.Text.ToString(), out var effectDefinition))
+            effectId = effectDefinition.Id;
+        if (effectId is not null && effectDefinition is not null)
         {
-            var effectDefinition = new EffectDefinition
-            {
-                Id = "Poison2",
-                Tag = EffectTagId.Poison,
-                Stacking = StackingRule.Stack,
-                MaxStacks = 3,
-                StatModifiers =
-                [
-                    new StatModifierDefinition
-                    {
-                        Stat = StatKind.Strength,
-                        Value = -2,
-                        Kind = ModifierKind.Flat
-                    },
-                    new StatModifierDefinition
-                    {
-                        Stat = StatKind.HitRoll,
-                        Value = -3,
-                        Kind = ModifierKind.Flat
-                    },
-                ],
-                Flags = AffectFlags.Poison,
-                DurationFunc = (world, source, target) => 15,
-                TickRate = 2,
-                Dot = new DotDefinition
-                {
-                    DamageFunc = (world, source, target) => 45,
-                    DamageKind = DamageKind.Poison
-                },
-                Hot = null // not hot
-            };
-
-            //TODO: EffectFactory.ApplyEffect(systemContext, state, effectDefinition, actor, target);
+            systemContext.Msg.To(actor).Send($"Applying effect {effectDefinition.Name}");
+            ref var effectIntent = ref systemContext.Intent.Effect.Add();
+            effectIntent.EffectId = effectId.Value;
+            effectIntent.Source = actor;
+            effectIntent.Target = target;
         }
-        else if (ctx.Text.Equals("poison2".AsSpan(), StringComparison.OrdinalIgnoreCase))
-        {
-            var effectDefinition = new EffectDefinition
-            {
-                Id = "Poison3",
-                Tag = EffectTagId.Poison,
-                Stacking = StackingRule.Refresh,
-                MaxStacks = 3,
-                StatModifiers = [],
-                Flags = AffectFlags.Poison,
-                DurationFunc = (world, source, target) => 60,
-                TickRate = 2,
-                Dot = new DotDefinition
-                {
-                    DamageFunc = (world, source, target) => 5,
-                    DamageKind = DamageKind.Poison
-                },
-                Hot = null // not hot
-            };
 
-            //TODO: EffectFactory.ApplyEffect(systemContext, state, effectDefinition, actor, target);
-        }
-        else if (ctx.Text.Equals("bless".AsSpan(), StringComparison.OrdinalIgnoreCase))
-        {
-            var effectDefinition = new EffectDefinition
-            {
-                Id = "Bless2",
-                Tag = EffectTagId.Bless,
-                Stacking = StackingRule.Replace,
-                MaxStacks = 1,
-                StatModifiers =
-                [
-                    new StatModifierDefinition
-                    {
-                        Stat = StatKind.Intelligence,
-                        Value = 2,
-                        Kind = ModifierKind.Flat
-                    },
-                    new StatModifierDefinition
-                    {
-                        Stat = StatKind.HitRoll,
-                        Value = 10,
-                        Kind = ModifierKind.AddPercent
-                    },
-                ],
-                Flags = AffectFlags.Bless,
-                DurationFunc = (world, source, target) => 60,
-                TickRate = 2,
-                Dot = null, // no dot
-                Hot = new HotDefinition
-                {
-                    HealFunc = (world, source, target) => 5,
-                },
-            };
-
-            //TODO: EffectFactory.ApplyEffect(systemContext, state, effectDefinition, actor, target);
-        }
+        // TODO: search spell and add ability intent if found
     }
 }

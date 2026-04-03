@@ -7,6 +7,6 @@ namespace MysteryMud.Core.Scheduler;
 
 public interface IScheduler
 {
-    void Schedule(Entity entity, ScheduledEventKind kind, long executedAt);
+    void Schedule(GameState state, Entity entity, ScheduledEventKind kind, long executeAt);
     void Process(GameState state, IEventBuffer<TriggeredScheduledEvent> triggeredScheduledEvents);
 }

@@ -84,7 +84,7 @@ public class MstatCommand : ICommand
             ref var statModifiers = ref effect.TryGetRef<StatModifiers>(out var hasStatModifiers);
             ref var damageEffect = ref effect.TryGetRef<DamageEffect>(out var hasDamageEffect);
             ref var healEffect = ref effect.TryGetRef<HealEffect>(out var hasHealEffect);
-            var effectName = effectInstance.Definition.Id;
+            var effectName = effectInstance.Definition.Name;
             var stackCount = effectInstance.StackCount;
             var sourceName = effectInstance.Source.DisplayName;
             if (isTimedEffect)
