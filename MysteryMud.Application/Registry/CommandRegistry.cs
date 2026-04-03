@@ -172,6 +172,7 @@ public class CommandRegistry : ICommandRegistry
                 HelpText = _inner.Definition.HelpText,
                 Syntaxes = _inner.Definition.Syntaxes,
                 Categories = _inner.Definition.Categories,
+                ThrottlingCategories = _inner.Definition.ThrottlingCategories,
             };
         }
 

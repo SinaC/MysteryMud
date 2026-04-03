@@ -40,6 +40,7 @@ public class ForceCommand : ICommand
 This is typically used for 'force all save'.",
         Syntaxes = ["[cmd] <character> <command>", "[cmd] all <command>"],
         Categories = ["punish"],
+        ThrottlingCategories = CommandThrottlingCategories.Admin,
     };
 
     public ForceCommand(ICommandRegistry commandRegistry)
@@ -79,10 +80,10 @@ This is typically used for 'force all save'.",
         ref var targetPosition = ref target.Get<Position>();
 
         // split command/args
-        CommandParser.SplitCommand(ctx.Text, out var forcedCmd, out var forcedArgs);
+        CommandParser.SplitCommand(ctx.Text, out var forcedCmdStart, out var forcedCmdLength, out var forcedArgsStart, out var forcedArgsLength);
 
         // search command // TODO: command level
-        var findResult = _commandRegistry.Find(CommandLevelKind.Player, targetPosition.Value, forcedCmd, out var forcedCommand);
+        var findResult = _commandRegistry.Find(CommandLevelKind.Player, targetPosition.Value, ctx.Text.Slice(forcedCmdStart, forcedCmdLength), out var forcedCommand);
         if (findResult == CommandFindResult.NotFound)
         {
             systemContext.Msg.To(actor).Send("Command not found.");
@@ -101,7 +102,7 @@ This is typically used for 'force all save'.",
         else if (forcedCommand is null)
         {
             systemContext.Msg.To(actor).Send("Something goes wrong.");
-            systemContext.Log.LogError("ForceCommand: command registry returned null command when trying to find {cmd}", forcedCmd.ToString());
+            systemContext.Log.LogError("ForceCommand: command registry returned null command when trying to find {cmd}", ctx.Text.ToString());
             return;
         }
         else if (forcedCommand!.Definition.CannotBeForced)
@@ -110,22 +111,21 @@ This is typically used for 'force all save'.",
             return;
         }
 
-        // add forced command to target command buffer
+        // add forced command request to target command buffer
         ref var buffer = ref target.Get<CommandBuffer>();
-        buffer.Items ??= new CommandRequest[8]; // small initial capacity
-        if (buffer.Count == buffer.Items.Length)
-            Array.Resize(ref buffer.Items, buffer.Items.Length * 2); // expand if needed
-        buffer.Items[buffer.Count++] = new CommandRequest
+        buffer.Add(new CommandRequest
         {
             Command = forcedCommand,
             CommandId = forcedCommand.Definition.Id,
-            
-            RawCommand = forcedCmd.ToString(),
-            RawArgs = forcedArgs.ToString(),
+
+            CmdStart = forcedCmdStart,
+            CmdLength = forcedCmdLength,
+            ArgsStart = forcedArgsStart,
+            ArgsLength = forcedArgsLength,
 
             Cancelled = false,
             Force = true
-        };
+        });
         if (!target.Has<HasCommandTag>())
             target.Add<HasCommandTag>();
 

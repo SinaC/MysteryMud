@@ -10,5 +10,6 @@ public record CommandDefinitionData(
     bool AllowAbbreviation,
     string HelpText,
     string[] Syntaxes,
-    string[] Categories
+    string[] Categories,
+    string[] ThrottlingCategories
 );

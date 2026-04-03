@@ -7,9 +7,20 @@ public struct CommandRequest
     public ICommand Command;
     public int CommandId;
 
-    public string RawCommand;
-    public string RawArgs;
+    public string Input; // full input string (1 allocation max)
+    public int CmdStart;
+    public int CmdLength;
+    public int ArgsStart;
+    public int ArgsLength;
+
+    public long ExecuteAt; // for lag scheduling
 
     public bool Cancelled;
     public bool Force; // skip spam/cooldown/wait
+
+    public readonly ReadOnlySpan<char> CommandSpan
+        => Input.AsSpan(CmdStart, CmdLength);
+
+    public readonly ReadOnlySpan<char> ArgsSpan
+        => Input.AsSpan(ArgsStart, ArgsLength);
 }

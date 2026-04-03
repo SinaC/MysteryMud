@@ -32,11 +32,12 @@ public class SocialCommand : ICommand
             CannotBeForced = false,
             RequiredLevel = CommandLevelKind.Player,
             MinimumPosition = PositionKind.Resting,
-            Priority = 0, // low priority
+            Priority = -1, // low priority -> unsure every other commands has more priority than social command
             AllowAbbreviation = true,
             HelpText = string.Empty,
             Syntaxes = ["[cmd]", "[cmd] <character>"],
-            Categories = ["social"]
+            Categories = ["social"],
+            ThrottlingCategories = CommandThrottlingCategories.Social
         };
     }
 

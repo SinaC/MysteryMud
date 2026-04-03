@@ -4,16 +4,17 @@ using MysteryMud.Core.Services;
 using MysteryMud.Domain.Commands;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
+using MysteryMud.GameData.Definitions;
+using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Systems;
 
 public class CommandThrottleSystem
 {
-    private const long SPAM_WINDOW = 10_000;
-    private const long RESET_WINDOW = 30_000;
-
-    private const int MAX_IDENTICAL = 2;
-    private const int MAX_VIOLATIONS = 3;
+    private const long SPAM_WINDOW = 10_000;  // 10s window for identical commands
+    private const long RESET_WINDOW = 30_000; // reset violations after 30s
+    private const int MAX_IDENTICAL = 2;      // max identical commands per SPAM_WINDOW
+    private const int MAX_VIOLATIONS = 3;     // max spam violations before blocking
 
     private readonly IGameMessageService _msg;
 
@@ -27,215 +28,167 @@ public class CommandThrottleSystem
         long now = state.CurrentTimeMs;
 
         var query = new QueryDescription()
-           .WithAll<CommandBuffer, CommandThrottle, PlayerTag, HasCommandTag>();
-        state.World.Query(query, (Entity player, ref CommandBuffer buffer, ref CommandThrottle throttle, ref PlayerTag _, ref HasCommandTag _) =>
-        {
-            EnsureBuffers(ref throttle);
+            .WithAll<CommandBuffer, CommandThrottle, PlayerTag, HasCommandTag>();
 
-            // ---- reset violations over time ----
-            if (now - throttle.LastViolationTime > RESET_WINDOW)
+        state.World.Query(query,
+            (Entity player, ref CommandBuffer buffer, ref CommandThrottle throttle, ref PlayerTag _, ref HasCommandTag _) =>
             {
-                throttle.Violations = 0;
-            }
+                // --- refill all category buckets ---
+                Refill(ref throttle.Movement, now);
+                Refill(ref throttle.Combat, now);
+                Refill(ref throttle.Social, now);
+                Refill(ref throttle.Utility, now);
+                Refill(ref throttle.Admin, now);
 
-            // ---- prune history ----
-            PruneHistory(ref throttle, now);
-
-            for (int i = 0; i < buffer.Count; i++)
-            {
-                ref var request = ref buffer.Items[i];
-
-                if (request.Cancelled)
-                    continue;
-
-                if (request.Force)
-                    continue; // skip throttle checks
-
-                // =====================================
-                // 1. WAIT STATE (global delay)
-                // =====================================
-                if (now < throttle.NextAllowedTime)
+                // --- reset violations if enough time passed ---
+                if (now - throttle.LastViolationTime > RESET_WINDOW)
                 {
-                    request.Cancelled = true;
-                    Notify(player, "You must wait before acting again.");
-                    continue;
+                    throttle.Violations = 0;
                 }
 
-                // =====================================
-                // 2. COOLDOWN (per command)
-                // =====================================
-                if (IsOnCooldown(ref throttle, request.CommandId, now))
+                // --- prune history for SPAM_WINDOW ---
+                throttle.PruneHistory(now, SPAM_WINDOW);
+
+                bool notified = false;
+
+                for (int i = 0; i < buffer.Count; i++)
                 {
-                    request.Cancelled = true;
-                    Notify(player, "That command is not ready yet.");
-                    continue;
+                    ref var request = ref buffer.Items[i];
+
+                    if (request.Cancelled || request.Force)
+                        continue;
+
+                    var def = request.Command.Definition;
+                    var primaryCat = GetPrimaryCategory(def.ThrottlingCategories);
+                    ref var bucket = ref GetBucket(ref throttle, primaryCat);
+
+                    float cost = GetCommandCost(ref def);
+
+                    // --- check global WAIT_STATE ---
+                    if (now < throttle.NextAllowedTime)
+                    {
+                        request.Cancelled = true;
+                        if (!notified)
+                        {
+                            _msg.To(player).Send("You must wait before acting again.");
+                            notified = true;
+                        }
+                        continue;
+                    }
+
+                    // --- check token bucket ---
+                    if (bucket.Tokens < cost)
+                    {
+                        request.Cancelled = true;
+                        if (!notified)
+                        {
+                            _msg.To(player).Send("You are acting too fast.");
+                            notified = true;
+                        }
+                        continue;
+                    }
+
+                    // --- spam detection ---
+                    int identical = throttle.CountIdentical(request.CommandId);
+                    if (identical >= MAX_IDENTICAL)
+                    {
+                        throttle.Violations++;
+                        throttle.LastViolationTime = now;
+                        request.Cancelled = true;
+                        if (!notified)
+                        { 
+                            _msg.To(player).Send(GetSpamMessage(throttle.Violations));
+                            notified = true;
+                        }
+                        continue;
+                    }
+
+                    if (throttle.Violations >= MAX_VIOLATIONS)
+                    {
+                        request.Cancelled = true;
+                        if (!notified)
+                        { 
+                            _msg.To(player).Send("You are sending commands too fast.");
+                            notified = true;
+                        }
+                        continue;
+                    }
+
+                    // --- accept command ---
+                    request.ExecuteAt = now;
+
+                    // consume bucket tokens
+                    bucket.Tokens -= cost;
+
+                    // add to history
+                    throttle.AddHistory(request.CommandId, now);
+
+
+                    // optional WAIT_STATE lag (category-based)
+                    throttle.NextAllowedTime = now + GetCommandLag(ref def);
                 }
-
-                // =====================================
-                // 3. SPAM DETECTION
-                // =====================================
-                int identical = CountIdentical(ref throttle, request.CommandId);
-
-                if (identical >= MAX_IDENTICAL)
-                {
-                    throttle.Violations++;
-                    throttle.LastViolationTime = now;
-
-                    request.Cancelled = true;
-
-                    Notify(player, GetSpamMessage(throttle.Violations));
-                    continue;
-                }
-
-                if (throttle.Violations >= MAX_VIOLATIONS)
-                {
-                    request.Cancelled = true;
-
-                    Notify(player, "You are sending commands too fast.");
-                    continue;
-                }
-
-                // =====================================
-                // 4. ACCEPT → APPLY EFFECTS
-                // =====================================
-
-                AddHistory(ref throttle, request.CommandId, now);
-
-                // Apply WAIT_STATE (example: 500ms global delay)
-                throttle.NextAllowedTime = now + GetGlobalDelay(request.CommandId);
-
-                // Apply cooldown if needed
-                ApplyCooldown(ref throttle, request.CommandId, now);
-            }
-        });
+            });
     }
 
-    // =========================
-    // Helpers
-    // =========================
+    // --------------------
+    // Helper functions
+    // --------------------
 
-    private static void EnsureBuffers(ref CommandThrottle t)
+    private static void Refill(ref CommandCategoryBucket b, long now)
     {
-        t.History ??= new CommandHistoryEntry[10];
-        t.Cooldowns ??= new CooldownEntry[5];
-    }
-
-    private static void PruneHistory(ref CommandThrottle t, long now)
-    {
-        int write = 0;
-
-        for (int i = 0; i < t.HistoryCount; i++)
+        if (b.LastRefillTime == 0)
         {
-            if (now - t.History[i].Timestamp <= SPAM_WINDOW)
-            {
-                t.History[write++] = t.History[i];
-            }
-        }
-
-        t.HistoryCount = write;
-    }
-
-    private static int CountIdentical(ref CommandThrottle t, int commandId)
-    {
-        int count = 0;
-
-        for (int i = 0; i < t.HistoryCount; i++)
-        {
-            if (t.History[i].CommandId == commandId)
-                count++;
-        }
-
-        return count;
-    }
-
-    private static void AddHistory(ref CommandThrottle t, int commandId, long now)
-    {
-        if (t.HistoryCount == t.History.Length)
-            Array.Resize(ref t.History, t.History.Length * 2);
-
-        t.History[t.HistoryCount++] = new CommandHistoryEntry
-        {
-            CommandId = commandId,
-            Timestamp = now
-        };
-    }
-
-    private static bool IsOnCooldown(ref CommandThrottle t, int commandId, long now)
-    {
-        for (int i = 0; i < t.CooldownCount; i++)
-        {
-            if (t.Cooldowns[i].CommandId == commandId)
-            {
-                return now < t.Cooldowns[i].ReadyAt;
-            }
-        }
-
-        return false;
-    }
-
-    private static void ApplyCooldown(ref CommandThrottle t, int commandId, long now)
-    {
-        long delay = GetCooldown(commandId);
-        if (delay <= 0)
+            b.LastRefillTime = now;
+            b.Tokens = b.MaxTokens;
             return;
-
-        for (int i = 0; i < t.CooldownCount; i++)
-        {
-            if (t.Cooldowns[i].CommandId == commandId)
-            {
-                t.Cooldowns[i].ReadyAt = now + delay;
-                return;
-            }
         }
 
-        if (t.CooldownCount == t.Cooldowns.Length)
-            Array.Resize(ref t.Cooldowns, t.Cooldowns.Length * 2);
-
-        t.Cooldowns[t.CooldownCount++] = new CooldownEntry
-        {
-            CommandId = commandId,
-            ReadyAt = now + delay
-        };
+        float delta = (now - b.LastRefillTime) / 1000f;
+        b.LastRefillTime = now;
+        b.Tokens = Math.Min(b.MaxTokens, b.Tokens + delta * b.RefillRate);
     }
 
-    // =========================
-    // Config (you can externalize later)
-    // =========================
-
-    private static long GetGlobalDelay(int commandId) // TODO: use command category instead of commandId ?
-    {
-        //return commandId switch
-        //{
-        //    // e.g. attack → slower
-        //    1 => 1000,
-        //    _ => 300
-        //};
-        return 300;
-    }
-
-    private static long GetCooldown(int commandId)
-    {
-        //return commandId switch
-        //{
-        //    // e.g. "cast spell"
-        //    2 => 5000,
-        //    _ => 0
-        //};
-        return 0;
-    }
-
-    private static string GetSpamMessage(int violations)
-    {
-        return violations switch
+    private static string GetSpamMessage(int violations) =>
+        violations switch
         {
             1 => "Slow down.",
             2 => "You are spamming commands.",
             _ => "Command input throttled."
         };
+
+    private static CommandThrottlingCategories GetPrimaryCategory(CommandThrottlingCategories cat)
+    {
+        if ((cat & CommandThrottlingCategories.Movement) != 0) return CommandThrottlingCategories.Movement;
+        if ((cat & CommandThrottlingCategories.Combat) != 0) return CommandThrottlingCategories.Combat;
+        if ((cat & CommandThrottlingCategories.Social) != 0) return CommandThrottlingCategories.Social;
+        if ((cat & CommandThrottlingCategories.Utility) != 0) return CommandThrottlingCategories.Utility;
+        if ((cat & CommandThrottlingCategories.Admin) != 0) return CommandThrottlingCategories.Admin;
+        return CommandThrottlingCategories.Utility;
     }
 
-    private void Notify(Entity entity, string msg)
+    private static ref CommandCategoryBucket GetBucket(ref CommandThrottle t, CommandThrottlingCategories cat)
     {
-        _msg.To(entity).Send(msg);
+        switch (cat)
+        {
+            case CommandThrottlingCategories.Movement: return ref t.Movement;
+            case CommandThrottlingCategories.Combat: return ref t.Combat;
+            case CommandThrottlingCategories.Social: return ref t.Social;
+            case CommandThrottlingCategories.Utility: return ref t.Utility;
+            case CommandThrottlingCategories.Admin: return ref t.Admin;
+            default: return ref t.Utility;
+        }
+    }
+
+    private static float GetCommandCost(ref CommandDefinition def)
+    {
+        // Could vary per command or category
+        return 1f;
+    }
+
+    private static long GetCommandLag(ref CommandDefinition def)
+    {
+        // Optional: category-based lag
+        if ((def.ThrottlingCategories & CommandThrottlingCategories.Combat) != 0) return 300; // combat slower
+        return 0; // other categories instant
     }
 }
