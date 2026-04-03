@@ -19,21 +19,22 @@ public class JsonCommandLoader
         var data = JsonSerializer.Deserialize<List<CommandDefinitionData>>(json, options) ?? [];
 
         var commands = new List<CommandDefinition>();
-        foreach (var c in data)
+        foreach (var cmd in data)
         {
             var command = new CommandDefinition
             {
-                Id = c.Name.ComputeCommandId(),
-                Name = c.Name,
-                Aliases = c.Aliases,
-                CannotBeForced = c.CannotBeForced,
-                RequiredLevel = Enum.Parse<CommandLevelKind>(c.RequiredLevel, ignoreCase: true),
-                MinimumPosition = Enum.Parse<PositionKind>(c.MinimumPosition, ignoreCase: true),
-                Priority = c.Priority,
-                AllowAbbreviation = c.AllowAbbreviation,
-                HelpText = c.HelpText,
-                Syntaxes = c.Syntaxes,
-                Categories = c.Categories
+                Id = cmd.Name.ComputeCommandId(),
+                Name = cmd.Name,
+                Aliases = cmd.Aliases,
+                CannotBeForced = cmd.CannotBeForced,
+                RequiredLevel = Enum.Parse<CommandLevelKind>(cmd.RequiredLevel, ignoreCase: true),
+                MinimumPosition = Enum.Parse<PositionKind>(cmd.MinimumPosition, ignoreCase: true),
+                Priority = cmd.Priority,
+                AllowAbbreviation = cmd.AllowAbbreviation,
+                HelpText = cmd.HelpText,
+                Syntaxes = cmd.Syntaxes,
+                Categories = cmd.Categories,
+                ThrottlingCategories = cmd.ThrottlingCategories.Aggregate(CommandThrottlingCategories.None, (accumulator, cat) => accumulator | Enum.Parse<CommandThrottlingCategories>(cat, ignoreCase: true)),
             };
             commands.Add(command);
         }

@@ -1,14 +1,11 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
-using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Registry;
 using MysteryMud.Core;
-using MysteryMud.Core.Logging;
 using MysteryMud.Domain.Commands;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
-using MysteryMud.Domain.Extensions;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.Dispatching;
@@ -26,10 +23,20 @@ public class CommandDispatcher : ICommandDispatcher
 
     public void Dispatch(SystemContext systemContext, GameState state, Entity actor, ReadOnlySpan<char> input)
     {
-        systemContext.Log.LogInformation(LogEvents.System, "*** [{name}] DISPATCHING [{input}]", actor.DebugName, input.ToString());
+        if (!actor.IsAlive())
+            return;
+
+        // Get or create buffer
+        ref var buffer = ref actor.Get<CommandBuffer>();
+
+        if (buffer.Count >= MAX_COMMANDS_PER_TICK)
+            return;
+
+        var inputStr = input.ToString(); // ONE allocation
 
         // extract command and arguments
-        CommandParser.SplitCommand(input, out var cmdSpan, out var argsSpan);
+        CommandParser.SplitCommand(input, out var cmdStart, out var cmdLength, out var argsStart, out var argsLength);
+        var cmdSpan = input.Slice(cmdStart, cmdLength);
 
         // get command level
         ref var commandLevel = ref actor.Get<CommandLevel>();
@@ -49,34 +56,22 @@ public class CommandDispatcher : ICommandDispatcher
                 return;
         }
 
-        // get command buffer
-        ref var buffer = ref actor.Get<CommandBuffer>();
-
-        // create items array if needed
-        buffer.Items ??= new CommandRequest[8]; // small initial capacity
-
-        if (buffer.Count >= MAX_COMMANDS_PER_TICK)
+        // add command request to command buffer
+        buffer.Add(new CommandRequest
         {
-            // TODO: message ?
-            // drop or ignore new commands
-        }
-        else
-        {
-            if (buffer.Count == buffer.Items.Length)
-                Array.Resize(ref buffer.Items, buffer.Items.Length * 2); // expand if needed
-            buffer.Items[buffer.Count++] = new CommandRequest
-            {
-                Command = command!,
-                CommandId = command!.Definition.Id,
+            Command = command!,
+            CommandId = command!.Definition.Id,
 
-                RawCommand = cmdSpan.ToString(),
-                RawArgs = argsSpan.ToString(),
+            Input = inputStr,
+            CmdStart = cmdStart,
+            CmdLength = cmdLength,
+            ArgsStart = argsStart,
+            ArgsLength = argsLength,
 
-                Cancelled = false,
-                Force = false
-            };
-            if (!actor.Has<HasCommandTag>())
-                actor.Add<HasCommandTag>();
-        }
+            Cancelled = false,
+            Force = false
+        });
+        if (!actor.Has<HasCommandTag>())
+            actor.Add<HasCommandTag>();
     }
 }

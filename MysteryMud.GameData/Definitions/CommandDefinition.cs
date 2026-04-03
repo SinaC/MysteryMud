@@ -15,4 +15,5 @@ public readonly struct CommandDefinition
     public required string HelpText { get; init; }
     public required string[] Syntaxes { get; init; }
     public required string[] Categories { get; init; }
+    public required CommandThrottlingCategories ThrottlingCategories { get; init; }
 }

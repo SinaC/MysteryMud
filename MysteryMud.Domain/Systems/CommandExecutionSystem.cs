@@ -7,53 +7,93 @@ namespace MysteryMud.Domain.Systems;
 
 public class CommandExecutionSystem
 {
-    //private const int MaxEntitiesPerTick = 100;
-
-    public void Execute(SystemContext systemContext, GameState state)
+    public void Execute(SystemContext ctx, GameState state)
     {
-        //var processed = 0;
+        long now = state.CurrentTimeMs;
 
         var query = new QueryDescription()
             .WithAll<CommandBuffer, HasCommandTag>();
-        state.World.Query(query, (Entity entity, ref CommandBuffer buffer, ref HasCommandTag hasCommandTag) =>
+
+        state.World.Query(query, (Entity entity, ref CommandBuffer buffer, ref HasCommandTag _) =>
         {
             if (!entity.IsAlive())
                 return;
 
             for (int i = 0; i < buffer.Count; i++)
             {
-                ref var request = ref buffer.Items[i];
+                ref var req = ref buffer.Items[i];
 
-                if (request.Cancelled)
+                if (req.Cancelled)
                     continue;
 
-                //var command = _registry.Get(request.CommandId);
+                // not ready yet
+                if (req.ExecuteAt > now)
+                    continue;
 
-                var cmd = request.RawCommand.AsSpan();
-                var args = request.RawArgs.AsSpan();
-
-                // TODO: should be commandId and use CommandRegistry to get the command
-                // execute command
-                request.Command.Execute(
-                    systemContext,
+                req.Command.Execute(
+                    ctx,
                     state,
                     entity,
-                    cmd,
-                    args
+                    req.CommandSpan,
+                    req.ArgsSpan
                 );
             }
 
-            // clear buffer after execution
-            Array.Clear(buffer.Items, 0, buffer.Count);
-            buffer.Count = 0;
-
-            // remove has active command tag
+            buffer.Clear();
             entity.Remove<HasCommandTag>();
-
-            // TODO
-            //processed++;
-            //if (processed >= MaxEntitiesPerTick)
-            //    break; // defer remaining entities to next tick
         });
     }
 }
+// related to complex throttling
+//public class CommandExecutionSystem
+//{
+//    //private const int MaxEntitiesPerTick = 100;
+
+//    public void Execute(SystemContext systemContext, GameState state)
+//    {
+//        //var processed = 0;
+
+//        var query = new QueryDescription()
+//            .WithAll<CommandBuffer, HasCommandTag>();
+//        state.World.Query(query, (Entity entity, ref CommandBuffer buffer, ref HasCommandTag hasCommandTag) =>
+//        {
+//            if (!entity.IsAlive())
+//                return;
+
+//            for (int i = 0; i < buffer.Count; i++)
+//            {
+//                ref var request = ref buffer.Items[i];
+
+//                if (request.Cancelled)
+//                    continue;
+
+//                //var command = _registry.Get(request.CommandId);
+
+//                var cmd = request.CommandSpan;
+//                var args = request.ArgsSpan;
+
+//                // TODO: should be commandId and use CommandRegistry to get the command
+//                // execute command
+//                request.Command.Execute(
+//                    systemContext,
+//                    state,
+//                    entity,
+//                    cmd,
+//                    args
+//                );
+//            }
+
+//            // clear buffer after execution
+//            Array.Clear(buffer.Items, 0, buffer.Count);
+//            buffer.Count = 0;
+
+//            // remove has active command tag
+//            entity.Remove<HasCommandTag>();
+
+//            // TODO
+//            //processed++;
+//            //if (processed >= MaxEntitiesPerTick)
+//            //    break; // defer remaining entities to next tick
+//        });
+//    }
+//}

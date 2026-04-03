@@ -24,12 +24,14 @@ public static class PlayerFactory
 
     public static Entity CreatePlayer(World world, string name, Entity room)
     {
+        var commandThrottle = new CommandThrottle();
+        CommandThrottlingFactory.Initialize(ref commandThrottle);
         var player = world.Create(
             new CharacterTag(),
             new PlayerTag(),
             new CommandLevel { Value = CommandLevelKind.Player },
             new CommandBuffer(),
-            new CommandThrottle(),
+            commandThrottle,
             new Name { Value = name },
             new BaseStats
             {

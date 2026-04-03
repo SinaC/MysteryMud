@@ -25,7 +25,8 @@ public class SocialsCommand : ICommand
         AllowAbbreviation = true,
         HelpText = "Display list of available socials.",
         Syntaxes = ["[cmd]"],
-        Categories = []
+        Categories = ["information"],
+        ThrottlingCategories = CommandThrottlingCategories.Utility,
     };
 
     public SocialsCommand(ICommandRegistry commandRegistry)

@@ -4,9 +4,22 @@ namespace MysteryMud.Domain.Components.Characters;
 
 public class CommandBuffer // this MUST be a class (see below explanation)
 {
-    // this cannot be used
-    public CommandRequest[] Items = default!;
+    public CommandRequest[] Items = new CommandRequest[8];
     public int Count;
+
+    public void Add(in CommandRequest request)
+    {
+        if (Count == Items.Length)
+            Array.Resize(ref Items, Items.Length * 2);
+
+        Items[Count++] = request;
+    }
+
+    public void Clear()
+    {
+        Array.Clear(Items, 0, Count);
+        Count = 0;
+    }
 }
 
 // we could stick to struct when using a List instead of manual buffer (items+count)

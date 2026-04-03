@@ -29,7 +29,8 @@ public class HelpCommand : ICommand
         AllowAbbreviation = true,
         HelpText = "[cmd] shows you commands in a category, all categories or all commands starting with a prefix.",
         Syntaxes = ["[cmd]", "[cmd] <prefix>", "[cmd] <category>"],
-        Categories = []
+        Categories = ["information"],
+        ThrottlingCategories = CommandThrottlingCategories.Utility,
     };
 
     public HelpCommand(ICommandRegistry commandRegistry)

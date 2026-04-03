@@ -36,20 +36,24 @@ public static class CommandParser
         ctx.TargetCount = parsed;
     }
 
-    public static void SplitCommand(ReadOnlySpan<char> input, out ReadOnlySpan<char> command, out ReadOnlySpan<char> args)
+    public static void SplitCommand(ReadOnlySpan<char> input, out int commandStart, out int commandLength, out int argsStart, out int argsLength)
     {
         input = input.Trim();
         int space = input.IndexOf(' ');
 
         if (space < 0)
         {
-            command = input;
-            args = [];
+            commandStart = 0;
+            commandLength = input.Length;
+            argsStart = input.Length;
+            argsLength = 0;
             return;
         }
 
-        command = input[..space];
-        args = input[(space + 1)..].TrimStart();
+        commandStart = 0;
+        commandLength = space;
+        argsStart = space+1;
+        argsLength = input.Length - (space + 1);
     }
 
     private static TargetSpec ParseTarget(ReadOnlySpan<char> token)
