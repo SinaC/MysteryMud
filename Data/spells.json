@@ -98,11 +98,11 @@
   ],
   "Spells": [
     {
-      "Name": "a",
+      "Name": "poison",
       "Effects": ["Poison"]
     },
     {
-      "Name": "b",
+      "Name": "bless",
       "Effects": ["Bless"]
     }
   ]
