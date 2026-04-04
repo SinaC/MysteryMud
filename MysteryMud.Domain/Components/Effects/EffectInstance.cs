@@ -1,5 +1,5 @@
 ﻿using Arch.Core;
-using MysteryMud.GameData.Definitions;
+using MysteryMud.Domain.Effect;
 
 namespace MysteryMud.Domain.Components.Effects;
 
@@ -8,6 +8,6 @@ public struct EffectInstance
     public Entity Source;
     public Entity Target;
 
-    public EffectDefinition Definition;
     public int StackCount; // for stacking effects, otherwise 1
+    public EffectRuntime EffectRuntime;
 }

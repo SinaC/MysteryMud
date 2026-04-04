@@ -7,9 +7,9 @@ using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Rooms;
+using MysteryMud.Domain.Effect;
 using MysteryMud.Domain.Factories;
 using MysteryMud.Domain.Services;
-using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.Infrastructure.Eventing;
 using MysteryMud.Infrastructure.Intent;
@@ -36,7 +36,7 @@ public class GameServer
     private readonly IntentBusContainer _intentBusContainer;
     private readonly GameLoop _gameLoop;
 
-    public GameServer(ILogger logger, World world, ICommandDispatcher commandDispatcher, SpellDatabase spellDatabase)
+    public GameServer(ILogger logger, World world, ICommandDispatcher commandDispatcher, EffectRegistry effectRegistry)
     {
         _world = world;
         _logger = logger;
@@ -56,7 +56,7 @@ public class GameServer
         _actService = new ActService();
         _gameMessageService = new GameMessageService(_messageBus, _actService);
         _intentBusContainer = new IntentBusContainer();
-        _gameLoop = new GameLoop(_logger, _outputService, _commandBus, _messageBus, _scheduler, _gameMessageService, _intentBusContainer, spellDatabase, _world);
+        _gameLoop = new GameLoop(_logger, _outputService, _commandBus, _messageBus, _scheduler, _gameMessageService, _intentBusContainer, effectRegistry, _world);
     }
 
     public void Start()
@@ -139,7 +139,7 @@ public class GameServer
                     [StatKind.Constitution] = 15,
                     [StatKind.HitRoll] = 0,
                     [StatKind.DamRoll] = 0,
-                    [StatKind.Armor] = 0
+                    [StatKind.ArmorClass] = 0
                 }
             },
             new EffectiveStats
@@ -155,7 +155,7 @@ public class GameServer
                     [StatKind.Constitution] = 15,
                     [StatKind.HitRoll] = 0,
                     [StatKind.DamRoll] = 0,
-                    [StatKind.Armor] = 0
+                    [StatKind.ArmorClass] = 0
                 }
             },
             new Health { Current = 100000, Max = 100000 },

@@ -1,0 +1,124 @@
+[
+  {
+    "Name": "FlamingWeapon",
+    "Actions": [
+      {
+        "Type": "InstantDamage",
+        "Trigger": "OnApply",
+        "DamageFormula": "5 + caster.Level",
+        "DamageKind": "Fire"
+      }
+    ]
+  },
+  {
+    "Name": "Fireball",
+    "Actions": [
+      {
+        "Type": "InstantDamage",
+        "Trigger": "OnApply",
+        "DamageFormula": "20 + caster.Intelligence * 2",
+        "DamageKind": "Fire"
+      }
+    ]
+  },
+  {
+    "Name": "MagicMissile",
+    "Actions": [
+      {
+        "Type": "InstantDamage",
+        "Trigger": "OnApply",
+        "DamageFormula": "5 + caster.Level",
+		"DamageKind": "Energy"
+      },
+      {
+        "Type": "InstantDamage",
+        "Trigger": "OnApply",
+        "DamageFormula": "5 + caster.Level",
+		"DamageKind": "Energy"
+      },
+      {
+        "Type": "InstantDamage",
+        "Trigger": "OnApply",
+        "DamageFormula": "5 + caster.Level",
+		"DamageKind": "Energy"
+      }
+    ]
+  },
+  {
+    "Name": "Poison",
+    "Tag": "Poison",
+    "Stacking": "Stack",
+    "MaxStacks": 3,
+    "DurationFormula": "4 * caster.Strength",
+    "TickRate": 2,
+    "WearOffMessage": "You feel less sick.",
+    "Actions": [
+      {
+        "Type": "StatModifier",
+        "Stat": "Strength",
+        "Mode": "Flat",
+        "ValueFormula": "-3"
+      },
+      {
+        "Type": "PeriodicDamage",
+        "Trigger": "OnTick",
+        "DamageFormula": "1 + effect.stackcount",
+        "DamageKind": "Poison"
+      }
+    ]
+  },
+  {
+    "Name": "Bless",
+    "Tag": "Bless",
+    "Stacking": "Refresh",
+    "MaxStacks": 1,
+    "DurationFormula": "60",
+    "TickRate": 3,
+    "WearOffMessage": "You feel less righteous.",
+    "Actions": [
+      {
+        "Type": "StatModifier",
+        "Stat": "HitRoll",
+        "Mode": "Flat",
+        "ValueFormula": "5"
+      },
+      {
+        "Type": "StatModifier",
+        "Stat": "Strength",
+        "Mode": "AddPercent",
+        "ValueFormula": "10"
+      },
+      {
+        "Type": "PeriodicHeal",
+        "Trigger": "OnTick",
+        "HealFormula": "3 + caster.Level / 2"
+      }
+    ]
+  },
+  {
+    "Name": "CureLight",
+    "Stacking": "None",
+    "MaxStacks": 1,
+    "Actions": [
+      {
+        "Type": "InstantHeal",
+        "Trigger": "OnApply",
+        "HealFormula": "10 + caster.Level"
+      }
+    ]
+  },
+  {
+    "Name": "Armor",
+    "Stacking": "Refresh",
+    "MaxStacks": 1,
+    "DurationFormula": "120",
+    "Actions": [
+      {
+        "Type": "StatModifier",
+        "Stat": "ArmorClass",
+        "Mode": "Flat",
+        "ValueFormula": "-20"
+      }
+    ]
+  }
+]

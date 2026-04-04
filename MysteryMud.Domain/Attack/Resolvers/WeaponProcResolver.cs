@@ -6,9 +6,9 @@ using MysteryMud.Core.Intent;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
+using MysteryMud.Domain.Effect;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Helpers;
-using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Attack.Resolvers;
@@ -18,7 +18,7 @@ public class WeaponProcResolver
     private readonly ILogger _logger;
     private readonly IGameMessageService _msg;
     private readonly IIntentWriterContainer _intents;
-    private readonly SpellDatabase _spellDatabase;
+    private readonly EffectRegistry _effectRegistry;
 
     //public struct WeaponProc
     //{
@@ -26,12 +26,12 @@ public class WeaponProcResolver
     //    public float Chance;         // 0..1 probability
     //}
 
-    public WeaponProcResolver(ILogger logger, IGameMessageService msg, IIntentWriterContainer intents, SpellDatabase spellDatabase)
+    public WeaponProcResolver(ILogger logger, IGameMessageService msg, IIntentWriterContainer intents, EffectRegistry effectRegistry)
     {
         _logger = logger;
         _msg = msg;
         _intents = intents;
-        _spellDatabase = spellDatabase;
+        _effectRegistry = effectRegistry;
     }
 
     public void Resolve(GameState state, AttackResult attack)
@@ -54,13 +54,13 @@ public class WeaponProcResolver
             return;
 
         // existing effect ?
-        if (!_spellDatabase.EffectsById.TryGetValue(weapon.ProcEffectId.Value, out var effectDefinition))
+        if (!_effectRegistry.TryGetValue(weapon.ProcEffectId.Value, out var effectRuntime) || effectRuntime == null)
         {
             _logger.LogWarning("WeaponProcResolver: weapon {weaponName} tried to proc effect {effectId}", weaponEntity.DebugName, weapon.ProcEffectId);
             return;
         }
 
-        _msg.ToAll(attack.Source).Act("{0} appl{%v} effect {1} to {2}.").With(weaponEntity, effectDefinition.Name, attack.Target);
+        _msg.ToAll(attack.Source).Act("{0} apply{0:v} effect {1} to {2}.").With(weaponEntity, effectRuntime.Name, attack.Target);
 
         ref var effectIntent = ref _intents.Effect.Add();
         effectIntent.EffectId = weapon.ProcEffectId.Value;

@@ -4,17 +4,15 @@ using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Intent;
-using MysteryMud.Core.Logging;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Damage;
+using MysteryMud.Domain.Effect;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Heal;
 using MysteryMud.Domain.Helpers;
-using MysteryMud.GameData.Actions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
-using System.Runtime.CompilerServices;
 
 namespace MysteryMud.Domain.Systems;
 
@@ -84,13 +82,8 @@ public class TimedEffectSystem
                 // flag as expired
                 effect.Add<ExpiredTag>();
 
-                // display wear off message if any
                 ref var instance = ref effect.Get<EffectInstance>();
-                if (instance.Definition.WearOffMessage != null)
-                {
-                    // TODO: in room ?
-                    _msg.To(instance.Target).Send(instance.Definition.WearOffMessage);
-                }
+                ExpireEffect(state, effect, ref instance);
 
                 // effect expired event
                 ref var effectExpiredEvt = ref _effectExpiredEvents.Add();
@@ -109,7 +102,7 @@ public class TimedEffectSystem
                 }
 
                 ref var instance = ref effect.Get<EffectInstance>();
-                ApplyEffect(state, effect, ref instance);
+                TickEffect(state, effect, ref instance);
 
                 // intent for next tick
                 timed.NextTick = state.CurrentTick + timed.TickRate;
@@ -128,39 +121,59 @@ public class TimedEffectSystem
         }
     }
 
-    private void ApplyEffect(GameState state, Entity effect, ref EffectInstance instance)
+    private void ExpireEffect(GameState state, Entity effect, ref EffectInstance instance)
     {
-        ref var healEffect = ref effect.TryGetRef<HealEffect>(out var hasHealEffect);
-        if (hasHealEffect)
+        if (instance.EffectRuntime != null && instance.EffectRuntime.OnExpire != null && instance.EffectRuntime.OnExpire.Length > 0)
         {
-            var totalHeal = healEffect.Heal * instance.StackCount;
-            var healAction = new HealAction
+            var ctx = new EffectContext
             {
+                Effect = effect,
                 Source = instance.Source,
                 Target = instance.Target,
-                Amount = totalHeal,
-                SourceKind = HealSourceKind.HoT
-            };
-            _logger.LogInformation(LogEvents.Hot, "Applying HoT heal for Effect {effectName} on Target {targetName} with heal {heal}", effect.DebugName, instance.Target.DebugName, totalHeal);
-            _healResolver.Resolve(state, healAction);
-        }
 
-        ref var damageEffect = ref effect.TryGetRef<DamageEffect>(out var hasDamageEffect);
-        if (hasDamageEffect)
-        {
-            var totalDamage = damageEffect.Damage * instance.StackCount;
-            var damageAction = new DamageAction
+                IncomingDamage = 0,
+                LastDamage = 0,
+
+                StackCount = instance.StackCount,
+
+                State = state,
+                Msg = _msg,
+                DamageResolver = _damageResolver,
+                HealResolver = _healResolver,
+            };
+            foreach (var onExpire in instance.EffectRuntime.OnExpire)
             {
+                if (CharacterHelpers.IsAlive(instance.Source, instance.Target))
+                    onExpire(ctx);
+            }
+        }
+    }
+
+    private void TickEffect(GameState state, Entity effect, ref EffectInstance instance)
+    {
+        if (instance.EffectRuntime != null && instance.EffectRuntime.OnTick.Length > 0)
+        {
+            var ctx = new EffectContext
+            {
+                Effect = effect,
                 Source = instance.Source,
                 Target = instance.Target,
-                Amount = totalDamage,
-                DamageKind = damageEffect.DamageKind,
-                SourceKind = DamageSourceKind.DoT
-            };
-            _logger.LogInformation(LogEvents.Dot, "Applying DoT damage for Effect {effectName} on Target {targetName} with damage {damage} type {damageKind}", effect.DebugName, instance.Target.DebugName, totalDamage, damageEffect.DamageKind);
-            _damageResolver.Resolve(state, damageAction);
-        }
 
-        // TOOD: other
+                IncomingDamage = 0,
+                LastDamage = 0,
+
+                StackCount = instance.StackCount,
+
+                State = state,
+                Msg = _msg,
+                DamageResolver = _damageResolver,
+                HealResolver = _healResolver,
+            };
+            foreach (var onTick in instance.EffectRuntime.OnTick)
+            {
+                if (CharacterHelpers.IsAlive(instance.Source, instance.Target))
+                    onTick(ctx);
+            }
+        }
     }
 }

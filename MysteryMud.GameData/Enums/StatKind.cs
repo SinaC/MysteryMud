@@ -9,5 +9,5 @@ public enum StatKind
     Constitution,
     HitRoll,
     DamRoll,
-    Armor
+    ArmorClass
 }

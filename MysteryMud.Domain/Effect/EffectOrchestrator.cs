@@ -5,10 +5,8 @@ using MysteryMud.Core.Intent;
 using MysteryMud.Domain.Damage;
 using MysteryMud.Domain.Effect.Factories;
 using MysteryMud.Domain.Heal;
-using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Events;
 using MysteryMud.GameData.Intents;
-using System.Runtime.CompilerServices;
 
 namespace MysteryMud.Domain.Effect;
 
@@ -18,17 +16,17 @@ public class EffectOrchestrator
     private readonly ILogger _logger;
     private readonly IIntentContainer _intents;
     private readonly IEventBuffer<EffectResolvedEvent> _effectResolved;
-    private readonly SpellDatabase _spellDatabase;
+    private readonly EffectRegistry _effectRegistry;
     private readonly EffectFactory _effectFactory;
     private readonly DamageResolver _damageResolver;
     private readonly HealResolver _healResolver;
 
-    public EffectOrchestrator(ILogger logger, IIntentContainer intents, IEventBuffer<EffectResolvedEvent> effectResolved, SpellDatabase spellDatabase, EffectFactory effectFactory, DamageResolver damageResolver, HealResolver healResolver)
+    public EffectOrchestrator(ILogger logger, IIntentContainer intents, IEventBuffer<EffectResolvedEvent> effectResolved, EffectRegistry effectRegistry, EffectFactory effectFactory, DamageResolver damageResolver, HealResolver healResolver)
     {
         _logger = logger;
         _intents = intents;
         _effectResolved = effectResolved;
-        _spellDatabase = spellDatabase;
+        _effectRegistry = effectRegistry;
         _effectFactory = effectFactory;
         _damageResolver = damageResolver;
         _healResolver = healResolver;
@@ -48,13 +46,11 @@ public class EffectOrchestrator
 
     public void ResolveImmediate(GameState state, ref EffectIntent intent)
     {
-        if (!_spellDatabase.EffectsById.TryGetValue(intent.EffectId, out var effectDefinition))
+        if (!_effectRegistry.TryGetValue(intent.EffectId, out var effectRuntime) || effectRuntime == null)
         {
-            _logger.LogError("Effect id {effectId} not found in the effect database", intent.EffectId);
+            _logger.LogError("Effect id {effectId} not found in the effect registry", intent.EffectId);
             return;
         }
-
-        // TODO: other effects (direct damage, direct heal, ...)
-        _effectFactory.ApplyEffect(state, effectDefinition, intent.Source, intent.Target);
+        _effectFactory.ResolveEffect(state, effectRuntime, intent.Source, intent.Target);
     }
 }

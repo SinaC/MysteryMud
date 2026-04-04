@@ -7,5 +7,6 @@ public enum DamageKind
     Magic,
     Fire,
     Cold,
-    Poison
+    Poison,
+    Energy
 }
