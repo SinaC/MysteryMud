@@ -12,9 +12,9 @@ using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Damage.Resolvers;
+using MysteryMud.Domain.Damage;
+using MysteryMud.Domain.Effect.Factories;
 using MysteryMud.Domain.Extensions;
-using MysteryMud.Domain.Factories;
 using MysteryMud.Domain.Heal;
 using MysteryMud.Domain.Services;
 using MysteryMud.Domain.Systems;
@@ -85,9 +85,9 @@ static class Demo2
         var healResolver = new HealResolver(aggroResolver, gameMessageService, healedEventBuffer);
         var hitResolver = new HitResolver(gameMessageService);
         var hitDamageFactory = new HitDamageFactory();
-        var weaponProcResolver = new WeaponProcResolver();
+        var weaponProcResolver = new WeaponProcResolver(logger, gameMessageService, intentBusContainer, spellDatabase);
         var reactionResolver = new ReactionResolver(gameMessageService);
-        var attackOrchestrator = new AttackOrchestrator(intentBusContainer, attackResolvedEventBuffer, spellDatabase, effectFactory, hitResolver, hitDamageFactory, damageResolver, weaponProcResolver, reactionResolver);
+        var attackOrchestrator = new AttackOrchestrator(logger, intentBusContainer, attackResolvedEventBuffer, effectFactory, hitResolver, hitDamageFactory, damageResolver, weaponProcResolver, reactionResolver);
 
         var fleeSystem = new FleeSystem(gameMessageService, intentBusContainer, fleeBlockedEventBuffer);
         var movementSystem = new MovementSystem(gameMessageService, intentBusContainer, movedEventBuffer);

@@ -19,7 +19,7 @@ public class HelpCommand : ICommand
 
     public CommandDefinition Definition { get; } = new CommandDefinition
     {
-        Id = Name.ComputeCommandId(),
+        Id = Name.ComputeUniqueId(),
         Name = Name,
         Aliases = ["?"],
         CannotBeForced = true, // TODO: test

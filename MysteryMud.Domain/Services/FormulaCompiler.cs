@@ -142,7 +142,7 @@ public class FormulaCompiler
                                 "<=" => a <= b ? 1 : 0,
                                 "==" => a == b ? 1 : 0,
                                 "!=" => a != b ? 1 : 0,
-                                _ => throw new Exception($"Unknown operator {token.Op}")
+                                _ => throw new Exception($"Unknown operator {token.FuncName}")
                             });
                             break;
                         }
@@ -210,7 +210,6 @@ public class FormulaCompiler
     {
         public TokenType Type;
         public int Number;
-        public char Op;
         public string FuncName;
         public int FuncArgCount;
     };
@@ -271,7 +270,7 @@ public class FormulaCompiler
                 }
                 else
                 {
-                    tokens.Add(new Token { Type = TokenType.Operator, Op = expr[i++] });
+                    tokens.Add(new Token { Type = TokenType.Operator, FuncName = expr[i++].ToString() });
                 }
                 lastTokenWasArithmeticOperator = true;
                 continue;
@@ -279,7 +278,7 @@ public class FormulaCompiler
 
             if (expr[i] == '*' || expr[i] == '/')
             {
-                tokens.Add(new Token { Type = TokenType.Operator, Op = expr[i++] });
+                tokens.Add(new Token { Type = TokenType.Operator, FuncName = expr[i++].ToString() });
                 lastTokenWasArithmeticOperator = true;
                 continue;
             }

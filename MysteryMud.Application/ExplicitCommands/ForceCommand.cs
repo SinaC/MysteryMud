@@ -27,7 +27,7 @@ public class ForceCommand : ICommand
 
     public CommandDefinition Definition { get; } = new CommandDefinition
     {
-        Id = Name.ComputeCommandId(),
+        Id = Name.ComputeUniqueId(),
         Name = Name,
         Aliases = [],
         CannotBeForced = true,
@@ -81,6 +81,8 @@ This is typically used for 'force all save'.",
         // get target position
         ref var targetPosition = ref target.Get<Position>();
 
+        var inputStr = ctx.Text.ToString(); // ONE allocation
+
         // split command/args
         CommandParser.SplitCommand(ctx.Text, out var forcedCmdStart, out var forcedCmdLength, out var forcedArgsStart, out var forcedArgsLength);
 
@@ -120,6 +122,7 @@ This is typically used for 'force all save'.",
             Command = forcedCommand,
             CommandId = forcedCommand.Definition.Id,
 
+            Input = inputStr,
             CmdStart = forcedCmdStart,
             CmdLength = forcedCmdLength,
             ArgsStart = forcedArgsStart,

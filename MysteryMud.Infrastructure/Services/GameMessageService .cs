@@ -28,21 +28,31 @@ public class GameMessageService : IGameMessageService
         return new MessageTargetBuilder(_messageBus, _actService, targets);
     }
 
+    // to everyone in the room except actor
     public IMessageTargetBuilder ToRoom(Entity entity)
     {
         var targets = ActTargetResolver.GetRoomTargets(entity);
         return new MessageTargetBuilder(_messageBus, _actService, targets);
     }
 
+    // to everyone in the room except 'actor' and 'except'
     public IMessageTargetBuilder ToRoomExcept(Entity entity, Entity except)
     {
         var targets = ActTargetResolver.GetRoomTargetsExcept(entity, except);
         return new MessageTargetBuilder(_messageBus, _actService, targets);
     }
 
+    // to everyone in the room
     public IMessageTargetBuilder ToAll(Entity entity)
     {
         var targets = ActTargetResolver.GetAllTargets(entity);
+        return new MessageTargetBuilder(_messageBus, _actService, targets);
+    }
+
+    // to every in the room except 'except'
+    public IMessageTargetBuilder ToAllExcept(Entity entity, Entity except)
+    {
+        var targets = ActTargetResolver.GetAllTargetsExcept(entity, except);
         return new MessageTargetBuilder(_messageBus, _actService, targets);
     }
 }

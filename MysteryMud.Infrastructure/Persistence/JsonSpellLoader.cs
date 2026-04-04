@@ -1,4 +1,5 @@
-﻿using MysteryMud.Domain.Services;
+﻿using MysteryMud.Core.Extensions;
+using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.Infrastructure.Persistence.Dto;
@@ -20,12 +21,13 @@ public class JsonSpellLoader
         var data = JsonSerializer.Deserialize<SpellAndEffectRootData>(json, options)!;
 
         // load effect definitions first so spells can reference them
-        var effectDefinitions = new Dictionary<string, EffectDefinition>();
+        var effectDefinitions = new Dictionary<string, EffectDefinition>(StringComparer.OrdinalIgnoreCase);
         foreach (var effect in data.Effects)
         {
             var definition = new EffectDefinition
             {
-                Id = effect.Name,
+                Id = effect.Name.ComputeUniqueId(),
+                Name = effect.Name,
                 Tag = Enum.Parse<EffectTagId>(effect.Tag),
                 Stacking = Enum.Parse<StackingRule>(effect.Stacking, ignoreCase: true),
                 MaxStacks = Math.Max(1, effect.MaxStacks),
@@ -67,20 +69,23 @@ public class JsonSpellLoader
         }
 
         // load spells
-        var spells = new Dictionary<string, SpellDefinition>();
-        foreach (var s in data.Spells)
+        var spells = new Dictionary<string, SpellDefinition>(StringComparer.OrdinalIgnoreCase);
+        foreach (var spell in data.Spells)
         {
-            spells[s.Name] = new SpellDefinition
+            spells[spell.Name] = new SpellDefinition
             {
-                Name = s.Name,
-                Effects = s.Effects.Select(name => effectDefinitions[name]).ToArray()
+                Id = spell.Name.ComputeUniqueId(),
+                Name = spell.Name,
+                Effects = spell.Effects.Select(name => effectDefinitions[name]).ToArray()
             };
         }
 
         var spellDatabase = new SpellDatabase
         {
-            EffectDefinitions = effectDefinitions,
-            Spells = spells
+            Effects = effectDefinitions,
+            EffectsById = effectDefinitions.Values.ToDictionary(x => x.Id, x => x),
+            Spells = spells,
+            SpellsById = spells.Values.ToDictionary(x => x.Id, x => x)
         };
 
         return spellDatabase;

@@ -161,7 +161,7 @@ public class CommandRegistry : ICommandRegistry
             _inner = inner;
             _definition = new CommandDefinition
             {
-                Id = _alias.ComputeCommandId(),
+                Id = _alias.ComputeUniqueId(),
                 Name = _alias,
                 Aliases = [],
                 CannotBeForced = _inner.Definition.CannotBeForced,

@@ -23,7 +23,7 @@ public class JsonCommandLoader
         {
             var command = new CommandDefinition
             {
-                Id = cmd.Name.ComputeCommandId(),
+                Id = cmd.Name.ComputeUniqueId(),
                 Name = cmd.Name,
                 Aliases = cmd.Aliases,
                 CannotBeForced = cmd.CannotBeForced,

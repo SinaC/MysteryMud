@@ -11,9 +11,10 @@ using MysteryMud.Core.Services;
 using MysteryMud.Domain.Attack;
 using MysteryMud.Domain.Attack.Factories;
 using MysteryMud.Domain.Attack.Resolvers;
-using MysteryMud.Domain.Damage.Resolvers;
+using MysteryMud.Domain.Damage;
+using MysteryMud.Domain.Effect;
+using MysteryMud.Domain.Effect.Factories;
 using MysteryMud.Domain.Extensions;
-using MysteryMud.Domain.Factories;
 using MysteryMud.Domain.Heal;
 using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Definitions;
@@ -83,6 +84,7 @@ internal class GameLoop
     private readonly EventBuffer<EffectExpiredEvent> _effectExpiredEventBuffer = new();
     private readonly EventBuffer<EffectTickedEvent> _effectTickedEventBuffer = new();
     private readonly EventBuffer<AttackResolvedEvent> _attackResolvedEventBuffer = new();
+    private readonly EventBuffer<EffectResolvedEvent> _effectResolvedEventBuffer = new();
 
     private readonly ILookService _lookService;
 
@@ -94,7 +96,9 @@ internal class GameLoop
     private readonly HitDamageFactory _hitDamageFactory;
     private readonly WeaponProcResolver _weaponProcResolver;
     private readonly ReactionResolver _reactionResolver;
+
     private readonly AttackOrchestrator _attackOrchestrator;
+    private readonly EffectOrchestrator _effectOrchestrator;
 
     private readonly CommandExecutionSystem _commandExecutionSystem;
     private readonly CommandThrottleSystem _commandThrottleSystem;
@@ -132,9 +136,11 @@ internal class GameLoop
         _healResolver = new HealResolver(_aggroResolver, _gameMessageService, _healedEventBuffer);
         _hitResolver = new HitResolver(_gameMessageService);
         _hitDamageFactory = new HitDamageFactory();
-        _weaponProcResolver = new WeaponProcResolver();
+        _weaponProcResolver = new WeaponProcResolver(_logger, _gameMessageService, intentContainer, spellDatabase);
         _reactionResolver = new ReactionResolver(_gameMessageService);
-        _attackOrchestrator = new AttackOrchestrator(_intentContainer, _attackResolvedEventBuffer, _spellDatabase, _effectFactory, _hitResolver, _hitDamageFactory, _damageResolver, _weaponProcResolver, _reactionResolver);
+
+        _attackOrchestrator = new AttackOrchestrator(_logger, _intentContainer, _attackResolvedEventBuffer, _effectFactory, _hitResolver, _hitDamageFactory, _damageResolver, _weaponProcResolver, _reactionResolver);
+        _effectOrchestrator = new EffectOrchestrator(_logger, _intentContainer, _effectResolvedEventBuffer, _spellDatabase, _effectFactory, _damageResolver, _healResolver);
 
         _commandExecutionSystem = new CommandExecutionSystem(_logger);
         _commandThrottleSystem = new CommandThrottleSystem(_gameMessageService);
@@ -145,7 +151,7 @@ internal class GameLoop
         _autoAttackSystem = new AutoAttackSystem(_intentContainer);
         _timedEffectSystem = new TimedEffectSystem(_logger, _gameMessageService, _intentContainer, _damageResolver, _healResolver, _triggeredScheduledEventBuffer, _effectExpiredEventBuffer, _effectTickedEventBuffer);
         _threatDecaySystem = new ThreatDecaySystem();
-        _scheduleSystem = new ScheduleSystem(_scheduler, _intentContainer);
+        _scheduleSystem = new ScheduleSystem(_logger, _scheduler, _intentContainer);
         _deathSystem = new DeathSystem(_gameMessageService, _intentContainer, _deathEventBuffer);
         _respawnSystem = new RespawnSystem(_gameMessageService);
         _lootSystem = new LootSystem(_gameMessageService, _intentContainer, _itemLootedEventBuffer);
@@ -173,91 +179,106 @@ internal class GameLoop
 
     private void Tick(int currentTick)
     {
-        var state = new GameState
+        //_logger.LogDebug("TICK: {currentTick}", currentTick);
+        using (_logger.BeginScope(new Dictionary<string, object> { ["TICK"] = currentTick }))
         {
-            World = _world,
-            CurrentTick = currentTick,
-            CurrentTimeMs = currentTick * TickRateMs
-        };
+            var state = new GameState
+            {
+                World = _world,
+                CurrentTick = currentTick,
+                CurrentTimeMs = currentTick * TickRateMs
+            };
 
-        var systemContext = new SystemContext
-        {
-            Msg = _gameMessageService,
-            Intent = _intentContainer,
-        };
+            var systemContext = new SystemContext
+            {
+                Msg = _gameMessageService,
+                Intent = _intentContainer,
+            };
 
-        // Player commands 
-        _commandBus.Process(systemContext, state);
-        // check spam, wait state, can cancel command
-        _commandThrottleSystem.Execute(state);
-        // execute command (if not cancelled) → may generate manual LookIntent(Mode= Snapshot)
-        _commandExecutionSystem.Execute(systemContext, state);
-        // TODO: stop invalid combat: dead entities, entities in different rooms, ...
-        // Process all LookIntents with Mode=Snapshot → reads current world state before any effects → produces messages
-        _lookSystem.Tick(state, LookMode.Snapshot);
-        // TODO: AISystem                         // NPC behavior → generates intents
-        // Convert flee → MoveIntents
-        _fleeSystem.Tick(state);
-        // TODO: ChaseSystem                      // NPC chase movement
-        // Process MoveIntents → emits auto-look PostUpdate (Mode=PostUpdate)
-        _movementSystem.Tick(state);
-        // Process get/drop/put/give/... intents
-        _itemInteractionSystem.Tick(state);
-        // Recalculate stats from DirtyFlags
-        _statsSystem.Tick(state);
-        // Generate triggered scheduled event (tick or expired)
-        _scheduler.Process(state, _triggeredScheduledEventBuffer);
-        // Resolve triggered scheduled event and generates scheduleIntent (for next tick), effectExpiredEvent (to inform), effectTickedEvent (to inform)
-        _timedEffectSystem.Tick(state);
-        // Decay threat by 2%
-        _threatDecaySystem.Tick(state);
-        // TODO: NPCTargetSystem.AssignTargets   // Select highest threat targets
-        // TODO: GroupCombatSystem.Resolve       // Handle assist/protect/own target attack intents
-        // TODO: AbilitySystem                   // Resolve skill/spell usage → may generate DamageAction/HealAction/EffectActions
-        // Generate AttackIntents for entities in combat
-        _autoAttackSystem.Tick(state);
-        // Process AttackIntents (resolve damage/heal/aggro) → AttackEvents + reactions
-        _attackOrchestrator.Tick(state);
-        // Flag dead entities
-        _deathSystem.Tick(state);
-        // Auto-resurrect players
-        _respawnSystem.Tick(state);
-        // Process loot & auto-loot
-        _lootSystem.Tick(state);
-        // Processes LookIntents with Mode=PostUpdate → reflects final world state after all updates
-        _lookSystem.Tick(state, LookMode.PostUpdate);
-        // Process scheduleIntents (which can be generated from IA, abilities, TimedEffectSytem, AttackOrchestrator)
-        _scheduleSystem.Tick(state);
+            // Player commands 
+            _commandBus.Process(systemContext, state);
+            // check spam, wait state, can cancel command
+            _commandThrottleSystem.Execute(state);
+            // execute command (if not cancelled) → may generate manual LookIntent(Mode= Snapshot)
+            _commandExecutionSystem.Execute(systemContext, state);
 
-        // Remove destroyed items / dead NPCs / disconnected players
-        _cleanupSystem.Tick(state);
+            // TODO: stop invalid combat: dead entities, entities in different rooms, ...
+            // Processes all LookIntents with Mode=Snapshot → reads current world state before any effects → produces messages
+            _lookSystem.Tick(state, LookMode.Snapshot);
+            // TODO: AISystem                         // NPC behavior → generates intents
+            // Convert flee → MoveIntents
+            _fleeSystem.Tick(state);
+            // TODO: ChaseSystem                      // NPC chase movement
+            // Resolve MoveIntents → emits auto-look PostUpdate (Mode=PostUpdate)
+            _movementSystem.Tick(state);
+            // Handle get/drop/put/give/...
+            _itemInteractionSystem.Tick(state);
+            // Recalculate stats from DirtyFlags
+            _statsSystem.Tick(state);
+            // Generate triggered scheduled event (tick or expired)
+            _scheduler.Process(state, _triggeredScheduledEventBuffer);
+            // Resolve triggered scheduled event and generates scheduleIntent (for next tick), effectExpiredEvent (to inform), effectTickedEvent (to inform)
+            _timedEffectSystem.Tick(state);
+            // Decay threat by 2%
+            _threatDecaySystem.Tick(state);
+            // TODO: NPCTargetSystem.AssignTargets   // Select highest threat targets
+            // TODO: GroupCombatSystem.Resolve       // Handle assist/protect/own target attack intents
+            // TODO: AbilitySystem                   // Resolve skill/spell usage → may generate DamageAction/HealAction/EffectActions
+            // Generate AttackIntents for entities in combat
+            _autoAttackSystem.Tick(state);
+            // TODO: loop on effect/attack orchestrator until no more pending attack/effect intents
+            for (int i = 0; i < 2; i++)
+            {
+                // Resolve EffectIntents → Effect
+                _effectOrchestrator.Tick(state);
+                _intentContainer.ClearEffects();
+                // Resolve AttackIntents → AttackEvents + reactions, procs, spell effects, damage, heal, etc.
+                _attackOrchestrator.Tick(state);
+                _intentContainer.ClearAttacks();
+            }
+            // Flag dead entities
+            _deathSystem.Tick(state);
+            // Auto-resurrect players
+            _respawnSystem.Tick(state);
+            // Handle loot & auto-loot
+            _lootSystem.Tick(state);
+            // Processes LookIntents with Mode=PostUpdate → reflects final world state after all updates
+            _lookSystem.Tick(state, LookMode.PostUpdate);
+            // Handle scheduleIntents (which can be generated from IA, abilities, TimedEffectSytem, AttackOrchestrator)
+            _scheduleSystem.Tick(state);
 
-        // Process messages to be sent to players
-        _messageBus.Process(systemContext, state);
+            // Remove destroyed items / dead NPCs / disconnected players
+            _cleanupSystem.Tick(state);
 
-        // Send messages to players
-        _outputService.FlushAll();
+            // Process messages to be sent to players
+            _messageBus.Process(systemContext, state);
 
-        // Clear intents of event buffers
-        _intentContainer.ClearAll();
-        _fleeBlockedEventBuffer.Clear();
-        _movedEventBuffer.Clear();
-        _itemGotEventBuffer.Clear();
-        _itemDroppedEventBuffer.Clear();
-        _itemGivenEventBuffer.Clear();
-        _itemPutEventBuffer.Clear();
-        _itemWornEventBuffer.Clear();
-        _itemRemovedEventBuffer.Clear();
-        _itemDestroyedEventBuffer.Clear();
-        _itemSacrifiedEventBuffer.Clear();
-        _damagedEventBuffer.Clear();
-        _healedEventBuffer.Clear();
-        _deathEventBuffer.Clear();
-        _itemLootedEventBuffer.Clear();
-        _lookedEventBuffer.Clear();
-        _triggeredScheduledEventBuffer.Clear();
-        _effectExpiredEventBuffer.Clear();
-        _effectTickedEventBuffer.Clear();
+            // Send messages to players
+            _outputService.FlushAll();
+
+            // Clear intents of event buffers
+            _intentContainer.ClearAll();
+            _fleeBlockedEventBuffer.Clear();
+            _movedEventBuffer.Clear();
+            _itemGotEventBuffer.Clear();
+            _itemDroppedEventBuffer.Clear();
+            _itemGivenEventBuffer.Clear();
+            _itemPutEventBuffer.Clear();
+            _itemWornEventBuffer.Clear();
+            _itemRemovedEventBuffer.Clear();
+            _itemDestroyedEventBuffer.Clear();
+            _itemSacrifiedEventBuffer.Clear();
+            _damagedEventBuffer.Clear();
+            _healedEventBuffer.Clear();
+            _deathEventBuffer.Clear();
+            _itemLootedEventBuffer.Clear();
+            _lookedEventBuffer.Clear();
+            _triggeredScheduledEventBuffer.Clear();
+            _effectExpiredEventBuffer.Clear();
+            _effectTickedEventBuffer.Clear();
+            _attackResolvedEventBuffer.Clear();
+            _effectResolvedEventBuffer.Clear();
+        }
     }
 
     /*

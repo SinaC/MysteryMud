@@ -1,6 +1,20 @@
 {
   "Effects": [
-      {
+    {
+      "Name": "FlamingWeapon",
+      "Tag": "Fire",
+      "Stacking": "Stack",
+      "MaxStacks": 2,
+      "StatModifiers": [],
+      "Flags": [],
+      "DurationFormula": "20",
+      "TickRate": 1,
+      "Dot": {
+         "DamageFormula": "1",
+         "DamageKind": "Fire"
+      }
+    },
+	{
       "Name": "Poison",
       "Tag": "Poison",
       "Stacking": "Stack",
@@ -23,7 +37,7 @@
       "MaxStacks": 3,
       "StatModifiers": [
         { "Stat": "Strength", "Type": "Flat", "Value": -2 },
-		{ "Stat": "Hit", "Type": "Flat", "Value": -3 }
+		{ "Stat": "HitRoll", "Type": "Flat", "Value": -3 }
       ],
       "Flags": ["Poison"],
       "DurationFormula": "15",
@@ -84,11 +98,11 @@
   ],
   "Spells": [
     {
-      "Name": "a",
+      "Name": "poison",
       "Effects": ["Poison"]
     },
     {
-      "Name": "b",
+      "Name": "bless",
       "Effects": ["Bless"]
     }
   ]

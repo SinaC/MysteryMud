@@ -8,5 +8,4 @@ public struct AttackResult
     public Entity Source;
     public Entity Target;
     public AttackResultKind Result;
-    public AttackKind Kind;
 }

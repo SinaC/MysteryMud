@@ -2,7 +2,7 @@
 
 public static class ReadOnlySpanCharExtensions
 {
-    public static int ComputeCommandId(this ReadOnlySpan<char> name)
+    public static int ComputeUniqueId(this ReadOnlySpan<char> name)
     {
         unchecked
         {

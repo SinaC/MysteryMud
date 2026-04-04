@@ -1,10 +1,11 @@
-﻿using MysteryMud.Core;
+﻿using Microsoft.Extensions.Logging;
+using MysteryMud.Core;
 using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Intent;
 using MysteryMud.Domain.Attack.Factories;
 using MysteryMud.Domain.Attack.Resolvers;
-using MysteryMud.Domain.Damage.Resolvers;
-using MysteryMud.Domain.Factories;
+using MysteryMud.Domain.Damage;
+using MysteryMud.Domain.Effect.Factories;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
@@ -15,9 +16,9 @@ namespace MysteryMud.Domain.Attack;
 
 public sealed class AttackOrchestrator
 {
+    private readonly ILogger _logger;
     private readonly IIntentContainer _intents;
     private readonly IEventBuffer<AttackResolvedEvent> _attackResolved;
-    private readonly SpellDatabase _spellDatabase;
     private readonly EffectFactory _effectFactory;
     private readonly DamageResolver _damageResolver;
     private readonly HitResolver _hitResolver;
@@ -25,11 +26,11 @@ public sealed class AttackOrchestrator
     private readonly WeaponProcResolver _weaponProcResolver;
     private readonly ReactionResolver _reactionResolver;
 
-    public AttackOrchestrator(IIntentContainer intents, IEventBuffer<AttackResolvedEvent> attackResolved, SpellDatabase spellDatabase, EffectFactory effectFactory, HitResolver hitResolver, HitDamageFactory hitDamageFactory, DamageResolver damageResolver, WeaponProcResolver weaponProcResolver, ReactionResolver reactionResolver)
+    public AttackOrchestrator(ILogger logger, IIntentContainer intents, IEventBuffer<AttackResolvedEvent> attackResolved, EffectFactory effectFactory, HitResolver hitResolver, HitDamageFactory hitDamageFactory, DamageResolver damageResolver, WeaponProcResolver weaponProcResolver, ReactionResolver reactionResolver)
     {
+        _logger = logger;
         _intents = intents;
         _attackResolved = attackResolved;
-        _spellDatabase = spellDatabase;
         _effectFactory = effectFactory;
         _damageResolver = damageResolver;
         _hitResolver = hitResolver;
@@ -46,27 +47,18 @@ public sealed class AttackOrchestrator
             var intent = _intents.AttackByIndex(i);
             if (intent.Cancelled)
                 continue;
-            switch (intent.Kind)
-            {
-                case AttackKind.Hit:
-                    ResolveAttack(state, ref intent);
-                    break;
-                case AttackKind.Ability:
-                    ResolveAbility(state, ref intent);
-                    break;
-            }
+
+            ResolveAttack(state, ref intent);
         }
     }
 
     private void ResolveAttack(GameState state, ref AttackIntent intent)
     {
-        ref var attack = ref intent.Hit;
-
-        if (!CharacterHelpers.IsAlive(attack.Attacker, attack.Target))
+        if (!CharacterHelpers.IsAlive(intent.Attacker, intent.Target))
             return;
 
         // resolve hit
-        var resolvedHit = _hitResolver.Resolve(attack);
+        var resolvedHit = _hitResolver.Resolve(intent);
 
         // attack resolved event
         ref var attackResolvedEvt = ref _attackResolved.Add();
@@ -74,62 +66,31 @@ public sealed class AttackOrchestrator
         attackResolvedEvt.Target = resolvedHit.Target;
         attackResolvedEvt.Result = resolvedHit.Result;
 
-        // if hit, resolve damage
+        // if hit, resolve damage + weapon proc
         if (resolvedHit.Result == AttackResultKind.Hit)
         {
+            // damage
             var damageAction = _hitDamageFactory.CreateHitDamage(resolvedHit);
-
             _damageResolver.Resolve(state, damageAction);
+            // weapon proc
+            _weaponProcResolver.Resolve(state, resolvedHit);
         }
 
-        if (!CharacterHelpers.IsAlive(attack.Target))
+        if (!CharacterHelpers.IsAlive(intent.Target))
             return;
 
         // if still alive after damage, check reaction (such as counterattack)
         _reactionResolver.Resolve(_intents, resolvedHit);
 
         // multi-hit continuation
-        if (!attack.IsReaction && resolvedHit.Result != AttackResultKind.Dodge && attack.RemainingHits > 1)
+        if (!intent.IsReaction && resolvedHit.Result != AttackResultKind.Dodge && intent.RemainingHits > 1)
         {
             ref var nextMultiHitAttackIntent = ref _intents.Attack.Add();
-            nextMultiHitAttackIntent.Hit.Attacker = attack.Attacker;
-            nextMultiHitAttackIntent.Hit.Target = attack.Target;
-            nextMultiHitAttackIntent.Hit.RemainingHits = attack.RemainingHits - 1;
-            nextMultiHitAttackIntent.Hit.IsReaction = attack.IsReaction;
-            nextMultiHitAttackIntent.Hit.IgnoreDefense = attack.IgnoreDefense;
-        }
-    }
-
-    private void ResolveAbility(GameState state, ref AttackIntent intent)
-    {
-        ref var ability = ref intent.Ability;
-
-        if (!CharacterHelpers.IsAlive(ability.Caster))
-            return;
-
-        if (!_spellDatabase.Spells.TryGetValue(ability.AbilityId, out var def))
-            return; // spell not found
-
-        foreach (var target in ability.Targets.Where(t => CharacterHelpers.IsAlive(t)))
-        {
-            foreach (var eff in def.Effects) // TODO: saves vs spell
-            {
-                _effectFactory.ApplyEffect(state, eff, ability.Caster, target); // TODO: effect intent ?
-            }
-
-            // attack resolved event
-            ref var attackResolvedEvt = ref _attackResolved.Add();
-            attackResolvedEvt.Source = ability.Caster;
-            attackResolvedEvt.Target = target;
-            attackResolvedEvt.Result = AttackResultKind.Hit; // TODO
-
-            // TODO
-            //_reactionResolver.Resolve(_intents, new HitInfo
-            //{
-            //    Source = ability.Caster,
-            //    Target = target,
-            //    Result = AttackResultKind.Hit
-            //});
+            nextMultiHitAttackIntent.Attacker = intent.Attacker;
+            nextMultiHitAttackIntent.Target = intent.Target;
+            nextMultiHitAttackIntent.RemainingHits = intent.RemainingHits - 1;
+            nextMultiHitAttackIntent.IsReaction = intent.IsReaction;
+            nextMultiHitAttackIntent.IgnoreDefense = intent.IgnoreDefense;
         }
     }
 }

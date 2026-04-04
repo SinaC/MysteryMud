@@ -5,7 +5,8 @@ namespace MysteryMud.GameData.Definitions;
 
 public class EffectDefinition
 {
-    public string Id = default!;
+    public required int Id { get; init; } // generated
+    public string Name = default!;
     public EffectTagId Tag;
     public StackingRule Stacking;
     public int MaxStacks = 1;

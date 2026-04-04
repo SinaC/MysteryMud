@@ -31,7 +31,7 @@ public class ReactionResolver
         if (result.Result == AttackResultKind.Parry)
             trigger = true;
         // Hit -> chance to counter
-        else if (result.Result == AttackResultKind.Hit && result.Kind == AttackKind.Hit)
+        else if (result.Result == AttackResultKind.Hit)
         {
             ref var effectiveStats = ref result.Target.Get<EffectiveStats>();
 
@@ -42,14 +42,13 @@ public class ReactionResolver
             return;
 
         //budget.Remaining--;
-        _msg.ToRoom(result.Target).Act("{0} counterattacks {1:y} attack.").With(result.Target, result.Source);
-        ref var attackIntent = ref intentContainer.Attack.Add();
-        attackIntent.Kind = AttackKind.Hit;
-        attackIntent.Cancelled = false;
-        attackIntent.Hit.Attacker = result.Target;
-        attackIntent.Hit.Target = result.Source;
-        attackIntent.Hit.RemainingHits = 1;
-        attackIntent.Hit.IsReaction = true;
-        attackIntent.Hit.IgnoreDefense = false;
+        _msg.ToAll(result.Target).Act("{0} counterattack{0:v} {1:y} attack.").With(result.Target, result.Source);
+        ref var counterAttackIntent = ref intentContainer.Attack.Add();
+        counterAttackIntent.Cancelled = false;
+        counterAttackIntent.Attacker = result.Target;
+        counterAttackIntent.Target = result.Source;
+        counterAttackIntent.RemainingHits = 1;
+        counterAttackIntent.IsReaction = true;
+        counterAttackIntent.IgnoreDefense = false;
     }
 }

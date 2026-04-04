@@ -86,6 +86,7 @@ public class CommandThrottleSystem
                         continue;
                     }
 
+/* SPAM removed
                     // --- spam detection ---
                     int identical = throttle.CountIdentical(request.CommandId);
                     if (identical >= MAX_IDENTICAL)
@@ -100,7 +101,7 @@ public class CommandThrottleSystem
                         }
                         continue;
                     }
-
+*/
                     if (throttle.Violations >= MAX_VIOLATIONS)
                     {
                         request.Cancelled = true;

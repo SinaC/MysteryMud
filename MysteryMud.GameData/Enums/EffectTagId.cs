@@ -9,6 +9,7 @@ public enum EffectTagId : byte
     Sanctuary = 4,
     Curse = 5,
     Bleed = 6,
+    Fire = 7,
 
     Max = 32
 }
