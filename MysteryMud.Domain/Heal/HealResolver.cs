@@ -5,7 +5,6 @@ using MysteryMud.Core.Services;
 using MysteryMud.Domain.Attack.Resolvers;
 using MysteryMud.Domain.Calculators;
 using MysteryMud.Domain.Components.Characters;
-using MysteryMud.GameData.Actions;
 using MysteryMud.GameData.Events;
 
 namespace MysteryMud.Domain.Heal;
