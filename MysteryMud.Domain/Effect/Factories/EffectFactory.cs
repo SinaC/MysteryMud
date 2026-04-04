@@ -86,97 +86,134 @@ public class EffectFactory
 
     public void ResolveEffect(GameState state, EffectRuntime effectRuntime, Entity source, Entity target)
     {
-        var ctx = new EffectContext
-        {
-            Source = source,
-            Target = target,
-
-            IncomingDamage = 0,
-            LastDamage = 0,
-
-            StackCount = 1, // TODO
-
-            State = state,
-            Msg = _msg,
-            DamageResolver = _damageResolver,
-            HealResolver = _healResolver
-        };
-
+        int stackCount = 1;
+        Entity effect = default;
         // if duration, create affect, add expire intent and tick intent (if tick rate > 0)
         if (effectRuntime.DurationFunc != null)
         {
             ref var targetEffects = ref target.Get<CharacterEffects>();
 
-            // TODO: stacking
-            // create effect
-            var effect = state.World.Create(new EffectInstance
+            bool createNewEffect = false;
+            var existing = FindEffect(ref targetEffects, effectRuntime);
+            if (existing is null)
+                createNewEffect = true;
+            else
             {
-                Source = source,
-                Target = target,
-                StackCount = 1,
-                EffectRuntime = effectRuntime,
-            });
-            ctx.Effect = effect; // assign effect to context
-            // add effect to target effect cache
-            targetEffects.Effects.Add(effect);
-
-            _logger.LogInformation(LogEvents.Factory, "Creating Effect from Template {effectTemplateName} Source {sourceName} Target {targetName}", effectRuntime.Name, source.DebugName, target.DebugName);
-
-            // add tag if applicable
-            if (effectRuntime.Tag != EffectTagId.None)
-            {
-                var tagIndex = (int)effectRuntime.Tag;
-                // add EffectTag component to effect
-                effect.Add(new EffectTag
+                ref var instance = ref state.World.Get<EffectInstance>(existing.Value);
+                if (source == instance.Source)
                 {
-                    Id = effectRuntime.Tag
-                });
-                // add effect to target's CharacterEffects
-                if (targetEffects.EffectsByTag[tagIndex] == null)
-                    targetEffects.EffectsByTag[tagIndex] = [effect];
+                    createNewEffect = HandleStacking(state, effectRuntime, existing.Value, source, target, ref instance);
+                    stackCount = instance.StackCount;
+                    effect = existing.Value; // to be used in ctx when calling onApply
+                }
                 else
-                    targetEffects.EffectsByTag[tagIndex]!.Add(effect);
-                targetEffects.ActiveTags |= 1UL << tagIndex;
-
-                _logger.LogInformation(LogEvents.Factory, " - add tag {tag}", effectRuntime.Tag);
+                    createNewEffect = true;
             }
-
-            // add TimedEffect component to effect
-            var duration = effectRuntime.DurationFunc.Invoke(ctx);
-            var expirationTick = state.CurrentTick + duration;
-            var nextTick = effectRuntime.TickOnApply
-                ? state.CurrentTick
-                : state.CurrentTick + effectRuntime.TickRate; // 0: means pure duration
-            var tickRate = effectRuntime.TickRate; // 0: means pure duration
-            effect.Add(new TimedEffect
+            if (createNewEffect)
             {
-                StartTick = state.CurrentTick,
-                ExpirationTick = expirationTick,
-                NextTick = nextTick,
-                TickRate = tickRate
-            });
+                // create effect
+                var newEffect = state.World.Create(new EffectInstance
+                {
+                    Source = source,
+                    Target = target,
+                    StackCount = 1,
+                    EffectRuntime = effectRuntime,
+                });
+                effect = newEffect; // to be used in ctx when calling onApply
+                // add effect to target effect cache
+                targetEffects.Effects.Add(newEffect);
 
-            // expire intent
-            _logger.LogInformation(LogEvents.Factory, " - add duration {duration} ticks (expires at {expirationTick})", duration, expirationTick);
-            ref var expireScheduleIntent = ref _intent.Schedule.Add();
-            expireScheduleIntent.Effect = effect;
-            expireScheduleIntent.Kind = ScheduledEventKind.Expire;
-            expireScheduleIntent.ExecuteAt = expirationTick;
+                _logger.LogInformation(LogEvents.Factory, "Creating Effect from Template {effectTemplateName} Source {sourceName} Target {targetName}", effectRuntime.Name, source.DebugName, target.DebugName);
 
-            // first tick intent (if periodic)
-            if (tickRate > 0)
-            {
-                _logger.LogInformation(LogEvents.Factory, " - add tick rate {tickRate} (next tick {nextTick})", effectRuntime.TickRate, nextTick);
-                ref var tickScheduleIntent = ref _intent.Schedule.Add();
-                tickScheduleIntent.Effect = effect;
-                tickScheduleIntent.Kind = ScheduledEventKind.Tick;
-                tickScheduleIntent.ExecuteAt = nextTick;
+                // add tag if applicable
+                if (effectRuntime.Tag != EffectTagId.None)
+                {
+                    var tagIndex = (int)effectRuntime.Tag;
+                    // add EffectTag component to effect
+                    newEffect.Add(new EffectTag
+                    {
+                        Id = effectRuntime.Tag
+                    });
+                    // add effect to target's CharacterEffects
+                    if (targetEffects.EffectsByTag[tagIndex] == null)
+                        targetEffects.EffectsByTag[tagIndex] = [newEffect];
+                    else
+                        targetEffects.EffectsByTag[tagIndex]!.Add(newEffect);
+                    targetEffects.ActiveTags |= 1UL << tagIndex;
+
+                    _logger.LogInformation(LogEvents.Factory, " - add tag {tag}", effectRuntime.Tag);
+                }
+
+                // add TimedEffect component to effect
+                var ctx = new EffectContext
+                {
+                    Source = source,
+                    Target = target,
+
+                    IncomingDamage = 0,
+                    LastDamage = 0,
+
+                    StackCount = stackCount,
+
+                    State = state,
+                    Msg = _msg,
+                    DamageResolver = _damageResolver,
+                    HealResolver = _healResolver
+                };
+
+                var duration = effectRuntime.DurationFunc.Invoke(ctx);
+                var expirationTick = state.CurrentTick + duration;
+                var nextTick = effectRuntime.TickOnApply
+                    ? state.CurrentTick
+                    : state.CurrentTick + effectRuntime.TickRate; // 0: means pure duration
+                var tickRate = effectRuntime.TickRate; // 0: means pure duration
+                newEffect.Add(new TimedEffect
+                {
+                    StartTick = state.CurrentTick,
+                    ExpirationTick = expirationTick,
+                    NextTick = nextTick,
+                    TickRate = tickRate
+                });
+
+                // expire intent
+                _logger.LogInformation(LogEvents.Factory, " - add duration {duration} ticks (expires at {expirationTick})", duration, expirationTick);
+                ref var expireScheduleIntent = ref _intent.Schedule.Add();
+                expireScheduleIntent.Effect = newEffect;
+                expireScheduleIntent.Kind = ScheduledEventKind.Expire;
+                expireScheduleIntent.ExecuteAt = expirationTick;
+
+                // first tick intent (if periodic)
+                if (tickRate > 0)
+                {
+                    _logger.LogInformation(LogEvents.Factory, " - add tick rate {tickRate} (next tick {nextTick})", effectRuntime.TickRate, nextTick);
+                    ref var tickScheduleIntent = ref _intent.Schedule.Add();
+                    tickScheduleIntent.Effect = newEffect;
+                    tickScheduleIntent.Kind = ScheduledEventKind.Tick;
+                    tickScheduleIntent.ExecuteAt = nextTick;
+                }
             }
         }
 
         // trigger onApply actions
         if (effectRuntime.OnApply.Length > 0)
         {
+            var ctx = new EffectContext
+            {
+                Effect = effect,
+                Source = source,
+                Target = target,
+
+                IncomingDamage = 0,
+                LastDamage = 0,
+
+                StackCount = stackCount,
+
+                State = state,
+                Msg = _msg,
+                DamageResolver = _damageResolver,
+                HealResolver = _healResolver
+            };
+
             foreach (var onApply in effectRuntime.OnApply)
             {
                 if (CharacterHelpers.IsAlive(source, target))
@@ -186,43 +223,35 @@ public class EffectFactory
     }
 
     // return true if a new effect has to be applied
-    private bool HandleStacking(GameState state, EffectRuntime effectRuntime, Entity effect, Entity source, Entity target)
+    private bool HandleStacking(GameState state, EffectRuntime effectRuntime, Entity effect, Entity source, Entity target, ref EffectInstance instance)
     {
-        ref var instance = ref state.World.Get<EffectInstance>(effect);
-
-        if (source != instance.Source)
-        {
-            // if the source is different, we will treat it as a new effect and not apply stacking rules
-            return false; // not handled, allow new effect to be applied
-        }
-
-        var ctx = new EffectContext
-        {
-            Source = source,
-            Target = target,
-
-            IncomingDamage = 0,
-            LastDamage = 0,
-
-            StackCount = instance.StackCount,
-
-            State = state,
-            Msg = _msg,
-            DamageResolver = _damageResolver,
-            HealResolver = _healResolver
-        };
-
         ref var timedEffect = ref effect.TryGetRef<TimedEffect>(out var isTimedEffect);
-        int idx = (int)effectRuntime.Tag;
 
         switch (effectRuntime.Stacking)
         {
             case StackingRule.None:
                 // if the stacking rule is None, do not apply the new effect and do not refresh the duration
-                return true; // handled -> no new effect, existing modified
+                return false;
             case StackingRule.Refresh:
                 if (isTimedEffect)
                 {
+                    var ctx = new EffectContext
+                    {
+                        Effect = effect,
+                        Source = source,
+                        Target = target,
+
+                        IncomingDamage = 0,
+                        LastDamage = 0,
+
+                        StackCount = instance.StackCount,
+
+                        State = state,
+                        Msg = _msg,
+                        DamageResolver = _damageResolver,
+                        HealResolver = _healResolver
+                    };
+
                     // update Duration
                     var durationValue = effectRuntime.DurationFunc?.Invoke(ctx) ?? 0;
                     var expirationTick = state.CurrentTick + durationValue;
@@ -238,12 +267,29 @@ public class EffectFactory
                     expireScheduleIntent.Kind = ScheduledEventKind.Expire;
                     expireScheduleIntent.ExecuteAt = expirationTick;
                 }
-                return true; // handled -> no new effect, existing modified
+                return false;
             case StackingRule.Stack:
                 if (instance.StackCount < effectRuntime.MaxStacks)
                     instance.StackCount++;
                 if (isTimedEffect)
                 {
+                    var ctx = new EffectContext
+                    {
+                        Effect = effect,
+                        Source = source,
+                        Target = target,
+
+                        IncomingDamage = 0,
+                        LastDamage = 0,
+
+                        StackCount = instance.StackCount,
+
+                        State = state,
+                        Msg = _msg,
+                        DamageResolver = _damageResolver,
+                        HealResolver = _healResolver
+                    };
+
                     // update Duration
                     var durationValue = effectRuntime.DurationFunc?.Invoke(ctx) ?? 0;
                     var expirationTick = state.CurrentTick + durationValue;
@@ -259,14 +305,14 @@ public class EffectFactory
                     expireScheduleIntent.Kind = ScheduledEventKind.Expire;
                     expireScheduleIntent.ExecuteAt = expirationTick;
                 }
-                return true; // handled -> no new effect, existing modified
+                return false;
             case StackingRule.Replace:
                 _logger.LogInformation(LogEvents.Factory, "Replacing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName}", effectRuntime.Name, source.DebugName, instance.Target.DebugName);
                 RemoveEffect(state, effect); // destroy current effect (no wear off message because it's a replacement)
-                return false; // no handled -> new effect will be added
+                return true;
         }
 
-        return true; // default to handled to prevent new effect application if stacking rule is not recognized
+        return false;
     }
 
 
@@ -477,6 +523,23 @@ public class EffectFactory
         }
 
         return true; // default to handled to prevent new effect application if stacking rule is not recognized
+    }
+
+    public Entity? FindEffect(ref CharacterEffects characterEffects, EffectRuntime effectRuntime)
+    {
+        if (effectRuntime.Tag == EffectTagId.None)
+            return null;
+        var tagIndex = (int)effectRuntime.Tag;
+        ref var effectsByTag = ref characterEffects.EffectsByTag[tagIndex];
+        if (effectsByTag == null)
+            return null;
+        foreach (var effectByTag in effectsByTag)
+        {
+            ref var effectInstance = ref effectByTag.Get<EffectInstance>();
+            if (effectInstance.EffectRuntime.Name == effectRuntime.Name)
+                return effectByTag;
+        }
+        return null;
     }
 
     public Entity? FindEffect(ref CharacterEffects characterEffects, EffectDefinition effectDefinition)
