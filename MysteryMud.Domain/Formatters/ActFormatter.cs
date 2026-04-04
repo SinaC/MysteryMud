@@ -124,7 +124,7 @@ public static class ActFormatter
         {
             var letter = argumentFormat.Length > 0 ? argumentFormat[0] : (argumentIndex == 0 ? 'N' : 'n'); // default to 'N' or 'n' if no format specified
             ref var gender = ref character.TryGetRef<Gender>(out var hasGender);
-            var genderType = hasGender ? gender.Value : GenderKind.Neutral;
+            var genderKind = hasGender ? gender.Value : GenderKind.Neutral;
             switch (letter)
             {
                 case 'p':
@@ -142,29 +142,29 @@ public static class ActFormatter
                     sb.Append(target == character ? "You" : character.RelativeDisplayName(target).FirstCharToUpper());
                     break;
                 case 'e':
-                    sb.Append(target == character ? "you" : genderType.Subject);
+                    sb.Append(target == character ? "you" : genderKind.Subject);
                     break;
                 case 'E':
-                    sb.Append(target == character ? "You" : genderType.Subject.FirstCharToUpper());
+                    sb.Append(target == character ? "You" : genderKind.Subject.FirstCharToUpper());
                     break;
                 case 'm':
-                    sb.Append(target == character ? "you" : genderType.Objective);
+                    sb.Append(target == character ? "you" : genderKind.Objective);
                     break;
                 case 'M':
-                    sb.Append(target == character ? "You" : genderType.Objective.FirstCharToUpper());
+                    sb.Append(target == character ? "You" : genderKind.Objective.FirstCharToUpper());
                     break;
                 case 's':
-                    sb.Append(target == character ? "your" : genderType.Possessive);
+                    sb.Append(target == character ? "your" : genderKind.Possessive);
                     break;
                 case 'S':
-                    sb.Append(target == character ? "Your" : genderType.Possessive.FirstCharToUpper());
+                    sb.Append(target == character ? "Your" : genderKind.Possessive.FirstCharToUpper());
                     break;
                 case 'f':
-                    sb.Append(target == character ? "your" : genderType.Objective);
+                    sb.Append(target == character ? "your" : genderKind.Objective);
                     sb.Append("self");
                     break;
                 case 'F':
-                    sb.Append(target == character ? "your" : genderType.Objective.FirstCharToUpper());
+                    sb.Append(target == character ? "your" : genderKind.Objective.FirstCharToUpper());
                     sb.Append("self");
                     break;
                 case 'y':
@@ -200,7 +200,74 @@ public static class ActFormatter
 
         if (argument is Entity item && item.Has<ItemTag>())
         {
-            sb.Append(item.RelativeDisplayName(target));
+            var letter = argumentFormat.Length > 0 ? argumentFormat[0] : (argumentIndex == 0 ? 'N' : 'n'); // default to 'N' or 'n' if no format specified
+            var genderKind = GenderKind.Neutral;
+            switch (letter)
+            {
+                case 'p':
+                    AppendPossessive(sb, item.RelativeDisplayName(target));
+                    break;
+                case 'P':
+                    AppendPossessive(sb, item.RelativeDisplayName(target), true);
+                    break;
+                case 'n':
+                    sb.Append(item.DisplayName);
+                    break;
+                case 'N':
+                    sb.Append(item.RelativeDisplayName(target).FirstCharToUpper());
+                    break;
+                case 'e':
+                    sb.Append(genderKind.Subject);
+                    break;
+                case 'E':
+                    sb.Append(genderKind.Subject.FirstCharToUpper());
+                    break;
+                case 'm':
+                    sb.Append(genderKind.Objective);
+                    break;
+                case 'M':
+                    sb.Append(genderKind.Objective.FirstCharToUpper());
+                    break;
+                case 's':
+                    sb.Append(genderKind.Possessive);
+                    break;
+                case 'S':
+                    sb.Append(genderKind.Possessive.FirstCharToUpper());
+                    break;
+                case 'f':
+                    sb.Append(genderKind.Objective);
+                    sb.Append("self");
+                    break;
+                case 'F':
+                    sb.Append(genderKind.Objective.FirstCharToUpper());
+                    sb.Append("self");
+                    break;
+                case 'y':
+                    sb.Append(item.RelativeDisplayName(target)).Append("'s");
+                    break;
+                case 'Y':
+                    sb.Append(item.RelativeDisplayName(target)).Append("'s");
+                    break;
+                case 'b':
+                    sb.Append("is");
+                    break;
+                case 'B':
+                    sb.Append("Is");
+                    break;
+                case 'h':
+                    sb.Append("has");
+                    break;
+                case 'H':
+                    sb.Append("Has");
+                    break;
+                case 'v':
+                case 'V':
+                    AppendVerbSuffix(sb);
+                    break;
+                default:
+                    sb.Append("<???>");
+                    break;
+            }
             return;
         }
 

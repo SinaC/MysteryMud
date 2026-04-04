@@ -1,5 +1,16 @@
 [
   {
+    "Name": "FlamingWeapon",
+    "Actions": [
+      {
+        "Type": "InstantDamage",
+        "Trigger": "OnApply",
+        "DamageFormula": "5 + caster.Level",
+        "DamageKind": "Fire"
+      }
+    ]
+  },
+  {
     "Name": "Fireball",
     "Actions": [
       {

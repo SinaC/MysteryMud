@@ -10,7 +10,6 @@ using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Effect;
 using MysteryMud.Domain.Factories;
 using MysteryMud.Domain.Services;
-using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.Infrastructure.Eventing;
 using MysteryMud.Infrastructure.Intent;
@@ -37,7 +36,7 @@ public class GameServer
     private readonly IntentBusContainer _intentBusContainer;
     private readonly GameLoop _gameLoop;
 
-    public GameServer(ILogger logger, World world, ICommandDispatcher commandDispatcher, SpellDatabase spellDatabase, EffectRegistry effectRegistry)
+    public GameServer(ILogger logger, World world, ICommandDispatcher commandDispatcher, EffectRegistry effectRegistry)
     {
         _world = world;
         _logger = logger;
@@ -57,7 +56,7 @@ public class GameServer
         _actService = new ActService();
         _gameMessageService = new GameMessageService(_messageBus, _actService);
         _intentBusContainer = new IntentBusContainer();
-        _gameLoop = new GameLoop(_logger, _outputService, _commandBus, _messageBus, _scheduler, _gameMessageService, _intentBusContainer, spellDatabase, effectRegistry, _world);
+        _gameLoop = new GameLoop(_logger, _outputService, _commandBus, _messageBus, _scheduler, _gameMessageService, _intentBusContainer, effectRegistry, _world);
     }
 
     public void Start()

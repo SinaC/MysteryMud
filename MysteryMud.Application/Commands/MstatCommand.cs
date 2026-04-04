@@ -11,7 +11,6 @@ using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
-using System.Security.Principal;
 
 namespace MysteryMud.Application.Commands;
 
@@ -81,35 +80,6 @@ public class MstatCommand : ICommand
             if (!effect.IsAlive() || effect.Has<ExpiredTag>())
                 continue;
             ref var effectInstance = ref effect.Get<EffectInstance>();
-            if (effectInstance.Definition != null)
-            {
-                ref var timedEffect = ref effect.TryGetRef<TimedEffect>(out var isTimedEffect);
-                ref var statModifiers = ref effect.TryGetRef<StatModifiers>(out var hasStatModifiers);
-                ref var damageEffect = ref effect.TryGetRef<DamageEffect>(out var hasDamageEffect);
-                ref var healEffect = ref effect.TryGetRef<HealEffect>(out var hasHealEffect);
-                var effectName = effectInstance.Definition.Name;
-                var stackCount = effectInstance.StackCount;
-                var sourceName = effectInstance.Source.DisplayName;
-                if (isTimedEffect)
-                {
-                    var remainingTicks = timedEffect.ExpirationTick - state.CurrentTick;
-                    if (timedEffect.TickRate > 0)
-                        systemContext.Msg.To(actor).Send($"- {effectName} Source: {sourceName} Stacks: {stackCount} Remaining ticks: {remainingTicks} Tick rate: {timedEffect.TickRate}");
-                    else
-                        systemContext.Msg.To(actor).Send($"- {effectName} Source: {sourceName} Stacks: {stackCount} Remaining ticks: {remainingTicks}");
-                }
-                else
-                    systemContext.Msg.To(actor).Send($"- {effectName} Source: {sourceName} Stacks: {stackCount} Permanent");
-                if (hasStatModifiers)
-                {
-                    foreach (var modifier in statModifiers.Values)
-                        systemContext.Msg.To(actor).Send($"  - {modifier.Kind} {modifier.Value} {modifier.Stat}");
-                }
-                if (hasDamageEffect)
-                    systemContext.Msg.To(actor).Send($"  - Damage over time: {damageEffect.Damage} by stack");
-                if (hasHealEffect)
-                    systemContext.Msg.To(actor).Send($"  - Heal over time: {healEffect.Heal} by stack");
-            }
             if (effectInstance.EffectRuntime != null)
             {
                 // TODO: how could we display hot/dot

@@ -104,10 +104,6 @@ var effectRuntimes = effectLoader.Load(Path.Combine(basePath, gamePaths.EffectsJ
 var effectRegistry = new EffectRegistry();
 effectRegistry.RegisterEffects(effectRuntimes);
 
-// load spell definitions
-var spellLoader = new JsonSpellLoader();
-var spellDatabase = spellLoader.LoadSpells(Path.Combine(basePath, gamePaths.SpellsJson));
-
 // load command definitions
 var commandLoader = new JsonCommandLoader();
 var commandDefinitions = commandLoader.Load(Path.Combine(basePath, gamePaths.CommandsJson));
@@ -123,7 +119,7 @@ var explicitCommands = new List<ICommand>
     new HelpCommand(commandRegistry),
     new SocialsCommand(commandRegistry),
     new ForceCommand(logger, commandRegistry),
-    new TestCommand(spellDatabase, effectRegistry)
+    new TestCommand(effectRegistry)
 };
 // social commands (one by social definition)
 foreach (var socialDefinition in socialDefinitions)
@@ -143,5 +139,5 @@ var commandDispatcher = new CommandDispatcher(commandRegistry);
 //Demo2.Run(logger, world, commandDispatcher);
 
 // start game server
-var gameServer = new GameServer(logger, world, commandDispatcher, spellDatabase, effectRegistry);
+var gameServer = new GameServer(logger, world, commandDispatcher, effectRegistry);
 gameServer.Start();

@@ -1,6 +1,5 @@
 ﻿using Arch.Core.Extensions;
 using MysteryMud.Core.Extensions;
-using MysteryMud.Core.Logging;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Effect;

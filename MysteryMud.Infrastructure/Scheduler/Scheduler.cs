@@ -4,7 +4,6 @@ using MysteryMud.Core;
 using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Scheduler;
 using MysteryMud.Domain.Extensions;
-using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
 

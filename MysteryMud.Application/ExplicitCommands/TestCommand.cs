@@ -19,14 +19,12 @@ public class TestCommand : ICommand
 
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetAndText;
 
-    private readonly SpellDatabase _spellDatabase;
     private readonly EffectRegistry _effectRegistry;
 
     public CommandDefinition Definition { get; }
 
-    public TestCommand(SpellDatabase spellDatabase, EffectRegistry effectRegistry)
+    public TestCommand(EffectRegistry effectRegistry)
     {
-        _spellDatabase = spellDatabase;
         _effectRegistry = effectRegistry;
 
         Definition = new CommandDefinition
@@ -63,19 +61,6 @@ public class TestCommand : ICommand
             systemContext.Msg.To(actor).Send("You don't see that here.");
             return;
         }
-
-        //// search effect and add effect intent if found
-        //int? effectId = null;
-        //if (_spellDatabase.Effects.TryGetValue(ctx.Text.ToString(), out var effectDefinition))
-        //    effectId = effectDefinition.Id;
-        //if (effectId is not null && effectDefinition is not null)
-        //{
-        //    systemContext.Msg.To(actor).Send($"Applying effect {effectDefinition.Name}");
-        //    ref var effectIntent = ref systemContext.Intent.Effect.Add();
-        //    effectIntent.EffectId = effectId.Value;
-        //    effectIntent.Source = actor;
-        //    effectIntent.Target = target;
-        //}
 
         // search effect and add effect intent if found
         int? effectId = null;

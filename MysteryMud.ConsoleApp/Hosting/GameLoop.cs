@@ -17,7 +17,6 @@ using MysteryMud.Domain.Effect.Factories;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Heal;
 using MysteryMud.Domain.Systems;
-using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
 using MysteryMud.Infrastructure.Eventing;
@@ -36,7 +35,6 @@ internal class GameLoop
     private readonly IScheduler _scheduler;
     private readonly IGameMessageService _gameMessageService;
     private readonly IIntentContainer _intentContainer;
-    private readonly SpellDatabase _spellDatabase;
     private readonly EffectRegistry _effectRegistry;
     private readonly World _world;
 
@@ -118,7 +116,7 @@ internal class GameLoop
     private readonly LookSystem _lookSystem;
     private readonly CleanupSystem _cleanupSystem;
 
-    public GameLoop(ILogger logger, IOutputService putputService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, IGameMessageService gameMessageService, IIntentContainer intentContainer, SpellDatabase spellDatabase, EffectRegistry effectRegistry, World world)
+    public GameLoop(ILogger logger, IOutputService putputService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, IGameMessageService gameMessageService, IIntentContainer intentContainer, EffectRegistry effectRegistry, World world)
     {
         _logger = logger;
         _outputService = putputService;
@@ -127,7 +125,6 @@ internal class GameLoop
         _scheduler = scheduler;
         _gameMessageService = gameMessageService;
         _intentContainer = intentContainer;
-        _spellDatabase = spellDatabase;
         _effectRegistry = effectRegistry;
         _world = world;
 
@@ -138,13 +135,13 @@ internal class GameLoop
         _healResolver = new HealResolver(_aggroResolver, _gameMessageService, _healedEventBuffer);
         _hitResolver = new HitResolver(_gameMessageService);
         _hitDamageFactory = new HitDamageFactory();
-        _weaponProcResolver = new WeaponProcResolver(_logger, _gameMessageService, intentContainer, spellDatabase);
+        _weaponProcResolver = new WeaponProcResolver(_logger, _gameMessageService, _intentContainer, _effectRegistry);
         _reactionResolver = new ReactionResolver(_gameMessageService);
 
         _effectFactory = new EffectFactory(_logger, _gameMessageService, _intentContainer, _damageResolver, _healResolver);
 
         _attackOrchestrator = new AttackOrchestrator(_logger, _intentContainer, _attackResolvedEventBuffer, _effectFactory, _hitResolver, _hitDamageFactory, _damageResolver, _weaponProcResolver, _reactionResolver);
-        _effectOrchestrator = new EffectOrchestrator(_logger, _intentContainer, _effectResolvedEventBuffer, _spellDatabase, _effectRegistry, _effectFactory, _damageResolver, _healResolver);
+        _effectOrchestrator = new EffectOrchestrator(_logger, _intentContainer, _effectResolvedEventBuffer, _effectRegistry, _effectFactory, _damageResolver, _healResolver);
 
         _commandExecutionSystem = new CommandExecutionSystem(_logger);
         _commandThrottleSystem = new CommandThrottleSystem(_gameMessageService);

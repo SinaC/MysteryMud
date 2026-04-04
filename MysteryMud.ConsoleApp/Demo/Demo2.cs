@@ -13,12 +13,12 @@ using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Damage;
+using MysteryMud.Domain.Effect;
 using MysteryMud.Domain.Effect.Factories;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Heal;
 using MysteryMud.Domain.Services;
 using MysteryMud.Domain.Systems;
-using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
 using MysteryMud.Infrastructure.Eventing;
@@ -29,7 +29,7 @@ namespace MysteryMud.ConsoleApp.Demo;
 
 static class Demo2
 {
-    public static void Run(ILogger logger, World world, ICommandDispatcher commandDispatcher, SpellDatabase spellDatabase)
+    public static void Run(ILogger logger, World world, ICommandDispatcher commandDispatcher, EffectRegistry effectRegistry)
     {
         // get entities for testing
         Span<Entity> characters = stackalloc Entity[10];
@@ -84,7 +84,7 @@ static class Demo2
         var healResolver = new HealResolver(aggroResolver, gameMessageService, healedEventBuffer);
         var hitResolver = new HitResolver(gameMessageService);
         var hitDamageFactory = new HitDamageFactory();
-        var weaponProcResolver = new WeaponProcResolver(logger, gameMessageService, intentBusContainer, spellDatabase);
+        var weaponProcResolver = new WeaponProcResolver(logger, gameMessageService, intentBusContainer, effectRegistry);
         var reactionResolver = new ReactionResolver(gameMessageService);
         var effectFactory = new EffectFactory(logger, gameMessageService, intentBusContainer, damageResolver, healResolver);
         var attackOrchestrator = new AttackOrchestrator(logger, intentBusContainer, attackResolvedEventBuffer, effectFactory, hitResolver, hitDamageFactory, damageResolver, weaponProcResolver, reactionResolver);
@@ -249,7 +249,6 @@ static class Demo2
         }
     }
  */
-
 
     private static void DumpWorld(World world)
     {

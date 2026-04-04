@@ -3,7 +3,6 @@ using MysteryMud.Core;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Damage;
 using MysteryMud.Domain.Heal;
-using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Effect;
 

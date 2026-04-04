@@ -1,6 +1,4 @@
-﻿using MysteryMud.GameData.Enums;
-
-namespace MysteryMud.Infrastructure.Persistence.Dto.Effects;
+﻿namespace MysteryMud.Infrastructure.Persistence.Dto.Effects;
 
 public class PeriodicDamageData : EffectActionData
 {
