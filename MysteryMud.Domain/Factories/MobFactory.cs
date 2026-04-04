@@ -32,7 +32,7 @@ public static class MobFactory
                     [StatKind.Constitution] = 15,
                     [StatKind.HitRoll] = 0,
                     [StatKind.DamRoll] = 0,
-                    [StatKind.Armor] = 0
+                    [StatKind.ArmorClass] = 0
                 }
             },
             new EffectiveStats
@@ -48,7 +48,7 @@ public static class MobFactory
                     [StatKind.Constitution] = 15,
                     [StatKind.HitRoll] = 0,
                     [StatKind.DamRoll] = 0,
-                    [StatKind.Armor] = 0
+                    [StatKind.ArmorClass] = 0
                 }
             },
             new Health { Current = 5, Max = 100 },

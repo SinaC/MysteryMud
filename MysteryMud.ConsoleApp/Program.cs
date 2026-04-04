@@ -13,6 +13,7 @@ using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
+using MysteryMud.Domain.Effect;
 using MysteryMud.Domain.Factories;
 using MysteryMud.GameData.Enums;
 using MysteryMud.Infrastructure.Persistence;
@@ -97,6 +98,12 @@ RoomFactory.RespawnRoomEntity = temple;
 
 var basePath = AppContext.BaseDirectory;
 
+// load effect definitions
+var effectLoader = new JsonEffectLoader();
+var effectRuntimes = effectLoader.Load(Path.Combine(basePath, gamePaths.EffectsJson));
+var effectRegistry = new EffectRegistry();
+effectRegistry.RegisterEffects(effectRuntimes);
+
 // load spell definitions
 var spellLoader = new JsonSpellLoader();
 var spellDatabase = spellLoader.LoadSpells(Path.Combine(basePath, gamePaths.SpellsJson));
@@ -116,7 +123,7 @@ var explicitCommands = new List<ICommand>
     new HelpCommand(commandRegistry),
     new SocialsCommand(commandRegistry),
     new ForceCommand(logger, commandRegistry),
-    new TestCommand(spellDatabase)
+    new TestCommand(spellDatabase, effectRegistry)
 };
 // social commands (one by social definition)
 foreach (var socialDefinition in socialDefinitions)
@@ -136,5 +143,5 @@ var commandDispatcher = new CommandDispatcher(commandRegistry);
 //Demo2.Run(logger, world, commandDispatcher);
 
 // start game server
-var gameServer = new GameServer(logger, world, commandDispatcher, spellDatabase);
+var gameServer = new GameServer(logger, world, commandDispatcher, spellDatabase, effectRegistry);
 gameServer.Start();

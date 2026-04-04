@@ -1,0 +1,8 @@
+﻿namespace MysteryMud.Infrastructure.Persistence.Dto.Effects;
+
+public class StatModifierData : EffectActionData
+{
+    public required string Stat { get; init; }
+    public required string Mode { get; init; }
+    public required string ValueFormula { get; init; }
+}

@@ -46,7 +46,7 @@ public static class PlayerFactory
                     [StatKind.Constitution] = 15,
                     [StatKind.HitRoll] = 0,
                     [StatKind.DamRoll] = 0,
-                    [StatKind.Armor] = 0
+                    [StatKind.ArmorClass] = 0
                 }
             },
             new EffectiveStats
@@ -62,7 +62,7 @@ public static class PlayerFactory
                     [StatKind.Constitution] = 15,
                     [StatKind.HitRoll] = 0,
                     [StatKind.DamRoll] = 0,
-                    [StatKind.Armor] = 0
+                    [StatKind.ArmorClass] = 0
                 }
             },
             new Health { Current = 10, Max = 100 },

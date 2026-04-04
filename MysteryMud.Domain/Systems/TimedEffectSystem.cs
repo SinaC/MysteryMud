@@ -8,6 +8,7 @@ using MysteryMud.Core.Logging;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Damage;
+using MysteryMud.Domain.Effect;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Heal;
 using MysteryMud.Domain.Helpers;
@@ -84,13 +85,8 @@ public class TimedEffectSystem
                 // flag as expired
                 effect.Add<ExpiredTag>();
 
-                // display wear off message if any
                 ref var instance = ref effect.Get<EffectInstance>();
-                if (instance.Definition.WearOffMessage != null)
-                {
-                    // TODO: in room ?
-                    _msg.To(instance.Target).Send(instance.Definition.WearOffMessage);
-                }
+                ExpireEffect(state, effect, ref instance);
 
                 // effect expired event
                 ref var effectExpiredEvt = ref _effectExpiredEvents.Add();
@@ -128,8 +124,68 @@ public class TimedEffectSystem
         }
     }
 
+    private void ExpireEffect(GameState state, Entity effect, ref EffectInstance instance)
+    {
+        if (instance.EffectRuntime != null && instance.EffectRuntime.OnExpire != null && instance.EffectRuntime.OnExpire.Length > 0)
+        {
+            var ctx = new EffectContext
+            {
+                Effect = effect,
+                Source = instance.Source,
+                Target = instance.Target,
+
+                IncomingDamage = 0,
+                LastDamage = 0,
+
+                StackCount = instance.StackCount,
+
+                State = state,
+                Msg = _msg,
+                DamageResolver = _damageResolver,
+                HealResolver = _healResolver,
+            };
+            foreach (var onExpire in instance.EffectRuntime.OnExpire)
+            {
+                if (CharacterHelpers.IsAlive(instance.Source, instance.Target))
+                    onExpire(ctx);
+            }
+        }
+
+        // display wear off message if any
+        if (instance.Definition?.WearOffMessage != null)
+        {
+            // TODO: in room ?
+            _msg.To(instance.Target).Send(instance.Definition.WearOffMessage);
+        }
+    }
+
     private void ApplyEffect(GameState state, Entity effect, ref EffectInstance instance)
     {
+        if (instance.EffectRuntime != null && instance.EffectRuntime.OnTick.Length > 0)
+        {
+            var ctx = new EffectContext
+            {
+                Effect = effect,
+                Source = instance.Source,
+                Target = instance.Target,
+
+                IncomingDamage = 0,
+                LastDamage = 0,
+
+                StackCount = instance.StackCount,
+
+                State = state,
+                Msg = _msg,
+                DamageResolver = _damageResolver,
+                HealResolver = _healResolver,
+            };
+            foreach (var onTick in instance.EffectRuntime.OnTick)
+            {
+                if (CharacterHelpers.IsAlive(instance.Source, instance.Target))
+                    onTick(ctx);
+            }
+        }
+
         ref var healEffect = ref effect.TryGetRef<HealEffect>(out var hasHealEffect);
         if (hasHealEffect)
         {

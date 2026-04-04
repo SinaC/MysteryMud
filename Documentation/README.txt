@@ -7,6 +7,7 @@ Domain            ECS components, systems, factories, domain logic (mutable runt
 Application       Parser and concrete command implementations.
 Infrastructure    Registries, persistence, networking, scheduler, eventing, dispatcher.
 ConsoleApp        Entry point, console I/O, game loop, game server.
+each layer depends on the previous one
 
 Tick pipeline
 

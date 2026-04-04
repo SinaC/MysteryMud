@@ -1,0 +1,9 @@
+﻿using MysteryMud.GameData.Enums;
+
+namespace MysteryMud.Infrastructure.Persistence.Dto.Effects;
+
+public class InstantDamageData : EffectActionData
+{
+    public required string DamageFormula { get; init; }
+    public required string DamageKind { get; init; }
+};

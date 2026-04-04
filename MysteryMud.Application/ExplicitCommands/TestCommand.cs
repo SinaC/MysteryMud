@@ -7,6 +7,7 @@ using MysteryMud.Core.Commands;
 using MysteryMud.Core.Extensions;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
+using MysteryMud.Domain.Effect;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
@@ -19,12 +20,14 @@ public class TestCommand : ICommand
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetAndText;
 
     private readonly SpellDatabase _spellDatabase;
+    private readonly EffectRegistry _effectRegistry;
 
     public CommandDefinition Definition { get; }
 
-    public TestCommand(SpellDatabase spellDatabase)
+    public TestCommand(SpellDatabase spellDatabase, EffectRegistry effectRegistry)
     {
         _spellDatabase = spellDatabase;
+        _effectRegistry = effectRegistry;
 
         Definition = new CommandDefinition
         {
@@ -61,13 +64,26 @@ public class TestCommand : ICommand
             return;
         }
 
+        //// search effect and add effect intent if found
+        //int? effectId = null;
+        //if (_spellDatabase.Effects.TryGetValue(ctx.Text.ToString(), out var effectDefinition))
+        //    effectId = effectDefinition.Id;
+        //if (effectId is not null && effectDefinition is not null)
+        //{
+        //    systemContext.Msg.To(actor).Send($"Applying effect {effectDefinition.Name}");
+        //    ref var effectIntent = ref systemContext.Intent.Effect.Add();
+        //    effectIntent.EffectId = effectId.Value;
+        //    effectIntent.Source = actor;
+        //    effectIntent.Target = target;
+        //}
+
         // search effect and add effect intent if found
         int? effectId = null;
-        if (_spellDatabase.Effects.TryGetValue(ctx.Text.ToString(), out var effectDefinition))
-            effectId = effectDefinition.Id;
-        if (effectId is not null && effectDefinition is not null)
+        if (_effectRegistry.TryGetValue(ctx.Text.ToString(), out var effectRuntime) && effectRuntime != null)
+            effectId = effectRuntime.Id;
+        if (effectId is not null && effectRuntime is not null)
         {
-            systemContext.Msg.To(actor).Send($"Applying effect {effectDefinition.Name}");
+            systemContext.Msg.To(actor).Send($"Applying effect {effectRuntime.Name}");
             ref var effectIntent = ref systemContext.Intent.Effect.Add();
             effectIntent.EffectId = effectId.Value;
             effectIntent.Source = actor;

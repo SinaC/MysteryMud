@@ -37,6 +37,7 @@ internal class GameLoop
     private readonly IGameMessageService _gameMessageService;
     private readonly IIntentContainer _intentContainer;
     private readonly SpellDatabase _spellDatabase;
+    private readonly EffectRegistry _effectRegistry;
     private readonly World _world;
 
     /*
@@ -88,7 +89,6 @@ internal class GameLoop
 
     private readonly ILookService _lookService;
 
-    private readonly EffectFactory _effectFactory;
     private readonly AggroResolver _aggroResolver;
     private readonly DamageResolver _damageResolver;
     private readonly HealResolver _healResolver;
@@ -96,6 +96,8 @@ internal class GameLoop
     private readonly HitDamageFactory _hitDamageFactory;
     private readonly WeaponProcResolver _weaponProcResolver;
     private readonly ReactionResolver _reactionResolver;
+
+    private readonly EffectFactory _effectFactory;
 
     private readonly AttackOrchestrator _attackOrchestrator;
     private readonly EffectOrchestrator _effectOrchestrator;
@@ -116,7 +118,7 @@ internal class GameLoop
     private readonly LookSystem _lookSystem;
     private readonly CleanupSystem _cleanupSystem;
 
-    public GameLoop(ILogger logger, IOutputService putputService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, IGameMessageService gameMessageService, IIntentContainer intentContainer, SpellDatabase spellDatabase, World world)
+    public GameLoop(ILogger logger, IOutputService putputService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, IGameMessageService gameMessageService, IIntentContainer intentContainer, SpellDatabase spellDatabase, EffectRegistry effectRegistry, World world)
     {
         _logger = logger;
         _outputService = putputService;
@@ -126,11 +128,11 @@ internal class GameLoop
         _gameMessageService = gameMessageService;
         _intentContainer = intentContainer;
         _spellDatabase = spellDatabase;
+        _effectRegistry = effectRegistry;
         _world = world;
 
         _lookService = new LookService(_gameMessageService);
 
-        _effectFactory = new EffectFactory(_logger, _gameMessageService, _intentContainer);
         _aggroResolver = new AggroResolver();
         _damageResolver = new DamageResolver(_aggroResolver, _gameMessageService, _damagedEventBuffer, _deathEventBuffer);
         _healResolver = new HealResolver(_aggroResolver, _gameMessageService, _healedEventBuffer);
@@ -139,8 +141,10 @@ internal class GameLoop
         _weaponProcResolver = new WeaponProcResolver(_logger, _gameMessageService, intentContainer, spellDatabase);
         _reactionResolver = new ReactionResolver(_gameMessageService);
 
+        _effectFactory = new EffectFactory(_logger, _gameMessageService, _intentContainer, _damageResolver, _healResolver);
+
         _attackOrchestrator = new AttackOrchestrator(_logger, _intentContainer, _attackResolvedEventBuffer, _effectFactory, _hitResolver, _hitDamageFactory, _damageResolver, _weaponProcResolver, _reactionResolver);
-        _effectOrchestrator = new EffectOrchestrator(_logger, _intentContainer, _effectResolvedEventBuffer, _spellDatabase, _effectFactory, _damageResolver, _healResolver);
+        _effectOrchestrator = new EffectOrchestrator(_logger, _intentContainer, _effectResolvedEventBuffer, _spellDatabase, _effectRegistry, _effectFactory, _damageResolver, _healResolver);
 
         _commandExecutionSystem = new CommandExecutionSystem(_logger);
         _commandThrottleSystem = new CommandThrottleSystem(_gameMessageService);
