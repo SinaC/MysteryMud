@@ -43,12 +43,12 @@ public class ReactionResolver
 
         //budget.Remaining--;
         _msg.ToAll(result.Target).Act("{0} counterattack{0:v} {1:y} attack.").With(result.Target, result.Source);
-        ref var counterAttackIntent = ref intentContainer.Attack.Add();
-        counterAttackIntent.Cancelled = false;
-        counterAttackIntent.Attacker = result.Target;
-        counterAttackIntent.Target = result.Source;
-        counterAttackIntent.RemainingHits = 1;
-        counterAttackIntent.IsReaction = true;
-        counterAttackIntent.IgnoreDefense = false;
+        ref var counterAttackIntent = ref intentContainer.Action.Add();
+        counterAttackIntent.Kind = ActionKind.Attack;
+        counterAttackIntent.Attack.Source = result.Target;
+        counterAttackIntent.Attack.Target = result.Source;
+        counterAttackIntent.Attack.RemainingHits = 1;
+        counterAttackIntent.Attack.IsReaction = true;
+        counterAttackIntent.Attack.IgnoreDefense = false;
     }
 }

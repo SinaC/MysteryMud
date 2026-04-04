@@ -20,12 +20,6 @@ public class WeaponProcResolver
     private readonly IIntentWriterContainer _intents;
     private readonly EffectRegistry _effectRegistry;
 
-    //public struct WeaponProc
-    //{
-    //    public SkillEffect Effect;   // Could be Damage, Heal, Buff, Debuff, etc.
-    //    public float Chance;         // 0..1 probability
-    //}
-
     public WeaponProcResolver(ILogger logger, IGameMessageService msg, IIntentWriterContainer intents, EffectRegistry effectRegistry)
     {
         _logger = logger;
@@ -62,9 +56,10 @@ public class WeaponProcResolver
 
         _msg.ToAll(attack.Source).Act("{0} apply{0:v} effect {1} to {2}.").With(weaponEntity, effectRuntime.Name, attack.Target);
 
-        ref var effectIntent = ref _intents.Effect.Add();
-        effectIntent.EffectId = weapon.ProcEffectId.Value;
-        effectIntent.Source = attack.Source; // TODO: weaponEntity ?
-        effectIntent.Target = attack.Target;
+        ref var effectIntent = ref _intents.Action.Add();
+        effectIntent.Kind = ActionKind.Effect;
+        effectIntent.Effect.Source = attack.Source; // TODO: weaponEntity ?
+        effectIntent.Effect.Target = attack.Target;
+        effectIntent.Effect.EffectId = weapon.ProcEffectId.Value;
     }
 }

@@ -69,10 +69,11 @@ public class TestCommand : ICommand
         if (effectId is not null && effectRuntime is not null)
         {
             systemContext.Msg.To(actor).Send($"Applying effect {effectRuntime.Name}");
-            ref var effectIntent = ref systemContext.Intent.Effect.Add();
-            effectIntent.EffectId = effectId.Value;
-            effectIntent.Source = actor;
-            effectIntent.Target = target;
+            ref var effectIntent = ref systemContext.Intent.Action.Add();
+            effectIntent.Kind = ActionKind.Effect;
+            effectIntent.Effect.EffectId = effectId.Value;
+            effectIntent.Effect.Source = actor;
+            effectIntent.Effect.Target = target;
         }
 
         // TODO: search spell and add ability intent if found

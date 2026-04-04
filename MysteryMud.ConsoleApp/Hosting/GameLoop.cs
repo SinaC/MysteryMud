@@ -8,6 +8,7 @@ using MysteryMud.Core.Intent;
 using MysteryMud.Core.Logging;
 using MysteryMud.Core.Scheduler;
 using MysteryMud.Core.Services;
+using MysteryMud.Domain.Action;
 using MysteryMud.Domain.Attack;
 using MysteryMud.Domain.Attack.Factories;
 using MysteryMud.Domain.Attack.Resolvers;
@@ -97,8 +98,7 @@ internal class GameLoop
 
     private readonly EffectFactory _effectFactory;
 
-    private readonly AttackOrchestrator _attackOrchestrator;
-    private readonly EffectOrchestrator _effectOrchestrator;
+    private readonly ActionOrchestrator _actionOrchestrator;
 
     private readonly CommandExecutionSystem _commandExecutionSystem;
     private readonly CommandThrottleSystem _commandThrottleSystem;
@@ -140,8 +140,7 @@ internal class GameLoop
 
         _effectFactory = new EffectFactory(_logger, _gameMessageService, _intentContainer, _damageResolver, _healResolver);
 
-        _attackOrchestrator = new AttackOrchestrator(_logger, _intentContainer, _attackResolvedEventBuffer, _effectFactory, _hitResolver, _hitDamageFactory, _damageResolver, _weaponProcResolver, _reactionResolver);
-        _effectOrchestrator = new EffectOrchestrator(_logger, _intentContainer, _effectResolvedEventBuffer, _effectRegistry, _effectFactory, _damageResolver, _healResolver);
+        _actionOrchestrator = new ActionOrchestrator(_logger, _intentContainer, _attackResolvedEventBuffer, _effectResolvedEventBuffer, _effectRegistry, _effectFactory, _hitResolver, _hitDamageFactory, _damageResolver, _weaponProcResolver, _reactionResolver);
 
         _commandExecutionSystem = new CommandExecutionSystem(_logger);
         _commandThrottleSystem = new CommandThrottleSystem(_gameMessageService);
@@ -204,7 +203,7 @@ internal class GameLoop
             _commandExecutionSystem.Execute(systemContext, state);
 
             // TODO: stop invalid combat: dead entities, entities in different rooms, ...
-            // Processes all LookIntents with Mode=Snapshot → reads current world state before any effects → produces messages
+            // Process all LookIntents with Mode=Snapshot → reads current world state before any effects → produces messages
             _lookSystem.Tick(state, LookMode.Snapshot);
             // TODO: AISystem                         // NPC behavior → generates intents
             // Convert flee → MoveIntents
@@ -227,23 +226,15 @@ internal class GameLoop
             // TODO: AbilitySystem                   // Resolve skill/spell usage → may generate DamageAction/HealAction/EffectActions
             // Generate AttackIntents for entities in combat
             _autoAttackSystem.Tick(state);
-            // TODO: loop on effect/attack orchestrator until no more pending attack/effect intents
-            for (int i = 0; i < 2; i++)
-            {
-                // Resolve EffectIntents → Effect
-                _effectOrchestrator.Tick(state);
-                _intentContainer.ClearEffects();
-                // Resolve AttackIntents → AttackEvents + reactions, procs, spell effects, damage, heal, etc.
-                _attackOrchestrator.Tick(state);
-                _intentContainer.ClearAttacks();
-            }
+            // Process action intents (attack and effect)
+            _actionOrchestrator.Tick(state);
             // Flag dead entities
             _deathSystem.Tick(state);
             // Auto-resurrect players
             _respawnSystem.Tick(state);
             // Handle loot & auto-loot
             _lootSystem.Tick(state);
-            // Processes LookIntents with Mode=PostUpdate → reflects final world state after all updates
+            // Process LookIntents with Mode=PostUpdate → reflects final world state after all updates
             _lookSystem.Tick(state, LookMode.PostUpdate);
             // Handle scheduleIntents (which can be generated from IA, abilities, TimedEffectSytem, AttackOrchestrator)
             _scheduleSystem.Tick(state);
