@@ -95,7 +95,7 @@ public class MstatCommand : ICommand
                 if (hasStatModifiers)
                 {
                     foreach (var modifier in statModifiers.Values)
-                        executionContext.Msg.To(actor).Send($"  - {modifier.Kind} {modifier.Value} {modifier.Stat}");
+                        executionContext.Msg.To(actor).Send($"  - {modifier.Modifier} {modifier.Value} {modifier.Stat}");
                 }
             }
         }

@@ -9,4 +9,5 @@ public struct Casting
     public int AbilityId;
 
     public long ExecuteAt;
+    public long LastUpdate; // tick of the last message send to inform about casting
 }

@@ -1,4 +1,7 @@
 ﻿using MysteryMud.Core.Trie;
+using MysteryMud.Domain.Ability.Definitions;
+using MysteryMud.Domain.Ability.Factories;
+using MysteryMud.Domain.Combat.Effect;
 
 namespace MysteryMud.Domain.Ability;
 
@@ -7,12 +10,20 @@ public class AbilityRegistry
     private readonly Dictionary<int, AbilityRuntime> _abilitiesById = [];
     private readonly WordTrie<AbilityRuntime> _abilityWordTrie = new();
 
-    public void RegisterAbilities(IEnumerable<AbilityRuntime> abilities)
+    private readonly EffectRegistry _effectRegistry;
+
+    public AbilityRegistry(EffectRegistry effectRegistry)
+    {
+        _effectRegistry = effectRegistry;
+    }
+
+    public void RegisterAbilities(IEnumerable<AbilityDefinition> abilities)
     {
         foreach (var ability in abilities)
         {
-            _abilitiesById.Add(ability.Id, ability);
-            _abilityWordTrie.Insert(ability.Name.ToLowerInvariant(), ability);
+            var abilityRuntime = AbilityRuntimeFactory.Create(_effectRegistry, ability);
+            _abilitiesById.Add(ability.Id, abilityRuntime);
+            _abilityWordTrie.Insert(ability.Name.ToLowerInvariant(), abilityRuntime);
         }
     }
 

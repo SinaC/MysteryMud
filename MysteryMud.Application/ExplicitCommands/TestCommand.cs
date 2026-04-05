@@ -5,9 +5,9 @@ using MysteryMud.Application.Queries;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Core.Extensions;
+using MysteryMud.Domain.Combat.Effect;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Effect;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
