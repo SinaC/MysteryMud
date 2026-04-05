@@ -4,10 +4,8 @@ namespace MysteryMud.Core.Intent;
 
 public interface IIntentWriterContainer
 {
-    // AttackOrchestrator
-    IIntentWriter<AttackIntent> Attack { get; }
-    // EffectOrchestrator (player/AI casting spells, scripted triggers, delayed triggers from scheduler)
-    IIntentWriter<EffectIntent> Effect { get; }
+    // ActionOrchestrator
+    IIntentWriter<ActionIntent> Action { get; }
 
     // FleeSystem
     IIntentWriter<FleeIntent> Flee { get; }

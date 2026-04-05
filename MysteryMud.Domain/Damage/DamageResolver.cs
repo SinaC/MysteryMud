@@ -8,7 +8,6 @@ using MysteryMud.Domain.Calculators;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Factories;
-using MysteryMud.GameData.Actions;
 using MysteryMud.GameData.Events;
 
 namespace MysteryMud.Domain.Damage;

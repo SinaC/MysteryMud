@@ -1,7 +1,7 @@
 ﻿using Arch.Core;
 using MysteryMud.GameData.Enums;
 
-namespace MysteryMud.GameData.Actions;
+namespace MysteryMud.Domain.Heal;
 
 public struct HealAction
 {

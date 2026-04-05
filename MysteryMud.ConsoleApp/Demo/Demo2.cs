@@ -5,6 +5,7 @@ using MysteryMud.Application.Dispatching;
 using MysteryMud.Application.Services;
 using MysteryMud.Core;
 using MysteryMud.Core.Eventing;
+using MysteryMud.Domain.Action;
 using MysteryMud.Domain.Attack;
 using MysteryMud.Domain.Attack.Factories;
 using MysteryMud.Domain.Attack.Resolvers;
@@ -73,6 +74,7 @@ static class Demo2
         var itemLootedEventBuffer = new EventBuffer<ItemLootedEvent>();
         var lookedEventBuffer = new EventBuffer<LookedEvent>();
         var attackResolvedEventBuffer = new EventBuffer<AttackResolvedEvent>();
+        var effectResolvedEventBuffer = new EventBuffer<EffectResolvedEvent>();
 
         var systemContext = new SystemContext { Msg = gameMessageService, Intent = intentBusContainer };
 
@@ -87,7 +89,7 @@ static class Demo2
         var weaponProcResolver = new WeaponProcResolver(logger, gameMessageService, intentBusContainer, effectRegistry);
         var reactionResolver = new ReactionResolver(gameMessageService);
         var effectFactory = new EffectFactory(logger, gameMessageService, intentBusContainer, damageResolver, healResolver);
-        var attackOrchestrator = new AttackOrchestrator(logger, intentBusContainer, attackResolvedEventBuffer, effectFactory, hitResolver, hitDamageFactory, damageResolver, weaponProcResolver, reactionResolver);
+        var actionOrchestrator = new ActionOrchestrator(logger, intentBusContainer, attackResolvedEventBuffer, effectResolvedEventBuffer, effectRegistry, effectFactory, hitResolver, hitDamageFactory, damageResolver, weaponProcResolver, reactionResolver);
 
         var fleeSystem = new FleeSystem(gameMessageService, intentBusContainer, fleeBlockedEventBuffer);
         var movementSystem = new MovementSystem(gameMessageService, intentBusContainer, movedEventBuffer);
@@ -169,7 +171,7 @@ static class Demo2
         itemInteractionSystem.Tick(gameState);
         statsSystem.Tick(gameState);
         autoAttackSystem.Tick(gameState);
-        attackOrchestrator.Tick(gameState);
+        actionOrchestrator.Tick(gameState);
         deathSystem.Tick(gameState);
         lootSystem.Tick(gameState);
         lookSystem.Tick(gameState, LookMode.PostUpdate);

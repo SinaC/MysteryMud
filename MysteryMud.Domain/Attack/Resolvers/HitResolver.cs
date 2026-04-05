@@ -1,8 +1,8 @@
 ﻿using Arch.Core.Extensions;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
-using MysteryMud.GameData.Intents;
 
 namespace MysteryMud.Domain.Attack.Resolvers;
 
@@ -15,13 +15,13 @@ public class HitResolver
         _msg = msg;
     }
 
-    public AttackResult Resolve(AttackIntent intent)
+    public AttackResult Resolve(AttackData attackData)
     {
-        ref var stats = ref intent.Target.Get<EffectiveStats>();
+        ref var stats = ref attackData.Target.Get<EffectiveStats>();
         var roll = Random.Shared.NextDouble();
         AttackResultKind result;
 
-        if (intent.IgnoreDefense)
+        if (attackData.IgnoreDefense)
             result = AttackResultKind.Hit;
         else
         {
@@ -32,17 +32,17 @@ public class HitResolver
 
         var resolved = new AttackResult
         {
-            Source = intent.Attacker,
-            Target = intent.Target,
+            Source = attackData.Source,
+            Target = attackData.Target,
             Result = result
         };
 
         // messages
         switch (result)
         {
-            case AttackResultKind.Dodge: _msg.ToAll(intent.Target).Act("{0} dodge{0:v} {1}'s attack.").With(intent.Target, intent.Attacker); break;
-            case AttackResultKind.Parry: _msg.ToAll(intent.Target).Act("{0} parr{0:v} {1}'s attack.").With(intent.Target, intent.Attacker); break;
-            case AttackResultKind.Hit: _msg.ToAll(intent.Target).Act("{0} hit{0:v} {1}.").With(intent.Attacker, intent.Target); break; // TODO: this message should probably be in DamageSystem when we know the damage amount, but we can keep it here for now for testing purposes
+            case AttackResultKind.Dodge: _msg.ToAll(attackData.Target).Act("{0} dodge{0:v} {1}'s attack.").With(attackData.Target, attackData.Source); break;
+            case AttackResultKind.Parry: _msg.ToAll(attackData.Target).Act("{0} parr{0:v} {1}'s attack.").With(attackData.Target, attackData.Source); break;
+            case AttackResultKind.Hit: _msg.ToAll(attackData.Target).Act("{0} hit{0:v} {1}.").With(attackData.Source, attackData.Target); break; // TODO: this message should probably be in DamageSystem when we know the damage amount, but we can keep it here for now for testing purposes
         }
 
         return resolved;

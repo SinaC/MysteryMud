@@ -5,10 +5,8 @@ namespace MysteryMud.Infrastructure.Intent;
 
 public sealed class IntentBusContainer : IIntentContainer
 {
-    // AttackOrchestrator
-    private readonly StructBuffer<AttackIntent> _attack = new(1024);
-    // EffectOrchestrator
-    private readonly StructBuffer<EffectIntent> _effect = new(1024);
+    // ActionOrchestrator
+    private readonly StructBuffer<ActionIntent> _action = new(1024);
 
     // FleeSystem
     private readonly StructBuffer<FleeIntent> _flee = new(128);
@@ -32,10 +30,8 @@ public sealed class IntentBusContainer : IIntentContainer
 
     public IntentBusContainer()
     {
-        // CombatOrchestrator
-        Attack = new IntentWriter<AttackIntent>(_attack);
-        // EffectOrchestrator
-        Effect = new IntentWriter<EffectIntent>(_effect);
+        // ActionOrchestrator
+        Action = new IntentWriter<ActionIntent>(_action);
 
         // FleeSystem
         Flee = new IntentWriter<FleeIntent>(_flee);
@@ -58,14 +54,10 @@ public sealed class IntentBusContainer : IIntentContainer
         Schedule = new IntentWriter<ScheduleIntent>(_schedule);
     }
 
-    // Attack intents are a special case, we want to able to have direct access, because AttackOrchestrator add attack intents while iterating them
-    public AttackIntent AttackByIndex(int index) => _attack[index];
-    public int AttackCount => _attack.Count;
-    public IIntentWriter<AttackIntent> Attack { get; }
-    // Effect intents are a special case, we want to able to have direct access, because EffectOrchestrator add effect intents while iterating them
-    public EffectIntent EffectByIndex(int index) => _effect[index];
-    public int EffectCount => _effect.Count;
-    public IIntentWriter<EffectIntent> Effect { get; }
+    // Action intents are a special case, we want to able to have direct access, because ActionOrchestrator add action intents while iterating them
+    public ActionIntent ActionByIndex(int index) => _action[index];
+    public int ActionCount => _action.Count;
+    public IIntentWriter<ActionIntent> Action { get; }
 
     // FleeSystem
     public IIntentWriter<FleeIntent> Flee { get; }
@@ -100,24 +92,10 @@ public sealed class IntentBusContainer : IIntentContainer
     public IIntentWriter<ScheduleIntent> Schedule { get; }
     public Span<ScheduleIntent> ScheduleSpan => _schedule.AsSpan();
 
-    public void ClearAttacks()
-    {
-        // AttackOrchestrator
-        _attack.Clear();
-    }
-
-    public void ClearEffects()
-    {
-        // EffectOrchestrator
-        _effect.Clear();
-    }
-
     public void ClearAll()
     {
-        // AttackOrchestrator
-        _attack.Clear();
-        // EffectOrchestrator
-        _effect.Clear();
+        // ActionOrchestrator
+        _action.Clear();
 
         // FleeSystem
         _flee.Clear();

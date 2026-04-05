@@ -4,13 +4,9 @@ namespace MysteryMud.Core.Intent;
 
 public interface IIntentContainer : IIntentWriterContainer
 {
-    // Attack intents are a special case, we want to able to have direct access, because AttackOrchestrator add attack intents while iterating them
-    AttackIntent AttackByIndex(int index);
-    int AttackCount { get; }
-
-    // Effect intents are a special case, we want to able to have direct access, because EffectOrchestrator add attack intents while iterating them
-    EffectIntent EffectByIndex(int index);
-    int EffectCount { get; }
+    // Action intents are a special case, we want to able to have direct access, because ActionOrchestrator add attack intents while iterating them
+    ActionIntent ActionByIndex(int index);
+    int ActionCount { get; }
 
     // FleeSystem
     Span<FleeIntent> FleeSpan { get; }
@@ -32,7 +28,5 @@ public interface IIntentContainer : IIntentWriterContainer
     // ScheduleSystem
     Span<ScheduleIntent> ScheduleSpan { get; }
 
-    void ClearAttacks();
-    void ClearEffects();
     void ClearAll();
 }
