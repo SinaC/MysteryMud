@@ -3,6 +3,7 @@ using Arch.Core.Extensions;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Registry;
 using MysteryMud.Core;
+using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Commands;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
@@ -21,7 +22,7 @@ public class CommandDispatcher : ICommandDispatcher
         _commandRegistry = commandRegistry;
     }
 
-    public void Dispatch(SystemContext systemContext, GameState state, Entity actor, ReadOnlySpan<char> input)
+    public void Dispatch(CommandExecutionContext executionContext, GameState state, Entity actor, ReadOnlySpan<char> input)
     {
         if (!actor.IsAlive())
             return;
@@ -42,25 +43,25 @@ public class CommandDispatcher : ICommandDispatcher
         ref var commandLevel = ref actor.Get<CommandLevel>();
 
         // search command in registry
-        var findResult = _commandRegistry.Find(commandLevel.Value, PositionKind.Standing, cmdSpan, out var command); // TODO: position should be determined based on actor's state, not hardcoded
+        var findResult = _commandRegistry.Find(commandLevel.Value, PositionKind.Standing, cmdSpan, out var registeredCommand); // TODO: position should be determined based on actor's state, not hardcoded
         switch (findResult)
         {
             case CommandFindResult.NotFound:
-                systemContext.Msg.To(actor).Send("Unknown command.");
+                executionContext.Msg.To(actor).Send("Unknown command.");
                 return;
             case CommandFindResult.NoPermission:
-                systemContext.Msg.To(actor).Send("Permission denied."); // TODO
+                executionContext.Msg.To(actor).Send("Permission denied."); // TODO
                 return;
             case CommandFindResult.WrongPosition:
-                systemContext.Msg.To(actor).Send("Invalid position."); // TODO
+                executionContext.Msg.To(actor).Send("Invalid position."); // TODO
                 return;
         }
 
         // add command request to command buffer
         buffer.Add(new CommandRequest
         {
-            Command = command!,
-            CommandId = command!.Definition.Id,
+            Command = registeredCommand!,
+            CommandId = registeredCommand!.Definition.Id,
 
             Input = inputStr,
             CmdStart = cmdStart,

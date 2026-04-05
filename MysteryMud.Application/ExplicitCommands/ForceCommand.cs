@@ -17,7 +17,7 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.ExplicitCommands;
 
-public class ForceCommand : ICommand
+public class ForceCommand : IExplicitCommand
 {
     private const string Name = "force";
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetAndText;
@@ -50,13 +50,13 @@ This is typically used for 'force all save'.",
         _commandRegistry = commandRegistry;
     }
 
-    public void Execute(SystemContext systemContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(CommandExecutionContext executionContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
         if (ctx.TargetCount == 0 || ctx.Text.Length == 0)
         {
-            systemContext.Msg.To(actor).Send("Force whom what?");
+            executionContext.Msg.To(actor).Send("Force whom what?");
             return;
         }
 
@@ -68,13 +68,13 @@ This is typically used for 'force all save'.",
 
         if (target == default)
         {
-            systemContext.Msg.To(actor).Send("They aren't here.");
+            executionContext.Msg.To(actor).Send("They aren't here.");
             return;
         }
 
         if (target == actor)
         {
-            systemContext.Msg.To(actor).Send("They aren't here.");
+            executionContext.Msg.To(actor).Send("They aren't here.");
             return;
         }
 
@@ -90,28 +90,28 @@ This is typically used for 'force all save'.",
         var findResult = _commandRegistry.Find(CommandLevelKind.Player, targetPosition.Value, ctx.Text.Slice(forcedCmdStart, forcedCmdLength), out var forcedCommand);
         if (findResult == CommandFindResult.NotFound)
         {
-            systemContext.Msg.To(actor).Send("Command not found.");
+            executionContext.Msg.To(actor).Send("Command not found.");
             return;
         }
         else if (findResult == CommandFindResult.WrongPosition)
         {
-            systemContext.Msg.To(actor).Send($"{target.DisplayName} is in the wrong position.");
+            executionContext.Msg.To(actor).Send($"{target.DisplayName} is in the wrong position.");
             return;
         }
         else if (findResult == CommandFindResult.NoPermission)
         {
-            systemContext.Msg.To(actor).Send($"{target.DisplayName} is not allowed to use this command.");
+            executionContext.Msg.To(actor).Send($"{target.DisplayName} is not allowed to use this command.");
             return;
         }
         else if (forcedCommand is null)
         {
             _logger.LogError("ForceCommand: command registry returned null command when trying to find {cmd}", ctx.Text.ToString());
-            systemContext.Msg.To(actor).Send("Something goes wrong.");
+            executionContext.Msg.To(actor).Send("Something goes wrong.");
             return;
         }
         else if (forcedCommand!.Definition.CannotBeForced)
         {
-            systemContext.Msg.To(actor).Send("That will NOT be done.");
+            executionContext.Msg.To(actor).Send("That will NOT be done.");
             return;
         }
 

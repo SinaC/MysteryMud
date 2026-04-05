@@ -1,6 +1,7 @@
 ﻿using Arch.Core;
 using MysteryMud.Application.Dispatching;
 using MysteryMud.Core;
+using MysteryMud.Core.Commands;
 using MysteryMud.Core.Eventing;
 using System.Buffers;
 using System.Collections.Concurrent;
@@ -32,7 +33,7 @@ public class CommandBus : ICommandBus
         });
     }
 
-    public void Process(SystemContext ctx, GameState state)
+    public void Process(CommandExecutionContext ctx, GameState state)
     {
         int maxCommands = 100; // Prevent global starvation
         while (maxCommands-- > 0 && _queue.TryDequeue(out var cmd))

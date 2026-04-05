@@ -7,7 +7,6 @@ using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.Commands;
@@ -16,20 +15,13 @@ public class GetCommand : ICommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetPair;
 
-    public CommandDefinition Definition { get; }
-
-    public GetCommand(CommandDefinition definition)
-    {
-        Definition = definition;
-    }
-
-    public void Execute(SystemContext systemContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(CommandExecutionContext executionContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
         if (ctx.TargetCount == 0)
         {
-            systemContext.Msg.To(actor).Send("Get what ?");
+            executionContext.Msg.To(actor).Send("Get what ?");
             return;
         }
 
@@ -41,7 +33,7 @@ public class GetCommand : ICommand
             foreach (var item in EntityFinder.SelectTargets(actor, ctx.Primary, roomContents.Items))
             {
                 // intent to get item from room
-                ref var getItemFromRoomIntent = ref systemContext.Intent.GetItem.Add();
+                ref var getItemFromRoomIntent = ref executionContext.Intent.GetItem.Add();
                 getItemFromRoomIntent.Entity = actor;
                 getItemFromRoomIntent.Item = item;
                 getItemFromRoomIntent.SourceKind = GetSourceKind.Room;
@@ -53,7 +45,7 @@ public class GetCommand : ICommand
             var container = EntityFinder.FindContainer(actor, ctx.Secondary);
             if (container == default)
             {
-                systemContext.Msg.To(actor).Send("You don't see that here.");
+                executionContext.Msg.To(actor).Send("You don't see that here.");
                 return;
             }
 
@@ -61,7 +53,7 @@ public class GetCommand : ICommand
             foreach (var item in EntityFinder.SelectTargets(actor, ctx.Primary, containerContents.Items))
             {
                 // intent to get item from container
-                ref var getItemFromContainerIntent = ref systemContext.Intent.GetItem.Add();
+                ref var getItemFromContainerIntent = ref executionContext.Intent.GetItem.Add();
                 getItemFromContainerIntent.Entity = actor;
                 getItemFromContainerIntent.Item = item;
                 getItemFromContainerIntent.SourceKind = GetSourceKind.Container;

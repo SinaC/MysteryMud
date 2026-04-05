@@ -100,7 +100,7 @@ public sealed class TelnetSession : IDisposable
                 }
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             //Console.WriteLine($"Error in ReceiveLoop: {ex}");
         }
@@ -147,7 +147,7 @@ public sealed class TelnetSession : IDisposable
                 }
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             //Console.WriteLine($"Error in ParseLoop: {ex}");
         }
@@ -725,7 +725,7 @@ public sealed class TelnetSession : IDisposable
 
         // flag bits (commonly used)
         const int MTTS_ANSI = 1;
-        const int MTTS_UTF8 = 4;
+        //const int MTTS_UTF8 = 4;
         const int MTTS_256COLOR = 8;
         const int MTTS_TRUECOLOR = 256;
 

@@ -4,9 +4,9 @@ using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Dispatching;
 using MysteryMud.Application.Services;
 using MysteryMud.Core;
+using MysteryMud.Core.Commands;
 using MysteryMud.Core.Eventing;
 using MysteryMud.Domain.Action;
-using MysteryMud.Domain.Attack;
 using MysteryMud.Domain.Attack.Factories;
 using MysteryMud.Domain.Attack.Resolvers;
 using MysteryMud.Domain.Components;
@@ -76,7 +76,7 @@ static class Demo2
         var attackResolvedEventBuffer = new EventBuffer<AttackResolvedEvent>();
         var effectResolvedEventBuffer = new EventBuffer<EffectResolvedEvent>();
 
-        var systemContext = new SystemContext { Msg = gameMessageService, Intent = intentBusContainer };
+        var executionContext = new CommandExecutionContext { Msg = gameMessageService, Intent = intentBusContainer };
 
         // TODO: deathEvent and damageEvent are purely combat events and should probably remains the only event passed to systems, other events like itemGotEvent, itemDroppedEvent, itemGivenEvent, itemPutEvent can be directly sent to message service without going through event buffer since they are only used for messaging and no system needs to react to them, this way we can avoid the complexity of managing multiple event buffers and also avoid the issue of events being processed in the wrong order (like damage events being processed before attack intents)
         // TODO: we should replace all these eventbuffers with a more generic event system
@@ -152,7 +152,7 @@ static class Demo2
         trollEffectiveStats.Dodge = 0; // for testing, make sure all hits land so we can see the counterattack in action
         trollEffectiveStats.Parry = 0; // for testing, make sure all hits land so we can see the counterattack in action
         trollEffectiveStats.CounterAttack = 100; // for testing, make sure all we counterattack every time so we can see the counterattack in action
-        commandDispatcher.Dispatch(systemContext, gameState, goblin, "kill troll".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, goblin, "kill troll".AsSpan());
         // goblin uses command kill troll
         //goblin.Add(new CombatState { Target = troll, RoundDelay = 0 });
 
@@ -270,7 +270,7 @@ static class Demo2
             Console.WriteLine($"Message to {entity.DebugName}: {message}");
         }
 
-        public void Process(SystemContext ctx, GameState state)
+        public void Process(GameState state)
         {
             // nop for demo
         }

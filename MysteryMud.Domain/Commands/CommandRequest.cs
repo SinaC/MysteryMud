@@ -4,7 +4,7 @@ namespace MysteryMud.Domain.Commands;
 
 public struct CommandRequest
 {
-    public ICommand Command;
+    public RegisteredCommand Command;
     public int CommandId;
 
     public string Input; // full input string (1 allocation max)

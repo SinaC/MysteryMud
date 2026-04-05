@@ -7,7 +7,6 @@ using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.GameData.Definitions;
 
 namespace MysteryMud.Application.Commands;
 
@@ -15,20 +14,13 @@ public class GiveCommand : ICommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetPair;
 
-    public CommandDefinition Definition { get; }
-
-    public GiveCommand(CommandDefinition definition)
-    {
-        Definition = definition;
-    }
-
-    public void Execute(SystemContext systemContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(CommandExecutionContext executionContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
         if (ctx.TargetCount < 2)
         {
-            systemContext.Msg.To(actor).Send("Give what to whom ?");
+            executionContext.Msg.To(actor).Send("Give what to whom ?");
             return;
         }
 
@@ -40,14 +32,14 @@ public class GiveCommand : ICommand
         var target = EntityFinder.SelectSingleTarget(actor, ctx.Secondary, roomContents.Characters);
         if (target == default)
         {
-            systemContext.Msg.To(actor).Send("They are not here.");
+            executionContext.Msg.To(actor).Send("They are not here.");
             return;
         }
 
         foreach (var item in EntityFinder.SelectTargets(actor, ctx.Primary, inventory.Items))
         {
             // intent to give item
-            ref var giveItemIntent = ref systemContext.Intent.GiveItem.Add();
+            ref var giveItemIntent = ref executionContext.Intent.GiveItem.Add();
             giveItemIntent.Entity = actor;
             giveItemIntent.Item = item;
             giveItemIntent.Target = target;

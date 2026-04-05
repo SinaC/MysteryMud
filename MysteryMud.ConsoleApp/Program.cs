@@ -7,7 +7,6 @@ using MysteryMud.Application.ExplicitCommands;
 using MysteryMud.Application.Registry;
 using MysteryMud.ConsoleApp;
 using MysteryMud.ConsoleApp.Hosting;
-using MysteryMud.Core.Commands;
 using MysteryMud.Core.Extensions;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
@@ -114,7 +113,7 @@ var socialDefinitions = socialLoader.Load(Path.Combine(basePath, gamePaths.Socia
 
 // initialize command registry (Infrastructure)
 var commandRegistry = new CommandRegistry(logger);
-var explicitCommands = new List<ICommand>
+var explicitCommands = new List<IExplicitCommand>
 {
     new HelpCommand(commandRegistry),
     new SocialsCommand(commandRegistry),

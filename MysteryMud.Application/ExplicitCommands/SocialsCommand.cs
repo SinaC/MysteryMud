@@ -8,7 +8,7 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.ExplicitCommands;
 
-public class SocialsCommand : ICommand
+public class SocialsCommand : IExplicitCommand
 {
     private const string Name = "socials";
     private readonly ICommandRegistry _commandRegistry;
@@ -34,12 +34,12 @@ public class SocialsCommand : ICommand
         _commandRegistry = commandRegistry;
     }
 
-    public void Execute(SystemContext systemContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(CommandExecutionContext executionContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
-        var socialCommandDefinitions = _commandRegistry.GetCommandDefinitions<SocialCommand>();
-        foreach (var chunk in socialCommandDefinitions.OrderBy(x => x.Name).Chunk(4))
+        var socialCommandDefinitions = _commandRegistry.GetCommands<SocialCommand>();
+        foreach (var chunk in socialCommandDefinitions.OrderBy(x => x.Definition.Name).Chunk(4))
         {
-            systemContext.Msg.To(actor).Send(string.Join(string.Empty, chunk.Select(x => $"{x.Name,-14}")));
+            executionContext.Msg.To(actor).Send(string.Join(string.Empty, chunk.Select(x => $"{x.Definition.Name,-14}")));
         }
     }
 }
