@@ -8,6 +8,7 @@ using MysteryMud.Application.Registry;
 using MysteryMud.ConsoleApp;
 using MysteryMud.ConsoleApp.Hosting;
 using MysteryMud.Core.Extensions;
+using MysteryMud.Domain.Ability;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
@@ -103,6 +104,12 @@ var effectRuntimes = effectLoader.Load(Path.Combine(basePath, gamePaths.EffectsJ
 var effectRegistry = new EffectRegistry();
 effectRegistry.RegisterEffects(effectRuntimes);
 
+// load ability definitions
+var abilityLoader = new JsonAbilityLoader(effectRegistry);
+var abilityRuntimes = abilityLoader.Load(Path.Combine(basePath, gamePaths.AbilitiesJson));
+var abilityRegistry = new AbilityRegistry();
+abilityRegistry.RegisterAbilities(abilityRuntimes);
+
 // load command definitions
 var commandLoader = new JsonCommandLoader();
 var commandDefinitions = commandLoader.Load(Path.Combine(basePath, gamePaths.CommandsJson));
@@ -118,7 +125,8 @@ var explicitCommands = new List<IExplicitCommand>
     new HelpCommand(commandRegistry),
     new SocialsCommand(commandRegistry),
     new ForceCommand(logger, commandRegistry),
-    new TestCommand(effectRegistry)
+    new TestCommand(effectRegistry),
+    new CastCommand(logger, abilityRegistry)
 };
 // social commands (one by social definition)
 foreach (var socialDefinition in socialDefinitions)
@@ -138,5 +146,5 @@ var commandDispatcher = new CommandDispatcher(commandRegistry);
 //Demo2.Run(logger, world, commandDispatcher);
 
 // start game server
-var gameServer = new GameServer(logger, world, commandDispatcher, effectRegistry);
+var gameServer = new GameServer(logger, world, commandDispatcher, effectRegistry, abilityRegistry);
 gameServer.Start();

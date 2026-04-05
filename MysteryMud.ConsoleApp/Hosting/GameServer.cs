@@ -3,6 +3,7 @@ using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Dispatching;
 using MysteryMud.Core.Logging;
+using MysteryMud.Domain.Ability;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
@@ -36,7 +37,7 @@ public class GameServer
     private readonly IntentBusContainer _intentBusContainer;
     private readonly GameLoop _gameLoop;
 
-    public GameServer(ILogger logger, World world, ICommandDispatcher commandDispatcher, EffectRegistry effectRegistry)
+    public GameServer(ILogger logger, World world, ICommandDispatcher commandDispatcher, EffectRegistry effectRegistry, AbilityRegistry abilityRegistry)
     {
         _world = world;
         _logger = logger;
@@ -56,7 +57,7 @@ public class GameServer
         _actService = new ActService();
         _gameMessageService = new GameMessageService(_messageBus, _actService);
         _intentBusContainer = new IntentBusContainer();
-        _gameLoop = new GameLoop(_logger, _outputService, _commandBus, _messageBus, _scheduler, _gameMessageService, _intentBusContainer, effectRegistry, _world);
+        _gameLoop = new GameLoop(_logger, _outputService, _commandBus, _messageBus, _scheduler, _gameMessageService, _intentBusContainer, effectRegistry, abilityRegistry, _world);
     }
 
     public void Start()

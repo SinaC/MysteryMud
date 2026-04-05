@@ -112,6 +112,7 @@
     "Stacking": "Refresh",
     "MaxStacks": 1,
     "DurationFormula": "120",
+	"WearOffMessage": "You feel less armored.",
     "Actions": [
       {
         "Type": "StatModifier",

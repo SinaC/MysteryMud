@@ -39,6 +39,7 @@ public class LookSystem
                     break;
             }
 
+            // add looked event
             ref var lookedEvt = ref _lookedEvents.Add();
             lookedEvt.Viewer = intent.Viewer;
             lookedEvt.Entity = intent.Target;

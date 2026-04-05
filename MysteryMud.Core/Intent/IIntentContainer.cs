@@ -21,6 +21,9 @@ public interface IIntentContainer : IIntentWriterContainer
     Span<RemoveItemIntent> RemoveItemSpan { get; }
     Span<DestroyItemIntent> DestroyItemSpan { get; }
     Span<SacrificeItemIntent> SacrificeItemSpan { get; }
+    // AbilitySystem
+    Span<UseAbilityIntent> UseAbilitySpan { get; }
+    Span<ExecuteAbilityIntent> ExecuteAbilitySpan { get; }
     // LootSystem
     Span<LootIntent> LootSpan { get; }
     // LookSystem

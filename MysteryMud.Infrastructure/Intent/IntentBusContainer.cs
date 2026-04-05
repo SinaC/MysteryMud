@@ -21,6 +21,9 @@ public sealed class IntentBusContainer : IIntentContainer
     private readonly StructBuffer<RemoveItemIntent> _removeItem = new(128);
     private readonly StructBuffer<DestroyItemIntent> _destroyItem = new(128);
     private readonly StructBuffer<SacrificeItemIntent> _sacrificeItem = new(128);
+    // AbilitySystem
+    private readonly StructBuffer<UseAbilityIntent> _useAbility = new(256);
+    private readonly StructBuffer<ExecuteAbilityIntent> _executeAbility = new(256);
     // LootSystem
     private readonly StructBuffer<LootIntent> _loot = new(128);
     // LookSystem
@@ -46,6 +49,9 @@ public sealed class IntentBusContainer : IIntentContainer
         RemoveItem = new IntentWriter<RemoveItemIntent>(_removeItem);
         DestroyItem = new IntentWriter<DestroyItemIntent>(_destroyItem);
         SacrificeItem = new IntentWriter<SacrificeItemIntent>(_sacrificeItem);
+        // AbilitySystem
+        UseAbility = new IntentWriter<UseAbilityIntent>(_useAbility);
+        ExecuteAbility = new IntentWriter<ExecuteAbilityIntent>(_executeAbility);
         // LootSystem
         Loot = new IntentWriter<LootIntent>(_loot);
         // LookSystem
@@ -82,6 +88,11 @@ public sealed class IntentBusContainer : IIntentContainer
     public Span<DestroyItemIntent> DestroyItemSpan => _destroyItem.AsSpan();
     public IIntentWriter<SacrificeItemIntent> SacrificeItem { get; }
     public Span<SacrificeItemIntent> SacrificeItemSpan => _sacrificeItem.AsSpan();
+    // AbilitySystem
+    public IIntentWriter<UseAbilityIntent> UseAbility { get; }
+    public Span<UseAbilityIntent> UseAbilitySpan => _useAbility.AsSpan();
+    public IIntentWriter<ExecuteAbilityIntent> ExecuteAbility { get; }
+    public Span<ExecuteAbilityIntent> ExecuteAbilitySpan => _executeAbility.AsSpan();
     // LootSystem
     public IIntentWriter<LootIntent> Loot { get; }
     public Span<LootIntent> LootSpan => _loot.AsSpan();
@@ -110,6 +121,9 @@ public sealed class IntentBusContainer : IIntentContainer
         _removeItem.Clear();
         _destroyItem.Clear();
         _sacrificeItem.Clear();
+        // AbilitySystem
+        _useAbility.Clear();
+        _executeAbility.Clear();
         // LootSystem
         _loot.Clear();
         // LookSystem

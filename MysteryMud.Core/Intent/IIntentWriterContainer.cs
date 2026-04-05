@@ -20,6 +20,9 @@ public interface IIntentWriterContainer
     IIntentWriter<RemoveItemIntent> RemoveItem { get; }
     IIntentWriter<DestroyItemIntent> DestroyItem { get; }
     IIntentWriter<SacrificeItemIntent> SacrificeItem { get; }
+    // AbilitySystem
+    IIntentWriter<UseAbilityIntent> UseAbility { get; }
+    IIntentWriter<ExecuteAbilityIntent> ExecuteAbility { get; }
     // LootSystem
     IIntentWriter<LootIntent> Loot { get; }
     // LookSystem
