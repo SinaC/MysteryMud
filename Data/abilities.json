@@ -27,6 +27,7 @@
   {
     "Name": "Cure Light",
     "Kind": "Spell",
+	"CastTime": 100,
     "ResourceCost": 10,
     "Effects": ["CureLight"]
   },

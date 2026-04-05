@@ -3,7 +3,7 @@ using MysteryMud.Core;
 using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Intent;
 using MysteryMud.Domain.Ability;
-using MysteryMud.Domain.Effect;
+using MysteryMud.Domain.Combat.Effect;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
 

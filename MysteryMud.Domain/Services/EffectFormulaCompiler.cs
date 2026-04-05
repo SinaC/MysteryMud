@@ -1,6 +1,6 @@
 ﻿using Arch.Core.Extensions;
+using MysteryMud.Domain.Combat.Effect;
 using MysteryMud.Domain.Components.Characters;
-using MysteryMud.Domain.Effect;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Services;

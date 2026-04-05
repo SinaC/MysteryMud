@@ -21,7 +21,7 @@ public class AutoAttackSystem
     {
         var query = new QueryDescription()
             .WithAll<CombatState, EffectiveStats>()
-            .WithNone<Dead>();
+            .WithNone<Dead, Casting>(); // no autoattack if dead or casting
         state.World.Query(query, (Entity actor, ref CombatState combat, ref EffectiveStats stats) =>
         {
             var target = combat.Target;

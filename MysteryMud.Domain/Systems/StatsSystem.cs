@@ -53,7 +53,7 @@ public class StatsSystem
                             if (modifier.Stat != stat) // TODO: optimize by only iterating modifiers for this stat, instead of all modifiers for all stats -> index modifiers by stat in the StatModifiers component
                                 continue;
                             var modifierValue = modifier.Value * effectInstance.StackCount;
-                            switch (modifier.Kind)
+                            switch (modifier.Modifier)
                             {
                                 case ModifierKind.Flat:
                                     flat += modifierValue;

@@ -5,6 +5,7 @@ using MysteryMud.Core.Intent;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Ability;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Helpers;
 
 namespace MysteryMud.Domain.Systems;
 
@@ -57,21 +58,24 @@ public class AbilityValidationSystem
                 var executeAt = state.CurrentTick + abilityRuntime.CastTime;
                 // TODO: use scheduler
 
-                _msg.ToAll(source).Act("{0} start{0:v} casting '{1}'").With(source, abilityRuntime.Name); // TODO: target
+                _msg.To(source).Act(CastMessageHelpers.CasterStartMessage).With(abilityRuntime.Name);
+                _msg.ToRoom(source).Act(CastMessageHelpers.RoomStartMessage).With(source);
 
                 source.Add(new Casting
                 {
                     Source = source,
                     Targets = targets,
                     AbilityId = abilityId,
-                    ExecuteAt = executeAt
+                    ExecuteAt = executeAt,
+                    LastUpdate = state.CurrentTick,
                 });
 
                 continue;
             }
 
             // instant execution
-            _msg.ToAll(source).Act("{0} cast{0:v} '{1}'").With(source, abilityRuntime.Name); // TODO: target
+            _msg.To(source).Act(CastMessageHelpers.CasterInstantMessage).With(abilityRuntime.Name);
+            _msg.ToRoom(source).Act(CastMessageHelpers.RoomInstantMessage).With(source);
             // add execute ability intent
             ref var executeAbilityIntent = ref _intents.ExecuteAbility.Add();
             executeAbilityIntent.AbilityId = abilityRuntime.Id;

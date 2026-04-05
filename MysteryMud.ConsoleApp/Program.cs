@@ -9,11 +9,11 @@ using MysteryMud.ConsoleApp;
 using MysteryMud.ConsoleApp.Hosting;
 using MysteryMud.Core.Extensions;
 using MysteryMud.Domain.Ability;
+using MysteryMud.Domain.Combat.Effect;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Effect;
 using MysteryMud.Domain.Factories;
 using MysteryMud.GameData.Enums;
 using MysteryMud.Infrastructure.Persistence;
@@ -100,15 +100,15 @@ var basePath = AppContext.BaseDirectory;
 
 // load effect definitions
 var effectLoader = new JsonEffectLoader();
-var effectRuntimes = effectLoader.Load(Path.Combine(basePath, gamePaths.EffectsJson));
+var effectDefinitions = effectLoader.Load(Path.Combine(basePath, gamePaths.EffectsJson));
 var effectRegistry = new EffectRegistry();
-effectRegistry.RegisterEffects(effectRuntimes);
+effectRegistry.RegisterEffects(effectDefinitions);
 
 // load ability definitions
-var abilityLoader = new JsonAbilityLoader(effectRegistry);
-var abilityRuntimes = abilityLoader.Load(Path.Combine(basePath, gamePaths.AbilitiesJson));
-var abilityRegistry = new AbilityRegistry();
-abilityRegistry.RegisterAbilities(abilityRuntimes);
+var abilityLoader = new JsonAbilityLoader();
+var abilityDefinitions = abilityLoader.Load(Path.Combine(basePath, gamePaths.AbilitiesJson));
+var abilityRegistry = new AbilityRegistry(effectRegistry);
+abilityRegistry.RegisterAbilities(abilityDefinitions);
 
 // load command definitions
 var commandLoader = new JsonCommandLoader();

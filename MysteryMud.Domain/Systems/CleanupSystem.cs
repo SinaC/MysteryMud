@@ -3,6 +3,7 @@ using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Logging;
+using MysteryMud.Domain.Combat.Effect.Factories;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
@@ -10,7 +11,6 @@ using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Effect.Factories;
 using MysteryMud.Domain.Extensions;
 
 namespace MysteryMud.Domain.Systems;

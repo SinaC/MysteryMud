@@ -58,6 +58,8 @@ public class MovementSystem
                 lookIntent.Mode = LookMode.PostUpdate;
             }
 
+            // TODO: remove casting and display phrase
+
             // event
             ref var movedEvt = ref _movedEvents.Add();
             movedEvt.Actor = intent.Actor;

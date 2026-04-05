@@ -1,14 +1,8 @@
-﻿using Arch.Core.Extensions;
-using MysteryMud.Core.Extensions;
-using MysteryMud.Domain.Components.Characters;
-using MysteryMud.Domain.Components.Effects;
-using MysteryMud.Domain.Damage;
-using MysteryMud.Domain.Effect;
-using MysteryMud.Domain.Heal;
+﻿using MysteryMud.Core.Extensions;
+using MysteryMud.Domain.Combat.Effect.Definitions;
 using MysteryMud.Domain.Services;
-using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
-using MysteryMud.Infrastructure.Persistence.Dto.Effects;
+using MysteryMud.Infrastructure.Persistence.Dto.Actions;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -23,204 +17,114 @@ public class JsonEffectLoader
     };
     private static readonly EffectFormulaCompiler _formulaCompiler = new();
 
-    public List<EffectRuntime> Load(string filePath)
+    public List<EffectDefinition> Load(string filePath)
     {
         if (!File.Exists(filePath))
             throw new FileNotFoundException($"Effect JSON file not found: {filePath}");
 
         var json = File.ReadAllText(filePath);
-        var effectDefinitions = JsonSerializer.Deserialize<List<EffectDefinitionData>>(json, _serializerOptions) ?? [];
+        var data = JsonSerializer.Deserialize<List<EffectDefinitionData>>(json, _serializerOptions) ?? [];
 
-        var effectRuntimes = new List<EffectRuntime>();
-        foreach (var effectDefinition in effectDefinitions)
+        var effects = new List<EffectDefinition>();
+        foreach (var entry in data)
         {
-            var effectRuntime = CompileEffect(effectDefinition);
-            effectRuntimes.Add(effectRuntime);
+            var effect = MapEffect(entry);
+            effects.Add(effect);
         }
 
-        return effectRuntimes;
+        return effects;
     }
 
-    private EffectRuntime CompileEffect(EffectDefinitionData def)
+    private EffectDefinition MapEffect(EffectDefinitionData data)
     {
-        var onApply = new List<Action<EffectContext>>();
-        var onTick = new List<Action<EffectContext>>();
-        var onExpire = new List<Action<EffectContext>>();
+        // map actions
+        var actions = data.Actions.Select(MapAction).ToList();
 
-        foreach (var actionData in def.Actions)
+        return new EffectDefinition
         {
-            var action = CompileAction(actionData);
+            Id = data.Name.ComputeUniqueId(),
+            Name = data.Name,
 
-            // sort by trigger
-            switch (actionData.Trigger)
-            {
-                case "OnApply":
-                    onApply.Add(action);
-                    break;
-                case "OnTick":
-                    onTick.Add(action);
-                    break;
-                case "OnExpire":
-                    onExpire.Add(action);
-                break;
-                default:
-                    throw new NotSupportedException($"Unknown trigger '{actionData.Trigger}' in effect '{def.Name}'");
-            }
-        }
+            DurationFunc = data.DurationFormula == null
+                ? null
+                : _formulaCompiler.Compile(data.DurationFormula),
+            Tag = data.Tag == null
+                ? EffectTagId.None
+                : Enum.Parse<EffectTagId>(data.Tag, ignoreCase: true),
+            Stacking = data.Stacking == null
+                ? StackingRule.None
+                : Enum.Parse<StackingRule>(data.Stacking, ignoreCase: true),
+            MaxStacks = data.MaxStacks,
+            TickOnApply = data.TickOnApply,
+            TickRate = data.TickRate,
 
-        // wear off message (add OnExpire action)
-        if (def.WearOffMessage != null)
-            onExpire.Add(ctx => ctx.Msg.To(ctx.Target).Send(def.WearOffMessage));
-        // apply message
-        if (def.ApplyMessage != null)
-            onApply.Add(ctx => ctx.Msg.To(ctx.Target).Send(def.ApplyMessage));
+            WearOffMessage = data.WearOffMessage,
+            ApplyMessage = data.ApplyMessage,
 
-        var tag = def.Tag == null
-            ? EffectTagId.None
-            : Enum.Parse<EffectTagId>(def.Tag, ignoreCase: true);
-        var stacking = def.Stacking == null
-            ? StackingRule.None
-            : Enum.Parse<StackingRule>(def.Stacking, ignoreCase: true);
-        var durationFunc = def.DurationFormula == null
-            ? null
-            : _formulaCompiler.Compile(def.DurationFormula);
-
-        if (def.DurationFormula == null && (onTick.Count > 0 || onExpire.Count > 0))
-            throw new Exception("DurationFormula must be specified when Trigger OnTick or OnExpire is defined");
-
-        if (def.TickRate == 0 && onTick.Count > 0)
-            throw new Exception("TickRate cannot be 0 when Trigger OnTick is defined");
-
-        // TODO: duration must be specified when there is at least one StatModifierData
-
-        return new EffectRuntime
-        {
-            Id = def.Name.ComputeUniqueId(),
-            Name = def.Name,
-            Tag = tag,
-            Stacking = stacking,
-            MaxStacks = def.MaxStacks,
-
-            DurationFunc = durationFunc,
-
-            TickOnApply = def.TickOnApply,
-            TickRate = def.TickRate,
-
-            OnApply = onApply.ToArray(),
-            OnTick = onTick.ToArray(),
-            OnExpire = onExpire.ToArray(),
+            Actions = actions
         };
     }
 
-    private Action<EffectContext> CompileAction(EffectActionData action)
+    private EffectActionDefinition MapAction(EffectActionData action)
     {
+        var trigger = Enum.Parse<TriggerType>(action.Trigger, ignoreCase: true);
         switch (action)
         {
-            case StatModifierData stat:
+            case StatModifierData data:
                 {
-                    var valueFunc = _formulaCompiler.Compile(stat.ValueFormula);
-                    return ctx =>
+                    var stat = Enum.Parse<StatKind>(data.Stat, ignoreCase: true);
+                    var modifier = Enum.Parse<ModifierKind>(data.Mode, ignoreCase: true);
+                    var valueFunc = _formulaCompiler.Compile(data.ValueFormula);
+                    return new StatModifierActionDefinition
                     {
-                        var value = valueFunc(ctx); // TODO: multiply by stack count ?
-                        var modifier = new StatModifier
-                        {
-                            Stat = Enum.Parse<StatKind>(stat.Stat, ignoreCase: true),
-                            Kind = Enum.Parse<ModifierKind>(stat.Mode, ignoreCase: true),
-                            Value = value
-                        };
-
-                        ref var statModifiers = ref ctx.Effect.TryGetRef<StatModifiers>(out var hasStatModifiers);
-                        if (hasStatModifiers)
-                            statModifiers.Values.Add(modifier);
-                        else
-                        {
-                            ctx.Effect.Add(new StatModifiers
-                            {
-                                Values = [modifier]
-                            });
-                        }
-
-                        // add dirty flag to character stats so we will recalculate them with the new modifiers
-                        if (!ctx.Target.Has<DirtyStats>())
-                            ctx.Target.Add<DirtyStats>();
+                        Trigger = trigger,
+                        Stat = stat,
+                        Modifier = modifier,
+                        ValueFunc = valueFunc
                     };
                 }
 
-            case PeriodicHealData heal:
+            case PeriodicHealData data:
                 {
-                    var healFunc = _formulaCompiler.Compile(heal.HealFormula);
-                    return ctx =>
+                    var amountFunc = _formulaCompiler.Compile(data.HealFormula);
+                    return new PeriodicHealActionDefinition
                     {
-                        var amount = healFunc(ctx); // TODO: should used snapshotted value
-                        var totalHeal = amount * ctx.StackCount;
-                        var healAction = new HealAction
-                        {
-                            Source = ctx.Source,
-                            Target = ctx.Target,
-                            Amount = totalHeal,
-                            SourceKind = HealSourceKind.HoT
-                        };
-                        //ctx.Log.LogInformation(LogEvents.Hot, "Applying HoT heal for Effect {effectName} on Target {targetName} with heal {heal}", effect.DebugName, instance.Target.DebugName, totalHeal);
-                        ctx.HealResolver.Resolve(ctx.State, healAction);
+                        Trigger = trigger,
+                        AmountFunc = amountFunc
                     };
                 }
 
-            case InstantHealData heal:
+            case InstantHealData data:
                 {
-                    var healFunc = _formulaCompiler.Compile(heal.HealFormula);
-                    return ctx =>
+                    var amountFunc = _formulaCompiler.Compile(data.HealFormula);
+                    return new InstantHealActionDefinition
                     {
-                        var amount = healFunc(ctx);
-                        var totalHeal = amount;
-                        var healAction = new HealAction
-                        {
-                            Source = ctx.Source,
-                            Target = ctx.Target,
-                            Amount = totalHeal,
-                            SourceKind = HealSourceKind.Spell // TODO
-                        };
-                        ctx.HealResolver.Resolve(ctx.State, healAction);
+                        Trigger = trigger,
+                        AmountFunc = amountFunc
                     };
                 }
 
-            case PeriodicDamageData dmg:
+            case PeriodicDamageData data:
                 {
-                    var dmgFunc = _formulaCompiler.Compile(dmg.DamageFormula);
-                    var dmgKind = Enum.Parse<DamageKind>(dmg.DamageKind, ignoreCase: true);
-                    return ctx =>
+                    var amountFunc = _formulaCompiler.Compile(data.DamageFormula);
+                    var dmgKind = Enum.Parse<DamageKind>(data.DamageKind, ignoreCase: true);
+                    return new PeriodicDamageActionDefinition
                     {
-                        var amount = dmgFunc(ctx); // TODO: should used snapshotted value
-                        var totalDamage = amount * ctx.StackCount;
-                        var damageAction = new DamageAction
-                        {
-                            Source = ctx.Source,
-                            Target = ctx.Target,
-                            Amount = totalDamage,
-                            DamageKind = dmgKind,
-                            SourceKind = DamageSourceKind.DoT
-                        };
-                        //_logger.LogInformation(LogEvents.Dot, "Applying DoT damage for Effect {effectName} on Target {targetName} with damage {damage} type {damageKind}", effect.DebugName, instance.Target.DebugName, totalDamage, damageEffect.DamageKind);
-                        ctx.DamageResolver.Resolve(ctx.State, damageAction);
+                        Trigger = trigger,
+                        AmountFunc = amountFunc,
+                        Kind = dmgKind
                     };
                 }
 
-            case InstantDamageData dmg:
+            case InstantDamageData data:
                 {
-                    var dmgFunc = _formulaCompiler.Compile(dmg.DamageFormula);
-                    var dmgKind = Enum.Parse<DamageKind>(dmg.DamageKind, ignoreCase: true);
-                    return ctx =>
+                    var amountFunc = _formulaCompiler.Compile(data.DamageFormula);
+                    var dmgKind = Enum.Parse<DamageKind>(data.DamageKind, ignoreCase: true);
+                    return new InstantDamageActionDefinition
                     {
-                        var amount = dmgFunc(ctx);
-                        var totalDamage = amount;
-                        var damageAction = new DamageAction
-                        {
-                            Source = ctx.Source,
-                            Target = ctx.Target,
-                            Amount = totalDamage,
-                            DamageKind = dmgKind,
-                            SourceKind = DamageSourceKind.Spell // TODO
-                        };
-                        ctx.DamageResolver.Resolve(ctx.State, damageAction);
+                        Trigger = trigger,
+                        AmountFunc = amountFunc,
+                        Kind = dmgKind
                     };
                 }
             default:
