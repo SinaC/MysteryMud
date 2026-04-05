@@ -7,7 +7,6 @@ using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.Commands;
@@ -15,13 +14,6 @@ namespace MysteryMud.Application.Commands;
 public class LookCommand : ICommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetPair;
-
-    public CommandDefinition Definition { get; }
-
-    public LookCommand(CommandDefinition definition)
-    {
-        Definition = definition;
-    }
 
     // arguments:
     //   - no argument
@@ -31,7 +23,7 @@ public class LookCommand : ICommand
     //          - item in container: show container description and contents
     //   - one argument (only for character): prioritize character > item in room > item in inventory > item in equipped slots
     // TODO: handle self, all, indexed targets
-    public void Execute(SystemContext systemContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(CommandExecutionContext executionContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
@@ -41,12 +33,12 @@ public class LookCommand : ICommand
             ref var location = ref actor.TryGetRef<Location>(out var hasLocation);
             if (!hasLocation)
             {
-                systemContext.Msg.To(actor).Send("You are floating in the void. You see nothing.");
+                executionContext.Msg.To(actor).Send("You are floating in the void. You see nothing.");
                 return;
             }
 
             // intent to look at room
-            ref var lookRoomIntent = ref systemContext.Intent.Look.Add();
+            ref var lookRoomIntent = ref executionContext.Intent.Look.Add();
             lookRoomIntent.Viewer = actor;
             lookRoomIntent.TargetKind = LookTargetKind.Room;
             lookRoomIntent.Target = location.Room;
@@ -72,7 +64,7 @@ public class LookCommand : ICommand
         if (target != default)
         {
             // intent to look at character
-            ref var lookCharacterIntent = ref systemContext.Intent.Look.Add();
+            ref var lookCharacterIntent = ref executionContext.Intent.Look.Add();
             lookCharacterIntent.Viewer = actor;
             lookCharacterIntent.TargetKind = LookTargetKind.Character;
             lookCharacterIntent.Target = target;
@@ -84,7 +76,7 @@ public class LookCommand : ICommand
         if (item != default)
         {
             // intent to look at item
-            ref var lookItemIntent = ref systemContext.Intent.Look.Add();
+            ref var lookItemIntent = ref executionContext.Intent.Look.Add();
             lookItemIntent.Viewer = actor;
             lookItemIntent.TargetKind = LookTargetKind.Item;
             lookItemIntent.Target = item;
@@ -99,7 +91,7 @@ public class LookCommand : ICommand
             if (inventoryItem != default)
             {
                 // intent to look at item
-                ref var lookItemIntent = ref systemContext.Intent.Look.Add();
+                ref var lookItemIntent = ref executionContext.Intent.Look.Add();
                 lookItemIntent.Viewer = actor;
                 lookItemIntent.TargetKind = LookTargetKind.Item;
                 lookItemIntent.Target = item;
@@ -107,6 +99,6 @@ public class LookCommand : ICommand
             }
         }
 
-        systemContext.Msg.To(actor).Send($"You don't see that here.");
+        executionContext.Msg.To(actor).Send($"You don't see that here.");
     }
 }

@@ -13,7 +13,7 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.ExplicitCommands;
 
-public class TestCommand : ICommand
+public class TestCommand : IExplicitCommand
 {
     private const string Name = "test";
 
@@ -44,21 +44,21 @@ public class TestCommand : ICommand
         };
     }
 
-    public void Execute(SystemContext systemContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(CommandExecutionContext executionContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
         ref var roomContents = ref actor.Get<Location>().Room.Get<RoomContents>().Characters;
         var target = EntityFinder.SelectSingleTarget(actor, ctx.Primary, roomContents);
 
-        //systemContext.Msg.To(actor).Send("Ansi16: %RR%GG%YY%BB%MM%CC%WW%rr%gg%yy%bb%mm%cc%ww%xnocolor");
-        //systemContext.Msg.To(actor).Send("Ansi256: %=214orange%xnocolor");
-        //systemContext.Msg.To(actor).Send("RGB: %#FFA500orange%xnocolor");
-        //systemContext.Msg.To(actor).Send("GRADIENT: %#FFA500>#00FFA5orange-2-cyan%xnocolor");
+        //executionContext.Msg.To(actor).Send("Ansi16: %RR%GG%YY%BB%MM%CC%WW%rr%gg%yy%bb%mm%cc%ww%xnocolor");
+        //executionContext.Msg.To(actor).Send("Ansi256: %=214orange%xnocolor");
+        //executionContext.Msg.To(actor).Send("RGB: %#FFA500orange%xnocolor");
+        //executionContext.Msg.To(actor).Send("GRADIENT: %#FFA500>#00FFA5orange-2-cyan%xnocolor");
 
         if (target == default)
         {
-            systemContext.Msg.To(actor).Send("You don't see that here.");
+            executionContext.Msg.To(actor).Send("You don't see that here.");
             return;
         }
 
@@ -68,8 +68,8 @@ public class TestCommand : ICommand
             effectId = effectRuntime.Id;
         if (effectId is not null && effectRuntime is not null)
         {
-            systemContext.Msg.To(actor).Send($"Applying effect {effectRuntime.Name}");
-            ref var effectIntent = ref systemContext.Intent.Action.Add();
+            executionContext.Msg.To(actor).Send($"Applying effect {effectRuntime.Name}");
+            ref var effectIntent = ref executionContext.Intent.Action.Add();
             effectIntent.Kind = ActionKind.Effect;
             effectIntent.Effect.EffectId = effectId.Value;
             effectIntent.Effect.Source = actor;

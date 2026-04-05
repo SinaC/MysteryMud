@@ -7,7 +7,6 @@ using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.GameData.Definitions;
 
 namespace MysteryMud.Application.Commands;
 
@@ -15,20 +14,13 @@ public class KillCommand : ICommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.Target;
 
-    public CommandDefinition Definition { get; }
-
-    public KillCommand(CommandDefinition definition)
-    {
-        Definition = definition;
-    }
-
-    public void Execute(SystemContext systemContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(CommandExecutionContext executionContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
         if (ctx.TargetCount == 0)
         {
-            systemContext.Msg.To(actor).Send("Kill whom ?");
+            executionContext.Msg.To(actor).Send("Kill whom ?");
             return;
         }
 
@@ -37,20 +29,20 @@ public class KillCommand : ICommand
 
         if (target == default)
         {
-            systemContext.Msg.To(actor).Send("They aren't here.");
+            executionContext.Msg.To(actor).Send("They aren't here.");
             return;
         }
 
         if (target.Equals(actor))
         {
-            systemContext.Msg.To(actor).Send("You hit yourself. Ouch.");
+            executionContext.Msg.To(actor).Send("You hit yourself. Ouch.");
             return;
         }
 
         // TODO: check if already in combat, if so, maybe switch targets? Or maybe not allow switching targets?
         if (actor.Has<CombatState>())
         {
-            systemContext.Msg.To(actor).Send("You do the best you can!");
+            executionContext.Msg.To(actor).Send("You do the best you can!");
             return;
         }    
 

@@ -3,13 +3,13 @@ using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Services;
 using MysteryMud.Core;
+using MysteryMud.Core.Commands;
 using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Intent;
 using MysteryMud.Core.Logging;
 using MysteryMud.Core.Scheduler;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Action;
-using MysteryMud.Domain.Attack;
 using MysteryMud.Domain.Attack.Factories;
 using MysteryMud.Domain.Attack.Resolvers;
 using MysteryMud.Domain.Damage;
@@ -189,18 +189,18 @@ internal class GameLoop
                 CurrentTimeMs = currentTick * TickRateMs
             };
 
-            var systemContext = new SystemContext
+            var executionContext = new CommandExecutionContext
             {
                 Msg = _gameMessageService,
                 Intent = _intentContainer,
             };
 
             // Player commands 
-            _commandBus.Process(systemContext, state);
+            _commandBus.Process(executionContext, state);
             // check spam, wait state, can cancel command
             _commandThrottleSystem.Execute(state);
             // execute command (if not cancelled) → may generate manual LookIntent(Mode= Snapshot)
-            _commandExecutionSystem.Execute(systemContext, state);
+            _commandExecutionSystem.Execute(executionContext, state);
 
             // TODO: stop invalid combat: dead entities, entities in different rooms, ...
             // Process all LookIntents with Mode=Snapshot → reads current world state before any effects → produces messages
@@ -243,7 +243,7 @@ internal class GameLoop
             _cleanupSystem.Tick(state);
 
             // Process messages to be sent to players
-            _messageBus.Process(systemContext, state);
+            _messageBus.Process(state);
 
             // Send messages to players
             _outputService.FlushAll();
@@ -284,7 +284,7 @@ internal class GameLoop
             CurrentTick = TimeSystem.CurrentTick
         };
 
-        var systemContext = new SystemContext
+        var executionContext = new SystemContext
         {
             Log = _logger,
             Msg = _gameMessageService,
@@ -293,31 +293,31 @@ internal class GameLoop
         };
 
         // process player commands
-        _commandBus.Process(systemContext, state);
+        _commandBus.Process(executionContext, state);
 
         // process scheduled events
-        _scheduler.Process(systemContext, state);
+        _scheduler.Process(executionContext, state);
         // handle state transitions for effects
         //StateMachineSystem.Update(world); TODO: implement state machine system and handle with scheduled events
 
         // AiSystem.Process(world);
         // handle combat rounds
-        CombatSystem.Process(systemContext, state);
+        CombatSystem.Process(executionContext, state);
 
         // handle deaths and related consequences
-        DeathSystem.Process(systemContext, state);
+        DeathSystem.Process(executionContext, state);
 
         // handle player deaths and respawns
-        RespawnSystem.Process(systemContext, state);
+        RespawnSystem.Process(executionContext, state);
 
         // recalculate stats for entities
         StatSystem.Process(state);
 
         // perform cleanup tasks like removing characters, items, ...
-        CleanupSystem.Process(systemContext, state);
+        CleanupSystem.Process(executionContext, state);
 
         // process messages to be sent to players
-        _messageBus.Process(systemContext, state);
+        _messageBus.Process(executionContext, state);
 
         // send output to players
         _outputService.FlushAll();

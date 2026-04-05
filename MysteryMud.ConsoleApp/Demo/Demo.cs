@@ -3,6 +3,7 @@ using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Dispatching;
 using MysteryMud.Core;
+using MysteryMud.Core.Commands;
 using MysteryMud.Core.Eventing;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
@@ -40,54 +41,54 @@ static class Demo
         var messageBus = new DemoMessageBus();
         var actService = new ActService();
         var gameMessageService = new GameMessageService(messageBus, actService);
-        var systemContext = new SystemContext { Msg = gameMessageService, Intent = new IntentBusContainer() };
+        var executionContext = new CommandExecutionContext { Msg = gameMessageService, Intent = new IntentBusContainer() };
 
         // test commands
-        commandDispatcher.Dispatch(systemContext, gameState, player, "look".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, player, "get all.sword".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, player, "look".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, player, "inventory".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, goblin, "say you stole my sword".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, player, "tell goblin you're a liar".AsSpan());
-        //commandDispatcher.Dispatch(systemContext, gameState, sword, "inventory".AsSpan()); will crash because sword is not a character and doesn't have inventory component
-        commandDispatcher.Dispatch(systemContext, gameState, player, "look chest".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, player, "get all from chest".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, player, "inventory".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, player, "wear gem".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, player, "wear sword".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, player, "inventory".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, player, "equipment".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, player, "drop toto".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, player, "drop gem".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, player, "give sword goblin".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, goblin, "wear sword".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, goblin, "remove sword".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, goblin, "wear sword".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, player, "look goblin".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, player, "inventory".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, player, "get gem".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, player, "inventory".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, player, "put gem chest".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, player, "look chest".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, player, "look".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, temple, "look".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, chest, "look".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, gem, "look".AsSpan());
-        commandDispatcher.Dispatch(systemContext, gameState, goblin, "get trash".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, player, "look".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, player, "get all.sword".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, player, "look".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, player, "inventory".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, goblin, "say you stole my sword".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, player, "tell goblin you're a liar".AsSpan());
+        //commandDispatcher.Dispatch(executionContext, gameState, sword, "inventory".AsSpan()); will crash because sword is not a character and doesn't have inventory component
+        commandDispatcher.Dispatch(executionContext, gameState, player, "look chest".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, player, "get all from chest".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, player, "inventory".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, player, "wear gem".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, player, "wear sword".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, player, "inventory".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, player, "equipment".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, player, "drop toto".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, player, "drop gem".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, player, "give sword goblin".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, goblin, "wear sword".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, goblin, "remove sword".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, goblin, "wear sword".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, player, "look goblin".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, player, "inventory".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, player, "get gem".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, player, "inventory".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, player, "put gem chest".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, player, "look chest".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, player, "look".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, temple, "look".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, chest, "look".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, gem, "look".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, goblin, "get trash".AsSpan());
 
         ////testing combat
-        //commandDispatcher.Dispatch(systemContext, gameState, player, "kill goblin".AsSpan());
+        //commandDispatcher.Dispatch(executionContext, gameState, player, "kill goblin".AsSpan());
 
         ////testing buffs and dots
-        //commandDispatcher.Dispatch(systemContext, gameState, goblin, "test troll poison".AsSpan());
-        //commandDispatcher.Dispatch(systemContext, gameState, player, "test troll poison".AsSpan()); // will apply a second stack of poison because StackingRule is Stack
-        //commandDispatcher.Dispatch(systemContext, gameState, player, "test troll poison".AsSpan()); // will apply a second stack of poison because StackingRule is Stack
-        //commandDispatcher.Dispatch(systemContext, gameState, player, "test troll bless".AsSpan()); // will not be applied because StackingRule is None
-        //commandDispatcher.Dispatch(systemContext, gameState, player, "test troll bless".AsSpan());
+        //commandDispatcher.Dispatch(executionContext, gameState, goblin, "test troll poison".AsSpan());
+        //commandDispatcher.Dispatch(executionContext, gameState, player, "test troll poison".AsSpan()); // will apply a second stack of poison because StackingRule is Stack
+        //commandDispatcher.Dispatch(executionContext, gameState, player, "test troll poison".AsSpan()); // will apply a second stack of poison because StackingRule is Stack
+        //commandDispatcher.Dispatch(executionContext, gameState, player, "test troll bless".AsSpan()); // will not be applied because StackingRule is None
+        //commandDispatcher.Dispatch(executionContext, gameState, player, "test troll bless".AsSpan());
 
-        //commandDispatcher.Dispatch(systemContext, gameState, goblin, "test troll poison".AsSpan());
-        //commandDispatcher.Dispatch(systemContext, gameState, player, "test troll poison".AsSpan());
-        //commandDispatcher.Dispatch(systemContext, gameState, goblin, "test troll poison".AsSpan());
+        //commandDispatcher.Dispatch(executionContext, gameState, goblin, "test troll poison".AsSpan());
+        //commandDispatcher.Dispatch(executionContext, gameState, player, "test troll poison".AsSpan());
+        //commandDispatcher.Dispatch(executionContext, gameState, goblin, "test troll poison".AsSpan());
     }
 
     private class DemoMessageBus : IMessageBus
@@ -97,7 +98,7 @@ static class Demo
             Console.WriteLine($"Message to {entity.DebugName}: {message}");
         }
 
-        public void Process(SystemContext ctx, GameState state)
+        public void Process(GameState state)
         {
             // nop for demo
         }

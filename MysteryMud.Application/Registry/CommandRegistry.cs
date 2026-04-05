@@ -1,7 +1,6 @@
-﻿using Arch.Core;
-using CommunityToolkit.HighPerformance;
+﻿using CommunityToolkit.HighPerformance;
 using Microsoft.Extensions.Logging;
-using MysteryMud.Core;
+using MysteryMud.Application.ExplicitCommands;
 using MysteryMud.Core.Commands;
 using MysteryMud.Core.Extensions;
 using MysteryMud.GameData.Definitions;
@@ -14,28 +13,28 @@ public class CommandRegistry : ICommandRegistry
 {
     private readonly ILogger _logger;
 
-    private readonly Dictionary<int, ICommand> _commandById = [];
-    private ICommand[] _commands = [];
+    private readonly Dictionary<int, RegisteredCommand> _commandById = [];
+    private RegisteredCommand[] _commands = [];
 
     public CommandRegistry(ILogger logger)
     {
         _logger = logger;
     }
 
-    public void RegisterCommands(IEnumerable<CommandDefinition> definitions, IEnumerable<Assembly> assemblies, IEnumerable<ICommand> explicitCommands)
+    public void RegisterCommands(IEnumerable<CommandDefinition> definitions, IEnumerable<Assembly> assemblies, IEnumerable<IExplicitCommand> explicitCommands)
     {
-        var list = new List<ICommand>();
+        var list = new List<RegisteredCommand>();
 
         // First register explicit commands passed in (e.g. HelpCommand) - these take absolute precedence over convention-based ones
         foreach (var explicitCommand in explicitCommands ?? [])
         {
             // Add command for main name
-            list.Add(explicitCommand);
+            list.Add(CreateRegisteredCommand(explicitCommand));
 
             // Aliases become separate entries (important!)
             foreach (var alias in explicitCommand.Definition.Aliases)
             {
-                list.Add(new AliasCommand(alias, explicitCommand));
+                list.Add(CreateRegisteredAlias(alias, explicitCommand));
             }
         }
 
@@ -52,15 +51,15 @@ public class CommandRegistry : ICommandRegistry
                 continue;
             }
 
-            var cmd = (ICommand)Activator.CreateInstance(type, def)!; // use ctor(CommandDefinition, int)
+            var cmd = (ICommand)Activator.CreateInstance(type)!;
 
             // Add command for main name
-            list.Add(cmd);
+            list.Add(CreateRegisteredCommand(def, cmd));
 
             // Aliases become separate entries (important!)
             foreach (var alias in def.Aliases)
             {
-                list.Add(new AliasCommand(alias, cmd));
+                list.Add(CreateRegisteredAlias(alias, def, cmd));
             }
         }
 
@@ -79,7 +78,7 @@ public class CommandRegistry : ICommandRegistry
         }
     }
 
-    public CommandFindResult Find(CommandLevelKind level, PositionKind positionType, ReadOnlySpan<char> input, out ICommand? command)
+    public CommandFindResult Find(CommandLevelKind level, PositionKind positionType, ReadOnlySpan<char> input, out RegisteredCommand? command)
     {
         var foundPrefix = false;
         var anyPermission = false;
@@ -134,52 +133,52 @@ public class CommandRegistry : ICommandRegistry
         return CommandFindResult.NotFound;
     }
 
-    public IEnumerable<CommandDefinition> GetCommandDefinitions(CommandLevelKind commandLevel)
-        => _commands
-            .Where(c => c.Definition.RequiredLevel <= commandLevel)
-            .Select(c => c.Definition)
-            .DistinctBy(d => d.Name); // Aliases share the same definition, so distinct by name
+    public IEnumerable<RegisteredCommand> GetCommands(CommandLevelKind commandLevel)
+        => _commands.Where(c => c.Definition.RequiredLevel <= commandLevel);
 
-    public IEnumerable<CommandDefinition> GetCommandDefinitions<TCommand>()
+    public IEnumerable<RegisteredCommand> GetCommands<TCommand>()
         where TCommand : ICommand
-        => _commands
-            .OfType<TCommand>()
-            .Select(x => x.Definition);
+        => _commands.Where(x => x.Handler is TCommand);
 
-    public bool TryGetById(int id, out ICommand? command)
+    public bool TryGetById(int id, out RegisteredCommand? command)
         => _commandById.TryGetValue(id, out command);
 
-    private sealed class AliasCommand : ICommand
-    {
-        private readonly string _alias;
-        private readonly ICommand _inner;
-        private readonly CommandDefinition _definition;
-
-        public AliasCommand(string alias, ICommand inner)
+    private RegisteredCommand CreateRegisteredCommand(CommandDefinition definition, ICommand cmd)
+        => new()
         {
-            _alias = alias;
-            _inner = inner;
-            _definition = new CommandDefinition
-            {
-                Id = _alias.ComputeUniqueId(),
-                Name = _alias,
-                Aliases = [],
-                CannotBeForced = _inner.Definition.CannotBeForced,
-                RequiredLevel = _inner.Definition.RequiredLevel,
-                MinimumPosition = _inner.Definition.MinimumPosition,
-                Priority = _inner.Definition.Priority,
-                AllowAbbreviation = _inner.Definition.AllowAbbreviation,
-                HelpText = _inner.Definition.HelpText,
-                Syntaxes = _inner.Definition.Syntaxes,
-                Categories = _inner.Definition.Categories,
-                ThrottlingCategories = _inner.Definition.ThrottlingCategories,
-            };
-        }
+            Handler = cmd,
+            Definition = definition
+        };
 
-        public CommandDefinition Definition => _definition;
+    private RegisteredCommand CreateRegisteredCommand(IExplicitCommand cmd)
+        => CreateRegisteredCommand(cmd.Definition, cmd);
 
-        public void Execute(SystemContext systemContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args) => _inner.Execute(systemContext, state, actor, cmd, args);
+    private RegisteredCommand CreateRegisteredAlias(string alias, CommandDefinition definition, ICommand cmd)
+    {
+        var aliasDefinition = new CommandDefinition
+        {
+            Id = alias.ComputeUniqueId(),
+            Name = alias,
+            Aliases = [],
+            CannotBeForced = definition.CannotBeForced,
+            RequiredLevel = definition.RequiredLevel,
+            MinimumPosition = definition.MinimumPosition,
+            Priority = definition.Priority,
+            AllowAbbreviation = definition.AllowAbbreviation,
+            HelpText = definition.HelpText,
+            Syntaxes = definition.Syntaxes,
+            Categories = definition.Categories,
+            ThrottlingCategories = definition.ThrottlingCategories,
+        };
+        return new RegisteredCommand
+        {
+            Handler = cmd,
+            Definition = aliasDefinition
+        };
     }
+
+    private RegisteredCommand CreateRegisteredAlias(string alias, IExplicitCommand cmd)
+        => CreateRegisteredAlias(alias, cmd.Definition, cmd);
 }
 
 // Trie-based implementation - not used in production, but kept for reference and testing

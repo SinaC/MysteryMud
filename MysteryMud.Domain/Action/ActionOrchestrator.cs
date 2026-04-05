@@ -8,7 +8,6 @@ using MysteryMud.Domain.Damage;
 using MysteryMud.Domain.Effect;
 using MysteryMud.Domain.Effect.Factories;
 using MysteryMud.Domain.Helpers;
-using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
 using MysteryMud.GameData.Intents;

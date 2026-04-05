@@ -5,7 +5,6 @@ using MysteryMud.Application.Queries;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Components.Characters;
-using MysteryMud.GameData.Definitions;
 
 namespace MysteryMud.Application.Commands;
 
@@ -13,20 +12,13 @@ public class DestroyCommand : ICommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.Target;
 
-    public CommandDefinition Definition { get; }
-
-    public DestroyCommand(CommandDefinition definition)
-    {
-        Definition = definition;
-    }
-
-    public void Execute(SystemContext systemContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(CommandExecutionContext executionContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
         if (ctx.TargetCount == 0)
         {
-            systemContext.Msg.To(actor).Send("Destroy what ?");
+            executionContext.Msg.To(actor).Send("Destroy what ?");
             return;
         }
 
@@ -36,7 +28,7 @@ public class DestroyCommand : ICommand
         foreach (var item in EntityFinder.SelectTargets(actor, ctx.Primary, inventory.Items))
         {
             // intent to destroy item
-            ref var destroyItemIntent = ref systemContext.Intent.DestroyItem.Add();
+            ref var destroyItemIntent = ref executionContext.Intent.DestroyItem.Add();
             destroyItemIntent.Entity = actor;
             destroyItemIntent.Item = item;
         }

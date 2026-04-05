@@ -9,8 +9,7 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.ExplicitCommands;
 
-// this is a special case
-public class HelpCommand : ICommand
+public class HelpCommand : IExplicitCommand
 {
     private const string Name = "help";
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.Target;
@@ -38,37 +37,37 @@ public class HelpCommand : ICommand
         _commandRegistry = commandRegistry;
     }
 
-    public void Execute(SystemContext systemContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(CommandExecutionContext executionContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
         if (ctx.TargetCount == 0)
         {
-            var commands = _commandRegistry.GetCommandDefinitions(CommandLevelKind.Player); // TODO: CommandLevel should be determined by actor's actual level, not just Player
-            systemContext.Msg.To(actor).Send("Available command categories:%W");
-            foreach (var chunk in commands.Where(x => x.Categories.Length > 0).SelectMany(cmd => cmd.Categories).Distinct().OrderBy(x => x).Chunk(4))
+            var commands = _commandRegistry.GetCommands(CommandLevelKind.Player); // TODO: CommandLevel should be determined by actor's actual level, not just Player
+            executionContext.Msg.To(actor).Send("Available command categories:%W");
+            foreach (var chunk in commands.Where(x => x.Definition.Categories.Length > 0).SelectMany(cmd => cmd.Definition.Categories).Distinct().OrderBy(x => x).Chunk(4))
             {
-                systemContext.Msg.To(actor).Send(string.Join(string.Empty, chunk.Select(x => $"{x,-14}")));
+                executionContext.Msg.To(actor).Send(string.Join(string.Empty, chunk.Select(x => $"{x,-14}")));
             }
-            systemContext.Msg.To(actor).Send("%xNo category:%W");
-            foreach(var chunk in commands.Where(cmd => cmd.Categories.Length == 0).Select(cmd => cmd.Name).OrderBy(x => x).Chunk(4))
+            executionContext.Msg.To(actor).Send("%xNo category:%W");
+            foreach (var chunk in commands.Where(cmd => cmd.Definition.Categories.Length == 0).Select(cmd => cmd.Definition.Name).OrderBy(x => x).Chunk(4))
             {
-                systemContext.Msg.To(actor).Send(string.Join(string.Empty, chunk.Select(x => $"{x,-14}")));
+                executionContext.Msg.To(actor).Send(string.Join(string.Empty, chunk.Select(x => $"{x,-14}")));
             }
-            systemContext.Msg.To(actor).Send("%xType 'help <category>' to see commands in that category, or 'help <prefix>' to search for commands starting with that prefix.");
+            executionContext.Msg.To(actor).Send("%xType 'help <category>' to see commands in that category, or 'help <prefix>' to search for commands starting with that prefix.");
         }
         else
         {
             var arg = ctx.Primary.Name.ToString();
-            var commandsByCategory = _commandRegistry.GetCommandDefinitions(CommandLevelKind.Player)
-                .Where(cmd => cmd.Name.StartsWith(arg, StringComparison.OrdinalIgnoreCase) || cmd.Categories.Contains(arg, StringComparer.OrdinalIgnoreCase))
-                .GroupBy(cmd => cmd.Categories.FirstOrDefault(c => c.Equals(arg, StringComparison.OrdinalIgnoreCase)) ?? "uncategorized");
+            var commandsByCategory = _commandRegistry.GetCommands(CommandLevelKind.Player)
+                .Where(cmd => cmd.Definition.Name.StartsWith(arg, StringComparison.OrdinalIgnoreCase) || cmd.Definition.Categories.Contains(arg, StringComparer.OrdinalIgnoreCase))
+                .GroupBy(cmd => cmd.Definition.Categories.FirstOrDefault(c => c.Equals(arg, StringComparison.OrdinalIgnoreCase)) ?? "uncategorized");
             foreach (var group in commandsByCategory)
             {
-                systemContext.Msg.To(actor).Send($"Category: {group.Key}");
+                executionContext.Msg.To(actor).Send($"Category: {group.Key}");
                 foreach (var item in group)
                 {
-                    systemContext.Msg.To(actor).Send($"  {item.Name} -  %#FA8640>#0486FA{item.HelpText}");
+                    executionContext.Msg.To(actor).Send($"  {item.Definition.Name} -  %#FA8640>#0486FA{item.Definition.HelpText}");
                 }
             }
         }
