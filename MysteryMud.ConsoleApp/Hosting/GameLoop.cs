@@ -9,6 +9,7 @@ using MysteryMud.Core.Intent;
 using MysteryMud.Core.Logging;
 using MysteryMud.Core.Scheduler;
 using MysteryMud.Core.Services;
+using MysteryMud.Domain.Ability;
 using MysteryMud.Domain.Action;
 using MysteryMud.Domain.Attack.Factories;
 using MysteryMud.Domain.Attack.Resolvers;
@@ -37,6 +38,7 @@ internal class GameLoop
     private readonly IGameMessageService _gameMessageService;
     private readonly IIntentContainer _intentContainer;
     private readonly EffectRegistry _effectRegistry;
+    private readonly AbilityRegistry _abilityRegistry;
     private readonly World _world;
 
     /*
@@ -85,6 +87,8 @@ internal class GameLoop
     private readonly EventBuffer<EffectTickedEvent> _effectTickedEventBuffer = new();
     private readonly EventBuffer<AttackResolvedEvent> _attackResolvedEventBuffer = new();
     private readonly EventBuffer<EffectResolvedEvent> _effectResolvedEventBuffer = new();
+    private readonly EventBuffer<AbilityUsedEvent> _abilityUsedEventBuffer = new();
+    private readonly EventBuffer<AbilityExecutedEvent> _abilityExecutedEventBuffer = new();
 
     private readonly ILookService _lookService;
 
@@ -106,6 +110,9 @@ internal class GameLoop
     private readonly MovementSystem _movementSystem;
     private readonly ItemInteractionSystem _itemInteractionSystem;
     private readonly StatsSystem _statsSystem;
+    private readonly AbilityValidationSystem _abilityValidationSystem;
+    private readonly AbilityCastingSystem _abilityCastingSystem;
+    private readonly AbilityExecutionSystem _abilityExecutionSystem;
     private readonly AutoAttackSystem _autoAttackSystem;
     private readonly TimedEffectSystem _timedEffectSystem;
     private readonly ThreatDecaySystem _threatDecaySystem;
@@ -116,7 +123,7 @@ internal class GameLoop
     private readonly LookSystem _lookSystem;
     private readonly CleanupSystem _cleanupSystem;
 
-    public GameLoop(ILogger logger, IOutputService putputService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, IGameMessageService gameMessageService, IIntentContainer intentContainer, EffectRegistry effectRegistry, World world)
+    public GameLoop(ILogger logger, IOutputService putputService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, IGameMessageService gameMessageService, IIntentContainer intentContainer, EffectRegistry effectRegistry, AbilityRegistry abilityRegistry, World world)
     {
         _logger = logger;
         _outputService = putputService;
@@ -126,6 +133,7 @@ internal class GameLoop
         _gameMessageService = gameMessageService;
         _intentContainer = intentContainer;
         _effectRegistry = effectRegistry;
+        _abilityRegistry = abilityRegistry;
         _world = world;
 
         _lookService = new LookService(_gameMessageService);
@@ -148,6 +156,9 @@ internal class GameLoop
         _movementSystem = new MovementSystem(_gameMessageService, _intentContainer, _movedEventBuffer);
         _itemInteractionSystem = new ItemInteractionSystem(_gameMessageService, _intentContainer, _itemGotEventBuffer, _itemDroppedEventBuffer, _itemGivenEventBuffer, _itemPutEventBuffer, _itemWornEventBuffer, _itemRemovedEventBuffer, _itemDestroyedEventBuffer, _itemSacrifiedEventBuffer);
         _statsSystem = new StatsSystem();
+        _abilityValidationSystem = new AbilityValidationSystem(_logger, _gameMessageService, _intentContainer, _abilityRegistry);
+        _abilityCastingSystem = new AbilityCastingSystem(_logger, _gameMessageService, _intentContainer, _abilityRegistry);
+        _abilityExecutionSystem = new AbilityExecutionSystem(_logger, _intentContainer, _abilityExecutedEventBuffer, _abilityRegistry, _effectRegistry);
         _autoAttackSystem = new AutoAttackSystem(_intentContainer);
         _timedEffectSystem = new TimedEffectSystem(_logger, _gameMessageService, _intentContainer, _damageResolver, _healResolver, _triggeredScheduledEventBuffer, _effectExpiredEventBuffer, _effectTickedEventBuffer);
         _threatDecaySystem = new ThreatDecaySystem();
@@ -209,9 +220,9 @@ internal class GameLoop
             // Convert flee → MoveIntents
             _fleeSystem.Tick(state);
             // TODO: ChaseSystem                      // NPC chase movement
-            // Resolve MoveIntents → emits auto-look PostUpdate (Mode=PostUpdate)
+            // Process MoveIntents → emits auto-look PostUpdate (Mode=PostUpdate)
             _movementSystem.Tick(state);
-            // Handle get/drop/put/give/...
+            // Process get/drop/put/give/...
             _itemInteractionSystem.Tick(state);
             // Recalculate stats from DirtyFlags
             _statsSystem.Tick(state);
@@ -223,12 +234,17 @@ internal class GameLoop
             _threatDecaySystem.Tick(state);
             // TODO: NPCTargetSystem.AssignTargets   // Select highest threat targets
             // TODO: GroupCombatSystem.Resolve       // Handle assist/protect/own target attack intents
-            // TODO: AbilitySystem                   // Resolve skill/spell usage → may generate DamageAction/HealAction/EffectActions
+            // Process UseAbilityIntents -> set casting (if delayed casting) or generate ExecuteAbilityIntent (instant cast)
+            _abilityValidationSystem.Tick(state);
+            // Process delayed casting, once cast is effective generate ExecuteAbilityIntent + abilityUsedEvent
+            _abilityCastingSystem.Tick(state);
+            // Process ExecuteAbilityIntents -> generate ActionIntent(kind:effect) for each effects in ability + abilityExecutedEvent
+            _abilityExecutionSystem.Tick(state);
             // Generate AttackIntents for entities in combat
             _autoAttackSystem.Tick(state);
             // Process action intents (attack and effect)
             _actionOrchestrator.Tick(state);
-            // Flag dead entities
+            // Process dead entities: remove from combat, remove casting, create corpse -> generate loot intent
             _deathSystem.Tick(state);
             // Auto-resurrect players
             _respawnSystem.Tick(state);
@@ -248,8 +264,9 @@ internal class GameLoop
             // Send messages to players
             _outputService.FlushAll();
 
-            // Clear intents of event buffers
+            // Clear intents
             _intentContainer.ClearAll();
+            // Clear event buffers
             _fleeBlockedEventBuffer.Clear();
             _movedEventBuffer.Clear();
             _itemGotEventBuffer.Clear();
@@ -270,59 +287,10 @@ internal class GameLoop
             _effectTickedEventBuffer.Clear();
             _attackResolvedEventBuffer.Clear();
             _effectResolvedEventBuffer.Clear();
+            _abilityUsedEventBuffer.Clear();
+            _abilityExecutedEventBuffer.Clear();
         }
     }
-
-    /*
-    private void Tick()
-    {
-        TimeSystem.NextTick();
-
-        var state = new GameState
-        {
-            World = _world,
-            CurrentTick = TimeSystem.CurrentTick
-        };
-
-        var executionContext = new SystemContext
-        {
-            Log = _logger,
-            Msg = _gameMessageService,
-            Scheduler = _scheduler,
-            Intent = _intentContainer,
-        };
-
-        // process player commands
-        _commandBus.Process(executionContext, state);
-
-        // process scheduled events
-        _scheduler.Process(executionContext, state);
-        // handle state transitions for effects
-        //StateMachineSystem.Update(world); TODO: implement state machine system and handle with scheduled events
-
-        // AiSystem.Process(world);
-        // handle combat rounds
-        CombatSystem.Process(executionContext, state);
-
-        // handle deaths and related consequences
-        DeathSystem.Process(executionContext, state);
-
-        // handle player deaths and respawns
-        RespawnSystem.Process(executionContext, state);
-
-        // recalculate stats for entities
-        StatSystem.Process(state);
-
-        // perform cleanup tasks like removing characters, items, ...
-        CleanupSystem.Process(executionContext, state);
-
-        // process messages to be sent to players
-        _messageBus.Process(executionContext, state);
-
-        // send output to players
-        _outputService.FlushAll();
-    }
-    */
 
     private void CheckConsoleInput()
     {

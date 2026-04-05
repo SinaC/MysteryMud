@@ -16,12 +16,12 @@ namespace MysteryMud.Infrastructure.Persistence;
 
 public class JsonEffectLoader
 {
-    private readonly EffectFormulaCompiler _formulaCompiler = new();
-    private readonly JsonSerializerOptions _serializerOptions = new()
+    private static readonly JsonSerializerOptions _serializerOptions = new()
     {
         Converters = { new EffectActionDataConverter() },
         PropertyNameCaseInsensitive = true
     };
+    private static readonly EffectFormulaCompiler _formulaCompiler = new();
 
     public List<EffectRuntime> Load(string filePath)
     {

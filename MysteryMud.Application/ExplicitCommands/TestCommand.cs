@@ -63,17 +63,17 @@ public class TestCommand : IExplicitCommand
         }
 
         // search effect and add effect intent if found
-        int? effectId = null;
         if (_effectRegistry.TryGetValue(ctx.Text.ToString(), out var effectRuntime) && effectRuntime != null)
-            effectId = effectRuntime.Id;
-        if (effectId is not null && effectRuntime is not null)
         {
+            var effectId = effectRuntime.Id;
+
             executionContext.Msg.To(actor).Send($"Applying effect {effectRuntime.Name}");
             ref var effectIntent = ref executionContext.Intent.Action.Add();
             effectIntent.Kind = ActionKind.Effect;
-            effectIntent.Effect.EffectId = effectId.Value;
+            effectIntent.Effect.EffectId = effectId;
             effectIntent.Effect.Source = actor;
             effectIntent.Effect.Target = target;
+            return;
         }
 
         // TODO: search spell and add ability intent if found

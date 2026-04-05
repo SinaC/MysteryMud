@@ -1,0 +1,39 @@
+[
+  {
+    "Name": "Fireball",
+    "Kind": "Spell",
+    "ResourceCost": 15,
+    "Effects": ["Fireball"]
+  },
+  {
+    "Name": "Magic Missile",
+    "Kind": "Spell",
+    "CastTime": 20,
+    "ResourceCost": 12,
+    "Effects": ["MagicMissile"]
+  },
+  {
+    "Name": "Poison",
+    "Kind": "Spell",
+    "ResourceCost": 20,
+    "Effects": ["Poison"]
+  },
+  {
+    "Name": "Bless",
+    "Kind": "Spell",
+    "ResourceCost": 18,
+    "Effects": ["Bless"]
+  },
+  {
+    "Name": "Cure Light",
+    "Kind": "Spell",
+    "ResourceCost": 10,
+    "Effects": ["CureLight"]
+  },
+  {
+    "Name": "Armor",
+    "Kind": "Spell",
+    "ResourceCost": 16,
+    "Effects": ["Armor"]
+  }
+]

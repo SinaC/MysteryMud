@@ -8,33 +8,37 @@ namespace MysteryMud.Infrastructure.Persistence;
 
 public class JsonCommandLoader
 {
+    private static readonly JsonSerializerOptions _serializerOptions = new ()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     // TODO: load from file or string instead of passing in a pre-parsed DTO
     public List<CommandDefinition> Load(string filePath)
     {
         if (!File.Exists(filePath))
             throw new FileNotFoundException($"Command JSON file not found: {filePath}");
 
-        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         var json = File.ReadAllText(filePath);
-        var data = JsonSerializer.Deserialize<List<CommandDefinitionData>>(json, options) ?? [];
+        var data = JsonSerializer.Deserialize<List<CommandDefinitionData>>(json, _serializerOptions) ?? [];
 
         var commands = new List<CommandDefinition>();
-        foreach (var cmd in data)
+        foreach (var entry in data)
         {
             var command = new CommandDefinition
             {
-                Id = cmd.Name.ComputeUniqueId(),
-                Name = cmd.Name,
-                Aliases = cmd.Aliases,
-                CannotBeForced = cmd.CannotBeForced,
-                RequiredLevel = Enum.Parse<CommandLevelKind>(cmd.RequiredLevel, ignoreCase: true),
-                MinimumPosition = Enum.Parse<PositionKind>(cmd.MinimumPosition, ignoreCase: true),
-                Priority = cmd.Priority,
-                AllowAbbreviation = cmd.AllowAbbreviation,
-                HelpText = cmd.HelpText,
-                Syntaxes = cmd.Syntaxes,
-                Categories = cmd.Categories,
-                ThrottlingCategories = cmd.ThrottlingCategories.Aggregate(CommandThrottlingCategories.None, (accumulator, cat) => accumulator | Enum.Parse<CommandThrottlingCategories>(cat, ignoreCase: true)),
+                Id = entry.Name.ComputeUniqueId(),
+                Name = entry.Name,
+                Aliases = entry.Aliases,
+                CannotBeForced = entry.CannotBeForced,
+                RequiredLevel = Enum.Parse<CommandLevelKind>(entry.RequiredLevel, ignoreCase: true),
+                MinimumPosition = Enum.Parse<PositionKind>(entry.MinimumPosition, ignoreCase: true),
+                Priority = entry.Priority,
+                AllowAbbreviation = entry.AllowAbbreviation,
+                HelpText = entry.HelpText,
+                Syntaxes = entry.Syntaxes,
+                Categories = entry.Categories,
+                ThrottlingCategories = entry.ThrottlingCategories.Aggregate(CommandThrottlingCategories.None, (accumulator, cat) => accumulator | Enum.Parse<CommandThrottlingCategories>(cat, ignoreCase: true)),
             };
             commands.Add(command);
         }

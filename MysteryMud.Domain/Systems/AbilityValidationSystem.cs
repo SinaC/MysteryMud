@@ -1,0 +1,82 @@
+﻿using Arch.Core.Extensions;
+using Microsoft.Extensions.Logging;
+using MysteryMud.Core;
+using MysteryMud.Core.Intent;
+using MysteryMud.Core.Services;
+using MysteryMud.Domain.Ability;
+using MysteryMud.Domain.Components.Characters;
+
+namespace MysteryMud.Domain.Systems;
+
+public class AbilityValidationSystem
+{
+    private readonly ILogger _logger;
+    private readonly IGameMessageService _msg;
+    private readonly IIntentContainer _intents;
+    private readonly AbilityRegistry _abilityRegistry;
+
+    public AbilityValidationSystem(ILogger logger, IGameMessageService msg, IIntentContainer intents, AbilityRegistry abilityRegistry)
+    {
+        _logger = logger;
+        _msg = msg;
+        _intents = intents;
+        _abilityRegistry = abilityRegistry;
+    }
+
+    public void Tick(GameState state)
+    {
+        foreach (ref var intent in _intents.UseAbilitySpan)
+        {
+            var source = intent.Source;
+            var abilityId = intent.AbilityId;
+            var targets = intent.Targets;
+
+            if (!_abilityRegistry.TryGetValue(abilityId, out var abilityRuntime) || abilityRuntime == null)
+            {
+                _logger.LogError("Ability {abilityId} not found", abilityId);
+                continue;
+            }
+
+            // already casting a spell
+            if (source.Has<Casting>())
+                continue;
+
+            // TODO
+            //if (IsOnCooldown(intent.User, def))
+            //    continue;
+
+            //if (!HasResources(intent.User, def))
+            //    continue;
+
+            // TODO: pay resource cost
+
+            // casting time ?
+            if (abilityRuntime.CastTime > 0)
+            {
+                // set Casting component
+                var executeAt = state.CurrentTick + abilityRuntime.CastTime;
+                // TODO: use scheduler
+
+                _msg.ToAll(source).Act("{0} start{0:v} casting '{1}'").With(source, abilityRuntime.Name); // TODO: target
+
+                source.Add(new Casting
+                {
+                    Source = source,
+                    Targets = targets,
+                    AbilityId = abilityId,
+                    ExecuteAt = executeAt
+                });
+
+                continue;
+            }
+
+            // instant execution
+            _msg.ToAll(source).Act("{0} cast{0:v} '{1}'").With(source, abilityRuntime.Name); // TODO: target
+            // add execute ability intent
+            ref var executeAbilityIntent = ref _intents.ExecuteAbility.Add();
+            executeAbilityIntent.AbilityId = abilityRuntime.Id;
+            executeAbilityIntent.Source = source;
+            executeAbilityIntent.Targets = targets;
+        }
+    }
+}

@@ -36,17 +36,19 @@ public class DamageResolver
 
         // apply damage type modifiers, resistances, vulnerabilities, etc.
         var modifiedDamage = DamageCalculator.ModifyDamage(dmg.Target, dmg.Amount, dmg.DamageKind, dmg.Source);
+        // cap ?
+        var finalDamage = modifiedDamage;
 
         // we have to split sending to source and sending to room because source may not be in the same room
-        _msg.To(dmg.Source).Act("%gYou deal {0} damage to {1}.%x").With(modifiedDamage, dmg.Target);
-        _msg.To(dmg.Target).Act("%r{0} deal{0:v} {1} damage to you.%x").With(dmg.Source, modifiedDamage);
-        _msg.ToRoomExcept(dmg.Target, dmg.Source).Act("%y{0} deal{0:v} {1} damage to {2}.%x").With(dmg.Source, modifiedDamage, dmg.Target);
+        _msg.To(dmg.Source).Act("%gYou deal {0} damage to {1}.%x").With(finalDamage, dmg.Target);
+        _msg.To(dmg.Target).Act("%r{0} deal{0:v} {1} damage to you.%x").With(dmg.Source, finalDamage);
+        _msg.ToRoomExcept(dmg.Target, dmg.Source).Act("%y{0} deal{0:v} {1} damage to {2}.%x").With(dmg.Source, finalDamage, dmg.Target);
 
         // apply damage
-        health.Current -= modifiedDamage;
+        health.Current -= finalDamage;
 
         // generate aggro
-        _aggroResolver.ResolveFromDamage(state, dmg.Target, dmg.Source, modifiedDamage, dmg.DamageKind);
+        _aggroResolver.ResolveFromDamage(state, dmg.Target, dmg.Source, finalDamage, dmg.DamageKind);
 
         // check for death
         if (health.Current <= 0)
@@ -64,7 +66,7 @@ public class DamageResolver
         ref var damagedEvt = ref _damaged.Add();
         damagedEvt.Target = dmg.Target;
         damagedEvt.Source = dmg.Source;
-        damagedEvt.Amount = modifiedDamage;
+        damagedEvt.Amount = finalDamage;
         damagedEvt.DamageKind = dmg.DamageKind;
         damagedEvt.SourceKind = dmg.SourceKind;
     }

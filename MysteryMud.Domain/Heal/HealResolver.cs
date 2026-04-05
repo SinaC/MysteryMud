@@ -34,27 +34,27 @@ public class HealResolver
         if (health.Current >= health.Max) // already at max hp
             return;
 
-        var maxHeal = health.Max - health.Current;
-
-        // apply heal modifiers and cap to max life
-        var modifiedHeal = Math.Max(HealCalculator.ModifyHeal(heal.Target, heal.Amount, heal.Source), maxHeal);
+        // apply heal modifiers
+        var modifiedHeal = HealCalculator.ModifyHeal(heal.Target, heal.Amount, heal.Source);
+        // cap to max health-current
+        var finalHeal = Math.Min(modifiedHeal, health.Max - health.Current);
 
         // we have to split sending to source and sending to room because source may not be in the same room
-        _msg.To(heal.Source).Act("%gYou heal {0} for {1} health.%x").With(heal.Target, modifiedHeal);
-        _msg.To(heal.Target).Act("%gYou heal {0} for {1} health.%x").With(heal.Target, modifiedHeal);
-        _msg.ToRoomExcept(heal.Target, heal.Source).Act("%y{0} heal{0:v} {1} for {2} health.%x").With(heal.Source, heal.Target, modifiedHeal);
+        _msg.To(heal.Source).Act("%gYou heal {0} for {1} health.%x").With(heal.Target, finalHeal);
+        _msg.To(heal.Target).Act("%gYou heal {0} for {1} health.%x").With(heal.Target, finalHeal);
+        _msg.ToRoomExcept(heal.Target, heal.Source).Act("%y{0} heal{0:v} {1} for {2} health.%x").With(heal.Source, heal.Target, finalHeal);
 
         // apply heal
-        health.Current = Math.Max(health.Current + modifiedHeal, health.Max);
+        health.Current = health.Current + finalHeal;
 
         // generate aggro for healing
-        _aggroResolver.ResolveFromHeal(state, heal.Target, heal.Source, modifiedHeal);
+        _aggroResolver.ResolveFromHeal(state, heal.Target, heal.Source, finalHeal);
 
         // healed event
         ref var healedEvt = ref _healed.Add();
         healedEvt.Target = heal.Target;
         healedEvt.Source = heal.Source;
-        healedEvt.Amount = heal.Amount;
+        healedEvt.Amount = finalHeal;
         healedEvt.SourceKind = heal.SourceKind;
     }
 }

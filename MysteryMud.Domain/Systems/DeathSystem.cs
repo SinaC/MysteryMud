@@ -40,6 +40,7 @@ public sealed class DeathSystem
         _msg.To(deathEvent.Dead).Send("%RYou have been KILLED%x");
         _msg.ToRoom(deathEvent.Dead).Act("{0} is dead").With(deathEvent.Dead);
 
+        deathEvent.Dead.Remove<Casting>();
         RemoveFromCombat(world, deathEvent.Dead);
         CreateCorpse(world, deathEvent.Dead, deathEvent.Killer);
 
