@@ -23,7 +23,7 @@ public static class AbilityRuntimeFactory
             Kind = def.Kind,
             CastTime = def.CastTime,
             Cooldown = def.Cooldown,
-            ResourceCost = def.ResourceCost,
+            Costs = def.Costs,
             EffectIds = effectIds,
         };
     }

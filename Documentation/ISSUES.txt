@@ -1,1 +1,18 @@
-﻿
+﻿issues with stacking
+ {
+    "Name": "Armor",
+    "Stacking": "Refresh",
+    "MaxStacks": 1,
+    "DurationFormula": "120",
+	"WearOffMessage": "You feel less armored.",
+    "Actions": [
+      {
+        "Type": "StatModifier",
+        "Stat": "ArmorClass",
+        "Mode": "Flat",
+        "ValueFormula": "-20"
+      }
+    ]
+  }
+when resolve armor the 2nd time
+we detect an instance, refresh it but we apply effect again

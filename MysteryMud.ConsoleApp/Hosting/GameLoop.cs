@@ -23,12 +23,14 @@ using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
 using MysteryMud.Infrastructure.Eventing;
 using MysteryMud.Infrastructure.Services;
+using System.Runtime.CompilerServices;
 
 namespace MysteryMud.ConsoleApp.Hosting;
 
 internal class GameLoop
 {
     private const int TickRateMs = 100;
+    private const int TickRegenRate = 10;
 
     private readonly ILogger _logger;
     private readonly IOutputService _outputService;
@@ -115,6 +117,10 @@ internal class GameLoop
     private readonly AbilityExecutionSystem _abilityExecutionSystem;
     private readonly AutoAttackSystem _autoAttackSystem;
     private readonly TimedEffectSystem _timedEffectSystem;
+    private readonly ManaRegenSystem _manaRegenSystem;
+    private readonly EnergyRegenSystem _energyRegenSystem;
+    private readonly RageDecaySystem _rageDecaySystem;
+    private readonly HealthRegenSystem _healthRegenSystem;
     private readonly ThreatDecaySystem _threatDecaySystem;
     private readonly ScheduleSystem _scheduleSystem;
     private readonly DeathSystem _deathSystem;
@@ -161,6 +167,10 @@ internal class GameLoop
         _abilityExecutionSystem = new AbilityExecutionSystem(_logger, _intentContainer, _abilityExecutedEventBuffer, _abilityRegistry, _effectRegistry);
         _autoAttackSystem = new AutoAttackSystem(_intentContainer);
         _timedEffectSystem = new TimedEffectSystem(_logger, _gameMessageService, _intentContainer, _damageResolver, _healResolver, _triggeredScheduledEventBuffer, _effectExpiredEventBuffer, _effectTickedEventBuffer);
+        _manaRegenSystem = new ManaRegenSystem();
+        _energyRegenSystem = new EnergyRegenSystem();
+        _rageDecaySystem = new RageDecaySystem();
+        _healthRegenSystem = new HealthRegenSystem();
         _threatDecaySystem = new ThreatDecaySystem();
         _scheduleSystem = new ScheduleSystem(_logger, _scheduler, _intentContainer);
         _deathSystem = new DeathSystem(_gameMessageService, _intentContainer, _deathEventBuffer);
@@ -212,7 +222,6 @@ internal class GameLoop
             _commandThrottleSystem.Execute(state);
             // execute command (if not cancelled) → may generate manual LookIntent(Mode= Snapshot)
             _commandExecutionSystem.Execute(executionContext, state);
-
             // TODO: stop invalid combat: dead entities, entities in different rooms, ...
             // Process all LookIntents with Mode=Snapshot → reads current world state before any effects → produces messages
             _lookSystem.Tick(state, LookMode.Snapshot);
@@ -230,6 +239,14 @@ internal class GameLoop
             _scheduler.Process(state, _triggeredScheduledEventBuffer);
             // Resolve triggered scheduled event and generates scheduleIntent (for next tick), effectExpiredEvent (to inform), effectTickedEvent (to inform)
             _timedEffectSystem.Tick(state);
+            // Regen
+            if (state.CurrentTimeMs % TickRegenRate == 0)
+            {
+                _manaRegenSystem.Tick(state);
+                _energyRegenSystem.Tick(state);
+                _rageDecaySystem.Tick(state);
+                _healthRegenSystem.Tick(state);
+            }
             // Decay threat by 2%
             _threatDecaySystem.Tick(state);
             // TODO: NPCTargetSystem.AssignTargets   // Select highest threat targets
@@ -242,7 +259,7 @@ internal class GameLoop
             _abilityExecutionSystem.Tick(state);
             // Generate AttackIntents for entities in combat
             _autoAttackSystem.Tick(state);
-            // Process action intents (attack and effect)
+            // Process ActionIntents. kind:attack -> resolve hit, perform damage, check weapon proc (effect), check reaction (counter attack)  kind: effect -> resolve effect
             _actionOrchestrator.Tick(state);
             // Process dead entities: remove from combat, remove casting, create corpse -> generate loot intent
             _deathSystem.Tick(state);

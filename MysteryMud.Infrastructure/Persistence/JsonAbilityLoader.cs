@@ -33,11 +33,18 @@ public class JsonAbilityLoader
                 Kind = Enum.Parse<AbilityKind>(entry.Kind, ignoreCase: true),
                 CastTime = entry.CastTime,
                 Cooldown = entry.Cooldown,
-                ResourceCost = entry.ResourceCost,
+                Costs = entry.Costs.Select(MapResourceCost).ToList(),
                 Effects = entry.Effects,
             };
             abilities.Add(ability);
         }
         return abilities;
     }
+
+    private ResourceCost MapResourceCost(ResourceCostData data)
+        => new()
+        {
+            Kind = Enum.Parse<ResourceKind>(data.Kind, ignoreCase: true),
+            Amount = data.Amount,
+        };
 }

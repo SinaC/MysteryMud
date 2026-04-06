@@ -6,6 +6,8 @@ using MysteryMud.Core.Services;
 using MysteryMud.Domain.Ability;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Helpers;
+using MysteryMud.Domain.Resources;
+using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Systems;
 
@@ -46,10 +48,16 @@ public class AbilityValidationSystem
             //if (IsOnCooldown(intent.User, def))
             //    continue;
 
-            //if (!HasResources(intent.User, def))
-            //    continue;
+            // check if has enough resources
+            if (!ResourceHelpers.CanPayCosts(source, abilityRuntime, out var cannotPayResult))
+            {
+                var msg = GenerateCannotPayCostsMessage(cannotPayResult);
+                _msg.To(source).Send(msg);
+                continue;
+            }
 
-            // TODO: pay resource cost
+            // pay resource costs
+            ResourceHelpers.PayCosts(source, abilityRuntime);
 
             // casting time ?
             if (abilityRuntime.CastTime > 0)
@@ -83,4 +91,24 @@ public class AbilityValidationSystem
             executeAbilityIntent.Targets = targets;
         }
     }
+
+    private static string GenerateCannotPayCostsMessage(CannotPayCostsResult result)
+        => result.Reason switch
+        {
+            CannotPayCostsReason.ResourceNotAvailable => result.Kind switch
+            {
+                ResourceKind.Mana => "You cannot use mana in your current form.",
+                ResourceKind.Rage => "You cannot build rage right now.",
+                ResourceKind.Energy => "You cannot use energy in your current form.",
+                _ => "That resource is unavailable."
+            },
+            CannotPayCostsReason.NotEnoughResource => result.Kind switch
+            {
+                ResourceKind.Mana => "You don't have enough mana.",
+                ResourceKind.Rage => "You don't have enough rage.",
+                ResourceKind.Energy => "You don't have enough energy.",
+                _ => "You don't have enough resources."
+            },
+            _ => "You don't have enough resources."
+        };
 }
