@@ -36,7 +36,7 @@ public class SocialCommand : IExplicitCommand
             RequiredLevel = CommandLevelKind.Player,
             MinimumPosition = PositionKind.Resting,
             Priority = -1, // low priority -> unsure every other commands has more priority than social command
-            AllowAbbreviation = true,
+            DisallowAbbreviation = false,
             HelpText = string.Empty,
             Syntaxes = ["[cmd]", "[cmd] <character>"],
             Categories = ["social"],

@@ -31,31 +31,16 @@ public class CastCommand : IExplicitCommand
         _logger = logger;
         _abilityRegistry = abilityRegistry;
 
-        /*
-         *     {
-        "Name": "cast",
-        "Aliases": [],
-        "CannotBeForced": false,
-        "RequiredLevel": "Player",
-        "MinimumPosition": "Standing",
-        "Priority": 500,
-        "AllowAbbreviation": true,
-        "HelpText": ,
-        "Syntaxes": ["[cmd] <ability> <target>"],
-        "Categories": ["ability", "spells"],
-		"ThrottlingCategories": ["combat"]
-    },*/
-
         Definition = new CommandDefinition
         {
             Id = Name.ComputeUniqueId(),
             Name = Name,
             Aliases = [],
-            CannotBeForced = true,
+            CannotBeForced = false,
             RequiredLevel = CommandLevelKind.Player,
             MinimumPosition = PositionKind.Standing,
             Priority = 500,
-            AllowAbbreviation = true,
+            DisallowAbbreviation = false,
             HelpText = @"Before you can cast a spell, you have to practice it.  The more you practice,
 the higher chance you have of success when casting.  Casting spells costs mana.
 The mana cost decreases as your level increases.

@@ -10,7 +10,7 @@ public readonly struct CommandDefinition
     public required CommandLevel RequiredLevel { get; init; }
     public required Position MinimumPosition { get; init; }
     public required int Priority { get; init; }
-    public required bool AllowAbbreviation { get; init; }
+    public required bool DisallowAbbreviation { get; init; }
 }
 
 public interface ICommand
