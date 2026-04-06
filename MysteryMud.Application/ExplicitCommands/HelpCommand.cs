@@ -25,7 +25,7 @@ public class HelpCommand : IExplicitCommand
         RequiredLevel = CommandLevelKind.Player,
         MinimumPosition = PositionKind.Dead,
         Priority = 0,
-        AllowAbbreviation = true,
+        DisallowAbbreviation = false,
         HelpText = "[cmd] shows you commands in a category, all categories or all commands starting with a prefix.",
         Syntaxes = ["[cmd]", "[cmd] <prefix>", "[cmd] <category>"],
         Categories = ["information"],

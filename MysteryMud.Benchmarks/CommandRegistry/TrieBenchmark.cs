@@ -74,7 +74,7 @@ public class TrieBenchmark
                 RequiredLevel = CommandLevel.Player,
                 MinimumPosition = Position.Standing,
                 Priority = rnd.Next(1, 10),
-                AllowAbbreviation = rnd.NextDouble() < 0.95
+                DisallowAbbreviation = rnd.NextDouble() >= 0.95
             };
         }
     }

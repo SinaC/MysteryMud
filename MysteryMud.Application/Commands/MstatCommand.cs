@@ -114,17 +114,6 @@ public class MstatCommand : ICommand
         executionContext.Msg.To(actor).Send($"Health: {health.Current}/{health.Max} Regen: {regen}");
     }
 
-    //private void DisplayMana(CommandExecutionContext ctx, Entity actor, Entity target)
-    //{
-    //    ref var mana = ref target.TryGetRef<Mana>(out var hasMana);
-    //    if (hasMana)
-    //    {
-    //        ref var manaRegen = ref target.TryGetRef<ManaRegen>(out var hasManaRegen);
-    //        var usesMana = target.Has<UsesMana>();
-    //        ctx.Msg.To(actor).Send($"Mana: {mana.Current}/{mana.Max} Regen: {(hasManaRegen ? manaRegen.AmountPerTick : 0)} CanUse: {usesMana}");
-    //    }
-    //}
-
     private void DisplayResource<TResource, TRegen, TUses>(CommandExecutionContext ctx, Entity actor, Entity target, ResourceKind kind, Func<TResource, (int current, int max)> getCurrentMaxFunc, Func<TRegen, int> getRegenFunc)
         where TResource : struct
         where TRegen : struct

@@ -36,7 +36,7 @@ public class TestCommand : IExplicitCommand
             RequiredLevel = CommandLevelKind.Admin,
             MinimumPosition = PositionKind.Dead,
             Priority = 0,
-            AllowAbbreviation = false,
+            DisallowAbbreviation = true,
             HelpText = "",
             Syntaxes = ["[cmd]"],
             Categories = ["test"],

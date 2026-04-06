@@ -58,7 +58,7 @@ public class OriginalCommandRegistry
         if (exact != null)
             return exact;
         // Step 4: Remove non-abbreviatable commands
-        usable.RemoveAll(c => !c.Definition.AllowAbbreviation);
+        usable.RemoveAll(c => c.Definition.DisallowAbbreviation);
         if (usable.Count == 0)
             return null;
         if (usable.Count == 1)

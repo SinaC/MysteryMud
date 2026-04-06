@@ -34,7 +34,7 @@ public class ForceCommand : IExplicitCommand
         RequiredLevel = CommandLevelKind.Admin,
         MinimumPosition = PositionKind.Dead,
         Priority = 0,
-        AllowAbbreviation = true,
+        DisallowAbbreviation = true,
         HelpText = @"[cmd] forces one character to execute a command, except of course delete.
 
 [cmd] 'all' forces all player characters to execute a command.

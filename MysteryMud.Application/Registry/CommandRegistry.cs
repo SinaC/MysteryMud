@@ -113,7 +113,7 @@ public class CommandRegistry : ICommandRegistry
                 return CommandFindResult.Success;
             }
 
-            if (!cmd.Definition.AllowAbbreviation)
+            if (cmd.Definition.DisallowAbbreviation)
                 continue;
 
             // FIRST valid match wins
@@ -164,7 +164,7 @@ public class CommandRegistry : ICommandRegistry
             RequiredLevel = definition.RequiredLevel,
             MinimumPosition = definition.MinimumPosition,
             Priority = definition.Priority,
-            AllowAbbreviation = definition.AllowAbbreviation,
+            DisallowAbbreviation = definition.DisallowAbbreviation,
             HelpText = definition.HelpText,
             Syntaxes = definition.Syntaxes,
             Categories = definition.Categories,
@@ -241,7 +241,7 @@ public class CommandRegistry : ICommandRegistry
 //        if (exact != null)
 //            return CommandFindResult.Success(exact);
 //        // Step 4: Remove non-abbreviatable commands
-//        usable.RemoveAll(c => !c.Definition.AllowAbbreviation);
+//        usable.RemoveAll(c => c.Definition.DisallowAbbreviation);
 //        if (usable.Count == 0)
 //            return CommandFindResult.Fail(CommandFindResultType.NotFound);
 //        if (usable.Count == 1)

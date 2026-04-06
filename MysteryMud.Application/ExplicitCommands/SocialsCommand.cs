@@ -22,7 +22,7 @@ public class SocialsCommand : IExplicitCommand
         RequiredLevel = CommandLevelKind.Player,
         MinimumPosition = PositionKind.Dead,
         Priority = 0,
-        AllowAbbreviation = true,
+        DisallowAbbreviation = false,
         HelpText = "Display list of available socials.",
         Syntaxes = ["[cmd]"],
         Categories = ["information"],

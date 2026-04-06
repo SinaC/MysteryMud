@@ -45,7 +45,7 @@ public class OptimizedCommandRegistry
         foreach (var ch in key)
         {
             node = node.GetOrCreateChild(ch);
-            if (command.Definition.AllowAbbreviation)
+            if (!command.Definition.DisallowAbbreviation)
             {
                 node.AbbreviatableSubtree ??= new List<ICommand>();
                 if (!node.AbbreviatableSubtree.Contains(command))
@@ -56,7 +56,7 @@ public class OptimizedCommandRegistry
         node.Commands ??= new List<ICommand>();
         node.Commands.Add(command);
 
-        if (command.Definition.AllowAbbreviation)
+        if (!command.Definition.DisallowAbbreviation)
         {
             node.AbbreviatableSubtree ??= new List<ICommand>();
             if (!node.AbbreviatableSubtree.Contains(command))

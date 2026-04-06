@@ -7,7 +7,7 @@ public record CommandDefinitionData(
     string RequiredLevel,
     string MinimumPosition,
     int Priority,
-    bool AllowAbbreviation,
+    bool DisallowAbbreviation,
     string HelpText,
     string[] Syntaxes,
     string[] Categories,

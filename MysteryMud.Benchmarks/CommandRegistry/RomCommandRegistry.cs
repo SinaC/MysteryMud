@@ -55,7 +55,7 @@ public class RomCommandRegistry
             if (input.Equals(name, StringComparison.OrdinalIgnoreCase))
                 return cmd;
 
-            if (!cmd.Definition.AllowAbbreviation)
+            if (cmd.Definition.DisallowAbbreviation)
                 continue;
 
             // FIRST valid match wins
@@ -91,7 +91,7 @@ public class RomCommandRegistry
                 RequiredLevel = _inner.Definition.RequiredLevel,
                 MinimumPosition = _inner.Definition.MinimumPosition,
                 Priority = _inner.Definition.Priority,
-                AllowAbbreviation = _inner.Definition.AllowAbbreviation
+                DisallowAbbreviation = _inner.Definition.DisallowAbbreviation
             };
         }
 
