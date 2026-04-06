@@ -303,7 +303,15 @@ public class EffectFactory
     public Entity? FindEffect(ref CharacterEffects characterEffects, EffectRuntime effectRuntime)
     {
         if (effectRuntime.Tag == EffectTagId.None)
+        {
+            foreach (var effect in characterEffects.Effects)
+            {
+                ref var effectInstance = ref effect.Get<EffectInstance>();
+                if (effectInstance.EffectRuntime.Name == effectRuntime.Name)
+                    return effect;
+            }
             return null;
+        }
         var tagIndex = (int)effectRuntime.Tag;
         ref var effectsByTag = ref characterEffects.EffectsByTag[tagIndex];
         if (effectsByTag == null)

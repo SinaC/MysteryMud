@@ -6,6 +6,6 @@ public record AbilityDefinitionData
     string Kind, // spell/skill/passive/weapon
     int CastTime, // 0 means instant cast
     int Cooldown,
-    int ResourceCost, // only mana for the moment
+    List<ResourceCostData> Costs,
     List<string> Effects
 );

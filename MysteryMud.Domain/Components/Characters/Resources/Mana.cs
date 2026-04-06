@@ -1,4 +1,4 @@
-﻿namespace MysteryMud.Domain.Components.Characters;
+﻿namespace MysteryMud.Domain.Components.Characters.Resources;
 
 public struct Mana
 {

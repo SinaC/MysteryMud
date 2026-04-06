@@ -6,10 +6,13 @@ using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.GameData.Enums;
+using System.Numerics;
+using System.Runtime.InteropServices;
 
 namespace MysteryMud.Application.Commands;
 
@@ -37,16 +40,16 @@ public class MstatCommand : ICommand
         }
 
         // TODO: ref ?
-        var (name, location, health, baseStats, effectiveStats, inventory, equipment, characterEffects) = target.Get<Name, Location, Health, BaseStats, EffectiveStats, Inventory, Equipment, CharacterEffects>();
+        var (name, location, baseStats, effectiveStats, inventory, equipment, characterEffects) = target.Get<Name, Location, BaseStats, EffectiveStats, Inventory, Equipment, CharacterEffects>();
         executionContext.Msg.To(actor).Send($"Name: {name.Value}");
         ref var description = ref target.TryGetRef<Description>(out var hasDescription);
         if (hasDescription)
             executionContext.Msg.To(actor).Send($"Description: {description.Value}");
         executionContext.Msg.To(actor).Send($"Location: {location.Room.DisplayName}");
-        executionContext.Msg.To(actor).Send($"Health: {health.Current}/{health.Max}");
-        ref var mana = ref target.TryGetRef<Mana>(out var hasMana);
-        if (hasMana)
-            executionContext.Msg.To(actor).Send($"Mana: {mana.Current}/{mana.Max}");
+        DisplayHealth(executionContext, actor, target);
+        DisplayResource<Mana, ManaRegen, UsesMana>(executionContext, actor, target, ResourceKind.Mana, x => (x.Current, x.Max), x => x.AmountPerTick);
+        DisplayResource<Energy, EnergyRegen, UsesEnergy>(executionContext, actor, target, ResourceKind.Energy, x => (x.Current, x.Max), x => x.AmountPerTick);
+        DisplayResource<Rage, RageDecay, UsesRage>(executionContext, actor, target, ResourceKind.Rage, x => (x.Current, x.Max), x => x.AmountPerTick);
         foreach (var stat in Enum.GetValues<StatKind>())
         {
             executionContext.Msg.To(actor).Send($"{stat}: {effectiveStats.Values[stat]}/{baseStats.Values[stat]}");
@@ -98,6 +101,45 @@ public class MstatCommand : ICommand
                         executionContext.Msg.To(actor).Send($"  - {modifier.Modifier} {modifier.Value} {modifier.Stat}");
                 }
             }
+        }
+    }
+
+    private void DisplayHealth(CommandExecutionContext executionContext, Entity actor, Entity target)
+    {
+        var health = target.Get<Health>();
+        ref var healthRegen = ref target.TryGetRef<HealthRegen>(out var hasRegen);
+        var regen = hasRegen
+            ? healthRegen.AmountPerTick
+            : 0;
+        executionContext.Msg.To(actor).Send($"Health: {health.Current}/{health.Max} Regen: {regen}");
+    }
+
+    //private void DisplayMana(CommandExecutionContext ctx, Entity actor, Entity target)
+    //{
+    //    ref var mana = ref target.TryGetRef<Mana>(out var hasMana);
+    //    if (hasMana)
+    //    {
+    //        ref var manaRegen = ref target.TryGetRef<ManaRegen>(out var hasManaRegen);
+    //        var usesMana = target.Has<UsesMana>();
+    //        ctx.Msg.To(actor).Send($"Mana: {mana.Current}/{mana.Max} Regen: {(hasManaRegen ? manaRegen.AmountPerTick : 0)} CanUse: {usesMana}");
+    //    }
+    //}
+
+    private void DisplayResource<TResource, TRegen, TUses>(CommandExecutionContext ctx, Entity actor, Entity target, ResourceKind kind, Func<TResource, (int current, int max)> getCurrentMaxFunc, Func<TRegen, int> getRegenFunc)
+        where TResource : struct
+        where TRegen : struct
+        where TUses : struct
+    {
+        ref var resource = ref target.TryGetRef<TResource>(out var hasResource);
+        if (hasResource)
+        {
+            var (current, max) = getCurrentMaxFunc(resource);
+            ref var resourceRegen = ref target.TryGetRef<TRegen>(out var hasRegen);
+            var regen = hasRegen
+                ? getRegenFunc(resourceRegen)
+                : 0;
+            var uses = target.Has<TUses>();
+            ctx.Msg.To(actor).Send($"{kind}: {current}/{max} Regen/Decay: {regen} CanUse: {uses}");
         }
     }
 }

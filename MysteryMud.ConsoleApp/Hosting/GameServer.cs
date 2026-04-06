@@ -8,6 +8,7 @@ using MysteryMud.Domain.Combat.Effect;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
+using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Factories;
 using MysteryMud.Domain.Services;
@@ -118,59 +119,7 @@ public class GameServer
     private void InitializePlayer(Entity player, int connectionId)
     {
         // TODO: fill in with actual character creation data, load from file, etc
-        var commandThrottle = new CommandThrottle();
-        CommandThrottlingFactory.Initialize(ref commandThrottle);
-        player.Add(
-            new CharacterTag(),
-            new PlayerTag(),
-            new CommandLevel { Value = CommandLevelKind.Admin },
-            new CommandBuffer(),
-            commandThrottle,
-            new Name { Value = "joel" }, // TODO: implement character creation and loading from file, for now just use a placeholder name
-            new BaseStats
-            {
-                Level = 1,
-                Experience = 0,
-                Values = new Dictionary<StatKind, int>
-                {
-                    [StatKind.Strength] = 15,
-                    [StatKind.Intelligence] = 10,
-                    [StatKind.Wisdom] = 15,
-                    [StatKind.Dexterity] = 12,
-                    [StatKind.Constitution] = 15,
-                    [StatKind.HitRoll] = 0,
-                    [StatKind.DamRoll] = 0,
-                    [StatKind.ArmorClass] = 0
-                }
-            },
-            new EffectiveStats
-            {
-                Level = 1,
-                Experience = 0,
-                Values = new Dictionary<StatKind, int>
-                {
-                    [StatKind.Strength] = 15,
-                    [StatKind.Intelligence] = 10,
-                    [StatKind.Wisdom] = 15,
-                    [StatKind.Dexterity] = 12,
-                    [StatKind.Constitution] = 15,
-                    [StatKind.HitRoll] = 0,
-                    [StatKind.DamRoll] = 0,
-                    [StatKind.ArmorClass] = 0
-                }
-            },
-            new Health { Current = 100000, Max = 100000 },
-            new Inventory { Items = [] },
-            new Equipment { Slots = [] },
-            new CharacterEffects
-            {
-                Effects = [],
-                EffectsByTag = new List<Entity>?[32]
-            },
-            new Location { Room = RoomFactory.StartingRoomEntity },
-            new Position { Value = PositionKind.Standing },
-            new DirtyStats()); // ensure stats are recomputed
-        RoomFactory.StartingRoomEntity.Get<RoomContents>().Characters.Add(player); // move to starting room
+        PlayerFactory.InitializePlayer(player);
 
         _telnet.Write(connectionId, "Welcome to the game!\r\n> ");
         _telnet.Flush(connectionId);
