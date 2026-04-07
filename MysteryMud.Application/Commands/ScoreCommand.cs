@@ -7,6 +7,7 @@ using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Extensions;
+using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.Commands;
@@ -63,6 +64,11 @@ public class ScoreCommand : ICommand
                     foreach (var modifier in statModifiers.Values)
                         executionContext.Msg.To(actor).Send($"  - {modifier.Modifier} {modifier.Value} {modifier.Stat}");
                 }
+
+                DisplayResourceModifier<HealthModifier>(executionContext, actor, effect, "Health", x => x.Modifier, x => x.Value);
+                DisplayResourceModifier<ManaModifier>(executionContext, actor, effect, "Mana", x => x.Modifier, x => x.Value);
+                DisplayResourceModifier<EnergyModifier>(executionContext, actor, effect, "Energy", x => x.Modifier, x => x.Value);
+                DisplayResourceModifier<RageModifier>(executionContext, actor, effect, "Rage", x => x.Modifier, x => x.Value);
             }
         }
     }
@@ -87,6 +93,17 @@ public class ScoreCommand : ICommand
             var (current, max) = getCurrentMaxFunc(resource);
             ref var resourceRegen = ref actor.TryGetRef<TRegen>(out var hasRegen);
             ctx.Msg.To(actor).Send($"{kind}: {current}/{max} CanUse: {uses}");
+        }
+    }
+
+    private void DisplayResourceModifier<TResourceModifier>(CommandExecutionContext ctx, Entity actor, Entity effect, string resourceName, Func<TResourceModifier, ModifierKind> getModifierFunc, Func<TResourceModifier, decimal> getValueFunc)
+        where TResourceModifier : struct
+    {
+        ref var resourceModifiers = ref effect.TryGetRef<ResourceModifiers<TResourceModifier>>(out var hasResourceModifiers);
+        if (hasResourceModifiers)
+        {
+            foreach (var modifier in resourceModifiers.Values)
+                ctx.Msg.To(actor).Send($"  - {getModifierFunc(modifier)} {getValueFunc(modifier)} {resourceName}");
         }
     }
 }

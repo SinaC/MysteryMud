@@ -53,9 +53,11 @@ public class EffectRuntimeFactory
         if (def.TickRate == 0 && onTick.Count > 0)
             throw new Exception($"TickRate cannot be 0 when Trigger OnTick is defined in effect '{def.Name}'");
 
-        // TODO: duration must be specified when there is at least one StatModifierData
-        if (def.Actions.OfType<StatModifierActionDefinition>().Any() && def.DurationFunc == null)
+        if (def.Actions.Any(x => x is StatModifierActionDefinition) && def.DurationFunc == null)
             throw new Exception($"DurationFormula must be specified if a StatModifierAction is defined in effect '{def.Name}'");
+
+        if (def.Actions.Any(x => x is HealthModifierActionDefinition or ManaModifierActionDefinition or EnergyModifierActionDefinition or RageModifierActionDefinition) && def.DurationFunc == null)
+            throw new Exception($"DurationFormula must be specified if a ResourceModifierAction is defined in effect '{def.Name}'");
 
         return new EffectRuntime
         {

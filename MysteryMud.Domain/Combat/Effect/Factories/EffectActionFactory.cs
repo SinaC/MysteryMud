@@ -4,6 +4,7 @@ using MysteryMud.Domain.Combat.Damage;
 using MysteryMud.Domain.Combat.Effect.Definitions;
 using MysteryMud.Domain.Combat.Heal;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
@@ -22,6 +23,10 @@ public class EffectActionFactory
     public Action<EffectContext> Create(EffectActionDefinition actionDefinition) => actionDefinition switch
     {
         StatModifierActionDefinition definition => CreateStatModifier(definition),
+        HealthModifierActionDefinition definition => CreateHealthModifier(definition),
+        ManaModifierActionDefinition definition => CreateManaModifier(definition),
+        EnergyModifierActionDefinition definition => CreateEnergyModifier(definition),
+        RageModifierActionDefinition definition => CreateRageModifier(definition),
         PeriodicHealActionDefinition definition => CreatePeriodHeal(definition),
         InstantHealActionDefinition definition => CreateInstantHeal(definition),
         PeriodicDamageActionDefinition definition => CreatePeriodDamage(definition),
@@ -61,6 +66,142 @@ public class EffectActionFactory
             }
             else
                 _logger.LogError("Trying to apply StatModifier on a null-effect");
+        };
+    }
+
+    public Action<EffectContext> CreateHealthModifier(HealthModifierActionDefinition definition)
+    {
+        return ctx =>
+        {
+            if (ctx.Effect is not null)
+            {
+                var effect = ctx.Effect.Value;
+                var value = definition.ValueFunc(ctx); // TODO: multiply by stack count ?
+                var modifier = new HealthModifier
+                {
+                    Modifier = definition.Modifier,
+                    Value = value
+                };
+
+                ref var resourceModifiers = ref effect.TryGetRef<ResourceModifiers<HealthModifier>>(out var hasResourceModifiers);
+                if (hasResourceModifiers)
+                    resourceModifiers.Values.Add(modifier);
+                else
+                {
+                    effect.Add(new ResourceModifiers<HealthModifier>
+                    {
+                        Values = [modifier]
+                    });
+                }
+
+                // add dirty flag to character resources so we will recalculate them with the new modifiers
+                if (!ctx.Target.Has<DirtyHealth>())
+                    ctx.Target.Add<DirtyHealth>();
+            }
+            else
+                _logger.LogError("Trying to apply HealthModifier on a null-effect");
+        };
+    }
+
+    public Action<EffectContext> CreateManaModifier(ManaModifierActionDefinition definition)
+    {
+        return ctx =>
+        {
+            if (ctx.Effect is not null)
+            {
+                var effect = ctx.Effect.Value;
+                var value = definition.ValueFunc(ctx); // TODO: multiply by stack count ?
+                var modifier = new ManaModifier
+                {
+                    Modifier = definition.Modifier,
+                    Value = value
+                };
+
+                ref var resourceModifiers = ref effect.TryGetRef<ResourceModifiers<ManaModifier>>(out var hasResourceModifiers);
+                if (hasResourceModifiers)
+                    resourceModifiers.Values.Add(modifier);
+                else
+                {
+                    effect.Add(new ResourceModifiers<ManaModifier>
+                    {
+                        Values = [modifier]
+                    });
+                }
+
+                // add dirty flag to character resources so we will recalculate them with the new modifiers
+                if (!ctx.Target.Has<DirtyMana>())
+                    ctx.Target.Add<DirtyMana>();
+            }
+            else
+                _logger.LogError("Trying to apply ManaModifier on a null-effect");
+        };
+    }
+
+    public Action<EffectContext> CreateEnergyModifier(EnergyModifierActionDefinition definition)
+    {
+        return ctx =>
+        {
+            if (ctx.Effect is not null)
+            {
+                var effect = ctx.Effect.Value;
+                var value = definition.ValueFunc(ctx); // TODO: multiply by stack count ?
+                var modifier = new EnergyModifier
+                {
+                    Modifier = definition.Modifier,
+                    Value = value
+                };
+
+                ref var resourceModifiers = ref effect.TryGetRef<ResourceModifiers<EnergyModifier>>(out var hasResourceModifiers);
+                if (hasResourceModifiers)
+                    resourceModifiers.Values.Add(modifier);
+                else
+                {
+                    effect.Add(new ResourceModifiers<EnergyModifier>
+                    {
+                        Values = [modifier]
+                    });
+                }
+
+                // add dirty flag to character resources so we will recalculate them with the new modifiers
+                if (!ctx.Target.Has<DirtyEnergy>())
+                    ctx.Target.Add<DirtyEnergy>();
+            }
+            else
+                _logger.LogError("Trying to apply EnergyModifier on a null-effect");
+        };
+    }
+
+    public Action<EffectContext> CreateRageModifier(RageModifierActionDefinition definition)
+    {
+        return ctx =>
+        {
+            if (ctx.Effect is not null)
+            {
+                var effect = ctx.Effect.Value;
+                var value = definition.ValueFunc(ctx); // TODO: multiply by stack count ?
+                var modifier = new RageModifier
+                {
+                    Modifier = definition.Modifier,
+                    Value = value
+                };
+
+                ref var resourceModifiers = ref effect.TryGetRef<ResourceModifiers<RageModifier>>(out var hasResourceModifiers);
+                if (hasResourceModifiers)
+                    resourceModifiers.Values.Add(modifier);
+                else
+                {
+                    effect.Add(new ResourceModifiers<RageModifier>
+                    {
+                        Values = [modifier]
+                    });
+                }
+
+                // add dirty flag to character resources so we will recalculate them with the new modifiers
+                if (!ctx.Target.Has<DirtyRage>())
+                    ctx.Target.Add<DirtyRage>();
+            }
+            else
+                _logger.LogError("Trying to apply RageModifier on a null-effect");
         };
     }
 

@@ -17,8 +17,11 @@ using MysteryMud.Domain.Combat.Damage;
 using MysteryMud.Domain.Combat.Effect;
 using MysteryMud.Domain.Combat.Effect.Factories;
 using MysteryMud.Domain.Combat.Heal;
+using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Systems;
+using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
 using MysteryMud.Infrastructure.Eventing;
@@ -112,7 +115,11 @@ internal class GameLoop
     private readonly FleeSystem _fleeSystem;
     private readonly MovementSystem _movementSystem;
     private readonly ItemInteractionSystem _itemInteractionSystem;
-    private readonly StatsSystem _statsSystem;
+    private readonly EffectiveStatsSystem _effectiveStatsSystem;
+    private readonly MaxResourcesSystem<BaseHealth, Health, DirtyHealth, HealthModifier> _maxHeathSystem;
+    private readonly MaxResourcesSystem<BaseMana, Mana, DirtyMana, ManaModifier> _maxManaSystem;
+    private readonly MaxResourcesSystem<BaseEnergy, Energy, DirtyEnergy, EnergyModifier> _maxEnergySystem;
+    private readonly MaxResourcesSystem<BaseRage, Rage, DirtyRage, RageModifier> _maxRageSystem;
     private readonly AbilityValidationSystem _abilityValidationSystem;
     private readonly AbilityCastingSystem _abilityCastingSystem;
     private readonly AbilityExecutionSystem _abilityExecutionSystem;
@@ -162,7 +169,11 @@ internal class GameLoop
         _fleeSystem = new FleeSystem(_gameMessageService, _intentContainer, _fleeBlockedEventBuffer);
         _movementSystem = new MovementSystem(_gameMessageService, _intentContainer, _movedEventBuffer);
         _itemInteractionSystem = new ItemInteractionSystem(_gameMessageService, _intentContainer, _itemGotEventBuffer, _itemDroppedEventBuffer, _itemGivenEventBuffer, _itemPutEventBuffer, _itemWornEventBuffer, _itemRemovedEventBuffer, _itemDestroyedEventBuffer, _itemSacrifiedEventBuffer);
-        _statsSystem = new StatsSystem();
+        _effectiveStatsSystem = new EffectiveStatsSystem();
+        _maxHeathSystem = new MaxResourcesSystem<BaseHealth, Health, DirtyHealth, HealthModifier>(x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value);
+        _maxManaSystem = new MaxResourcesSystem<BaseMana, Mana, DirtyMana, ManaModifier>(x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value);
+        _maxEnergySystem = new MaxResourcesSystem<BaseEnergy, Energy, DirtyEnergy, EnergyModifier>(x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value);
+        _maxRageSystem = new MaxResourcesSystem<BaseRage, Rage, DirtyRage, RageModifier>(x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value);
         _abilityValidationSystem = new AbilityValidationSystem(_logger, _gameMessageService, _intentContainer, _abilityRegistry);
         _abilityCastingSystem = new AbilityCastingSystem(_logger, _gameMessageService, _intentContainer, _abilityRegistry);
         _abilityExecutionSystem = new AbilityExecutionSystem(_logger, _intentContainer, _abilityExecutedEventBuffer, _abilityRegistry, _effectRegistry);
@@ -234,8 +245,13 @@ internal class GameLoop
             _movementSystem.Tick(state);
             // Process get/drop/put/give/...
             _itemInteractionSystem.Tick(state);
-            // Recalculate stats from DirtyFlags
-            _statsSystem.Tick(state);
+            // Recalculate stats with DirtyStats
+            _effectiveStatsSystem.Tick(state);
+            // Recalculate resource with DirtyResource where resource can be Health, Mana, Energy, Rage
+            _maxHeathSystem.Tick(state);
+            _maxManaSystem.Tick(state);
+            _maxEnergySystem.Tick(state);
+            _maxRageSystem.Tick(state);
             // Generate triggered scheduled event (tick or expired)
             _scheduler.Process(state, _triggeredScheduledEventBuffer);
             // Resolve triggered scheduled event and generates scheduleIntent (for next tick), effectExpiredEvent (to inform), effectTickedEvent (to inform)

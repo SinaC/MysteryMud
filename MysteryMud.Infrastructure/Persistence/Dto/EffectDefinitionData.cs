@@ -1,4 +1,6 @@
-﻿namespace MysteryMud.Infrastructure.Persistence.Dto.Actions;
+﻿using MysteryMud.Infrastructure.Persistence.Dto.Actions;
+
+namespace MysteryMud.Infrastructure.Persistence.Dto;
 
 public record EffectDefinitionData
 (

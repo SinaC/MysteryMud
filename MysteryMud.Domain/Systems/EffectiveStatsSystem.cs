@@ -8,7 +8,7 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Systems;
 
-public class StatsSystem
+public class EffectiveStatsSystem
 {
     public void Tick(GameState state)
     {
@@ -49,11 +49,12 @@ public class StatsSystem
                         continue;
 
                     ref var effectInstance = ref effect.Get<EffectInstance>();
+                    var stackCount = effectInstance.StackCount;
                     foreach (var modifier in statModifiers.Values)
                     {
                         if (modifier.Stat != stat) // TODO: optimize by only iterating modifiers for this stat, instead of all modifiers for all stats -> index modifiers by stat in the StatModifiers component
                             continue;
-                        var modifierValue = modifier.Value * effectInstance.StackCount;
+                        var modifierValue = modifier.Value * stackCount;
                         switch (modifier.Modifier)
                         {
                             case ModifierKind.Flat:
