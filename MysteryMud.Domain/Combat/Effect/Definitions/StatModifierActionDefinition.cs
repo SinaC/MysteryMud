@@ -6,5 +6,5 @@ public class StatModifierActionDefinition : EffectActionDefinition
 {
     public required StatKind Stat { get; init; }
     public required ModifierKind Modifier { get; init; }
-    public required Func<EffectContext, int> ValueFunc { get; init; }
+    public required Func<EffectContext, decimal> ValueFunc { get; init; }
 }

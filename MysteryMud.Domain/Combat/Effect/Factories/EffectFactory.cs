@@ -159,7 +159,7 @@ public class EffectFactory
         };
 
         var duration = effectRuntime.DurationFunc!.Invoke(ctx);
-        var expirationTick = state.CurrentTick + duration;
+        var expirationTick = (int)(state.CurrentTick + duration);
         var nextTick = effectRuntime.TickOnApply
             ? state.CurrentTick
             : state.CurrentTick + effectRuntime.TickRate; // 0: means pure duration
@@ -283,7 +283,7 @@ public class EffectFactory
 
                     // update Duration
                     var durationValue = effectRuntime.DurationFunc?.Invoke(ctx) ?? 0;
-                    var expirationTick = state.CurrentTick + durationValue;
+                    var expirationTick = (int)(state.CurrentTick + durationValue);
                     timedEffect.LastRefreshTick = state.CurrentTick;
                     timedEffect.ExpirationTick = expirationTick;
 
@@ -325,7 +325,7 @@ public class EffectFactory
 
                     // update Duration
                     var durationValue = effectRuntime.DurationFunc?.Invoke(ctx) ?? 0;
-                    var expirationTick = state.CurrentTick + durationValue;
+                    var expirationTick = (int)(state.CurrentTick + durationValue);
                     timedEffect.LastRefreshTick = state.CurrentTick;
                     timedEffect.ExpirationTick = expirationTick;
 

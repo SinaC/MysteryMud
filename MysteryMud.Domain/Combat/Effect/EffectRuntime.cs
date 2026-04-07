@@ -8,7 +8,7 @@ public class EffectRuntime
     public required string Name { get; init; }
 
     // state-effect
-    public Func<EffectContext, int>? DurationFunc { get; init; } // if null -> stateless effect
+    public Func<EffectContext, decimal>? DurationFunc { get; init; } // if null -> stateless effect
     public required EffectTagId Tag { get; init; }
     public required StackingRule Stacking { get; init; }
     public required int MaxStacks { get; init; } = 1;

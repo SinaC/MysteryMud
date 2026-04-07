@@ -7,6 +7,6 @@ public struct HealAction
 {
     public Entity Target;
     public Entity Source;
-    public int Amount;
+    public decimal Amount;
     public HealSourceKind SourceKind;
 }

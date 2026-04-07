@@ -2,6 +2,7 @@
 using MysteryMud.Domain.Combat.Effect;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.GameData.Enums;
+using System.Globalization;
 
 namespace MysteryMud.Domain.Services;
 
@@ -11,18 +12,22 @@ namespace MysteryMud.Domain.Services;
 public class EffectFormulaCompiler
 {
     // User-defined functions dictionary
-    private readonly Dictionary<string, Func<int[], int>> _functions;
+    private readonly Dictionary<string, Func<decimal[], decimal>> _functions;
 
     public EffectFormulaCompiler()
     {
-        _functions = new Dictionary<string, Func<int[], int>>(StringComparer.OrdinalIgnoreCase)
+        _functions = new Dictionary<string, Func<decimal[], decimal>>(StringComparer.OrdinalIgnoreCase)
         {
             { "range", args =>
                 {
                     if (args.Length != 2) throw new Exception("range() expects 2 arguments");
-                    return Random.Shared.Next(args[0], args[1] + 1);
+                    int min = (int)args[0], max = (int)args[1];
+                    return Random.Shared.Next(min, max + 1);
                 }
             },
+            { "floor", args => Math.Floor(args[0]) },
+            { "ceil", args => Math.Ceiling(args[0]) },
+            { "round", args => Math.Round(args[0]) },
             { "sum", args => args.Sum() },
             { "max", args => args.Max() },
             { "min", args => args.Min() },
@@ -30,7 +35,7 @@ public class EffectFormulaCompiler
             { "dice", args =>
                 {
                     if (args.Length != 2) throw new Exception("dice() expects 2 arguments");
-                    int n = args[0], sides = args[1];
+                    int n = (int)args[0], sides = (int)args[1];
                     int total = 0;
                     for (int i = 0; i < n; i++) total += Random.Shared.Next(1, sides + 1);
                     return total;
@@ -52,18 +57,18 @@ public class EffectFormulaCompiler
         };
     }
 
-    public void AddFunction(string name, Func<int[], int> implementation)
+    public void AddFunction(string name, Func<decimal[], decimal> implementation)
     {
         _functions[name] = implementation;
     }
 
-    public Func<EffectContext, int> Compile(string formula)
+    public Func<EffectContext, decimal> Compile(string formula)
     {
         var rpn = ToRpn(Tokenize(formula));
 
         return ctx =>
         {
-            var stack = new Stack<int>();
+            var stack = new Stack<decimal>();
 
             ref var casterStats = ref ctx.Source.Get<EffectiveStats>();
             ref var targetStats = ref ctx.Target.Get<EffectiveStats>();
@@ -130,22 +135,21 @@ public class EffectFormulaCompiler
 
                     case TokenType.Operator:
                         {
-                            int b = stack.Pop();
-                            int a = stack.Pop();
+                            decimal b = stack.Pop();
+                            decimal a = stack.Pop();
                             stack.Push(token.FuncName switch
                             {
                                 "+" => a + b,
                                 "-" => a - b,
                                 "*" => a * b,
                                 "/" => a / b,
-                                ">" => a > b ? 1 : 0,
-                                "<" => a < b ? 1 : 0,
-                                "=" => a == b ? 1 : 0,
-                                "!" => a != b ? 1 : 0,
-                                ">=" => a >= b ? 1 : 0,
-                                "<=" => a <= b ? 1 : 0,
-                                "==" => a == b ? 1 : 0,
-                                "!=" => a != b ? 1 : 0,
+                                ">" => a > b ? 1m : 0m,
+                                "<" => a < b ? 1m : 0m,
+                                "=" => a == b ? 1m : 0m,
+                                ">=" => a >= b ? 1m : 0m,
+                                "<=" => a <= b ? 1m : 0m,
+                                "==" => a == b ? 1m : 0m,
+                                "!=" => a != b ? 1m : 0m,
                                 _ => throw new Exception($"Unknown operator {token.FuncName}")
                             });
                             break;
@@ -153,12 +157,12 @@ public class EffectFormulaCompiler
 
                     case TokenType.LogicalOperator:
                         {
-                            int b = stack.Pop();
-                            int a = stack.Pop();
+                            decimal b = stack.Pop();
+                            decimal a = stack.Pop();
                             stack.Push(token.FuncName switch
                             {
-                                "&&" => (a != 0 && b != 0) ? 1 : 0,
-                                "||" => (a != 0 || b != 0) ? 1 : 0,
+                                "&&" => (a != 0 && b != 0) ? 1m : 0m,
+                                "||" => (a != 0 || b != 0) ? 1m : 0m,
                                 _ => throw new Exception($"Unknown logical operator {token.FuncName}")
                             });
                         }
@@ -171,7 +175,7 @@ public class EffectFormulaCompiler
                         if (stack.Count < token.FuncArgCount)
                             throw new Exception($"Not enough arguments for function {token.FuncName}");
 
-                        var args = new int[token.FuncArgCount];
+                        var args = new decimal[token.FuncArgCount];
                         for (int i = token.FuncArgCount - 1; i >= 0; i--)
                             args[i] = stack.Pop(); // maintain left-to-right order
 
@@ -214,10 +218,11 @@ public class EffectFormulaCompiler
 
     struct Token
     {
-        public TokenType Type;
-        public int Number;
+        public required TokenType Type;
+        public decimal Number;
         public string FuncName;
         public int FuncArgCount;
+        public required int StartIndex; // used for error highlighting
     };
 
     // Tokenizer
@@ -239,12 +244,33 @@ public class EffectFormulaCompiler
                 continue;
             }
 
-            // Number
-            if (char.IsDigit(expr[i]))
+            int start = i; // track start index for errors
+
+            // Number (decimal)
+            if (char.IsDigit(expr[i]) || expr[i] == '.')
             {
-                int start = i;
-                while (i < expr.Length && char.IsDigit(expr[i])) i++;
-                tokens.Add(new Token { Type = TokenType.Number, Number = int.Parse(expr[start..i]) });
+                bool hasDot = false;
+
+                while (i < expr.Length && (char.IsDigit(expr[i]) || expr[i] == '.'))
+                {
+                    if (expr[i] == '.')
+                    {
+                        if (hasDot) throw TokenError(expr, i, "Invalid number format");
+                        hasDot = true;
+                    }
+                    i++;
+                }
+
+                if (!decimal.TryParse(expr[start..i], NumberStyles.Number, CultureInfo.InvariantCulture, out var number))
+                    throw TokenError(expr, start, "Invalid number format");
+
+                tokens.Add(new Token
+                {
+                    Type = TokenType.Number,
+                    Number = number,
+                    StartIndex = start
+                });
+
                 lastTokenWasArithmeticOperator = false;
                 continue;
             }
@@ -252,7 +278,7 @@ public class EffectFormulaCompiler
             // Logical operators
             if (expr[i] == '&' && i + 1 < expr.Length && expr[i + 1] == '&')
             {
-                tokens.Add(new Token { Type = TokenType.LogicalOperator, FuncName = "&&" });
+                tokens.Add(new Token { Type = TokenType.LogicalOperator, FuncName = "&&", StartIndex = start });
                 i += 2;
                 lastTokenWasArithmeticOperator = false;
                 continue;
@@ -260,7 +286,7 @@ public class EffectFormulaCompiler
 
             if (expr[i] == '|' && i + 1 < expr.Length && expr[i + 1] == '|')
             {
-                tokens.Add(new Token { Type = TokenType.LogicalOperator, FuncName = "||" });
+                tokens.Add(new Token { Type = TokenType.LogicalOperator, FuncName = "||", StartIndex = start });
                 i += 2;
                 lastTokenWasArithmeticOperator = false;
                 continue;
@@ -271,12 +297,12 @@ public class EffectFormulaCompiler
             {
                 if (expr[i] == '-' && lastTokenWasArithmeticOperator) // unary minus
                 {
-                    tokens.Add(new Token { Type = TokenType.Function, FuncName = "neg", FuncArgCount = 1 });
+                    tokens.Add(new Token { Type = TokenType.Function, FuncName = "neg", FuncArgCount = 1, StartIndex = start });
                     i++;
                 }
                 else
                 {
-                    tokens.Add(new Token { Type = TokenType.Operator, FuncName = expr[i++].ToString() });
+                    tokens.Add(new Token { Type = TokenType.Operator, FuncName = expr[i++].ToString(), StartIndex = start });
                 }
                 lastTokenWasArithmeticOperator = true;
                 continue;
@@ -284,14 +310,14 @@ public class EffectFormulaCompiler
 
             if (expr[i] == '*' || expr[i] == '/')
             {
-                tokens.Add(new Token { Type = TokenType.Operator, FuncName = expr[i++].ToString() });
+                tokens.Add(new Token { Type = TokenType.Operator, FuncName = expr[i++].ToString(), StartIndex = start });
                 lastTokenWasArithmeticOperator = true;
                 continue;
             }
 
             if (expr[i] == '(')
             {
-                tokens.Add(new Token { Type = TokenType.LeftParen });
+                tokens.Add(new Token { Type = TokenType.LeftParen, StartIndex = start });
                 i++;
                 lastTokenWasArithmeticOperator = true;
                 continue;
@@ -299,12 +325,26 @@ public class EffectFormulaCompiler
 
             if (expr[i] == ')')
             {
-                tokens.Add(new Token { Type = TokenType.RightParen });
+                tokens.Add(new Token { Type = TokenType.RightParen, StartIndex = start });
                 i++;
                 lastTokenWasArithmeticOperator = false;
                 continue;
             }
- 
+
+            // !=
+            if (expr[i] == '!')
+            {
+                if (i + 1 < expr.Length && expr[i + 1] == '=')
+                {
+                    tokens.Add(new Token { Type = TokenType.Operator, FuncName = "!=", StartIndex = start });
+                    i += 2;
+                }
+                else
+                    throw TokenError(expr, i, "Unexpected '!' operator. Did you mean '!='?");
+
+                lastTokenWasArithmeticOperator = false;
+                continue;
+            }
 
             // Multi-char comparisons
             if (i + 1 < expr.Length)
@@ -312,21 +352,32 @@ public class EffectFormulaCompiler
                 string twoChar = expr.Substring(i, 2);
                 switch (twoChar)
                 {
-                    case ">=": tokens.Add(new Token { Type = TokenType.Operator, FuncName = ">=" }); i += 2; lastTokenWasArithmeticOperator = false; continue;
-                    case "<=": tokens.Add(new Token { Type = TokenType.Operator, FuncName = "<=" }); i += 2; lastTokenWasArithmeticOperator = false; continue;
-                    case "==": tokens.Add(new Token { Type = TokenType.Operator, FuncName = "==" }); i += 2; lastTokenWasArithmeticOperator = false; continue;
-                    case "!=": tokens.Add(new Token { Type = TokenType.Operator, FuncName = "!=" }); i += 2; lastTokenWasArithmeticOperator = false; continue;
+                    case ">=": tokens.Add(new Token { Type = TokenType.Operator, FuncName = ">=", StartIndex = start }); i += 2; lastTokenWasArithmeticOperator = false; continue;
+                    case "<=": tokens.Add(new Token { Type = TokenType.Operator, FuncName = "<=", StartIndex = start }); i += 2; lastTokenWasArithmeticOperator = false; continue;
+                    case "==": tokens.Add(new Token { Type = TokenType.Operator, FuncName = "==", StartIndex = start }); i += 2; lastTokenWasArithmeticOperator = false; continue;
+                    //case "!=": tokens.Add(new Token { Type = TokenType.Operator, FuncName = "!=" }); i += 2; lastTokenWasArithmeticOperator = false; continue; handled in previous case
                 }
             }
 
             // Single-char comparisons
-            if (expr[i] == '>') { tokens.Add(new Token { Type = TokenType.Operator, FuncName = ">" }); i++; lastTokenWasArithmeticOperator = false; continue; }
-            if (expr[i] == '<') { tokens.Add(new Token { Type = TokenType.Operator, FuncName = "<" }); i++; lastTokenWasArithmeticOperator = false; continue; }
+            if (expr[i] == '>')
+            { 
+                tokens.Add(new Token { Type = TokenType.Operator, FuncName = ">", StartIndex = start });
+                i++;
+                lastTokenWasArithmeticOperator = false;
+                continue;
+            }
+            if (expr[i] == '<') {
+                tokens.Add(new Token { Type = TokenType.Operator, FuncName = "<", StartIndex = start });
+                i++;
+                lastTokenWasArithmeticOperator = false;
+                continue;
+            }
 
             // Comma
             if (expr[i] == ',')
             {
-                tokens.Add(new Token { Type = TokenType.Comma });
+                tokens.Add(new Token { Type = TokenType.Comma, StartIndex = start });
                 i++;
                 lastTokenWasArithmeticOperator = true;
                 continue;
@@ -335,47 +386,59 @@ public class EffectFormulaCompiler
             // Identifier
             if (char.IsLetter(expr[i]))
             {
-                int start = i;
                 while (i < expr.Length && (char.IsLetter(expr[i]) || expr[i] == '.')) i++;
                 string tokenStr = expr[start..i].ToLowerInvariant();
 
                 switch (tokenStr)
                 {
                     // Caster
-                    case "caster.level": tokens.Add(new Token { Type = TokenType.CasterLevel }); break;
-                    case "caster.strength": tokens.Add(new Token { Type = TokenType.CasterStrength }); break;
-                    case "caster.intelligence": tokens.Add(new Token { Type = TokenType.CasterIntelligence }); break;
-                    case "caster.wisdom": tokens.Add(new Token { Type = TokenType.CasterWisdom }); break;
-                    case "caster.dexterity": tokens.Add(new Token { Type = TokenType.CasterDexterity }); break;
-                    case "caster.constitution": tokens.Add(new Token { Type = TokenType.CasterConstitution }); break;
+                    case "caster.level": tokens.Add(new Token { Type = TokenType.CasterLevel, StartIndex = start }); break;
+                    case "caster.strength": tokens.Add(new Token { Type = TokenType.CasterStrength, StartIndex = start }); break;
+                    case "caster.intelligence": tokens.Add(new Token { Type = TokenType.CasterIntelligence, StartIndex = start }); break;
+                    case "caster.wisdom": tokens.Add(new Token { Type = TokenType.CasterWisdom, StartIndex = start }); break;
+                    case "caster.dexterity": tokens.Add(new Token { Type = TokenType.CasterDexterity, StartIndex = start }); break;
+                    case "caster.constitution": tokens.Add(new Token { Type = TokenType.CasterConstitution, StartIndex = start }); break;
 
                     // Target
-                    case "target.level": tokens.Add(new Token { Type = TokenType.TargetLevel }); break;
-                    case "target.strength": tokens.Add(new Token { Type = TokenType.TargetStrength }); break;
-                    case "target.intelligence": tokens.Add(new Token { Type = TokenType.TargetIntelligence }); break;
-                    case "target.wisdom": tokens.Add(new Token { Type = TokenType.TargetWisdom }); break;
-                    case "target.dexterity": tokens.Add(new Token { Type = TokenType.TargetDexterity }); break;
-                    case "target.constitution": tokens.Add(new Token { Type = TokenType.TargetConstitution }); break;
+                    case "target.level": tokens.Add(new Token { Type = TokenType.TargetLevel, StartIndex = start }); break;
+                    case "target.strength": tokens.Add(new Token { Type = TokenType.TargetStrength, StartIndex = start }); break;
+                    case "target.intelligence": tokens.Add(new Token { Type = TokenType.TargetIntelligence, StartIndex = start }); break;
+                    case "target.wisdom": tokens.Add(new Token { Type = TokenType.TargetWisdom, StartIndex = start }); break;
+                    case "target.dexterity": tokens.Add(new Token { Type = TokenType.TargetDexterity, StartIndex = start }); break;
+                    case "target.constitution": tokens.Add(new Token { Type = TokenType.TargetConstitution, StartIndex = start }); break;
 
                     // Effect
-                    case "effect.stackcount": tokens.Add(new Token { Type = TokenType.EffectStackCount }); break;
+                    case "effect.stackcount": tokens.Add(new Token { Type = TokenType.EffectStackCount, StartIndex = start }); break;
 
                     default:
                         // function detection
                         if (i < expr.Length && expr[i] == '(')
-                            tokens.Add(new Token { Type = TokenType.Function, FuncName = tokenStr });
+                            tokens.Add(new Token { Type = TokenType.Function, FuncName = tokenStr, StartIndex = start });
                         else
-                            throw new Exception($"Unknown identifier {tokenStr}");
+                            throw TokenError(expr, start, $"Unknown identifier '{tokenStr}'");
                         break;
                 }
                 lastTokenWasArithmeticOperator = false;
                 continue;
             }
 
-            throw new Exception($"Unexpected character '{expr[i]}' at position {i}");
+            throw TokenError(expr, i, $"Unexpected character '{expr[i]}'");
         }
 
         return tokens;
+    }
+
+    static Exception TokenError(string formula, int pos, string message)
+    {
+        // limit snippet length
+        int snippetStart = Math.Max(0, pos - 10);
+        int snippetEnd = Math.Min(formula.Length, pos + 10);
+        string snippet = formula[snippetStart..snippetEnd];
+
+        // caret position in snippet
+        int caretPos = pos - snippetStart;
+
+        return new Exception($"{message} at position {pos}:\n{snippet}\n{new string(' ', caretPos)}^");
     }
 
     // RPN Conversion(Shunting Yard)

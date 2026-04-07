@@ -33,50 +33,51 @@ public class StatsSystem
                 // TODO: apply modifiers from equipment
 
                 // apply modifiers from effects
-                var flat = 0;
-                var percent = 0;
-                var multiply = 1;
-                var overriding = (int?)null;
+                var flat = 0m;
+                var percent = 0m;
+                var multiply = 1m;
+                var overriding = (decimal?)null;
 
                 ref var characterEffects = ref character.Get<CharacterEffects>();
                 foreach (var effect in characterEffects.Effects)
                 {
                     if (!EffectHelpers.IsAlive(effect))
                         continue;
-                    ref var statModifiers = ref effect.TryGetRef<StatModifiers>(out var hasStatModifiers);
-                    if (hasStatModifiers)
-                    {
-                        ref var effectInstance = ref effect.Get<EffectInstance>();
 
-                        foreach (var modifier in statModifiers.Values)
+                    ref var statModifiers = ref effect.TryGetRef<StatModifiers>(out var hasStatModifiers);
+                    if (!hasStatModifiers)
+                        continue;
+
+                    ref var effectInstance = ref effect.Get<EffectInstance>();
+                    foreach (var modifier in statModifiers.Values)
+                    {
+                        if (modifier.Stat != stat) // TODO: optimize by only iterating modifiers for this stat, instead of all modifiers for all stats -> index modifiers by stat in the StatModifiers component
+                            continue;
+                        var modifierValue = modifier.Value * effectInstance.StackCount;
+                        switch (modifier.Modifier)
                         {
-                            if (modifier.Stat != stat) // TODO: optimize by only iterating modifiers for this stat, instead of all modifiers for all stats -> index modifiers by stat in the StatModifiers component
-                                continue;
-                            var modifierValue = modifier.Value * effectInstance.StackCount;
-                            switch (modifier.Modifier)
-                            {
-                                case ModifierKind.Flat:
-                                    flat += modifierValue;
-                                    break;
-                                case ModifierKind.AddPercent:
-                                    percent += modifierValue;
-                                    break;
-                                case ModifierKind.Multiply:
-                                    multiply *= modifierValue;
-                                    break;
-                                case ModifierKind.Override: // what if multiple overrides? for now, just take the last one, but maybe we should prioritize by source (e.g. gear overrides > buff overrides > debuff overrides) or something like that
-                                    overriding = modifierValue;
-                                    break;
-                            }
+                            case ModifierKind.Flat:
+                                flat += modifierValue;
+                                break;
+                            case ModifierKind.AddPercent:
+                                percent += modifierValue;
+                                break;
+                            case ModifierKind.Multiply:
+                                multiply *= modifierValue;
+                                break;
+                            case ModifierKind.Override: // what if multiple overrides? for now, just take the last one, but maybe we should prioritize by source (e.g. gear overrides > buff overrides > debuff overrides) or something like that
+                                overriding = modifierValue;
+                                break;
                         }
                     }
                 }
 
-                var finalValue = overriding ?? ((baseValue + flat) * (100 + percent) * multiply / 100);
+                var rawValue = overriding ?? ((baseValue + flat) * (100 + percent) * multiply / 100);
 
                 // TODO: capping
+                var finalValue = rawValue;
 
-                effectiveStats.Values[stat] = finalValue;
+                effectiveStats.Values[stat] = (int)Math.Round(finalValue, MidpointRounding.AwayFromZero);
             }
 
             // mark as clean

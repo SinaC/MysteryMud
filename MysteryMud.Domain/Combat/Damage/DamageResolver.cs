@@ -36,19 +36,27 @@ public class DamageResolver
 
         // apply damage type modifiers, resistances, vulnerabilities, etc.
         var modifiedDamage = DamageCalculator.ModifyDamage(dmg.Target, dmg.Amount, dmg.DamageKind, dmg.Source);
-        // cap ?
+        // TODO: capping
         var finalDamage = modifiedDamage;
+        // damage to apply, apply rounding
+        var damageToApply = (int)Math.Round(finalDamage, MidpointRounding.AwayFromZero);
 
         // we have to split sending to source and sending to room because source may not be in the same room
-        _msg.To(dmg.Source).Act("%gYou deal {0} damage to {1}.%x").With(finalDamage, dmg.Target);
-        _msg.To(dmg.Target).Act("%r{0} deal{0:v} {1} damage to you.%x").With(dmg.Source, finalDamage);
-        _msg.ToRoomExcept(dmg.Target, dmg.Source).Act("%y{0} deal{0:v} {1} damage to {2}.%x").With(dmg.Source, finalDamage, dmg.Target);
+        if (dmg.Source == dmg.Target)
+            _msg.To(dmg.Source).Act("%rYou deal {0} damage to yourself.%x").With(damageToApply);
+        else
+        {
+            _msg.To(dmg.Source).Act("%gYou deal {0} damage to {1}.%x").With(damageToApply, dmg.Target);
+            _msg.To(dmg.Target).Act("%r{0} deal{0:v} {1} damage to you.%x").With(dmg.Source, damageToApply);
+        }
+        _msg.ToRoomExcept(dmg.Target, dmg.Source).Act("%y{0} deal{0:v} {1} damage to {2}.%x").With(dmg.Source, damageToApply, dmg.Target);
 
         // apply damage
-        health.Current -= finalDamage;
+        health.Current -= damageToApply;
 
         // generate aggro
-        _aggroResolver.ResolveFromDamage(state, dmg.Target, dmg.Source, finalDamage, dmg.DamageKind);
+        _aggroResolver.ResolveFromDamage(state, dmg.Target, dmg.Source, damageToApply
+            , dmg.DamageKind);
 
         // check for death
         if (health.Current <= 0)
@@ -66,7 +74,7 @@ public class DamageResolver
         ref var damagedEvt = ref _damaged.Add();
         damagedEvt.Target = dmg.Target;
         damagedEvt.Source = dmg.Source;
-        damagedEvt.Amount = finalDamage;
+        damagedEvt.Amount = damageToApply;
         damagedEvt.DamageKind = dmg.DamageKind;
         damagedEvt.SourceKind = dmg.SourceKind;
     }
