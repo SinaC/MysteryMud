@@ -6,10 +6,12 @@ using MysteryMud.Application.Dispatching;
 using MysteryMud.Application.ExplicitCommands;
 using MysteryMud.Application.Registry;
 using MysteryMud.ConsoleApp;
+using MysteryMud.ConsoleApp.Demo;
 using MysteryMud.ConsoleApp.Hosting;
 using MysteryMud.Core.Extensions;
 using MysteryMud.Domain.Ability;
 using MysteryMud.Domain.Combat.Effect;
+using MysteryMud.Domain.Combat.Effect.Factories;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
@@ -59,7 +61,7 @@ RoomFactory.LinkRoom(world, market, temple, DirectionKind.North);
 RoomFactory.LinkRoom(world, market, common, DirectionKind.South);
 RoomFactory.LinkRoom(world, common, market, DirectionKind.North);
 
-var player = PlayerFactory.CreatePlayer(world, "player", market);
+var player = PlayerFactory.CreateAdmin(world, "player", market);
 var goblin = MobFactory.CreateMob(world, "goblin", "a goblin", market);
 var troll = MobFactory.CreateMob(world, "troll", "a troll", market);
 troll.Get<Health>().Current = 10000;
@@ -101,7 +103,9 @@ var basePath = AppContext.BaseDirectory;
 // load effect definitions
 var effectLoader = new JsonEffectLoader();
 var effectDefinitions = effectLoader.Load(Path.Combine(basePath, gamePaths.EffectsJson));
-var effectRegistry = new EffectRegistry();
+var effectActionFactory = new EffectActionFactory(logger);
+var effectRuntimeFactory = new EffectRuntimeFactory(effectActionFactory);
+var effectRegistry = new EffectRegistry(effectRuntimeFactory);
 effectRegistry.RegisterEffects(effectDefinitions);
 
 // load ability definitions
@@ -143,7 +147,7 @@ var commandDispatcher = new CommandDispatcher(commandRegistry);
 
 // run demo
 //Demo.Run(logger, world, commandDispatcher);
-//Demo2.Run(logger, world, commandDispatcher);
+//Demo2.Run(logger, world, commandDispatcher, effectRegistry);
 
 // start game server
 var gameServer = new GameServer(logger, world, commandDispatcher, effectRegistry, abilityRegistry);

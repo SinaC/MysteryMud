@@ -94,6 +94,76 @@ public static class PlayerFactory
         return player;
     }
 
+    public static Entity CreateAdmin(World world, string name, Entity room)
+    {
+        var commandThrottle = new CommandThrottle();
+        CommandThrottlingFactory.Initialize(ref commandThrottle);
+        var player = world.Create(
+            new CharacterTag(),
+            new PlayerTag(),
+            new CommandLevel { Value = CommandLevelKind.Admin },
+            new CommandBuffer(),
+            commandThrottle,
+            new Name { Value = name },
+            new BaseStats
+            {
+                Level = 1,
+                Experience = 0,
+                Values = new Dictionary<StatKind, int>
+                {
+                    [StatKind.Strength] = 15,
+                    [StatKind.Intelligence] = 10,
+                    [StatKind.Wisdom] = 15,
+                    [StatKind.Dexterity] = 12,
+                    [StatKind.Constitution] = 15,
+                    [StatKind.HitRoll] = 0,
+                    [StatKind.DamRoll] = 0,
+                    [StatKind.ArmorClass] = 0
+                }
+            },
+            new EffectiveStats
+            {
+                Level = 1,
+                Experience = 0,
+                Values = new Dictionary<StatKind, int>
+                {
+                    [StatKind.Strength] = 15,
+                    [StatKind.Intelligence] = 10,
+                    [StatKind.Wisdom] = 15,
+                    [StatKind.Dexterity] = 12,
+                    [StatKind.Constitution] = 15,
+                    [StatKind.HitRoll] = 0,
+                    [StatKind.DamRoll] = 0,
+                    [StatKind.ArmorClass] = 0
+                }
+            },
+            new Health { Current = 10, Max = 100 },
+            new HealthRegen { AmountPerTick = 1 },
+            new Mana { Current = 100, Max = 100 },
+            new ManaRegen { AmountPerTick = 1 },
+            new UsesMana(),
+            new Energy { Current = 100, Max = 100 },
+            new EnergyRegen { AmountPerTick = 1 },
+            new Rage { Current = 0, Max = 100 },
+            new RageDecay { AmountPerTick = 1 },
+            new Form { Value = FormType.Humanoid },
+            new Inventory { Items = [] },
+            new Equipment { Slots = [] },
+            new CharacterEffects
+            {
+                Effects = [],
+                EffectsByTag = new List<Entity>?[32]
+            },
+            new Position { Value = PositionKind.Standing },
+            new Location { Room = room },
+            new DirtyStats() // dirty by default
+        );
+
+        room.Get<RoomContents>().Characters.Add(player);
+
+        return player;
+    }
+
     public static void InitializePlayer(Entity player)
     {
         var commandThrottle = new CommandThrottle();
