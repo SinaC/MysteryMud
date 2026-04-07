@@ -7,7 +7,7 @@ public struct DamageAction
 {
     public Entity Target;
     public Entity Source;
-    public int Amount;
+    public decimal Amount;
     public DamageKind DamageKind;
     public DamageSourceKind SourceKind;
 }

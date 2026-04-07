@@ -5,6 +5,7 @@ using MysteryMud.Core.Services;
 using MysteryMud.Domain.Combat.Attack.Resolvers;
 using MysteryMud.Domain.Combat.Calculators;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
 
 namespace MysteryMud.Domain.Combat.Heal;
@@ -35,26 +36,35 @@ public class HealResolver
             return;
 
         // apply heal modifiers
-        var modifiedHeal = HealCalculator.ModifyHeal(heal.Target, heal.Amount, heal.Source);
+        decimal modifiedHeal = HealCalculator.ModifyHeal(heal.Target, heal.Amount, heal.Source);
         // cap to max health-current
-        var finalHeal = Math.Min(modifiedHeal, health.Max - health.Current);
+        decimal maxPossibleHeal = health.Max - health.Current;
+        decimal finalHeal = Math.Min(modifiedHeal, maxPossibleHeal);
+        // heal to apply, apply rounding
+        int healToApply = (int)Math.Round(finalHeal, MidpointRounding.AwayFromZero);
+        health.Current += healToApply;
 
         // we have to split sending to source and sending to room because source may not be in the same room
-        _msg.To(heal.Source).Act("%gYou heal {0} for {1} health.%x").With(heal.Target, finalHeal);
-        _msg.To(heal.Target).Act("%gYou heal {0} for {1} health.%x").With(heal.Target, finalHeal);
-        _msg.ToRoomExcept(heal.Target, heal.Source).Act("%y{0} heal{0:v} {1} for {2} health.%x").With(heal.Source, heal.Target, finalHeal);
+        if (heal.Source == heal.Target)
+            _msg.To(heal.Source).Act("%gYou heal yourself for {0} health.%x").With(healToApply);
+        else
+        {
+            _msg.To(heal.Source).Act("%gYou heal {0:n} for {1} health.%x").With(heal.Target, healToApply);
+            _msg.To(heal.Target).Act("%g{0} heal{0:v} you for {1} health.%x").With(heal.Source, healToApply);
+            _msg.ToRoomExcept(heal.Target, heal.Source).Act("%y{0} heal{0:v} {1} for {2} health.%x").With(heal.Source, heal.Target, healToApply);
+        }
 
         // apply heal
-        health.Current = health.Current + finalHeal;
+        health.Current = health.Current + healToApply;
 
         // generate aggro for healing
-        _aggroResolver.ResolveFromHeal(state, heal.Target, heal.Source, finalHeal);
+        _aggroResolver.ResolveFromHeal(state, heal.Target, heal.Source, healToApply);
 
         // healed event
         ref var healedEvt = ref _healed.Add();
         healedEvt.Target = heal.Target;
         healedEvt.Source = heal.Source;
-        healedEvt.Amount = finalHeal;
+        healedEvt.Amount = healToApply;
         healedEvt.SourceKind = heal.SourceKind;
     }
 }
