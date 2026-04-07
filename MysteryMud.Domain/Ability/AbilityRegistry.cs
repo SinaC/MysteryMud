@@ -1,7 +1,7 @@
 ﻿using MysteryMud.Core.Trie;
 using MysteryMud.Domain.Ability.Definitions;
 using MysteryMud.Domain.Ability.Factories;
-using MysteryMud.Domain.Combat.Effect;
+using MysteryMud.Domain.Action.Effect;
 
 namespace MysteryMud.Domain.Ability;
 

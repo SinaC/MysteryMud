@@ -1,5 +1,5 @@
 ﻿using MysteryMud.Core.Extensions;
-using MysteryMud.Domain.Combat.Effect.Definitions;
+using MysteryMud.Domain.Action.Effect.Definitions;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Enums;
 using MysteryMud.Infrastructure.Persistence.Dto;

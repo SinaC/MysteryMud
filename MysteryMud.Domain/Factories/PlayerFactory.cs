@@ -6,7 +6,6 @@ using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.GameData.Enums;
-using System.Numerics;
 
 namespace MysteryMud.Domain.Factories;
 
@@ -236,8 +235,8 @@ public static class PlayerFactory
             new DirtyStats()); // ensure stats are recomputed
 
         player.Add(
-            new Health { Current = 10, Max = 100 },
-            new BaseHealth { Max = 100 },
+            new Health { Current = 10000, Max = 10000 },
+            new BaseHealth { Max = 10000 },
             new HealthRegen { AmountPerTick = 1 });
         player.Add(
             new Mana { Current = 100, Max = 100 },

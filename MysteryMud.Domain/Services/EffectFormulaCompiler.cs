@@ -1,5 +1,5 @@
 ﻿using Arch.Core.Extensions;
-using MysteryMud.Domain.Combat.Effect;
+using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.GameData.Enums;
 using System.Globalization;

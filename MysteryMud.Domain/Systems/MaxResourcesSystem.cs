@@ -16,12 +16,12 @@ public class MaxResourcesSystem<TBase, TResource, TDirty, TModifier>
     where TDirty : struct
     where TModifier : struct
 {
-    private Func<TBase, int> _getBaseMaxFunc;
-    private Func<TResource, int> _getCurrentFunc;
-    private SetResourceValueAction<TResource> _setCurrentAction;
-    private SetResourceValueAction<TResource> _setMaxAction;
-    private Func<TModifier, decimal> _getModifierValueFunc;
-    private Func<TModifier, ModifierKind> _getModifierKindFunc;
+    private readonly Func<TBase, int> _getBaseMaxFunc;
+    private readonly Func<TResource, int> _getCurrentFunc;
+    private readonly SetResourceValueAction<TResource> _setCurrentAction;
+    private readonly SetResourceValueAction<TResource> _setMaxAction;
+    private readonly Func<TModifier, decimal> _getModifierValueFunc;
+    private readonly Func<TModifier, ModifierKind> _getModifierKindFunc;
 
     public MaxResourcesSystem(Func<TBase, int> getBaseMaxValueFunc, Func<TResource, int> getCurrentFunc, SetResourceValueAction<TResource> setCurrentAction, SetResourceValueAction<TResource> setMaxAction, Func<TModifier, ModifierKind> getModifierKindFunc, Func<TModifier, decimal> getModifierValueFunc)
     {
@@ -49,50 +49,12 @@ public class MaxResourcesSystem<TBase, TResource, TDirty, TModifier>
             // TODO: apply modifiers from equipment
 
             // apply modifiers from effects
-            var flat = 0m;
-            var percent = 0m;
-            var multiply = 1m;
-            var overriding = (decimal?)null;
-
-            decimal newMax = baseMax;
-            ref var characterEffects = ref character.Get<CharacterEffects>();
-            foreach (var effect in characterEffects.Effects)
-            {
-                if (!EffectHelpers.IsAlive(effect))
-                    continue;
-
-                // get modifiers
-                ref var effectModifiers = ref effect.TryGetRef<ResourceModifiers<TModifier>>(out var hasModifiers);
-                if (!hasModifiers)
-                    continue;
-
-                ref var effectInstance = ref effect.Get<EffectInstance>();
-                var stackCount = effectInstance.StackCount;
-                foreach (var modifier in effectModifiers.Values)
-                {
-                    var modifierValue = _getModifierValueFunc(modifier) * stackCount;
-                    var modifierKind = _getModifierKindFunc(modifier);
-                    switch (modifierKind)
-                    {
-                        case ModifierKind.Flat:
-                            flat += modifierValue;
-                            break;
-                        case ModifierKind.AddPercent:
-                            percent += modifierValue;
-                            break;
-                        case ModifierKind.Multiply:
-                            multiply *= modifierValue;
-                            break;
-                        case ModifierKind.Override: // what if multiple overrides? for now, just take the last one, but maybe we should prioritize by source (e.g. gear overrides > buff overrides > debuff overrides) or something like that
-                            overriding = modifierValue;
-                            break;
-                    }
-                }
-            }
-            newMax = overriding ?? ((baseMax + flat) * (100 + percent) * multiply / 100);
+            var (flat, percent, multiply, overriding) = ModifierPipeline.CalculateModifiers<ResourceModifiers<TModifier>, TModifier>(character, x => true, x => x.Values, _getModifierKindFunc, _getModifierValueFunc);
+           
+            var rawMax = overriding ?? ((baseMax + flat) * (100 + percent) * multiply / 100);
 
             // round final max
-            int finalMax = (int)Math.Round(newMax, MidpointRounding.AwayFromZero);
+            int finalMax = (int)Math.Round(rawMax, MidpointRounding.AwayFromZero);
 
             // clamp current value
             int current = _getCurrentFunc(effectiveRes);

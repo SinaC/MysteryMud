@@ -1,5 +1,5 @@
 ﻿using Arch.Core;
-using MysteryMud.Domain.Combat.Effect;
+using MysteryMud.Domain.Action.Effect;
 
 namespace MysteryMud.Domain.Components.Effects;
 
