@@ -8,7 +8,7 @@ namespace MysteryMud.Domain.Combat.Effect;
 
 public ref struct EffectContext
 {
-    public Entity Effect;
+    public Entity? Effect; // for non-instant effect
     public Entity Source;
     public Entity Target;
 

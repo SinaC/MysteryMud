@@ -23,7 +23,6 @@ using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
 using MysteryMud.Infrastructure.Eventing;
 using MysteryMud.Infrastructure.Services;
-using System.Runtime.CompilerServices;
 
 namespace MysteryMud.ConsoleApp.Hosting;
 
@@ -68,6 +67,8 @@ internal class GameLoop
         }
     }
 }*/
+    // TODO: deathEvent and damageEvent are purely combat events and should probably remains the only event passed to systems, other events like itemGotEvent, itemDroppedEvent, itemGivenEvent, itemPutEvent can be directly sent to message service without going through event buffer since they are only used for messaging and no system needs to react to them, this way we can avoid the complexity of managing multiple event buffers and also avoid the issue of events being processed in the wrong order (like damage events being processed before attack intents)
+    // TODO: we should replace all these eventbuffers with a more generic event system
 
     private readonly EventBuffer<FleeBlockedEvent> _fleeBlockedEventBuffer = new();
     private readonly EventBuffer<MovedEvent> _movedEventBuffer = new();

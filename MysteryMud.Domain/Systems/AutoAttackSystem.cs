@@ -44,6 +44,7 @@ public class AutoAttackSystem
             // Determine number of attacks (multi-hit)
             int hits = Math.Max(defaultHits, stats.AttackCount); // TODO
 
+            // Add attack intent
             ref var attackIntent = ref _intentContainer.Action.Add();
             attackIntent.Kind = GameData.Enums.ActionKind.Attack;
             attackIntent.Attack.Source = actor;

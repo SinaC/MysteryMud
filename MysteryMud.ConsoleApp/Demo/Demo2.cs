@@ -89,8 +89,10 @@ static class Demo2
         var weaponProcResolver = new WeaponProcResolver(logger, gameMessageService, intentBusContainer, effectRegistry);
         var reactionResolver = new ReactionResolver(gameMessageService);
         var effectFactory = new EffectFactory(logger, gameMessageService, intentBusContainer, damageResolver, healResolver);
+
         var actionOrchestrator = new ActionOrchestrator(logger, intentBusContainer, attackResolvedEventBuffer, effectResolvedEventBuffer, effectRegistry, effectFactory, hitResolver, hitDamageFactory, damageResolver, weaponProcResolver, reactionResolver);
 
+        var commandExecutionSystem = new CommandExecutionSystem(logger);
         var fleeSystem = new FleeSystem(gameMessageService, intentBusContainer, fleeBlockedEventBuffer);
         var movementSystem = new MovementSystem(gameMessageService, intentBusContainer, movedEventBuffer);
         var itemInteractionSystem = new ItemInteractionSystem(gameMessageService, intentBusContainer, itemGotEventBuffer, itemDroppedEventBuffer, itemGivenEventBuffer, itemPutEventBuffer, itemWornEventBuffer, itemRemovedEventBuffer, itemDestroyedEventBuffer, itemSacrifierEventBuffer);
@@ -147,14 +149,18 @@ static class Demo2
         //goblinAttack.Target = troll;
         //goblinAttack.RemainingHits = 3;
 
-        // scenario 3: goblin is in temple square, chest with gem is in temple square, troll is in temple square. Goblin (low life) uses command kill troll and troll has auto counterattacks
-        ref var trollEffectiveStats = ref troll.Get<EffectiveStats>();
-        trollEffectiveStats.Dodge = 0; // for testing, make sure all hits land so we can see the counterattack in action
-        trollEffectiveStats.Parry = 0; // for testing, make sure all hits land so we can see the counterattack in action
-        trollEffectiveStats.CounterAttack = 100; // for testing, make sure all we counterattack every time so we can see the counterattack in action
-        commandDispatcher.Dispatch(executionContext, gameState, goblin, "kill troll".AsSpan());
-        // goblin uses command kill troll
-        //goblin.Add(new CombatState { Target = troll, RoundDelay = 0 });
+        //// scenario 3: goblin is in temple square, chest with gem is in temple square, troll is in temple square. Goblin (low life) uses command kill troll and troll has auto counterattacks
+        //ref var trollEffectiveStats = ref troll.Get<EffectiveStats>();
+        //trollEffectiveStats.Dodge = 0; // for testing, make sure all hits land so we can see the counterattack in action
+        //trollEffectiveStats.Parry = 0; // for testing, make sure all hits land so we can see the counterattack in action
+        //trollEffectiveStats.CounterAttack = 100; // for testing, make sure all we counterattack every time so we can see the counterattack in action
+        //commandDispatcher.Dispatch(executionContext, gameState, goblin, "kill troll".AsSpan());
+        //// goblin uses command kill troll
+        ////goblin.Add(new CombatState { Target = troll, RoundDelay = 0 });
+        ///
+        // scenario 4: player applies 2 times armor on troll
+        commandDispatcher.Dispatch(executionContext, gameState, player, "test troll armor".AsSpan());
+        commandDispatcher.Dispatch(executionContext, gameState, player, "test troll armor".AsSpan());
 
         // start of gameloop
 
@@ -165,6 +171,7 @@ static class Demo2
         //}
 
         // one tick
+        commandExecutionSystem.Execute(executionContext, gameState);
         lookSystem.Tick(gameState, LookMode.Snapshot);
         fleeSystem.Tick(gameState);
         movementSystem.Tick(gameState);
@@ -203,54 +210,6 @@ static class Demo2
 
         // end of gameloop
     }
-
-    // TODO: don't use event buffer to display message to player, we can directly send message when we generate event, we can use event buffer to store events for systems that need to react to them but for events that are only used to display message we can directly send message without storing them in buffer, this way we can avoid the complexity of managing event buffers and also avoid the issue of events being processed in the wrong order (like damage events being processed before attack intents)
-    /*
-        
-    public class AutoAttackSystem
-    {
-        private readonly int defaultHits = 1; // e.g., base autoattack hits
-    
-        public void Run(World world, CombatContext ctx)
-        {
-            // Query all entities in combat
-            foreach (var entity in world.Query<InCombatTag, CombatStats>())
-            {
-                var stats = world.Get<CombatStats>(entity);
-    
-                // Find all targets this entity is in combat with
-                foreach (var target in GetCombatTargets(world, entity))
-                {
-                    if (!world.IsAlive(entity) || !world.IsAlive(target)) continue;
-    
-                    // Generate AttackIntent for this entity -> target
-                    ctx.Current.Add(new AttackIntent
-                    {
-                        Source = entity,
-                        Target = target,
-                        RemainingHits = defaultHits,   // can be multi-hit if desired
-                        IsReaction = false,            // autoattack, not a reaction
-                    });
-    
-                    // Optional: If you want counterattacks handled here instead of ReactionPhase,
-                    // you could generate a reaction intent if conditions are met:
-                    // (But usually better to keep reactions in ReactionPhase)
-                }
-            }
-        }
-    
-        // Returns all entities this entity is "in combat with"
-        private IEnumerable<Entity> GetCombatTargets(World world, Entity entity)
-        {
-            // For example: find all entities in the same room with InCombatTag
-            foreach (var other in world.Query<InCombatTag>())
-            {
-                if (other == entity) continue;
-                yield return other;
-            }
-        }
-    }
- */
 
     private static void DumpWorld(World world)
     {

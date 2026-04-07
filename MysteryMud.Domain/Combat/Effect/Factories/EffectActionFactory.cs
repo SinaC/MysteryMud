@@ -1,4 +1,5 @@
 ﻿using Arch.Core.Extensions;
+using Microsoft.Extensions.Logging;
 using MysteryMud.Domain.Combat.Damage;
 using MysteryMud.Domain.Combat.Effect.Definitions;
 using MysteryMud.Domain.Combat.Heal;
@@ -9,9 +10,16 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Combat.Effect.Factories;
 
-public static class EffectActionFactory
+public class EffectActionFactory
 {
-    public static Action<EffectContext> Create(EffectActionDefinition actionDefinition) => actionDefinition switch
+    private readonly ILogger _logger;
+
+    public EffectActionFactory(ILogger logger)
+    {
+        _logger = logger;
+    }
+
+    public Action<EffectContext> Create(EffectActionDefinition actionDefinition) => actionDefinition switch
     {
         StatModifierActionDefinition definition => CreateStatModifier(definition),
         PeriodicHealActionDefinition definition => CreatePeriodHeal(definition),
@@ -21,32 +29,38 @@ public static class EffectActionFactory
         _ => throw new Exception($"Unknown EffectAction {actionDefinition.GetType()}"),
     };
 
-    public static Action<EffectContext> CreateStatModifier(StatModifierActionDefinition definition)
+    public Action<EffectContext> CreateStatModifier(StatModifierActionDefinition definition)
     {
         return ctx =>
         {
-            var value = definition.ValueFunc(ctx); // TODO: multiply by stack count ?
-            var modifier = new StatModifier
+            if (ctx.Effect is not null)
             {
-                Stat = definition.Stat,
-                Modifier = definition.Modifier,
-                Value = value
-            };
-
-            ref var statModifiers = ref ctx.Effect.TryGetRef<StatModifiers>(out var hasStatModifiers);
-            if (hasStatModifiers)
-                statModifiers.Values.Add(modifier);
-            else
-            {
-                ctx.Effect.Add(new StatModifiers
+                var effect = ctx.Effect.Value;
+                var value = definition.ValueFunc(ctx); // TODO: multiply by stack count ?
+                var modifier = new StatModifier
                 {
-                    Values = [modifier]
-                });
-            }
+                    Stat = definition.Stat,
+                    Modifier = definition.Modifier,
+                    Value = value
+                };
 
-            // add dirty flag to character stats so we will recalculate them with the new modifiers
-            if (!ctx.Target.Has<DirtyStats>())
-                ctx.Target.Add<DirtyStats>();
+                ref var statModifiers = ref effect.TryGetRef<StatModifiers>(out var hasStatModifiers);
+                if (hasStatModifiers)
+                    statModifiers.Values.Add(modifier);
+                else
+                {
+                    effect.Add(new StatModifiers
+                    {
+                        Values = [modifier]
+                    });
+                }
+
+                // add dirty flag to character stats so we will recalculate them with the new modifiers
+                if (!ctx.Target.Has<DirtyStats>())
+                    ctx.Target.Add<DirtyStats>();
+            }
+            else
+                _logger.LogError("Trying to apply StatModifier on a null-effect");
         };
     }
 
