@@ -11,6 +11,18 @@
     ]
   },
   {
+	  "Name": "GiantStrength",
+	  "DurationFormula": "60",
+	  "Actions": [
+		{
+			"Type": "StatModifier",
+			"Stat": "Strength",
+			"Mode": "Flat",
+			"ValueFormula": "5"
+		}
+	  ]
+  },
+  {
 	  "Name": "BearForm",
 	  "DurationFormula": "120",
 	  "Actions": [

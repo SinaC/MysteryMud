@@ -2,11 +2,11 @@
 using MysteryMud.Core;
 using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Intent;
-using MysteryMud.Domain.Combat.Attack.Factories;
-using MysteryMud.Domain.Combat.Attack.Resolvers;
-using MysteryMud.Domain.Combat.Damage;
-using MysteryMud.Domain.Combat.Effect;
-using MysteryMud.Domain.Combat.Effect.Factories;
+using MysteryMud.Domain.Action.Attack.Factories;
+using MysteryMud.Domain.Action.Attack.Resolvers;
+using MysteryMud.Domain.Action.Damage;
+using MysteryMud.Domain.Action.Effect;
+using MysteryMud.Domain.Action.Effect.Factories;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;

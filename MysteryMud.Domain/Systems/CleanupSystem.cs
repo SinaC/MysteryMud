@@ -3,7 +3,7 @@ using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Logging;
-using MysteryMud.Domain.Combat.Effect.Factories;
+using MysteryMud.Domain.Action.Effect.Factories;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;

@@ -19,47 +19,52 @@ Tick pipeline
 6. MovementSystem                   // Process MoveIntents → emits auto-look PostUpdate (Mode=PostUpdate)
 7. InteractionSystem                // Process get/drop/put/give/... intents
 8. EffectiveStatSystem              // Recalculate stats from base stats and stat modifiers (only if DirtyStats tag is set)
-8. MaxHealthSystem                  // Recalculate max health from base max health and resource modifiers (only if DirtyHealth tag is set)
-8. MaxManaSystem                    // Recalculate max mana from base max mana and resource modifiers (only if DirtyMana tag is set)
-8. MaxEnergySystem                  // Recalculate max energy from base max energy and resource modifiers (only if DirtyEnergy tag is set)
-8. MaxRageSystem                    // Recalculate max rage from base max rage and resource modifiers (only if DirtyRage tag is set)
-9. Scheduler.Process                // Generate triggered scheduled event (tick or expired)
-10. TimedEffectSystem               // Resolve triggered scheduled event and generates scheduleIntent, effectExpiredEvent (to inform), effectTickedEvent (to inform)
-11. RegenManaSystem                 // Regen mana
-12. RegenEnergySystem               // Regen energy
-13. DecayRageSystem                 // Regen rage
-14. ThreatDecaySystem               // Decay threat
-15. AbilityValidationSystem         // Process UseAbilityIntents -> set casting (if delayed casting) or generate ExecuteAbilityIntent (instant cast)
-16. AbilityCastingSystem            // Process delayed casting, once cast is effective generate ExecuteAbilityIntent + abilityUsedEvent
-17. AbilityExecutionSystem          // Process ExecuteAbilityIntents -> generate ActionIntent(kind:effect) for each effects in ability + abilityExecutedEvent
-18. NPCTargetSystem                 // Select highest threat targets
-19. GroupCombatSystem.Resolve       // Process assist/protect/own target attack intents
-20. AutoAttackSystem                // Generate ActionIntent(kind:attack) for every entity in combat (CombatState component set)
-21. ActionOrchestrator              // Process ActionIntents. kind:attack -> resolve hit, perform damage, check weapon proc (effect), check reaction (counter attack)  kind: effect -> resolve effect
-22. DeathSystem                     // Flag dead entities
-23. RespawnSystem                   // Auto-resurrect players
-24. LootSystem                      // Process loot & auto-loot
-25. LookSystem(PostUpdate)          // Process LookIntents with Mode=PostUpdate → reflects final world state after all updates
-26. ScheduleSystem                  // Process scheduleIntents (which can be generated from IA, abilities, TimedEffectSytem, AttackOrchestrator)
-27. CleanupSystem                   // Remove destroyed items / dead NPCs / disconnected players
-28. Output → MessageBus             // Send all messages to players
+9. MaxResourcesSystem               // Recalculate max health/mana/energy/rage from base max health/mana/energy/rage and resource modifiers (only if DirtyHealth/mana/energy/rage tag is set)
+10. Scheduler.Process                // Generate triggered scheduled event (tick or expired)
+11. TimedEffectSystem               // Resolve triggered scheduled event and generates scheduleIntent, effectExpiredEvent (to inform), effectTickedEvent (to inform)
+12. RegenManaSystem                 // Regen mana
+13. RegenEnergySystem               // Regen energy
+14. DecayRageSystem                 // Regen rage
+15. ThreatDecaySystem               // Decay threat
+16. AbilityValidationSystem         // Process UseAbilityIntents -> set casting (if delayed casting) or generate ExecuteAbilityIntent (instant cast)
+17. AbilityCastingSystem            // Process delayed casting, once cast is effective generate ExecuteAbilityIntent + abilityUsedEvent
+18. AbilityExecutionSystem          // Process ExecuteAbilityIntents -> generate ActionIntent(kind:effect) for each effects in ability + abilityExecutedEvent
+19. NPCTargetSystem                 // Select highest threat targets
+20. GroupCombatSystem.Resolve       // Process assist/protect/own target attack intents
+21. AutoAttackSystem                // Generate ActionIntent(kind:attack) for every entity in combat (CombatState component set)
+22. ActionOrchestrator              // Process ActionIntents. kind:attack -> resolve hit, perform damage, check weapon proc (effect), check reaction (counter attack)  kind: effect -> resolve effect
+23. DeathSystem                     // Flag dead entities
+24. RespawnSystem                   // Auto-resurrect players
+25. LootSystem                      // Process loot & auto-loot
+26. LookSystem(PostUpdate)          // Process LookIntents with Mode=PostUpdate → reflects final world state after all updates
+27. ScheduleSystem                  // Process scheduleIntents (which can be generated from IA, abilities, TimedEffectSytem, AttackOrchestrator)
+28. CleanupSystem                   // Remove destroyed items / dead NPCs / disconnected players
+29. Output → MessageBus             // Send all messages to players
 
-CombatOrchestrator (step 15) details
-   loop on attack intents
-        ResolveHit 
-             Determine hit, dodge, parry -> ResolvedHit 
-             Generate AttackResolvedEvent
-             Produce messages like “You dodged!”
-         ResolveDamage (if hit)
-             Applies HP/Threat changes
-             Generates death events if HP ≤ 0
-             Sends messages like “You take 5 damage”
-             Does not trigger counterattack
-         ReactionPhase (if victim is still alive)
-             Checks conditions: parry -> guaranteed counterattack, hit -> chance to counterattack
-             Generates new AttackIntents for counterattacks
-         MultiHitPhase
-             Generate one AttackIntent (with one less remaining hit) if there are remaining hits for this attack round
+ActionOrchestrator (step 15) details
+   loop on attack/effect intents
+        Attack intent
+            ResolveHit 
+                 Determine hit, dodge, parry -> ResolvedHit 
+                 Generate AttackResolvedEvent
+                 Produce messages like “You dodged!”
+             ResolveDamage (if hit)
+                 Applies HP/Threat changes
+                 Generates death events if HP ≤ 0
+                 Sends messages like “You take 5 damage”
+                 Does not trigger counterattack
+             ReactionPhase (if victim is still alive)
+                 Checks conditions: parry -> guaranteed counterattack, hit -> chance to counterattack
+                 Generates new AttackIntents for counterattacks
+             MultiHitPhase
+                 Generate one AttackIntent (with one less remaining hit) if there are remaining hits for this attack round
+        Effect intent
+            ResolveEffect
+                Stack effect if already exists
+                Create effect otherwiseµ
+                schedule expired effect event if duration is not null
+                schedule tick effect event if tick rate > 0
+                execute onApply actions
 
  ┌─────────────────────────┐
  │   Player inputs command │
