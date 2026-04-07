@@ -18,7 +18,11 @@ Tick pipeline
 5. ChaseSystem                      // NPC chase movement
 6. MovementSystem                   // Process MoveIntents → emits auto-look PostUpdate (Mode=PostUpdate)
 7. InteractionSystem                // Process get/drop/put/give/... intents
-8. StatSystem                       // Recalculate stats from DirtyFlags
+8. EffectiveStatSystem              // Recalculate stats from base stats and stat modifiers (only if DirtyStats tag is set)
+8. MaxHealthSystem                  // Recalculate max health from base max health and resource modifiers (only if DirtyHealth tag is set)
+8. MaxManaSystem                    // Recalculate max mana from base max mana and resource modifiers (only if DirtyMana tag is set)
+8. MaxEnergySystem                  // Recalculate max energy from base max energy and resource modifiers (only if DirtyEnergy tag is set)
+8. MaxRageSystem                    // Recalculate max rage from base max rage and resource modifiers (only if DirtyRage tag is set)
 9. Scheduler.Process                // Generate triggered scheduled event (tick or expired)
 10. TimedEffectSystem               // Resolve triggered scheduled event and generates scheduleIntent, effectExpiredEvent (to inform), effectTickedEvent (to inform)
 11. RegenManaSystem                 // Regen mana
