@@ -10,6 +10,7 @@ using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Extensions;
+using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -100,6 +101,11 @@ public class MstatCommand : ICommand
                     foreach (var modifier in statModifiers.Values)
                         executionContext.Msg.To(actor).Send($"  - {modifier.Modifier} {modifier.Value} {modifier.Stat}");
                 }
+
+                DisplayResourceModifier<HealthModifier>(executionContext, actor, effect, "Health", x => x.Modifier, x => x.Value);
+                DisplayResourceModifier<ManaModifier>(executionContext, actor, effect, "Mana", x => x.Modifier, x => x.Value);
+                DisplayResourceModifier<EnergyModifier>(executionContext, actor, effect, "Energy", x => x.Modifier, x => x.Value);
+                DisplayResourceModifier<RageModifier>(executionContext, actor, effect, "Rage", x => x.Modifier, x => x.Value);
             }
         }
     }
@@ -129,6 +135,17 @@ public class MstatCommand : ICommand
                 : 0;
             var uses = target.Has<TUses>();
             ctx.Msg.To(actor).Send($"{kind}: {current}/{max} Regen/Decay: {regen} CanUse: {uses}");
+        }
+    }
+
+    private void DisplayResourceModifier<TResourceModifier>(CommandExecutionContext ctx, Entity actor, Entity effect, string resourceName, Func<TResourceModifier, ModifierKind> getModifierFunc, Func<TResourceModifier, decimal> getValueFunc)
+        where TResourceModifier : struct
+    {
+        ref var resourceModifiers = ref effect.TryGetRef<ResourceModifiers<TResourceModifier>>(out var hasResourceModifiers);
+        if (hasResourceModifiers)
+        {
+            foreach (var modifier in resourceModifiers.Values)
+                ctx.Msg.To(actor).Send($"  - {getModifierFunc(modifier)} {getValueFunc(modifier)} {resourceName}");
         }
     }
 }

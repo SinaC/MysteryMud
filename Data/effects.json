@@ -11,6 +11,30 @@
     ]
   },
   {
+	  "Name": "BearForm",
+	  "DurationFormula": "120",
+	  "Actions": [
+		{
+			"Type": "ResourceModifier",
+			"Resource": "Health",
+			"Mode": "AddPercent",
+			"ValueFormula": "50"
+		}
+	  ]
+  },
+  {
+	  "Name": "ManaForm",
+	  "DurationFormula": "90",
+	  "Actions": [
+		{
+			"Type": "ResourceModifier",
+			"Resource": "Mana",
+			"Mode": "Multiply",
+			"ValueFormula": "1.25"
+		}
+	  ]
+  },
+  {
     "Name": "Fireball",
     "Actions": [
       {

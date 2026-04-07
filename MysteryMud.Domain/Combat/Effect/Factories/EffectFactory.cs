@@ -8,11 +8,12 @@ using MysteryMud.Core.Services;
 using MysteryMud.Domain.Combat.Damage;
 using MysteryMud.Domain.Combat.Heal;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Helpers;
+using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
-using System.Security.Principal;
 
 namespace MysteryMud.Domain.Combat.Effect.Factories;
 
@@ -62,11 +63,23 @@ public class EffectFactory
             }
         }
 
+        // if effect has StatModifiers
         // flag the target's stats as dirty so they will be recalculated without this effect
-        ref var statModifiers = ref effect.TryGetRef<StatModifiers>(out var hasStatModifiers);
-        if (hasStatModifiers && !effectInstance.Target.Has<DirtyStats>())
+        if (effect.Has<StatModifiers>() && !effectInstance.Target.Has<DirtyStats>())
             effectInstance.Target.Add<DirtyStats>();
 
+        // if effect has ResourceModifiers
+        // flag the target's resources as dirty so they will be recalculated without this effect
+        if (effect.Has<ResourceModifiers<HealthModifier>>() && !effectInstance.Target.Has<DirtyHealth>())
+            effectInstance.Target.Add<DirtyHealth>();
+        if (effect.Has<ResourceModifiers<ManaModifier>>() && !effectInstance.Target.Has<DirtyMana>())
+            effectInstance.Target.Add<DirtyMana>();
+        if (effect.Has<ResourceModifiers<EnergyModifier>>() && !effectInstance.Target.Has<DirtyEnergy>())
+            effectInstance.Target.Add<DirtyEnergy>();
+        if (effect.Has<ResourceModifiers<RageModifier>>() && !effectInstance.Target.Has<DirtyRage>())
+            effectInstance.Target.Add<DirtyRage>();
+
+        // destroy effect
         state.World.Destroy(effect);
     }
 

@@ -2,6 +2,7 @@
 using MysteryMud.Domain.Combat.Effect.Definitions;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Enums;
+using MysteryMud.Infrastructure.Persistence.Dto;
 using MysteryMud.Infrastructure.Persistence.Dto.Actions;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -84,6 +85,40 @@ public class JsonEffectLoader
                     };
                 }
 
+            case ResourceModifierData data:
+                {
+                    var modifier = Enum.Parse<ModifierKind>(data.Mode, ignoreCase: true);
+                    var valueFunc = _formulaCompiler.Compile(data.ValueFormula);
+                    return data.Resource switch
+                    {
+                        "Health" => new HealthModifierActionDefinition
+                        {
+                            Trigger = trigger,
+                            Modifier = modifier,
+                            ValueFunc = valueFunc
+                        },
+                        "Mana" => new ManaModifierActionDefinition
+                        {
+                            Trigger = trigger,
+                            Modifier = modifier,
+                            ValueFunc = valueFunc
+                        },
+                        "Energy" => new EnergyModifierActionDefinition
+                        {
+                            Trigger = trigger,
+                            Modifier = modifier,
+                            ValueFunc = valueFunc
+                        },
+                        "Rage" => new RageModifierActionDefinition
+                        {
+                            Trigger = trigger,
+                            Modifier = modifier,
+                            ValueFunc = valueFunc
+                        },
+                        _ => throw new NotSupportedException($"Unknown resource modifier type: {data.Resource}")
+                    };
+                }
+
             case PeriodicHealData data:
                 {
                     var amountFunc = _formulaCompiler.Compile(data.HealFormula);
@@ -144,6 +179,7 @@ public class JsonEffectLoader
             return type switch
             {
                 "StatModifier" => JsonSerializer.Deserialize<StatModifierData>(root.GetRawText(), options),
+                "ResourceModifier" => JsonSerializer.Deserialize<ResourceModifierData>(root.GetRawText(), options),
                 "PeriodicHeal" => JsonSerializer.Deserialize<PeriodicHealData>(root.GetRawText(), options),
                 "PeriodicDamage" => JsonSerializer.Deserialize<PeriodicDamageData>(root.GetRawText(), options),
                 "InstantDamage" => JsonSerializer.Deserialize<InstantDamageData>(root.GetRawText(), options),

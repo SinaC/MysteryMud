@@ -158,7 +158,8 @@ Character
   └Health: current and max health
   optional
     HasCommandTag: a command (or more) is waiting in CommandBuffer
-    DirtyStats: needs effective stats recalculated
+    DirtyStats: needs effective stats to be recalculated
+    DirtyResources: needs effective resources to be recalculated
     CombatState: in combat
     DeadTag: is dead will be removed by cleanup system
     Gender: male|female|neutral
@@ -191,6 +192,7 @@ Effect (not stacking if difference source)
  ├ TimedEffect: TickRate (= 0 means pure duration effect), NextTick, StartTick, ExpirationTick, LastRefreshTick
  ├ EffectTag: EffectTagId (bit fields)
  ├ StatModifiers: StatModifier list
+ ├ ResourceModifiers: ResourceModifier list
  ├ DamageEffect: Damage, DamageKind
  └ HealEffect: Heal
  optional

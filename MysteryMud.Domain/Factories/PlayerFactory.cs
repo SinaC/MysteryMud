@@ -67,15 +67,6 @@ public static class PlayerFactory
                     [StatKind.ArmorClass] = 0
                 }
             },
-            new Health { Current = 10, Max = 100 },
-            new HealthRegen { AmountPerTick = 1 },
-            new Mana {  Current = 100, Max = 100 },
-            new ManaRegen { AmountPerTick = 1 },
-            new UsesMana(),
-            new Energy { Current = 100, Max = 100 },
-            new EnergyRegen { AmountPerTick = 1 },
-            new Rage { Current = 0, Max = 100 },
-            new RageDecay { AmountPerTick = 1 },
             new Form { Value = FormType.Humanoid },
             new Inventory { Items = [] },
             new Equipment { Slots = [] },
@@ -88,6 +79,23 @@ public static class PlayerFactory
             new Location { Room = room },
             new DirtyStats() // dirty by default
         );
+        player.Add(
+            new Health { Current = 10, Max = 100 },
+            new BaseHealth { Max = 100 },
+            new HealthRegen { AmountPerTick = 1 });
+        player.Add(
+            new Mana { Current = 100, Max = 100 },
+            new BaseMana { Max = 100 },
+            new ManaRegen { AmountPerTick = 1 },
+            new UsesMana());
+        player.Add(
+            new Energy { Current = 100, Max = 100 },
+            new BaseEnergy { Max = 100 },
+            new EnergyRegen { AmountPerTick = 1 });
+        player.Add(
+            new Rage { Current = 0, Max = 100 },
+            new BaseRage { Max = 100 },
+            new RageDecay { AmountPerTick = 1 });
 
         room.Get<RoomContents>().Characters.Add(player);
 
@@ -137,15 +145,6 @@ public static class PlayerFactory
                     [StatKind.ArmorClass] = 0
                 }
             },
-            new Health { Current = 10, Max = 100 },
-            new HealthRegen { AmountPerTick = 1 },
-            new Mana { Current = 100, Max = 100 },
-            new ManaRegen { AmountPerTick = 1 },
-            new UsesMana(),
-            new Energy { Current = 100, Max = 100 },
-            new EnergyRegen { AmountPerTick = 1 },
-            new Rage { Current = 0, Max = 100 },
-            new RageDecay { AmountPerTick = 1 },
             new Form { Value = FormType.Humanoid },
             new Inventory { Items = [] },
             new Equipment { Slots = [] },
@@ -158,6 +157,23 @@ public static class PlayerFactory
             new Location { Room = room },
             new DirtyStats() // dirty by default
         );
+        player.Add(
+            new Health { Current = 10, Max = 100 },
+            new BaseHealth { Max = 100 },
+            new HealthRegen { AmountPerTick = 1 });
+        player.Add(
+            new Mana { Current = 100, Max = 100 },
+            new BaseMana { Max = 100 },
+            new ManaRegen { AmountPerTick = 1 },
+            new UsesMana());
+        player.Add(
+            new Energy { Current = 100, Max = 100 },
+            new BaseEnergy { Max = 100 },
+            new EnergyRegen { AmountPerTick = 1 });
+        player.Add(
+            new Rage { Current = 0, Max = 100 },
+            new BaseRage { Max = 100 },
+            new RageDecay { AmountPerTick = 1 });
 
         room.Get<RoomContents>().Characters.Add(player);
 
@@ -207,15 +223,6 @@ public static class PlayerFactory
                     [StatKind.ArmorClass] = 0
                 }
             },
-            new Health { Current = 100000, Max = 100000 },
-            new HealthRegen { AmountPerTick = 1 },
-            new Mana { Current = 100, Max = 100 },
-            new ManaRegen { AmountPerTick = 1 },
-            new UsesMana(),
-            new Energy { Current = 100, Max = 100 },
-            new EnergyRegen { AmountPerTick = 1 },
-            new Rage { Current = 0, Max = 100 },
-            new RageDecay { AmountPerTick = 1 },
             new Form { Value = FormType.Humanoid },
             new Inventory { Items = [] },
             new Equipment { Slots = [] },
@@ -227,6 +234,25 @@ public static class PlayerFactory
             new Location { Room = RoomFactory.StartingRoomEntity },
             new Position { Value = PositionKind.Standing },
             new DirtyStats()); // ensure stats are recomputed
+
+        player.Add(
+            new Health { Current = 10, Max = 100 },
+            new BaseHealth { Max = 100 },
+            new HealthRegen { AmountPerTick = 1 });
+        player.Add(
+            new Mana { Current = 100, Max = 100 },
+            new BaseMana { Max = 100 },
+            new ManaRegen { AmountPerTick = 1 },
+            new UsesMana());
+        player.Add(
+            new Energy { Current = 100, Max = 100 },
+            new BaseEnergy { Max = 100 },
+            new EnergyRegen { AmountPerTick = 1 });
+        player.Add(
+            new Rage { Current = 0, Max = 100 },
+            new BaseRage { Max = 100 },
+            new RageDecay { AmountPerTick = 1 });
+
         RoomFactory.StartingRoomEntity.Get<RoomContents>().Characters.Add(player); // move to starting room
     }
 }
