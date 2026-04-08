@@ -7,5 +7,6 @@ public record AbilityDefinitionData
     int CastTime, // 0 means instant cast
     int Cooldown,
     List<ResourceCostData> Costs,
-    List<string> Effects
+    List<string> Effects,
+    CommandDefinitionData Command
 );

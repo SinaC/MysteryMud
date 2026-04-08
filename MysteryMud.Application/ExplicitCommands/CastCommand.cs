@@ -93,12 +93,12 @@ Use the 'spells' command to see the spells you already have (help spells).",
         {
             if (!_abilityRegistry.TryGetValue(casting.AbilityId, out var castingAbilityRuntime) || castingAbilityRuntime == null)
             {
-                _logger.LogError("{castName} is casting an unknown ability {abilityId}", actor.DebugName, casting.AbilityId);
+                _logger.LogError("{casterName} is focused on an unknown ability {abilityId}", actor.DebugName, casting.AbilityId);
                 actor.Remove<Casting>(); // remove casting and allow to cast a new spell
             }
             else
             {
-                executionContext.Msg.To(actor).Send($"You are already casting {castingAbilityRuntime.Name}");
+                executionContext.Msg.To(actor).Send($"You are already focused on {castingAbilityRuntime.Name}");
                 return;
             }
         }
@@ -116,6 +116,7 @@ Use the 'spells' command to see the spells you already have (help spells).",
         // add ability intent
         ref var useAbilityIntent = ref executionContext.Intent.UseAbility.Add();
         useAbilityIntent.AbilityId = abilityId;
+        useAbilityIntent.Kind = abilityRuntime.Kind;
         useAbilityIntent.Source = actor;
         useAbilityIntent.Targets = [target]; // TODO
     }

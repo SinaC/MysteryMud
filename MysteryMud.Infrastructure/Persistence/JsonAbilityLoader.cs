@@ -1,5 +1,6 @@
 ﻿using MysteryMud.Core.Extensions;
 using MysteryMud.Domain.Ability.Definitions;
+using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.Infrastructure.Persistence.Dto;
 using System.Text.Json;
@@ -26,15 +27,28 @@ public class JsonAbilityLoader
         {
             if (entry.Effects == null || entry.Effects.Count == 0)
                 throw new Exception($"No effect found on ability {entry.Name}");
+
+            var kind = Enum.Parse<AbilityKind>(entry.Kind, ignoreCase: true);
+            CommandDefinition? command = entry.Command == null
+                ? null
+                : JsonCommandLoader.Map(entry.Command);
+            if (kind == AbilityKind.Skill && command is null)
+                throw new Exception($"Skill ability {entry.Name} must declare a command");
+
+            var costs = entry.Costs == null || entry.Costs.Count == 0
+                ? []
+                : entry.Costs.Select(MapResourceCost).ToList();
+
             var ability = new AbilityDefinition
             {
                 Id = entry.Name.ComputeUniqueId(),
                 Name = entry.Name,
-                Kind = Enum.Parse<AbilityKind>(entry.Kind, ignoreCase: true),
+                Kind = kind,
                 CastTime = entry.CastTime,
                 Cooldown = entry.Cooldown,
-                Costs = entry.Costs.Select(MapResourceCost).ToList(),
+                Costs = costs,
                 Effects = entry.Effects,
+                Command = command,
             };
             abilities.Add(ability);
         }

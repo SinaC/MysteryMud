@@ -25,23 +25,26 @@ public class JsonCommandLoader
         var commands = new List<CommandDefinition>();
         foreach (var entry in data)
         {
-            var command = new CommandDefinition
-            {
-                Id = entry.Name.ComputeUniqueId(),
-                Name = entry.Name,
-                Aliases = entry.Aliases ?? [],
-                CannotBeForced = entry.CannotBeForced,
-                RequiredLevel = Enum.Parse<CommandLevelKind>(entry.RequiredLevel, ignoreCase: true),
-                MinimumPosition = Enum.Parse<PositionKind>(entry.MinimumPosition, ignoreCase: true),
-                Priority = entry.Priority,
-                DisallowAbbreviation = entry.DisallowAbbreviation,
-                HelpText = entry.HelpText,
-                Syntaxes = entry.Syntaxes,
-                Categories = entry.Categories,
-                ThrottlingCategories = entry.ThrottlingCategories.Aggregate(CommandThrottlingCategories.None, (accumulator, cat) => accumulator | Enum.Parse<CommandThrottlingCategories>(cat, ignoreCase: true)),
-            };
+            var command = Map(entry);
             commands.Add(command);
         }
         return commands;
     }
+
+    public static CommandDefinition Map(CommandDefinitionData data)
+        => new()
+        {
+            Id = data.Name.ComputeUniqueId(),
+            Name = data.Name,
+            Aliases = data.Aliases ?? [],
+            CannotBeForced = data.CannotBeForced,
+            RequiredLevel = Enum.Parse<CommandLevelKind>(data.RequiredLevel, ignoreCase: true),
+            MinimumPosition = Enum.Parse<PositionKind>(data.MinimumPosition, ignoreCase: true),
+            Priority = data.Priority,
+            DisallowAbbreviation = data.DisallowAbbreviation,
+            HelpText = data.HelpText,
+            Syntaxes = data.Syntaxes,
+            Categories = data.Categories,
+            ThrottlingCategories = data.ThrottlingCategories.Aggregate(CommandThrottlingCategories.None, (accumulator, cat) => accumulator | Enum.Parse<CommandThrottlingCategories>(cat, ignoreCase: true)),
+        };
 }

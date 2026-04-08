@@ -1,59 +1,104 @@
 [
   {
-    "Name": "FlamingWeapon",
+    "Name": "BerserkHeal",
     "Actions": [
       {
-        "Type": "InstantDamage",
-        "Trigger": "OnApply",
-        "DamageFormula": "5 + caster.Level",
-        "DamageKind": "Fire"
+        "Type": "InstantHeal",
+        "HealFormula": "caster.Level * 2"
       }
     ]
   },
   {
-	  "Name": "GiantStrength",
-	  "DurationFormula": "60",
-	  "Actions": [
-		{
-			"Type": "StatModifier",
-			"Stat": "Strength",
-			"Mode": "Flat",
-			"ValueFormula": "5"
-		}
-	  ]
+    "Name": "BerserkBuff",
+    "Stacking": "None",
+    "MaxStacks": 1,
+    "DurationFormula": "caster.Level / 8",
+    "ApplyMessage": "Your pulse races as you are consumed by rage!",
+    "WearOffMessage": "You feel your pulse slow down.",
+    "Actions": [
+      {
+        "Type": "StatModifier",
+        "Stat": "HitRoll",
+        "Mode": "Flat",
+        "ValueFormula": "max(1, caster.Level / 5)"
+      },
+      {
+        "Type": "StatModifier",
+        "Stat": "DamRoll",
+        "Mode": "Flat",
+        "ValueFormula": "max(1, caster.Level / 5)"
+      },
+      {
+        "Type": "StatModifier",
+        "Stat": "ArmorClass",
+        "Mode": "Flat",
+        "ValueFormula": "-max(10, 10 * (caster.Level / 5))"
+      }
+    ]
   },
   {
-	  "Name": "BearForm",
-	  "DurationFormula": "120",
-	  "Actions": [
-		{
-			"Type": "ResourceModifier",
-			"Resource": "Health",
-			"Mode": "AddPercent",
-			"ValueFormula": "50"
-		}
-	  ]
+    "Name": "FlamingWeapon",
+    "Actions": [
+      {
+      "Type": "InstantDamage",
+      "DamageFormula": "5 + caster.Level",
+      "DamageKind": "Fire"
+      }
+    ]
   },
   {
-	  "Name": "ManaForm",
-	  "DurationFormula": "90",
-	  "Actions": [
-		{
-			"Type": "ResourceModifier",
-			"Resource": "Mana",
-			"Mode": "Multiply",
-			"ValueFormula": "1.25"
-		}
-	  ]
+    "Name": "Kick",
+    "Actions": [
+      {
+      "Type": "InstantDamage",
+      "DamageFormula": "range(1, caster.Level)",
+      "DamageKind": "Bash"
+      }
+    ]
+  },
+  {
+    "Name": "GiantStrength",
+    "DurationFormula": "60",
+    "Actions": [
+      {
+        "Type": "StatModifier",
+        "Stat": "Strength",
+        "Mode": "Flat",
+        "ValueFormula": "5"
+      }
+    ]
+  },
+  {
+    "Name": "BearForm",
+    "DurationFormula": "120",
+    "Actions": [
+      {
+          "Type": "ResourceModifier",
+          "Resource": "Health",
+          "Mode": "AddPercent",
+          "ValueFormula": "50"
+      }
+    ]
+  },
+  {
+    "Name": "ManaForm",
+    "DurationFormula": "90",
+    "Actions": [
+      {
+          "Type": "ResourceModifier",
+          "Resource": "Mana",
+          "Mode": "Multiply",
+          "ValueFormula": "1.25"
+      }
+    ]
   },
   {
     "Name": "Fireball",
     "Actions": [
       {
-        "Type": "InstantDamage",
-        "Trigger": "OnApply",
-        "DamageFormula": "20 + caster.Intelligence * 2",
-        "DamageKind": "Fire"
+      "Type": "InstantDamage",
+      "DamageFormula": "20 + caster.Intelligence * 2",
+      "DamageKind": "Fire"
       }
     ]
   },
@@ -61,22 +106,19 @@
     "Name": "MagicMissile",
     "Actions": [
       {
-        "Type": "InstantDamage",
-        "Trigger": "OnApply",
-        "DamageFormula": "5 + caster.Level",
-		"DamageKind": "Energy"
+      "Type": "InstantDamage",
+      "DamageFormula": "5 + caster.Level",
+      "DamageKind": "Energy"
       },
       {
-        "Type": "InstantDamage",
-        "Trigger": "OnApply",
-        "DamageFormula": "5 + caster.Level",
-		"DamageKind": "Energy"
+      "Type": "InstantDamage",
+      "DamageFormula": "5 + caster.Level",
+      "DamageKind": "Energy"
       },
       {
-        "Type": "InstantDamage",
-        "Trigger": "OnApply",
-        "DamageFormula": "5 + caster.Level",
-		"DamageKind": "Energy"
+      "Type": "InstantDamage",
+      "DamageFormula": "5 + caster.Level",
+      "DamageKind": "Energy"
       }
     ]
   },
@@ -90,16 +132,16 @@
     "WearOffMessage": "You feel less sick.",
     "Actions": [
       {
-        "Type": "StatModifier",
-        "Stat": "Strength",
-        "Mode": "Flat",
-        "ValueFormula": "-3"
+      "Type": "StatModifier",
+      "Stat": "Strength",
+      "Mode": "Flat",
+      "ValueFormula": "-3"
       },
       {
-        "Type": "PeriodicDamage",
-        "Trigger": "OnTick",
-        "DamageFormula": "1 + effect.stackcount",
-        "DamageKind": "Poison"
+      "Type": "PeriodicDamage",
+      "Trigger": "OnTick",
+      "DamageFormula": "1 + effect.stackcount",
+      "DamageKind": "Poison"
       }
     ]
   },
@@ -113,33 +155,30 @@
     "WearOffMessage": "You feel less righteous.",
     "Actions": [
       {
-        "Type": "StatModifier",
-        "Stat": "HitRoll",
-        "Mode": "Flat",
-        "ValueFormula": "5"
+      "Type": "StatModifier",
+      "Stat": "HitRoll",
+      "Mode": "Flat",
+      "ValueFormula": "5"
       },
       {
-        "Type": "StatModifier",
-        "Stat": "Strength",
-        "Mode": "AddPercent",
-        "ValueFormula": "10"
+      "Type": "StatModifier",
+      "Stat": "Strength",
+      "Mode": "AddPercent",
+      "ValueFormula": "10"
       },
       {
-        "Type": "PeriodicHeal",
-        "Trigger": "OnTick",
-        "HealFormula": "3 + caster.Level / 2"
+      "Type": "PeriodicHeal",
+      "Trigger": "OnTick",
+      "HealFormula": "3 + caster.Level / 2"
       }
     ]
   },
   {
     "Name": "CureLight",
-    "Stacking": "None",
-    "MaxStacks": 1,
     "Actions": [
       {
-        "Type": "InstantHeal",
-        "Trigger": "OnApply",
-        "HealFormula": "10 + caster.Level"
+      "Type": "InstantHeal",
+      "HealFormula": "10 + caster.Level"
       }
     ]
   },
@@ -148,13 +187,13 @@
     "Stacking": "Refresh",
     "MaxStacks": 1,
     "DurationFormula": "120",
-	"WearOffMessage": "You feel less armored.",
+    "WearOffMessage": "You feel less armored.",
     "Actions": [
       {
-        "Type": "StatModifier",
-        "Stat": "ArmorClass",
-        "Mode": "Flat",
-        "ValueFormula": "-20"
+      "Type": "StatModifier",
+      "Stat": "ArmorClass",
+      "Mode": "Flat",
+      "ValueFormula": "-20"
       }
     ]
   }
