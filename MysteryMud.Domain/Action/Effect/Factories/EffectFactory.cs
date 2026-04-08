@@ -2,11 +2,10 @@
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
+using MysteryMud.Core.Effects;
 using MysteryMud.Core.Intent;
 using MysteryMud.Core.Logging;
 using MysteryMud.Core.Services;
-using MysteryMud.Domain.Action.Damage;
-using MysteryMud.Domain.Action.Heal;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.Domain.Components.Effects;
@@ -17,22 +16,19 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Action.Effect.Factories;
 
-// TODO: handle damage/heal/... effect
 public class EffectFactory
 {
     private readonly ILogger _logger;
     private readonly IGameMessageService _msg;
     private readonly IIntentWriterContainer _intent;
-    private readonly DamageResolver _damageResolver;
-    private readonly HealResolver _healResolver;
+    private readonly IEffectExecutor _effectExecutor;
 
-    public EffectFactory(ILogger logger, IGameMessageService msg, IIntentWriterContainer intent, DamageResolver damageResolver, HealResolver healResolver)
+    public EffectFactory(ILogger logger, IGameMessageService msg, IIntentWriterContainer intent, IEffectExecutor effectExecutor)
     {
         _logger = logger;
         _msg = msg;
         _intent = intent;
-        _damageResolver = damageResolver;
-        _healResolver = healResolver;
+        _effectExecutor = effectExecutor;
     }
 
     public void RemoveEffect(GameState state, Entity effect)
@@ -166,9 +162,13 @@ public class EffectFactory
             StackCount = 1,
 
             State = state,
-            Msg = _msg,
-            DamageResolver = _damageResolver,
-            HealResolver = _healResolver
+        };
+
+        var effectExecutionContext = new EffectExecutionContext
+        {
+            Context = ctx,
+            Executor = _effectExecutor,
+            Msg = _msg
         };
 
         var duration = effectRuntime.DurationFunc!.Invoke(ctx);
@@ -208,7 +208,7 @@ public class EffectFactory
             foreach (var onApply in effectRuntime.OnApply)
             {
                 if (CharacterHelpers.IsAlive(source, target))
-                    onApply.Invoke(ctx);
+                    onApply.Invoke(effectExecutionContext);
             }
         }
     }
@@ -230,15 +230,18 @@ public class EffectFactory
                 StackCount = 1,
 
                 State = state,
-                Msg = _msg,
-                DamageResolver = _damageResolver,
-                HealResolver = _healResolver
+            };
+            var effectExecutionContext = new EffectExecutionContext
+            {
+                Context = ctx,
+                Executor = _effectExecutor,
+                Msg = _msg
             };
 
             foreach (var onApply in effectRuntime.OnApply)
             {
                 if (CharacterHelpers.IsAlive(source, target))
-                    onApply.Invoke(ctx);
+                    onApply.Invoke(effectExecutionContext);
             }
         }
     }
@@ -289,9 +292,6 @@ public class EffectFactory
                         StackCount = instance.StackCount,
 
                         State = state,
-                        Msg = _msg,
-                        DamageResolver = _damageResolver,
-                        HealResolver = _healResolver
                     };
 
                     // update Duration
@@ -331,9 +331,6 @@ public class EffectFactory
                         StackCount = instance.StackCount,
 
                         State = state,
-                        Msg = _msg,
-                        DamageResolver = _damageResolver,
-                        HealResolver = _healResolver
                     };
 
                     // update Duration

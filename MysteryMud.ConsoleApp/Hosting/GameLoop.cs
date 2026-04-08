@@ -105,6 +105,7 @@ internal class GameLoop
     private readonly HitDamageFactory _hitDamageFactory;
     private readonly WeaponProcResolver _weaponProcResolver;
     private readonly ReactionResolver _reactionResolver;
+    private readonly EffectExecutor _effectExecutor;
 
     private readonly EffectFactory _effectFactory;
 
@@ -160,7 +161,8 @@ internal class GameLoop
         _weaponProcResolver = new WeaponProcResolver(_logger, _gameMessageService, _intentContainer, _effectRegistry);
         _reactionResolver = new ReactionResolver(_gameMessageService);
 
-        _effectFactory = new EffectFactory(_logger, _gameMessageService, _intentContainer, _damageResolver, _healResolver);
+        _effectExecutor = new EffectExecutor(_damageResolver, _healResolver);
+        _effectFactory = new EffectFactory(_logger, _gameMessageService, _intentContainer, _effectExecutor);
 
         _actionOrchestrator = new ActionOrchestrator(_logger, _intentContainer, _attackResolvedEventBuffer, _effectResolvedEventBuffer, _effectRegistry, _effectFactory, _hitResolver, _hitDamageFactory, _damageResolver, _weaponProcResolver, _reactionResolver);
 
@@ -178,7 +180,7 @@ internal class GameLoop
         _abilityCastingSystem = new AbilityCastingSystem(_logger, _gameMessageService, _intentContainer, _abilityRegistry);
         _abilityExecutionSystem = new AbilityExecutionSystem(_logger, _intentContainer, _abilityExecutedEventBuffer, _abilityRegistry, _effectRegistry);
         _autoAttackSystem = new AutoAttackSystem(_intentContainer);
-        _timedEffectSystem = new TimedEffectSystem(_logger, _gameMessageService, _intentContainer, _damageResolver, _healResolver, _triggeredScheduledEventBuffer, _effectExpiredEventBuffer, _effectTickedEventBuffer);
+        _timedEffectSystem = new TimedEffectSystem(_logger, _gameMessageService, _intentContainer, _effectExecutor, _triggeredScheduledEventBuffer, _effectExpiredEventBuffer, _effectTickedEventBuffer);
         _manaRegenSystem = new ManaRegenSystem();
         _energyRegenSystem = new EnergyRegenSystem();
         _rageDecaySystem = new RageDecaySystem();

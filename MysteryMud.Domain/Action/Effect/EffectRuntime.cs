@@ -16,8 +16,8 @@ public class EffectRuntime
     public required int TickRate { get; init; } = 0; // in ticks (0: pure duration effect if DurationFunc is not null)
 
     // effect delegate
-    public Action<EffectContext>[] OnApply { get; init; } = [];
-    public Action<EffectContext>[] OnTick { get; init; } = [];
-    public Action<EffectContext>[] OnExpire { get; init; } = [];
+    public Action<EffectExecutionContext>[] OnApply { get; init; } = [];
+    public Action<EffectExecutionContext>[] OnTick { get; init; } = [];
+    public Action<EffectExecutionContext>[] OnExpire { get; init; } = [];
     //TODO: public Action<EffectContext, DamageAction>[] OnReceiveDamage { get; init; } = [];
 }

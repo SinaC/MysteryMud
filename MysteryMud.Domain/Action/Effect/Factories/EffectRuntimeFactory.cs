@@ -14,9 +14,9 @@ public class EffectRuntimeFactory
 
     public EffectRuntime Create(EffectDefinition def)
     {
-        var onApply = new List<Action<EffectContext>>();
-        var onTick = new List<Action<EffectContext>>();
-        var onExpire = new List<Action<EffectContext>>();
+        var onApply = new List<Action<EffectExecutionContext>>();
+        var onTick = new List<Action<EffectExecutionContext>>();
+        var onExpire = new List<Action<EffectExecutionContext>>();
 
         foreach (var actionData in def.Actions)
         {
@@ -41,10 +41,10 @@ public class EffectRuntimeFactory
 
         // wear off message (add OnExpire action)
         if (def.WearOffMessage != null)
-            onExpire.Add(ctx => ctx.Msg.To(ctx.Target).Send(def.WearOffMessage));
+            onExpire.Add(ctx => ctx.Msg.To(ctx.Context.Target).Send(def.WearOffMessage));
         // apply message
         if (def.ApplyMessage != null)
-            onApply.Add(ctx => ctx.Msg.To(ctx.Target).Send(def.ApplyMessage));
+            onApply.Add(ctx => ctx.Msg.To(ctx.Context.Target).Send(def.ApplyMessage));
 
         if (def.DurationFunc == null && (onTick.Count > 0 || onExpire.Count > 0))
             throw new Exception($"DurationFormula must be specified when Trigger OnTick or OnExpire is defined in effect '{def.Name}'");
