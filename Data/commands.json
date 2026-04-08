@@ -178,7 +178,7 @@
         "Name": "score",
         "RequiredLevel": "Player",
         "MinimumPosition": "Standing",
-        "Priority": 1000,
+        "Priority": 500,
         "HelpText": "[cmd] shows much more detailed statistics to you only. Your ability scores\nare shown as true value(current value), so for example\nStr: 23/15 means you have a 15 strength from training, but a 23 strength\nfrom other factors (skills, spells or items).",
         "Syntaxes": ["[cmd]"],
         "Categories": ["information"],

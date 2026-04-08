@@ -4,11 +4,13 @@ using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
+using System.Numerics;
 
 namespace MysteryMud.Application.Commands;
 
@@ -20,6 +22,7 @@ public class ScoreCommand : ICommand
         // TODO: ref ?
         var (name, baseStats, effectiveStats, characterEffects) = actor.Get<Name, BaseStats, EffectiveStats, CharacterEffects>();
         executionContext.Msg.To(actor).Send($"Name: {name.Value}");
+        DisplayLevelAndExperience(executionContext, actor);
         DisplayHealth(executionContext, actor);
         DisplayResource<Mana, ManaRegen, UsesMana>(executionContext, actor, ResourceKind.Mana, x => (x.Current, x.Max));
         DisplayResource<Energy, EnergyRegen, UsesEnergy>(executionContext, actor, ResourceKind.Energy, x => (x.Current, x.Max));
@@ -73,10 +76,21 @@ public class ScoreCommand : ICommand
         }
     }
 
-    private void DisplayHealth(CommandExecutionContext executionContext, Entity actor)
+    private void DisplayLevelAndExperience(CommandExecutionContext ctx, Entity actor)
+    {
+        ref var level = ref actor.TryGetRef<Level>(out var hasLevel);
+        if (!hasLevel)
+            return;
+        ctx.Msg.To(actor).Send($"Level: {level.Value}");
+        ref var progression = ref actor.TryGetRef<Progression>(out var hasProgression);
+        if (hasProgression)
+            ctx.Msg.To(actor).Send($"Experience: {progression.Experience} NextLevel: {progression.ExperienceToNextLevel - progression.Experience} XP");
+    }
+
+    private void DisplayHealth(CommandExecutionContext ctx, Entity actor)
     {
         var health = actor.Get<Health>();
-        executionContext.Msg.To(actor).Send($"Health: {health.Current}/{health.Max}");
+        ctx.Msg.To(actor).Send($"Health: {health.Current}/{health.Max}");
     }
 
     private void DisplayResource<TResource, TRegen, TUses>(CommandExecutionContext ctx, Entity actor, ResourceKind kind, Func<TResource, (int current, int max)> getCurrentMaxFunc)

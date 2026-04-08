@@ -14,6 +14,7 @@ public static class ItemFactory
         var item = world.Create(
             new ItemTag(),
             new Name { Value = name },
+            new Level { Value = 1 },
             new Description { Value = description },
             new Location { Room = room }
         );
@@ -27,6 +28,7 @@ public static class ItemFactory
         var item = world.Create(
             new ItemTag(),
             new Name { Value = name },
+            new Level { Value = 1 },
             new Description { Value = description },
             new ContainedIn { Character = character }
         );
@@ -40,6 +42,7 @@ public static class ItemFactory
         var item = world.Create(
             new ItemTag(),
             new Name { Value = name },
+            new Level { Value = 1 },
             new Description { Value = description },
             new ContainedIn { Container = container }
         );

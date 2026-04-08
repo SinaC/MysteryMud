@@ -2,8 +2,10 @@
 
 namespace MysteryMud.GameData.Events;
 
-public struct DeathEvent
+public struct KillRewardEvent
 {
     public Entity Killer;
     public Entity Victim;
+    public bool GrantXp;
+    public bool GrantLoop;
 }

@@ -1,5 +1,6 @@
 ﻿using Arch.Core.Extensions;
 using MysteryMud.Domain.Action.Effect;
+using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.GameData.Enums;
 using System.Globalization;
@@ -70,6 +71,8 @@ public class EffectFormulaCompiler
         {
             var stack = new Stack<decimal>();
 
+            ref var casterLevel = ref ctx.Source.Get<Level>();
+            ref var targetLevel = ref ctx.Target.Get<Level>();
             ref var casterStats = ref ctx.Source.Get<EffectiveStats>();
             ref var targetStats = ref ctx.Target.Get<EffectiveStats>();
 
@@ -82,7 +85,7 @@ public class EffectFormulaCompiler
                         break;
 
                     case TokenType.CasterLevel:
-                        stack.Push(casterStats.Level);
+                        stack.Push(casterLevel.Value);
                         break;
 
                     case TokenType.CasterStrength:
@@ -106,7 +109,7 @@ public class EffectFormulaCompiler
                         break;
 
                     case TokenType.TargetLevel:
-                        stack.Push(targetStats.Level);
+                        stack.Push(targetLevel.Value);
                         break;
 
                     case TokenType.TargetStrength:

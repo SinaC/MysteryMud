@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Arch.Core.Extensions;
+using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Intent;
@@ -7,7 +8,9 @@ using MysteryMud.Domain.Action.Attack.Resolvers;
 using MysteryMud.Domain.Action.Damage;
 using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Action.Effect.Factories;
+using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Helpers;
+using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
 using MysteryMud.GameData.Intents;
@@ -20,6 +23,8 @@ public class ActionOrchestrator
     private readonly IIntentContainer _intents;
     private readonly IEventBuffer<AttackResolvedEvent> _attackResolved;
     private readonly IEventBuffer<EffectResolvedEvent> _effectResolved;
+    private readonly IEventBuffer<KillRewardEvent> _killRewards;
+    private readonly ExperienceService _experienceService;
     private readonly EffectRegistry _effectRegistry;
     private readonly EffectFactory _effectFactory;
     private readonly DamageResolver _damageResolver;
@@ -28,10 +33,12 @@ public class ActionOrchestrator
     private readonly WeaponProcResolver _weaponProcResolver;
     private readonly ReactionResolver _reactionResolver;
 
-    public ActionOrchestrator(ILogger logger, IIntentContainer intents, IEventBuffer<AttackResolvedEvent> attackResolved, IEventBuffer<EffectResolvedEvent> effectResolved, EffectRegistry effectRegistry, EffectFactory effectFactory, HitResolver hitResolver, HitDamageFactory hitDamageFactory, DamageResolver damageResolver, WeaponProcResolver weaponProcResolver, ReactionResolver reactionResolver)
+    public ActionOrchestrator(ILogger logger, IIntentContainer intents, IEventBuffer<AttackResolvedEvent> attackResolved, IEventBuffer<EffectResolvedEvent> effectResolved, IEventBuffer<KillRewardEvent> killRewards, ExperienceService experienceService, EffectRegistry effectRegistry, EffectFactory effectFactory, HitResolver hitResolver, HitDamageFactory hitDamageFactory, DamageResolver damageResolver, WeaponProcResolver weaponProcResolver, ReactionResolver reactionResolver)
     {
         _logger = logger;
         _intents = intents;
+        _experienceService = experienceService;
+        _killRewards = killRewards;
         _attackResolved = attackResolved;
         _effectResolved = effectResolved;
         _effectRegistry = effectRegistry;
@@ -51,6 +58,7 @@ public class ActionOrchestrator
             if (intent.Cancelled)
                 continue;
 
+            // process intent
             switch (intent.Kind)
             {
                 case ActionKind.Attack:
@@ -60,6 +68,18 @@ public class ActionOrchestrator
                     ResolveEffect(state, ref intent);
                     break;
             }
+
+            // process immediate death events to grant xp
+            foreach (var killRewardEvt in _killRewards.GetAll())
+            {
+                if (killRewardEvt.Killer.Has<Progression>())
+                {
+                    var xpReward = _experienceService.CalculateCombatXp(killRewardEvt.Killer, killRewardEvt.Victim);
+                    _experienceService.GrantExperience(killRewardEvt.Killer, xpReward);
+                }
+            }
+
+            _killRewards.Clear(); // clear after processing
         }
     }
 
