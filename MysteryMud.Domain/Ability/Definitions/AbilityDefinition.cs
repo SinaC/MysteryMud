@@ -1,4 +1,5 @@
-﻿using MysteryMud.GameData.Enums;
+﻿using MysteryMud.GameData.Definitions;
+using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Ability.Definitions;
 
@@ -11,4 +12,6 @@ public class AbilityDefinition
     public required int Cooldown { get; init; }
     public required List<ResourceCost> Costs { get; init; }
     public required List<string> Effects { get; init; }
+
+    public CommandDefinition? Command { get; init; }
 }

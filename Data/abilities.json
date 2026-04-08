@@ -36,5 +36,36 @@
     "Kind": "Spell",
     "Costs": [{ "Kind": "Mana", "Amount": 25 }],
     "Effects": ["Armor"]
+  },
+  {
+    "Name": "Kick",
+    "Kind": "Skill",
+    "Effects": ["Kick"],
+    "Command": {
+      "Name": "kick",
+      "RequiredLevel": "Player",
+      "MinimumPosition": "Fighting",
+      "Syntax": ["[cmd] <victim>"],
+      "HelpText": "Kicking allows the adventurer to receive an extra attack in combat, a powerful\nkick. However, a failed kick may throw an unwary fighter off balance.",
+      "Categories": ["ability", "combat"],
+      "ThrottlingCategories": ["combat"]
+    }
+  },
+  {
+    "Name": "Berserk",
+    "Kind": "Skill",
+    "Command": {
+      "Name": "berserk",
+      "RequiredLevel": "Player",
+      "MinimumPosition": "Fighting",
+      "Syntax": ["[cmd]"],
+      "HelpText": "Only powerful warriors can master berserking, the ability to enter insane rage\nin combat.  Its effects are not altogether unlike the frenzy spell -- a huge\nsurge of combat prowess, coupled with a disregard for personal safety.  \nBerserking warriors are more resistant to the effects of magic.",
+      "Categories": ["ability", "combat"],
+      "ThrottlingCategories": ["combat"]
+    },
+    "Costs": [
+      { "Kind": "Mana", "Amount": 50 }
+    ],
+    "Effects": ["BerserkHeal", "BerserkBuff"]
   }
 ]

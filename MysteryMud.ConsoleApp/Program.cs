@@ -118,10 +118,6 @@ abilityRegistry.RegisterAbilities(abilityDefinitions);
 var commandLoader = new JsonCommandLoader();
 var commandDefinitions = commandLoader.Load(Path.Combine(basePath, gamePaths.CommandsJson));
 
-// load social definitions
-var socialLoader = new JsonSocialLoader();
-var socialDefinitions = socialLoader.Load(Path.Combine(basePath, gamePaths.SocialsJson));
-
 // initialize command registry (Infrastructure)
 var commandRegistry = new CommandRegistry(logger);
 var explicitCommands = new List<IExplicitCommand>
@@ -132,11 +128,21 @@ var explicitCommands = new List<IExplicitCommand>
     new TestCommand(effectRegistry),
     new CastCommand(logger, abilityRegistry)
 };
+
 // social commands (one by social definition)
+var socialLoader = new JsonSocialLoader();
+var socialDefinitions = socialLoader.Load(Path.Combine(basePath, gamePaths.SocialsJson));
 foreach (var socialDefinition in socialDefinitions)
 {
     var socialCommand = new SocialCommand(logger, socialDefinition);
     explicitCommands.Add(socialCommand);
+}
+// skill commands (from abilities with type Skill)
+var skillCommandDefinitions = abilityDefinitions.Where(x => x.Kind == AbilityKind.Skill && x.Command is not null).Select(x => x.Command!.Value).ToArray();
+foreach (var skillCommandDefinition in skillCommandDefinitions)
+{
+    var skillCommand = new SkillCommand(logger, abilityRegistry, skillCommandDefinition);
+    explicitCommands.Add(skillCommand);
 }
 
 // commands from assemblies

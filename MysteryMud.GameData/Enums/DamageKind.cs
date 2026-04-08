@@ -8,5 +8,6 @@ public enum DamageKind
     Fire,
     Cold,
     Poison,
-    Energy
+    Energy,
+    Bash
 }

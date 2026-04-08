@@ -82,8 +82,11 @@ public class AbilityValidationSystem
             }
 
             // instant execution
-            _msg.To(source).Act(CastMessageHelpers.CasterInstantMessage).With(abilityRuntime.Name);
-            _msg.ToRoom(source).Act(CastMessageHelpers.RoomInstantMessage).With(source);
+            if (abilityRuntime.Kind == AbilityKind.Spell) // send generic randomized message for spell
+            {
+                _msg.To(source).Act(CastMessageHelpers.CasterInstantMessage).With(abilityRuntime.Name);
+                _msg.ToRoom(source).Act(CastMessageHelpers.RoomInstantMessage).With(source);
+            }
             // add execute ability intent
             ref var executeAbilityIntent = ref _intents.ExecuteAbility.Add();
             executeAbilityIntent.AbilityId = abilityRuntime.Id;

@@ -188,7 +188,7 @@
         "Name": "south",
         "RequiredLevel": "Player",
         "MinimumPosition": "Standing",
-        "Priority": 1000,
+        "Priority": 10000,
         "HelpText": "Use this command to walk in south direction.",
         "Syntaxes": ["[cmd]"],
         "Categories": ["movement"],

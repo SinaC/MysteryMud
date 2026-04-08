@@ -171,7 +171,7 @@ public class EffectFactory
             Msg = _msg
         };
 
-        var duration = effectRuntime.DurationFunc!.Invoke(ctx);
+        var duration = Math.Max(1, effectRuntime.DurationFunc!.Invoke(ctx));
         var expirationTick = (int)(state.CurrentTick + duration);
         var nextTick = effectRuntime.TickOnApply
             ? state.CurrentTick
@@ -295,13 +295,13 @@ public class EffectFactory
                     };
 
                     // update Duration
-                    var durationValue = effectRuntime.DurationFunc?.Invoke(ctx) ?? 0;
-                    var expirationTick = (int)(state.CurrentTick + durationValue);
+                    var duration = Math.Max(1, effectRuntime.DurationFunc?.Invoke(ctx) ?? 0);
+                    var expirationTick = (int)(state.CurrentTick + duration);
                     timedEffect.LastRefreshTick = state.CurrentTick;
                     timedEffect.ExpirationTick = expirationTick;
 
                     // schedule a new expiration event (don't remove the old one, just add a new one with the new expiration tick - when the old one executes it will check the current expiration tick and do nothing if it's different)
-                    _logger.LogInformation(LogEvents.Factory, "Refreshing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration} Expiration {expirationTick}", effectRuntime.Name, source.DebugName, instance.Target.DebugName, durationValue, expirationTick);
+                    _logger.LogInformation(LogEvents.Factory, "Refreshing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration} Expiration {expirationTick}", effectRuntime.Name, source.DebugName, instance.Target.DebugName, duration, expirationTick);
 
                     // expire schedule intent
                     ref var expireScheduleIntent = ref _intent.Schedule.Add();
@@ -334,13 +334,13 @@ public class EffectFactory
                     };
 
                     // update Duration
-                    var durationValue = effectRuntime.DurationFunc?.Invoke(ctx) ?? 0;
-                    var expirationTick = (int)(state.CurrentTick + durationValue);
+                    var duration = Math.Max(1, effectRuntime.DurationFunc?.Invoke(ctx) ?? 0);
+                    var expirationTick = (int)(state.CurrentTick + duration);
                     timedEffect.LastRefreshTick = state.CurrentTick;
                     timedEffect.ExpirationTick = expirationTick;
 
                     // schedule a new expiration event (don't remove the old one, just add a new one with the new expiration tick - when the old one executes it will check the current expiration tick and do nothing if it's different)
-                    _logger.LogInformation(LogEvents.Factory, "Stacking/Refreshing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration} Expiration {expirationTick} New Stack Count {newStackCount}", effectRuntime.Name, source.DebugName, instance.Target.DebugName, durationValue, expirationTick, instance.StackCount);
+                    _logger.LogInformation(LogEvents.Factory, "Stacking/Refreshing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName} Duration {duration} Expiration {expirationTick} New Stack Count {newStackCount}", effectRuntime.Name, source.DebugName, instance.Target.DebugName, duration, expirationTick, instance.StackCount);
 
                     // expire schedule intent
                     ref var expireScheduleIntent = ref _intent.Schedule.Add();
