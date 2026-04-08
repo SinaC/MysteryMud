@@ -18,11 +18,10 @@ public static class MobFactory
             new CommandLevel { Value = CommandLevelKind.Player },
             new CommandBuffer(),
             new Name { Value = name },
+            new Level { Value = 1 },
             new Description { Value = description },
             new BaseStats
             {
-                Level = 1,
-                Experience = 0,
                 Values = new Dictionary<StatKind, int>
                 {
                     [StatKind.Strength] = 15,
@@ -37,8 +36,6 @@ public static class MobFactory
             },
             new EffectiveStats
             {
-                Level = 1,
-                Experience = 0,
                 Values = new Dictionary<StatKind, int>
                 {
                     [StatKind.Strength] = 15,

@@ -77,6 +77,9 @@ static class Demo2
         var lookedEventBuffer = new EventBuffer<LookedEvent>();
         var attackResolvedEventBuffer = new EventBuffer<AttackResolvedEvent>();
         var effectResolvedEventBuffer = new EventBuffer<EffectResolvedEvent>();
+        var experienceGrantedEventBuffer = new EventBuffer<ExperienceGrantedEvent>();
+        var levelIncreasedEventBuffer = new EventBuffer<LevelIncreasedEvent>();
+        var killRewardEventBuffer = new EventBuffer<KillRewardEvent>();
 
         var executionContext = new CommandExecutionContext { Msg = gameMessageService, Intent = intentBusContainer };
 
@@ -84,7 +87,7 @@ static class Demo2
         // TODO: we should replace all these eventbuffers with a more generic event system
 
         var aggroResolver = new AggroResolver();
-        var damageResolver = new DamageResolver(aggroResolver, gameMessageService, damagedEventBuffer, deathEventBuffer);
+        var damageResolver = new DamageResolver(aggroResolver, gameMessageService, damagedEventBuffer, deathEventBuffer, killRewardEventBuffer);
         var healResolver = new HealResolver(aggroResolver, gameMessageService, healedEventBuffer);
         var hitResolver = new HitResolver(gameMessageService);
         var hitDamageFactory = new HitDamageFactory();
@@ -93,10 +96,12 @@ static class Demo2
         var effectExecutor = new EffectExecutor(damageResolver, healResolver);
         var effectFactory = new EffectFactory(logger, gameMessageService, intentBusContainer, effectExecutor);
 
-        var actionOrchestrator = new ActionOrchestrator(logger, intentBusContainer, attackResolvedEventBuffer, effectResolvedEventBuffer, effectRegistry, effectFactory, hitResolver, hitDamageFactory, damageResolver, weaponProcResolver, reactionResolver);
+        var experienceService = new ExperienceService(gameMessageService, experienceGrantedEventBuffer, levelIncreasedEventBuffer);
+
+        var actionOrchestrator = new ActionOrchestrator(logger, intentBusContainer, attackResolvedEventBuffer, effectResolvedEventBuffer, killRewardEventBuffer, experienceService, effectRegistry, effectFactory, hitResolver, hitDamageFactory, damageResolver, weaponProcResolver, reactionResolver);
 
         var commandExecutionSystem = new CommandExecutionSystem(logger);
-        var fleeSystem = new FleeSystem(gameMessageService, intentBusContainer, fleeBlockedEventBuffer);
+        var fleeSystem = new FleeSystem(gameMessageService, intentBusContainer, experienceService, fleeBlockedEventBuffer);
         var movementSystem = new MovementSystem(gameMessageService, intentBusContainer, movedEventBuffer);
         var itemInteractionSystem = new ItemInteractionSystem(gameMessageService, intentBusContainer, itemGotEventBuffer, itemDroppedEventBuffer, itemGivenEventBuffer, itemPutEventBuffer, itemWornEventBuffer, itemRemovedEventBuffer, itemDestroyedEventBuffer, itemSacrifierEventBuffer);
         var statsSystem = new EffectiveStatsSystem();

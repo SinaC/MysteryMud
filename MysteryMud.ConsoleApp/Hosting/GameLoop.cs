@@ -20,6 +20,7 @@ using MysteryMud.Domain.Action.Heal;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.Domain.Extensions;
+using MysteryMud.Domain.Services;
 using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
@@ -95,8 +96,12 @@ internal class GameLoop
     private readonly EventBuffer<EffectResolvedEvent> _effectResolvedEventBuffer = new();
     private readonly EventBuffer<AbilityUsedEvent> _abilityUsedEventBuffer = new();
     private readonly EventBuffer<AbilityExecutedEvent> _abilityExecutedEventBuffer = new();
+    private readonly EventBuffer<ExperienceGrantedEvent>  _experienceGrantedEventBuffer = new ();
+    private readonly EventBuffer<LevelIncreasedEvent> _levelIncreasedEventBuffer = new ();
+    private readonly EventBuffer<KillRewardEvent> _killRewardEventBuffer = new (); // short-term, only used in ActionOrchestrator but cannot be defined within ActionOrchestrator because EventBuffer is defined in Infrastructure
 
     private readonly ILookService _lookService;
+    private readonly ExperienceService _experienceService;
 
     private readonly AggroResolver _aggroResolver;
     private readonly DamageResolver _damageResolver;
@@ -152,9 +157,10 @@ internal class GameLoop
         _world = world;
 
         _lookService = new LookService(_gameMessageService);
+        _experienceService = new ExperienceService(_gameMessageService, _experienceGrantedEventBuffer, _levelIncreasedEventBuffer);
 
         _aggroResolver = new AggroResolver();
-        _damageResolver = new DamageResolver(_aggroResolver, _gameMessageService, _damagedEventBuffer, _deathEventBuffer);
+        _damageResolver = new DamageResolver(_aggroResolver, _gameMessageService, _damagedEventBuffer, _deathEventBuffer, _killRewardEventBuffer);
         _healResolver = new HealResolver(_aggroResolver, _gameMessageService, _healedEventBuffer);
         _hitResolver = new HitResolver(_gameMessageService);
         _hitDamageFactory = new HitDamageFactory();
@@ -164,11 +170,11 @@ internal class GameLoop
         _effectExecutor = new EffectExecutor(_damageResolver, _healResolver);
         _effectFactory = new EffectFactory(_logger, _gameMessageService, _intentContainer, _effectExecutor);
 
-        _actionOrchestrator = new ActionOrchestrator(_logger, _intentContainer, _attackResolvedEventBuffer, _effectResolvedEventBuffer, _effectRegistry, _effectFactory, _hitResolver, _hitDamageFactory, _damageResolver, _weaponProcResolver, _reactionResolver);
+        _actionOrchestrator = new ActionOrchestrator(_logger, _intentContainer, _attackResolvedEventBuffer, _effectResolvedEventBuffer, _killRewardEventBuffer, _experienceService, _effectRegistry, _effectFactory, _hitResolver, _hitDamageFactory, _damageResolver, _weaponProcResolver, _reactionResolver);
 
         _commandExecutionSystem = new CommandExecutionSystem(_logger);
         _commandThrottleSystem = new CommandThrottleSystem(_gameMessageService);
-        _fleeSystem = new FleeSystem(_gameMessageService, _intentContainer, _fleeBlockedEventBuffer);
+        _fleeSystem = new FleeSystem(_gameMessageService, _intentContainer, _experienceService, _fleeBlockedEventBuffer);
         _movementSystem = new MovementSystem(_gameMessageService, _intentContainer, _movedEventBuffer);
         _itemInteractionSystem = new ItemInteractionSystem(_gameMessageService, _intentContainer, _itemGotEventBuffer, _itemDroppedEventBuffer, _itemGivenEventBuffer, _itemPutEventBuffer, _itemWornEventBuffer, _itemRemovedEventBuffer, _itemDestroyedEventBuffer, _itemSacrifiedEventBuffer);
         _effectiveStatsSystem = new EffectiveStatsSystem();

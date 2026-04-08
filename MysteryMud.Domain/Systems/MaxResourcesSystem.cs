@@ -8,7 +8,7 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Systems;
 
-public delegate void SetResourceValueAction<TResource>(ref TResource rsource, int value);
+public delegate void SetResourceValueAction<TResource>(ref TResource resource, int value);
 
 public class MaxResourcesSystem<TBase, TResource, TDirty, TModifier>
     where TBase : struct

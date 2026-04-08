@@ -37,12 +37,9 @@ public sealed class DeathSystem
 
     private void HandleDeath(World world, ref DeathEvent deathEvent)
     {
-        _msg.To(deathEvent.Dead).Send("%RYou have been KILLED%x");
-        _msg.ToRoom(deathEvent.Dead).Act("{0} is dead").With(deathEvent.Dead);
-
-        deathEvent.Dead.Remove<Casting>();
-        RemoveFromCombat(world, deathEvent.Dead);
-        CreateCorpse(world, deathEvent.Dead, deathEvent.Killer);
+        deathEvent.Victim.Remove<Casting>();
+        RemoveFromCombat(world, deathEvent.Victim);
+        CreateCorpse(world, deathEvent.Victim, deathEvent.Killer);
 
         // TODO
         //// Queue XP reward

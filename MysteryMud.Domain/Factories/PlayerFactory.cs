@@ -34,10 +34,10 @@ public static class PlayerFactory
             new CommandBuffer(),
             commandThrottle,
             new Name { Value = name },
+            new Level { Value = 1 },
+            new Progression { Experience = 0, ExperienceByLevel = 1000, ExperienceToNextLevel = 2000 },
             new BaseStats
             {
-                Level = 1,
-                Experience = 0,
                 Values = new Dictionary<StatKind, int>
                 {
                     [StatKind.Strength] = 15,
@@ -52,8 +52,6 @@ public static class PlayerFactory
             },
             new EffectiveStats
             {
-                Level = 1,
-                Experience = 0,
                 Values = new Dictionary<StatKind, int>
                 {
                     [StatKind.Strength] = 15,
@@ -112,10 +110,10 @@ public static class PlayerFactory
             new CommandBuffer(),
             commandThrottle,
             new Name { Value = name },
+            new Level { Value = 100 },
+            new Progression { Experience = 1000000, ExperienceByLevel = 1000, ExperienceToNextLevel = 0 },
             new BaseStats
             {
-                Level = 1,
-                Experience = 0,
                 Values = new Dictionary<StatKind, int>
                 {
                     [StatKind.Strength] = 15,
@@ -130,8 +128,6 @@ public static class PlayerFactory
             },
             new EffectiveStats
             {
-                Level = 1,
-                Experience = 0,
                 Values = new Dictionary<StatKind, int>
                 {
                     [StatKind.Strength] = 15,
@@ -181,6 +177,7 @@ public static class PlayerFactory
 
     public static void InitializePlayer(Entity player)
     {
+        // TODO: read from pfile
         var commandThrottle = new CommandThrottle();
         CommandThrottlingFactory.Initialize(ref commandThrottle);
         player.Add(
@@ -190,10 +187,10 @@ public static class PlayerFactory
             new CommandBuffer(),
             commandThrottle,
             new Name { Value = "joel" }, // TODO: implement character creation and loading from file, for now just use a placeholder name
+            new Level { Value = 5 },
+            new Progression { Experience = 4995, ExperienceByLevel = 1000, ExperienceToNextLevel = 5000 },
             new BaseStats
             {
-                Level = 1,
-                Experience = 0,
                 Values = new Dictionary<StatKind, int>
                 {
                     [StatKind.Strength] = 15,
@@ -208,8 +205,6 @@ public static class PlayerFactory
             },
             new EffectiveStats
             {
-                Level = 1,
-                Experience = 0,
                 Values = new Dictionary<StatKind, int>
                 {
                     [StatKind.Strength] = 15,
