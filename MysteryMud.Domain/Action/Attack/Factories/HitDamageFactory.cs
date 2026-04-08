@@ -1,4 +1,4 @@
-﻿using MysteryMud.Domain.Action.Damage;
+﻿using MysteryMud.Core;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Action.Attack.Factories;

@@ -1,8 +1,7 @@
 ﻿using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
-using MysteryMud.Domain.Action.Damage;
+using MysteryMud.Core;
 using MysteryMud.Domain.Action.Effect.Definitions;
-using MysteryMud.Domain.Action.Heal;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.Domain.Components.Effects;
@@ -20,7 +19,7 @@ public class EffectActionFactory
         _logger = logger;
     }
 
-    public Action<EffectContext> Create(EffectActionDefinition actionDefinition) => actionDefinition switch
+    public Action<EffectExecutionContext> Create(EffectActionDefinition actionDefinition) => actionDefinition switch
     {
         StatModifierActionDefinition definition => CreateStatModifier(definition),
         HealthModifierActionDefinition definition => CreateHealthModifier(definition),
@@ -34,14 +33,15 @@ public class EffectActionFactory
         _ => throw new Exception($"Unknown EffectAction {actionDefinition.GetType()}"),
     };
 
-    public Action<EffectContext> CreateStatModifier(StatModifierActionDefinition definition)
+    public Action<EffectExecutionContext> CreateStatModifier(StatModifierActionDefinition definition)
     {
         return ctx =>
         {
-            if (ctx.Effect is not null)
+            var effectContext = ctx.Context;
+            if (effectContext.Effect is not null)
             {
-                var effect = ctx.Effect.Value;
-                var value = definition.ValueFunc(ctx); // TODO: multiply by stack count ?
+                var effect = effectContext.Effect.Value;
+                var value = definition.ValueFunc(ctx.Context); // TODO: multiply by stack count ?
                 var modifier = new StatModifier
                 {
                     Stat = definition.Stat,
@@ -61,22 +61,23 @@ public class EffectActionFactory
                 }
 
                 // add dirty flag to character stats so we will recalculate them with the new modifiers
-                if (!ctx.Target.Has<DirtyStats>())
-                    ctx.Target.Add<DirtyStats>();
+                if (!effectContext.Target.Has<DirtyStats>())
+                    effectContext.Target.Add<DirtyStats>();
             }
             else
                 _logger.LogError("Trying to apply StatModifier on a null-effect");
         };
     }
 
-    public Action<EffectContext> CreateHealthModifier(HealthModifierActionDefinition definition)
+    public Action<EffectExecutionContext> CreateHealthModifier(HealthModifierActionDefinition definition)
     {
         return ctx =>
         {
-            if (ctx.Effect is not null)
+            var effectContext = ctx.Context;
+            if (effectContext.Effect is not null)
             {
-                var effect = ctx.Effect.Value;
-                var value = definition.ValueFunc(ctx); // TODO: multiply by stack count ?
+                var effect = effectContext.Effect.Value;
+                var value = definition.ValueFunc(ctx.Context); // TODO: multiply by stack count ?
                 var modifier = new HealthModifier
                 {
                     Modifier = definition.Modifier,
@@ -95,22 +96,23 @@ public class EffectActionFactory
                 }
 
                 // add dirty flag to character resources so we will recalculate them with the new modifiers
-                if (!ctx.Target.Has<DirtyHealth>())
-                    ctx.Target.Add<DirtyHealth>();
+                if (!effectContext.Target.Has<DirtyHealth>())
+                    effectContext.Target.Add<DirtyHealth>();
             }
             else
                 _logger.LogError("Trying to apply HealthModifier on a null-effect");
         };
     }
 
-    public Action<EffectContext> CreateManaModifier(ManaModifierActionDefinition definition)
+    public Action<EffectExecutionContext> CreateManaModifier(ManaModifierActionDefinition definition)
     {
         return ctx =>
         {
-            if (ctx.Effect is not null)
+            var effectContext = ctx.Context;
+            if (effectContext.Effect is not null)
             {
-                var effect = ctx.Effect.Value;
-                var value = definition.ValueFunc(ctx); // TODO: multiply by stack count ?
+                var effect = effectContext.Effect.Value;
+                var value = definition.ValueFunc(ctx.Context); // TODO: multiply by stack count ?
                 var modifier = new ManaModifier
                 {
                     Modifier = definition.Modifier,
@@ -129,22 +131,23 @@ public class EffectActionFactory
                 }
 
                 // add dirty flag to character resources so we will recalculate them with the new modifiers
-                if (!ctx.Target.Has<DirtyMana>())
-                    ctx.Target.Add<DirtyMana>();
+                if (!effectContext.Target.Has<DirtyMana>())
+                    effectContext.Target.Add<DirtyMana>();
             }
             else
                 _logger.LogError("Trying to apply ManaModifier on a null-effect");
         };
     }
 
-    public Action<EffectContext> CreateEnergyModifier(EnergyModifierActionDefinition definition)
+    public Action<EffectExecutionContext> CreateEnergyModifier(EnergyModifierActionDefinition definition)
     {
         return ctx =>
         {
-            if (ctx.Effect is not null)
+            var effectContext = ctx.Context;
+            if (effectContext.Effect is not null)
             {
-                var effect = ctx.Effect.Value;
-                var value = definition.ValueFunc(ctx); // TODO: multiply by stack count ?
+                var effect = effectContext.Effect.Value;
+                var value = definition.ValueFunc(effectContext); // TODO: multiply by stack count ?
                 var modifier = new EnergyModifier
                 {
                     Modifier = definition.Modifier,
@@ -163,22 +166,23 @@ public class EffectActionFactory
                 }
 
                 // add dirty flag to character resources so we will recalculate them with the new modifiers
-                if (!ctx.Target.Has<DirtyEnergy>())
-                    ctx.Target.Add<DirtyEnergy>();
+                if (!effectContext.Target.Has<DirtyEnergy>())
+                    effectContext.Target.Add<DirtyEnergy>();
             }
             else
                 _logger.LogError("Trying to apply EnergyModifier on a null-effect");
         };
     }
 
-    public Action<EffectContext> CreateRageModifier(RageModifierActionDefinition definition)
+    public Action<EffectExecutionContext> CreateRageModifier(RageModifierActionDefinition definition)
     {
         return ctx =>
         {
-            if (ctx.Effect is not null)
+            var effectContext = ctx.Context;
+            if (effectContext.Effect is not null)
             {
-                var effect = ctx.Effect.Value;
-                var value = definition.ValueFunc(ctx); // TODO: multiply by stack count ?
+                var effect = effectContext.Effect.Value;
+                var value = definition.ValueFunc(effectContext); // TODO: multiply by stack count ?
                 var modifier = new RageModifier
                 {
                     Modifier = definition.Modifier,
@@ -197,83 +201,87 @@ public class EffectActionFactory
                 }
 
                 // add dirty flag to character resources so we will recalculate them with the new modifiers
-                if (!ctx.Target.Has<DirtyRage>())
-                    ctx.Target.Add<DirtyRage>();
+                if (!effectContext.Target.Has<DirtyRage>())
+                    effectContext.Target.Add<DirtyRage>();
             }
             else
                 _logger.LogError("Trying to apply RageModifier on a null-effect");
         };
     }
 
-    public static Action<EffectContext> CreatePeriodHeal(PeriodicHealActionDefinition definition)
+    public static Action<EffectExecutionContext> CreatePeriodHeal(PeriodicHealActionDefinition definition)
     {
         return ctx =>
         {
-            var amount = definition.AmountFunc(ctx); // TODO: should used snapshotted value
-            var totalHeal = amount * ctx.StackCount;
+            var effectContext = ctx.Context;
+            var amount = definition.AmountFunc(effectContext); // TODO: should used snapshotted value
+            var totalHeal = amount * effectContext.StackCount;
             var healAction = new HealAction
             {
-                Source = ctx.Source,
-                Target = ctx.Target,
+                Source = effectContext.Source,
+                Target = effectContext.Target,
                 Amount = totalHeal,
                 SourceKind = HealSourceKind.HoT
             };
             //ctx.Log.LogInformation(LogEvents.Hot, "Applying HoT heal for Effect {effectName} on Target {targetName} with heal {heal}", effect.DebugName, instance.Target.DebugName, totalHeal);
-            ctx.HealResolver.Resolve(ctx.State, healAction);
+            ctx.Executor.ResolveHeal(effectContext.State, healAction);
         };
     }
 
-    public static Action<EffectContext> CreateInstantHeal(InstantHealActionDefinition definition)
+    public static Action<EffectExecutionContext> CreateInstantHeal(InstantHealActionDefinition definition)
     {
         return ctx =>
         {
-            var amount = definition.AmountFunc(ctx);
+            var effectContext = ctx.Context;
+            var amount = definition.AmountFunc(effectContext);
             var totalHeal = amount;
             var healAction = new HealAction
             {
-                Source = ctx.Source,
-                Target = ctx.Target,
+                Source = effectContext.Source,
+                Target = effectContext.Target,
                 Amount = totalHeal,
                 SourceKind = HealSourceKind.Spell // TODO
             };
-            ctx.HealResolver.Resolve(ctx.State, healAction);
+            ctx.Executor.ResolveHeal(effectContext.State, healAction);
         };
     }
 
-    public static Action<EffectContext> CreatePeriodDamage(PeriodicDamageActionDefinition definition)
+    public static Action<EffectExecutionContext> CreatePeriodDamage(PeriodicDamageActionDefinition definition)
     {
         return ctx =>
         {
-            var amount = definition.AmountFunc(ctx); // TODO: should used snapshotted value
-            var totalDamage = amount * ctx.StackCount;
+            var effectContext = ctx.Context;
+            var amount = definition.AmountFunc(effectContext); // TODO: should used snapshotted value
+            var totalDamage = amount * effectContext.StackCount;
             var damageAction = new DamageAction
             {
-                Source = ctx.Source,
-                Target = ctx.Target,
+                Source = effectContext.Source,
+                Target = effectContext.Target,
                 Amount = totalDamage,
                 DamageKind = definition.Kind,
                 SourceKind = DamageSourceKind.DoT
             };
             //_logger.LogInformation(LogEvents.Dot, "Applying DoT damage for Effect {effectName} on Target {targetName} with damage {damage} type {damageKind}", effect.DebugName, instance.Target.DebugName, totalDamage, damageEffect.DamageKind);
-            ctx.DamageResolver.Resolve(ctx.State, damageAction);
+            ctx.Executor.ResolveDamage(effectContext.State, damageAction);
         };
     }
 
-    public static Action<EffectContext> CreateInstantDamage(InstantDamageActionDefinition definition)
+    public static Action<EffectExecutionContext> CreateInstantDamage(InstantDamageActionDefinition definition)
     {
         return ctx =>
         {
-            var amount = definition.AmountFunc(ctx);
+            var effectContext = ctx.Context;
+            var amount = definition.AmountFunc(effectContext);
             var totalDamage = amount;
             var damageAction = new DamageAction
             {
-                Source = ctx.Source,
-                Target = ctx.Target,
+                Source = effectContext.Source,
+                Target = effectContext.Target,
                 Amount = totalDamage,
                 DamageKind = definition.Kind,
                 SourceKind = DamageSourceKind.Spell // TODO
             };
-            ctx.DamageResolver.Resolve(ctx.State, damageAction);
+            ctx.Executor.ResolveDamage(effectContext.State, damageAction);
         };
     }
 }

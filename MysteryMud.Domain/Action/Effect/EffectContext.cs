@@ -1,8 +1,5 @@
 ﻿using Arch.Core;
 using MysteryMud.Core;
-using MysteryMud.Core.Services;
-using MysteryMud.Domain.Action.Damage;
-using MysteryMud.Domain.Action.Heal;
 
 namespace MysteryMud.Domain.Action.Effect;
 
@@ -18,8 +15,5 @@ public ref struct EffectContext
     public int StackCount;
 
     public GameState State;
-    public IGameMessageService Msg;
-    public DamageResolver DamageResolver;
-    public HealResolver HealResolver;
 }
 

@@ -1,7 +1,7 @@
 ﻿using Arch.Core;
 using MysteryMud.GameData.Enums;
 
-namespace MysteryMud.Domain.Action.Damage;
+namespace MysteryMud.Core;
 
 public struct DamageAction
 {

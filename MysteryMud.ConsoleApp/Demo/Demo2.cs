@@ -3,8 +3,10 @@ using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Dispatching;
 using MysteryMud.Application.Services;
+using MysteryMud.ConsoleApp.Hosting;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
+using MysteryMud.Core.Effects;
 using MysteryMud.Core.Eventing;
 using MysteryMud.Domain.Action;
 using MysteryMud.Domain.Action.Attack.Factories;
@@ -88,7 +90,8 @@ static class Demo2
         var hitDamageFactory = new HitDamageFactory();
         var weaponProcResolver = new WeaponProcResolver(logger, gameMessageService, intentBusContainer, effectRegistry);
         var reactionResolver = new ReactionResolver(gameMessageService);
-        var effectFactory = new EffectFactory(logger, gameMessageService, intentBusContainer, damageResolver, healResolver);
+        var effectExecutor = new EffectExecutor(damageResolver, healResolver);
+        var effectFactory = new EffectFactory(logger, gameMessageService, intentBusContainer, effectExecutor);
 
         var actionOrchestrator = new ActionOrchestrator(logger, intentBusContainer, attackResolvedEventBuffer, effectResolvedEventBuffer, effectRegistry, effectFactory, hitResolver, hitDamageFactory, damageResolver, weaponProcResolver, reactionResolver);
 

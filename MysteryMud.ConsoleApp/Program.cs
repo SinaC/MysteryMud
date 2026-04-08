@@ -65,6 +65,7 @@ var goblin = MobFactory.CreateMob(world, "goblin", "a goblin", market);
 var troll = MobFactory.CreateMob(world, "troll", "a troll", market);
 troll.Get<Health>().Current = 10000;
 troll.Get<Health>().Max = 10000;
+troll.Get<BaseHealth>().Max = 10000;
 ref var trollEffectiveStats = ref troll.Get<EffectiveStats>();
 trollEffectiveStats.Dodge = 0; // for testing, make sure all hits land so we can see the counterattack in action
 trollEffectiveStats.Parry = 0; // for testing, make sure all hits land so we can see the counterattack in action

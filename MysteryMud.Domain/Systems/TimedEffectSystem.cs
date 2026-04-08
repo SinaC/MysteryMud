@@ -2,12 +2,11 @@
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
+using MysteryMud.Core.Effects;
 using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Intent;
 using MysteryMud.Core.Services;
-using MysteryMud.Domain.Action.Damage;
 using MysteryMud.Domain.Action.Effect;
-using MysteryMud.Domain.Action.Heal;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Helpers;
@@ -21,19 +20,17 @@ public class TimedEffectSystem
     private readonly ILogger _logger;
     private readonly IGameMessageService _msg;
     private readonly IIntentContainer _intentContainer;
-    private readonly DamageResolver _damageResolver;
-    private readonly HealResolver _healResolver;
+    private readonly IEffectExecutor _effectExecutor;
     private readonly IEventBuffer<TriggeredScheduledEvent> _triggeredScheduledEvents;
     private readonly IEventBuffer<EffectExpiredEvent> _effectExpiredEvents;
     private readonly IEventBuffer<EffectTickedEvent> _effectTickedEvents;
 
-    public TimedEffectSystem(ILogger logger, IGameMessageService msg, IIntentContainer intentContainer, DamageResolver damageResolver, HealResolver healResolver, IEventBuffer<TriggeredScheduledEvent> triggeredScheduledEvents, IEventBuffer<EffectExpiredEvent> effectExpiredEvents, IEventBuffer<EffectTickedEvent> effectTickedEvents)
+    public TimedEffectSystem(ILogger logger, IGameMessageService msg, IIntentContainer intentContainer, IEffectExecutor effectExecutor, IEventBuffer<TriggeredScheduledEvent> triggeredScheduledEvents, IEventBuffer<EffectExpiredEvent> effectExpiredEvents, IEventBuffer<EffectTickedEvent> effectTickedEvents)
     {
         _logger = logger;
         _msg = msg;
         _intentContainer = intentContainer;
-        _damageResolver = damageResolver;
-        _healResolver = healResolver;
+        _effectExecutor = effectExecutor;
         _triggeredScheduledEvents = triggeredScheduledEvents;
         _effectExpiredEvents = effectExpiredEvents;
         _effectTickedEvents = effectTickedEvents;
@@ -137,14 +134,17 @@ public class TimedEffectSystem
                 StackCount = instance.StackCount,
 
                 State = state,
-                Msg = _msg,
-                DamageResolver = _damageResolver,
-                HealResolver = _healResolver,
+            };
+            var effectExecutionContext = new EffectExecutionContext
+            {
+                Context = ctx,
+                Executor = _effectExecutor,
+                Msg = _msg
             };
             foreach (var onExpire in instance.EffectRuntime.OnExpire)
             {
                 if (CharacterHelpers.IsAlive(instance.Source, instance.Target))
-                    onExpire(ctx);
+                    onExpire(effectExecutionContext);
             }
         }
     }
@@ -165,14 +165,17 @@ public class TimedEffectSystem
                 StackCount = instance.StackCount,
 
                 State = state,
-                Msg = _msg,
-                DamageResolver = _damageResolver,
-                HealResolver = _healResolver,
+            };
+            var effectExecutionContext = new EffectExecutionContext
+            {
+                Context = ctx,
+                Executor = _effectExecutor,
+                Msg = _msg
             };
             foreach (var onTick in instance.EffectRuntime.OnTick)
             {
                 if (CharacterHelpers.IsAlive(instance.Source, instance.Target))
-                    onTick(ctx);
+                    onTick(effectExecutionContext);
             }
         }
     }
