@@ -1,4 +1,6 @@
-﻿namespace MysteryMud.Infrastructure.Persistence.Dto;
+﻿using MysteryMud.Infrastructure.Persistence.Dto.Rules;
+
+namespace MysteryMud.Infrastructure.Persistence.Dto;
 
 public record AbilityDefinitionData
 (
@@ -7,6 +9,10 @@ public record AbilityDefinitionData
     int CastTime, // 0 means instant cast
     int Cooldown,
     List<ResourceCostData> Costs,
+    CommandDefinitionData Command,
+    string Executor,
+    Dictionary<string, string> Messages,
+    List<AbilityValidationRuleData> ValidationRules,
     List<string> Effects,
-    CommandDefinitionData Command
+    List<string> FailureEffects
 );

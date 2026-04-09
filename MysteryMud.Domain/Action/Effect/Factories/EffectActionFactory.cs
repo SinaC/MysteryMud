@@ -30,6 +30,7 @@ public class EffectActionFactory
         InstantHealActionDefinition definition => CreateInstantHeal(definition),
         PeriodicDamageActionDefinition definition => CreatePeriodDamage(definition),
         InstantDamageActionDefinition definition => CreateInstantDamage(definition),
+        ApplyTagActionDefinition definition => CreateApplyTag(definition),
         _ => throw new Exception($"Unknown EffectAction {actionDefinition.GetType()}"),
     };
 
@@ -282,6 +283,15 @@ public class EffectActionFactory
                 SourceKind = DamageSourceKind.Spell // TODO
             };
             ctx.Executor.ResolveDamage(effectContext.State, damageAction);
+        };
+    }
+
+    public static Action<EffectExecutionContext> CreateApplyTag(ApplyTagActionDefinition definition)
+    {
+        return ctx =>
+        {
+            // NOP
+            // TODO: for the moment effect tag is handled at effet level and not action level
         };
     }
 }

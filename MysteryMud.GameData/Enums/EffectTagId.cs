@@ -10,6 +10,9 @@ public enum EffectTagId : byte
     Curse = 5,
     Bleed = 6,
     Fire = 7,
+    Calm = 8,
+    Berserk = 9,
+    Stun = 10,
 
     Max = 32
 }

@@ -1,9 +1,13 @@
 ﻿using MysteryMud.Core.Extensions;
 using MysteryMud.Domain.Ability.Definitions;
+using MysteryMud.Domain.Ability.Rules;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.Infrastructure.Persistence.Dto;
+using MysteryMud.Infrastructure.Persistence.Dto.Rules;
+using System.Data;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace MysteryMud.Infrastructure.Persistence;
 
@@ -11,7 +15,8 @@ public class JsonAbilityLoader
 {
     private static readonly JsonSerializerOptions _serializerOptions = new()
     {
-        PropertyNameCaseInsensitive = true
+        Converters = { new AbilityValidationRuleDataConverter() },
+        PropertyNameCaseInsensitive = true,
     };
 
     public List<AbilityDefinition> Load(string filePath)
@@ -35,9 +40,8 @@ public class JsonAbilityLoader
             if (kind == AbilityKind.Skill && command is null)
                 throw new Exception($"Skill ability {entry.Name} must declare a command");
 
-            var costs = entry.Costs == null || entry.Costs.Count == 0
-                ? []
-                : entry.Costs.Select(MapResourceCost).ToList();
+            var costs = entry.Costs?.Select(MapResourceCost).ToList() ?? [];
+            var validationRules = entry.ValidationRules?.Select(MapRule).ToList();
 
             var ability = new AbilityDefinition
             {
@@ -46,9 +50,13 @@ public class JsonAbilityLoader
                 Kind = kind,
                 CastTime = entry.CastTime,
                 Cooldown = entry.Cooldown,
-                Costs = costs,
-                Effects = entry.Effects,
+                Costs = costs ?? [],
                 Command = command,
+                Executor = entry.Executor,
+                Messages = entry.Messages ?? [],
+                ValidationRules = validationRules ?? [],
+                Effects = entry.Effects ?? [],
+                FailureEffects = entry.FailureEffects ?? []
             };
             abilities.Add(ability);
         }
@@ -61,4 +69,39 @@ public class JsonAbilityLoader
             Kind = Enum.Parse<ResourceKind>(data.Kind, ignoreCase: true),
             Amount = data.Amount,
         };
+
+    private AbilityRuleDefinition MapRule(AbilityValidationRuleData data)
+        => data switch
+        {
+            AffectedByRuleData rule => new AffectedByRuleDefinition { FailMessageKey = rule.Fail, EffectTagId = Enum.Parse<EffectTagId>(rule.Tag) },
+            HasWeaponTypeRuleData rule => new HasWeaponTypeRuleDefinition { FailMessageKey = rule.Fail, Required = Enum.Parse<WeaponKind>(rule.Required) },
+            NotAffectedByRuleData rule => new NotAffectedByRuleDefinition { FailMessageKey = rule.Fail, EffectTagId = Enum.Parse<EffectTagId>(rule.Tag) },
+            TargetNotFightingRuleData rule => new TargetNotFightingRuleDefinition { FailMessageKey = rule.Fail },
+            _ => throw new NotSupportedException($"Unknown rule type: {data.GetType()}")
+        };
+
+    private class AbilityValidationRuleDataConverter : JsonConverter<AbilityValidationRuleData>
+    {
+        public override AbilityValidationRuleData? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            using var jsonDoc = JsonDocument.ParseValue(ref reader);
+            var root = jsonDoc.RootElement;
+
+            var type = root.GetProperty("Type").GetString();
+
+            return type switch
+            {
+                "AffectedBy" => JsonSerializer.Deserialize<AffectedByRuleData>(root.GetRawText(), options),
+                "HasWeaponType" => JsonSerializer.Deserialize<HasWeaponTypeRuleData>(root.GetRawText(), options),
+                "NotAffectedBy" => JsonSerializer.Deserialize<NotAffectedByRuleData>(root.GetRawText(), options),
+                "TargetNotFighting" => JsonSerializer.Deserialize<TargetNotFightingRuleData>(root.GetRawText(), options),
+                _ => throw new NotSupportedException($"Unknown rule type: {type}")
+            };
+        }
+
+        public override void Write(Utf8JsonWriter writer, AbilityValidationRuleData value, JsonSerializerOptions options)
+        {
+            JsonSerializer.Serialize(writer, value, value.GetType(), options);
+        }
+    }
 }

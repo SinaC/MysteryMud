@@ -1,4 +1,5 @@
-﻿using Arch.Core.Extensions;
+﻿using Arch.Core;
+using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Intent;
@@ -39,6 +40,23 @@ public class AbilityValidationSystem
                 _logger.LogError("Ability {abilityId} not found", abilityId);
                 continue;
             }
+
+            // check validation rules
+            foreach (var rule in abilityRuntime.ValidationRules)
+            {
+                var result = rule.Validate(source, targets, abilityRuntime);
+
+                if (!result.Success)
+                {
+                    if (result.FailureMessageKey is not null)
+                        SendAbilityMessage(source, abilityRuntime, result.FailureMessageKey);
+                    intent.Cancelled = true;
+                    break;
+                }
+            }
+
+            if (intent.Cancelled)
+                continue;
 
             // already casting a spell
             if (source.Has<Casting>())
@@ -114,4 +132,14 @@ public class AbilityValidationSystem
             },
             _ => "You don't have enough resources."
         };
+
+    private void SendAbilityMessage(Entity actor, AbilityRuntime ability, string key) // TODO: same code found in AbilityExecutionSystem
+    {
+        if (key is null)
+            return;
+        if (ability.Messages.TryGetValue(key, out var msg))
+            _msg.To(actor).Send(msg);
+        else
+            _logger.LogError("Ability {abilityName} validation rules refers to {key} but it's not found in messages", ability.Name, key);
+    }
 }

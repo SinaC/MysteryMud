@@ -39,7 +39,7 @@ public class JsonEffectLoader
     private EffectDefinition MapEffect(EffectDefinitionData data)
     {
         // map actions
-        var actions = data.Actions.Select(MapAction).ToList();
+        var actions = data.Actions?.Select(MapAction).ToList() ?? [];
 
         return new EffectDefinition
         {
@@ -162,6 +162,17 @@ public class JsonEffectLoader
                         Kind = dmgKind
                     };
                 }
+
+            case ApplyTagActionData data:
+                {
+                    var effectTagId = Enum.Parse<EffectTagId>(data.Tag);
+                    // TODO: target
+                    return new ApplyTagActionDefinition
+                    {
+                        Trigger = trigger,
+                        EffectTagId = effectTagId
+                    };
+                }
             default:
                 throw new NotSupportedException($"Unknown action type: {action.GetType()}");
         }
@@ -184,6 +195,7 @@ public class JsonEffectLoader
                 "PeriodicDamage" => JsonSerializer.Deserialize<PeriodicDamageData>(root.GetRawText(), options),
                 "InstantDamage" => JsonSerializer.Deserialize<InstantDamageData>(root.GetRawText(), options),
                 "InstantHeal" => JsonSerializer.Deserialize<InstantHealData>(root.GetRawText(), options),
+                "ApplyTag" => JsonSerializer.Deserialize<ApplyTagActionData>(root.GetRawText(), options),
                 _ => throw new NotSupportedException($"Unknown action type: {type}")
             };
         }
