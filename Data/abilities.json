@@ -64,8 +64,86 @@
       "ThrottlingCategories": ["combat"]
     },
     "Costs": [
-      { "Kind": "Mana", "Amount": 50 }
+      { "Kind": "Mana", "Amount": 5 }
     ],
+
+    "Executor": "BerserkExecutor",
+    "ValidationRules": [
+      { "Type": "NotAffectedBy", "Tag": "Berserk", "Fail": "OnAlreadyActive" },
+      { "Type": "NotAffectedBy", "Tag": "Calm", "Fail": "OnBlockedByCalm" }
+    ],
+    "Messages": {
+      "OnSuccess": "Your pulse races as you are consumed by rage!",
+      "OnFailure": "Your pulse speeds up, but nothing happens.",
+      "OnAlreadyActive": "You get a little madder.",
+      "OnBlockedByCalm": "You're feeling too mellow to berserk."
+    },
     "Effects": ["BerserkHeal", "BerserkBuff"]
+  },
+  {
+    "Name": "Bash",
+    "Kind": "Skill",
+    "Command": {
+      "Name": "bash",
+      "RequiredLevel": "Player",
+      "MinimumPosition": "Fighting",
+      "Syntax": ["[cmd]"],
+      "HelpText": "TBD",
+      "Categories": ["ability", "combat"],
+      "ThrottlingCategories": ["combat"]
+    },
+
+    "Executor": "ChanceBased",
+    "Messages": {
+      "OnSuccess": "You slam into your opponent, knocking them down!",
+      "OnFailure": "You miss your bash and stumble!"
+    },
+    "Effects": ["BashDamage", "BashStun"],
+    "FailureEffects": ["BashSelfStun"]
+  },
+  {
+    "Name": "Backstab",
+    "Kind": "Skill",
+    "Command": {
+      "Name": "backstab",
+      "RequiredLevel": "Player",
+      "MinimumPosition": "Standing",
+      "Syntax": ["[cmd]"],
+      "HelpText": "TBD",
+      "Categories": ["ability", "combat"],
+      "ThrottlingCategories": ["combat"]
+    },
+
+    "Executor": "ChanceBased",
+    "ValidationRules": [
+      { "Type": "HasWeaponType", "Required": "Dagger", "Fail": "NeedDagger" },
+      { "Type": "TargetNotFighting", "Fail": "TargetAware" }
+    ],
+    "Messages": {
+      "OnSuccess": "You slip behind your target and deliver a deadly backstab!",
+      "OnFailure": "You fail to land a proper backstab.",
+      "NeedDagger": "You need to wield a dagger to backstab.",
+      "TargetAware": "Your target is suspicious...you can't sneak up."
+    },
+    "Effects": ["BackstabDamage"],
+    "FailureEffects": ["BackstabFailDamage"]
+  },
+  {
+    "Name": "Calm",
+    "Kind": "Spell",
+    "Costs": [
+      { "Kind": "Mana", "Amount": 5 }
+    ],
+    "ValidationRules": [
+	  { "Type": "NotAffectedBy", "Tag": "Berserk", "Fail": "OnBlockedByBerserk" },
+      { "Type": "NotAffectedBy", "Tag": "Calm", "Fail": "OnAlreadyActive" }
+    ],
+    "Messages": {
+      "OnSuccess": "Success TBD",
+      "OnFailure": "Failure TBD",
+      "OnBlockedByBerserk": "You are too mad to be calmed down.",
+	  "OnAlreadyActive": "You are already calm."
+    },
+    "Effects": ["CalmBuff"]
   }
 ]

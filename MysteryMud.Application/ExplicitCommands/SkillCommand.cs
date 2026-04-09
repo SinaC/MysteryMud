@@ -78,5 +78,6 @@ public class SkillCommand : IExplicitCommand
         useAbilityIntent.Kind = abilityRuntime.Kind;
         useAbilityIntent.Source = actor;
         useAbilityIntent.Targets = [target]; // TODO
+        useAbilityIntent.Cancelled = false;
     }
 }

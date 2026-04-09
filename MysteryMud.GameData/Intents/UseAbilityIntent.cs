@@ -10,4 +10,6 @@ public struct UseAbilityIntent
 
     public AbilityKind Kind;
     public int AbilityId;
+
+    public bool Cancelled;
 }

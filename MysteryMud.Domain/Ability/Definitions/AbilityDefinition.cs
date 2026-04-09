@@ -11,7 +11,10 @@ public class AbilityDefinition
     public required int CastTime { get; init; } // 0 means instant cast
     public required int Cooldown { get; init; }
     public required List<ResourceCost> Costs { get; init; }
+    public CommandDefinition? Command { get; init; } // only for skills
+    public required string? Executor { get; init; }
     public required List<string> Effects { get; init; }
-
-    public CommandDefinition? Command { get; init; }
+    public required List<string> FailureEffects { get; init; } = [];
+    public required Dictionary<string, string> Messages { get; init; } = []; // TODO: actor/room messages ?
+    public required List<AbilityRuleDefinition> ValidationRules { get; init; } = [];
 }

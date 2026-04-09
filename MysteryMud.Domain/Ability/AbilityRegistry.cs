@@ -11,17 +11,19 @@ public class AbilityRegistry
     private readonly WordTrie<AbilityRuntime> _abilityWordTrie = new();
 
     private readonly EffectRegistry _effectRegistry;
+    private readonly AbilityExecutionResolverRegistry _abilityExecutionResolverRegistry;
 
-    public AbilityRegistry(EffectRegistry effectRegistry)
+    public AbilityRegistry(EffectRegistry effectRegistry, AbilityExecutionResolverRegistry abilityExecutionResolverRegistry)
     {
         _effectRegistry = effectRegistry;
+        _abilityExecutionResolverRegistry = abilityExecutionResolverRegistry;
     }
 
     public void RegisterAbilities(IEnumerable<AbilityDefinition> abilities)
     {
         foreach (var ability in abilities)
         {
-            var abilityRuntime = AbilityRuntimeFactory.Create(_effectRegistry, ability);
+            var abilityRuntime = AbilityRuntimeFactory.Create(_effectRegistry, _abilityExecutionResolverRegistry, ability);
             _abilitiesById.Add(ability.Id, abilityRuntime);
             _abilityWordTrie.Insert(ability.Name.ToLowerInvariant(), abilityRuntime);
         }

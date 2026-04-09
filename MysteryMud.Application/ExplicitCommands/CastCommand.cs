@@ -119,5 +119,6 @@ Use the 'spells' command to see the spells you already have (help spells).",
         useAbilityIntent.Kind = abilityRuntime.Kind;
         useAbilityIntent.Source = actor;
         useAbilityIntent.Targets = [target]; // TODO
+        useAbilityIntent.Cancelled = false;
     }
 }

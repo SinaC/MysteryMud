@@ -2,6 +2,7 @@
 using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Helpers;
 using MysteryMud.GameData.Enums;
 using System.Globalization;
 
@@ -71,10 +72,13 @@ public class EffectFormulaCompiler
         {
             var stack = new Stack<decimal>();
 
-            ref var casterLevel = ref ctx.Source.Get<Level>();
-            ref var targetLevel = ref ctx.Target.Get<Level>();
-            ref var casterStats = ref ctx.Source.Get<EffectiveStats>();
-            ref var targetStats = ref ctx.Target.Get<EffectiveStats>();
+            ref var source = ref ctx.Source;
+            ref var target = ref ctx.Target;
+
+            ref var casterLevel = ref source.Get<Level>();
+            ref var targetLevel = ref target.Get<Level>();
+            ref var casterStats = ref source.Get<EffectiveStats>();
+            ref var targetStats = ref target.Get<EffectiveStats>();
 
             foreach (var token in rpn)
             {
@@ -130,6 +134,30 @@ public class EffectFormulaCompiler
 
                     case TokenType.TargetConstitution:
                         stack.Push(targetStats.Values[StatKind.Constitution]);
+                        break;
+
+                    case TokenType.WeaponLevel: // TODO: precompute in put in context ?
+                        {
+                            if (!CharacterHelpers.TryGetMainHandWeapon(source, out var item, out var _))
+                                stack.Push(1); // TODO:
+                            else
+                            {
+                                stack.Push(item.Get<Level>().Value);
+                            }
+                        }
+                        break;
+
+                    case TokenType.WeaponDamage: // TODO: precompute in put in context ?
+                        {
+                            if (!CharacterHelpers.TryGetMainHandWeapon(source, out var _, out var weapon))
+                                stack.Push(1); // TODO:
+                            else
+                            {
+                                int total = 0;
+                                for (int i = 0; i < weapon.DiceCount; i++) total += Random.Shared.Next(1, weapon.DiceValue + 1);
+                                stack.Push(total);
+                            }
+                        }
                         break;
 
                     case TokenType.EffectStackCount:
@@ -215,6 +243,9 @@ public class EffectFormulaCompiler
         TargetWisdom,
         TargetDexterity,
         TargetConstitution,
+        // Weapon
+        WeaponLevel,
+        WeaponDamage,
         // Effect
         EffectStackCount,
     }
@@ -410,6 +441,10 @@ public class EffectFormulaCompiler
                     case "target.dexterity": tokens.Add(new Token { Type = TokenType.TargetDexterity, StartIndex = start }); break;
                     case "target.constitution": tokens.Add(new Token { Type = TokenType.TargetConstitution, StartIndex = start }); break;
 
+                    // Weapon
+                    case "weapon.level": tokens.Add(new Token { Type = TokenType.WeaponLevel, StartIndex = start }); break;
+                    case "weapon.damage": tokens.Add(new Token { Type = TokenType.WeaponDamage, StartIndex = start }); break;
+
                     // Effect
                     case "effect.stackcount": tokens.Add(new Token { Type = TokenType.EffectStackCount, StartIndex = start }); break;
 
@@ -498,6 +533,8 @@ public class EffectFormulaCompiler
                 case TokenType.TargetWisdom:
                 case TokenType.TargetDexterity:
                 case TokenType.TargetConstitution:
+                case TokenType.WeaponLevel:
+                case TokenType.WeaponDamage:
                 case TokenType.EffectStackCount:
                     output.Add(t);
                     break;

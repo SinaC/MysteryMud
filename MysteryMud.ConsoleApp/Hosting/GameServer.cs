@@ -33,7 +33,7 @@ public class GameServer
     private readonly IntentBusContainer _intentBusContainer;
     private readonly GameLoop _gameLoop;
 
-    public GameServer(ILogger logger, World world, ICommandDispatcher commandDispatcher, EffectRegistry effectRegistry, AbilityRegistry abilityRegistry)
+    public GameServer(ILogger logger, World world, ICommandDispatcher commandDispatcher, EffectRegistry effectRegistry, AbilityRegistry abilityRegistry, AbilityExecutionResolverRegistry abilityExecutionResolverRegistry)
     {
         _world = world;
         _logger = logger;
@@ -53,7 +53,7 @@ public class GameServer
         _actService = new ActService();
         _gameMessageService = new GameMessageService(_messageBus, _actService);
         _intentBusContainer = new IntentBusContainer();
-        _gameLoop = new GameLoop(_logger, _outputService, _commandBus, _messageBus, _scheduler, _gameMessageService, _intentBusContainer, effectRegistry, abilityRegistry, _world);
+        _gameLoop = new GameLoop(_logger, _outputService, _commandBus, _messageBus, _scheduler, _gameMessageService, _intentBusContainer, effectRegistry, abilityRegistry, abilityExecutionResolverRegistry, _world);
     }
 
     public void Start()

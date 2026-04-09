@@ -1,5 +1,60 @@
 [
   {
+    "Name": "BackstabDamage",
+    "Actions": [
+      {
+        "Type": "InstantDamage",
+        "DamageFormula": "weapon.Damage * 3 + caster.Level",
+		"DamageKind": "Pierce"
+      }
+    ]
+  },
+  {
+    "Name": "BackstabFailDamage",
+    "Actions": [
+      {
+        "Type": "InstantDamage",
+        "DamageFormula": "weapon.Damage",
+		"DamageKind": "Pierce"
+      }
+    ]
+  },
+  {
+    "Name": "BashDamage",
+    "Actions": [
+      {
+        "Type": "InstantDamage",
+        "DamageFormula": "10 + caster.Strength",
+		"DamageKind": "Bash"
+      }
+    ]
+  },
+  {
+    "Name": "BashStun",
+    "DurationFormula": "20",
+	"Tag": "Stun",
+	"WearOffMessage": "You regain your equilibrium.",
+    "Actions": [
+      {
+        "Type": "ApplyTag",
+		"Tag": "Stun"
+      }
+    ]
+  },
+  {
+    "Name": "BashSelfStun",
+    "DurationFormula": "10",
+	"Tag": "Stun",
+	"WearOffMessage": "You regain your equilibrium.",
+    "Actions": [
+      {
+        "Type": "ApplyTag",
+        "Target": "Self",
+		"Tag": "Stun"
+      }
+    ]
+  },
+  {
     "Name": "BerserkHeal",
     "Actions": [
       {
@@ -10,10 +65,10 @@
   },
   {
     "Name": "BerserkBuff",
+    "Tag": "Berserk",
     "Stacking": "None",
     "MaxStacks": 1,
-    "DurationFormula": "caster.Level / 8",
-    "ApplyMessage": "Your pulse races as you are consumed by rage!",
+    "DurationFormula": "600 * caster.Level / 8",
     "WearOffMessage": "You feel your pulse slow down.",
     "Actions": [
       {
@@ -37,12 +92,49 @@
     ]
   },
   {
+    "Name": "CalmBuff",
+    "Tag": "Calm",
+    "Stacking": "None",
+    "MaxStacks": 1,
+    "DurationFormula": "600 * caster.Level / 4",
+	"ApplyMessage": "A wave of calm passes over you.",
+    "WearOffMessage": "You have lost your peace of mind.",
+    "Actions": [
+      {
+        "Type": "StatModifier",
+        "Stat": "HitRoll",
+        "Mode": "Flat",
+        "ValueFormula": "-5"
+      },
+      {
+        "Type": "StatModifier",
+        "Stat": "DamRoll",
+        "Mode": "Flat",
+        "ValueFormula": "-5"
+      }
+    ]
+  },
+  {
     "Name": "FlamingWeapon",
     "Actions": [
       {
-      "Type": "InstantDamage",
-      "DamageFormula": "5 + caster.Level",
-      "DamageKind": "Fire"
+        "Type": "InstantDamage",
+        "DamageFormula": "5 + caster.Level",
+        "DamageKind": "Fire"
+      }
+    ]
+  },
+  {
+    "Name": "VampiricWeapon",
+    "Actions": [
+      {
+        "Type": "InstantDamage",
+        "DamageFormula": "range(1, 1 + weapon.Level / 5)",
+        "DamageKind": "Negative"
+      },
+	  {
+        "Type": "InstantHeal",
+        "HealFormula": "5 + caster.Level"
       }
     ]
   },
