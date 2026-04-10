@@ -1,6 +1,6 @@
 ﻿using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
-using MysteryMud.Core;
+using MysteryMud.Core.Effects;
 using MysteryMud.Domain.Action.Effect.Definitions;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Resources;

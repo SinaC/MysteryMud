@@ -1,4 +1,7 @@
-﻿namespace MysteryMud.Application.Parsing;
+﻿using MysteryMud.GameData.Enums;
+using MysteryMud.GameData.Targeting;
+
+namespace MysteryMud.Application.Parsing;
 
 public static class CommandParser
 {

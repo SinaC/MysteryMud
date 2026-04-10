@@ -6,10 +6,11 @@ namespace MysteryMud.GameData.Intents;
 public struct UseAbilityIntent
 {
     public Entity Source;
-    public List<Entity> Targets;
 
-    public AbilityKind Kind;
+    public TargetKind TargetKind; // Single, All, Indexed, Self
+    public int TargetIndex; // for N.something
+    public string TargetName; // empty for 'all' or 'self'
+
+    public AbilityKind AbilityKind;
     public int AbilityId;
-
-    public bool Cancelled;
 }

@@ -1,6 +1,5 @@
 ﻿using MysteryMud.Core.Extensions;
 using MysteryMud.Domain.Ability.Definitions;
-using MysteryMud.Domain.Ability.Rules;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.Infrastructure.Persistence.Dto;
@@ -21,7 +20,7 @@ public class JsonAbilityLoader
 
     public List<AbilityDefinition> Load(string filePath)
     {
-        if(!File.Exists(filePath))
+        if (!File.Exists(filePath))
             throw new FileNotFoundException($"Ability JSON file not found: {filePath}");
 
         var json = File.ReadAllText(filePath);
@@ -52,6 +51,7 @@ public class JsonAbilityLoader
                 Cooldown = entry.Cooldown,
                 Costs = costs ?? [],
                 Command = command,
+                Targeting = MapTargeting(entry.Targeting),
                 Executor = entry.Executor,
                 Messages = entry.Messages ?? [],
                 ValidationRules = validationRules ?? [],
@@ -68,6 +68,43 @@ public class JsonAbilityLoader
         {
             Kind = Enum.Parse<ResourceKind>(data.Kind, ignoreCase: true),
             Amount = data.Amount,
+        };
+
+    private AbilityTargeting MapTargeting(AbilityTargetingData data)
+        => data == null
+        ? new AbilityTargeting // if not specified, single character
+        {
+            Kind = AbilityTargetKind.None,
+            Scope = AbilityTargetScope.Single,
+            Allowed = AbilityTargetKindMask.AnyCharacter,
+
+            Default = AbilityDefaultTargetRule.None,
+            Optional = false,
+
+            MaxTargets = 0, // no max target
+            Selection = AbilityTargetSelection.Random,
+
+            Filters = [] // no filter
+        }
+        : new()
+        {
+            Kind = Enum.Parse<AbilityTargetKind>(data.Kind),
+            Scope = Enum.Parse<AbilityTargetScope>(data.Scope),
+            Allowed = data.Allowed == null || data.Allowed.Count == 0
+                ? AbilityTargetKindMask.Any
+                : data.Allowed.Aggregate(AbilityTargetKindMask.None, (r, f) => r | Enum.Parse<AbilityTargetKindMask>(f)),
+
+            Default = data.Default == null
+                ? AbilityDefaultTargetRule.None
+                : Enum.Parse<AbilityDefaultTargetRule>(data.Default),
+            Optional = data.Optional,
+
+            MaxTargets = data.MaxTargets,
+            Selection = data.Selection == null
+                ? AbilityTargetSelection.Random
+                : Enum.Parse<AbilityTargetSelection>(data.Selection),
+
+            Filters = data.Filters?.Select(Enum.Parse<AbilityTargetFilterId>)?.ToList() ?? []
         };
 
     private AbilityRuleDefinition MapRule(AbilityValidationRuleData data)

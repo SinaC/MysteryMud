@@ -1,6 +1,7 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.Core;
+using MysteryMud.Core.Effects;
 using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Action.Attack.Resolvers;

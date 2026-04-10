@@ -2,7 +2,7 @@
 using Arch.Core.Extensions;
 using MysteryMud.Domain.Components;
 
-namespace MysteryMud.Application.Queries.Matching;
+namespace MysteryMud.Domain.Queries.Matching;
 
 public static class NameMatcher
 {

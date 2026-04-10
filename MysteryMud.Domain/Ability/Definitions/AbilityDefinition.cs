@@ -12,6 +12,7 @@ public class AbilityDefinition
     public required int Cooldown { get; init; }
     public required List<ResourceCost> Costs { get; init; }
     public CommandDefinition? Command { get; init; } // only for skills
+    public AbilityTargeting Targeting { get; init; }
     public required string? Executor { get; init; }
     public required List<string> Effects { get; init; }
     public required List<string> FailureEffects { get; init; } = [];

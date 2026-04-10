@@ -4,20 +4,20 @@ namespace MysteryMud.Domain.Action.Effect;
 
 public class EffectRuntime
 {
-    public required int Id { get; init; }
-    public required string Name { get; init; }
+    public int Id;
+    public string Name = default!;
 
     // state-effect
-    public Func<EffectContext, decimal>? DurationFunc { get; init; } // if null -> stateless effect
-    public required EffectTagId Tag { get; init; }
-    public required StackingRule Stacking { get; init; }
-    public required int MaxStacks { get; init; } = 1;
-    public required bool TickOnApply { get; init; } = false; // if true, tick actions are triggered immediately
-    public required int TickRate { get; init; } = 0; // in ticks (0: pure duration effect if DurationFunc is not null)
+    public Func<EffectContext, decimal>? DurationFunc; // if null -> stateless effect
+    public EffectTagId Tag = EffectTagId.None;
+    public StackingRule Stacking = StackingRule.None;
+    public int MaxStacks = 1;
+    public bool TickOnApply = false; // if true, tick actions are triggered immediately
+    public int TickRate = 0; // in ticks (0: pure duration effect if DurationFunc is not null)
 
     // effect delegate
-    public Action<EffectExecutionContext>[] OnApply { get; init; } = [];
-    public Action<EffectExecutionContext>[] OnTick { get; init; } = [];
-    public Action<EffectExecutionContext>[] OnExpire { get; init; } = [];
-    //TODO: public Action<EffectContext, DamageAction>[] OnReceiveDamage { get; init; } = [];
+    public Action<EffectExecutionContext>[] OnApply = [];
+    public Action<EffectExecutionContext>[] OnTick = [];
+    public Action<EffectExecutionContext>[] OnExpire = [];
+    //TODO: public Action<EffectContext, DamageAction>[] OnReceiveDamage; = [];
 }

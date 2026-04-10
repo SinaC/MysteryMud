@@ -1,6 +1,4 @@
-﻿using MysteryMud.Domain.Ability.Definitions;
-
-namespace MysteryMud.Domain.Ability.Rules;
+﻿namespace MysteryMud.Domain.Ability.Definitions;
 
 public class TargetNotFightingRuleDefinition : AbilityRuleDefinition
 {

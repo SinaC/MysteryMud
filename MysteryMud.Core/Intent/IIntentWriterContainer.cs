@@ -22,6 +22,7 @@ public interface IIntentWriterContainer
     IIntentWriter<SacrificeItemIntent> SacrificeItem { get; }
     // AbilitySystem
     IIntentWriter<UseAbilityIntent> UseAbility { get; }
+    IIntentWriter<ResolvedAbilityIntent> ResolvedAbility { get; }
     IIntentWriter<ExecuteAbilityIntent> ExecuteAbility { get; }
     // LootSystem
     IIntentWriter<LootIntent> Loot { get; }

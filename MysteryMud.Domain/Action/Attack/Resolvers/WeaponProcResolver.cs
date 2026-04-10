@@ -61,5 +61,6 @@ public class WeaponProcResolver
         effectIntent.Effect.Source = attack.Source; // TODO: weaponEntity ?
         effectIntent.Effect.Target = attack.Target;
         effectIntent.Effect.EffectId = weapon.ProcEffectId.Value;
+        effectIntent.Cancelled = false;
     }
 }

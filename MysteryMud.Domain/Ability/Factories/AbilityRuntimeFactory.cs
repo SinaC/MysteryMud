@@ -23,6 +23,7 @@ public static class AbilityRuntimeFactory
             CastTime = def.CastTime,
             Cooldown = def.Cooldown,
             Costs = def.Costs,
+            Targeting = def.Targeting,
             ExecutorId = registeredResolver.Id,
             EffectIds = effectIds,
             FailureEffectIds = failureEffectIds,

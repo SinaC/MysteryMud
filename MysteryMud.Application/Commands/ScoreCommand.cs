@@ -10,7 +10,6 @@ using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
-using System.Numerics;
 
 namespace MysteryMud.Application.Commands;
 

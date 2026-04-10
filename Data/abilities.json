@@ -3,6 +3,13 @@
     "Name": "Fireball",
     "Kind": "Spell",
     "Costs": [{ "Kind": "Mana", "Amount": 15 }],
+    "Targeting": {
+      "Kind": "Character",
+      "Scope": "Single",
+      "Allowed": ["AnyCharacter"],
+      "Default": "CurrentOpponent",
+      "Optional": true
+    },
     "Effects": ["Fireball"]
   },
   {
@@ -10,18 +17,37 @@
     "Kind": "Spell",
     "CastTime": 20,
     "Costs": [{ "Kind": "Mana", "Amount": 10 }],
+    "Targeting": {
+      "Kind": "Character",
+      "Scope": "Single",
+      "Allowed": ["AnyCharacter"],
+      "Default": "CurrentOpponent",
+      "Optional": true
+    },
     "Effects": ["MagicMissile"]
   },
   {
     "Name": "Poison",
     "Kind": "Spell",
     "Costs": [{ "Kind": "Mana", "Amount": 20 }],
+    "Targeting": {
+      "Kind": "Any",
+      "Scope": "Single",
+      "Allowed": ["Any"],
+      "Default": "CurrentOpponent",
+      "Optional": true
+    },
     "Effects": ["Poison"]
   },
   {
     "Name": "Bless",
     "Kind": "Spell",
     "Costs": [{ "Kind": "Mana", "Amount": 18 }],
+    "Targeting": {
+      "Kind": "Any",
+      "Scope": "Single",
+      "Allowed": ["Any"]
+    },
     "Effects": ["Bless"]
   },
   {
@@ -29,18 +55,34 @@
     "Kind": "Spell",
     "CastTime": 100,
     "Costs": [{ "Kind": "Mana", "Amount": 10 }],
+    "Targeting": {
+      "Kind": "Character",
+      "Scope": "Single",
+      "Allowed": ["AnyCharacter"]
+    },
     "Effects": ["CureLight"]
   },
   {
     "Name": "Armor",
     "Kind": "Spell",
     "Costs": [{ "Kind": "Mana", "Amount": 25 }],
+    "Targeting": {
+      "Kind": "Character",
+      "Scope": "Single",
+      "Allowed": ["AnyCharacter"]
+    },
     "Effects": ["Armor"]
   },
   {
     "Name": "Kick",
     "Kind": "Skill",
-    "Effects": ["Kick"],
+    "Targeting": {
+      "Kind": "Character",
+      "Scope": "Single",
+      "Allowed": ["AnyCharacter"],
+      "Default": "CurrentOpponent",
+      "Optional": true
+    },
     "Command": {
       "Name": "kick",
       "RequiredLevel": "Player",
@@ -49,7 +91,8 @@
       "HelpText": "Kicking allows the adventurer to receive an extra attack in combat, a powerful\nkick. However, a failed kick may throw an unwary fighter off balance.",
       "Categories": ["ability", "combat"],
       "ThrottlingCategories": ["combat"]
-    }
+    },
+    "Effects": ["Kick"]
   },
   {
     "Name": "Berserk",
@@ -66,7 +109,13 @@
     "Costs": [
       { "Kind": "Mana", "Amount": 5 }
     ],
-
+    "Targeting": {
+      "Kind": "Character",
+      "Scope": "Single",
+      "Allowed": ["Self"],
+      "Default": "Self",
+      "Optional": true
+    },
     "Executor": "BerserkExecutor",
     "ValidationRules": [
       { "Type": "NotAffectedBy", "Tag": "Berserk", "Fail": "OnAlreadyActive" },
@@ -92,7 +141,13 @@
       "Categories": ["ability", "combat"],
       "ThrottlingCategories": ["combat"]
     },
-
+    "Targeting": {
+      "Kind": "Character",
+      "Scope": "Single",
+      "Allowed": ["AnyCharacter"],
+      "Default": "CurrentOpponent",
+      "Optional": true
+    },
     "Executor": "ChanceBased",
     "Messages": {
       "OnSuccess": "You slam into your opponent, knocking them down!",
@@ -113,7 +168,13 @@
       "Categories": ["ability", "combat"],
       "ThrottlingCategories": ["combat"]
     },
-
+    "Targeting": {
+      "Kind": "Character",
+      "Scope": "Single",
+      "Allowed": ["AnyCharacter"],
+      "Default": "None",
+      "Optional": false
+    },
     "Executor": "ChanceBased",
     "ValidationRules": [
       { "Type": "HasWeaponType", "Required": "Dagger", "Fail": "NeedDagger" },
@@ -134,8 +195,13 @@
     "Costs": [
       { "Kind": "Mana", "Amount": 5 }
     ],
+    "Targeting": {
+      "Kind": "Character",
+      "Scope": "Room",
+      "Allowed": ["AnyCharacter"]
+    },
     "ValidationRules": [
-	  { "Type": "NotAffectedBy", "Tag": "Berserk", "Fail": "OnBlockedByBerserk" },
+      { "Type": "NotAffectedBy", "Tag": "Berserk", "Fail": "OnBlockedByBerserk" },
       { "Type": "NotAffectedBy", "Tag": "Calm", "Fail": "OnAlreadyActive" }
     ],
     "Messages": {
@@ -145,5 +211,31 @@
 	  "OnAlreadyActive": "You are already calm."
     },
     "Effects": ["CalmBuff"]
+  },
+  {
+    "Name": "Trip",
+    "Kind": "Skill",
+    "Command": {
+      "Name": "trip",
+      "RequiredLevel": "Player",
+      "MinimumPosition": "Standing",
+      "Syntax": ["[cmd]"],
+      "HelpText": "TBD",
+      "Categories": ["ability", "combat"],
+      "ThrottlingCategories": ["combat"]
+    },
+    "Targeting": {
+      "Kind": "Character",
+      "Scope": "Single",
+      "Allowed": ["AnyCharacter"],
+      "Default": "CurrentOpponent",
+      "Optional": true
+    },
+    "Executor": "ChanceBased",
+    "Messages": {
+      "OnSuccess": "You trip your opponent and they fall to the ground!",
+      "OnFailure": "You fail to trip your opponent."
+    },
+    "Effects": ["TripKnockdown"]
   }
 ]

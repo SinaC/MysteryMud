@@ -2,7 +2,7 @@
 
 namespace MysteryMud.Domain.Components.Characters;
 
-public struct Casting
+public struct Casting // TODO: rename because it can also be used for skills
 {
     public Entity Source;
     public List<Entity> Targets;

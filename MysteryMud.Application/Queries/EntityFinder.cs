@@ -1,11 +1,5 @@
 ﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Application.Parsing;
-using MysteryMud.Application.Queries.Matching;
-using MysteryMud.Domain.Components;
-using MysteryMud.Domain.Components.Characters;
-using MysteryMud.Domain.Components.Items;
-using MysteryMud.Domain.Components.Rooms;
+using MysteryMud.GameData.Targeting;
 
 namespace MysteryMud.Application.Queries;
 
@@ -13,108 +7,11 @@ public static class EntityFinder
 {
     // Select entities matching the target spec
     public static List<Entity> SelectTargets(Entity actor, TargetSpec spec, List<Entity> entities)
-    {
-        var results = new List<Entity>();
-
-        if (spec.Kind == TargetKind.Self)
-        {
-            results.Add(actor);
-            return results;
-        }
-
-        int matchCount = 0;
-
-        for (int i = 0; i < entities.Count; i++)
-        {
-            var entity = entities[i];
-            if (!Matches(entity, spec.Name, spec.Kind == TargetKind.All)) // of course, 'All' with an empty name should match everything
-                continue;
-
-            matchCount++;
-
-            if (spec.Kind == TargetKind.Single)
-            {
-                results.Add(entity);
-                return results;
-            }
-            else if (spec.Kind == TargetKind.Indexed)
-            {
-                if (matchCount == spec.Index)
-                {
-                    results.Add(entity);
-                    return results;
-                }
-            }
-            else if (spec.Kind == TargetKind.All)
-            {
-                results.Add(entity);
-            }
-        }
-        return results;
-    }
+        => Domain.Queries.EntityFinder.SelectTargets(actor, spec.Kind, spec.Index, spec.Name, entities);
 
     public static Entity SelectSingleTarget(Entity actor, TargetSpec spec, List<Entity> entities)
-    {
-        if (spec.Kind == TargetKind.Self)
-        {
-            return actor;
-        }
-
-        int matchCount = 0;
-
-        for (int i = 0; i < entities.Count; i++)
-        {
-            var entity = entities[i];
-            if (!Matches(entity, spec.Name, spec.Kind == TargetKind.All)) // of course, 'All' with an empty name should match everything
-                continue;
-
-            matchCount++;
-
-            if (spec.Kind == TargetKind.Single)
-            {
-                return entity;
-            }
-            else if (spec.Kind == TargetKind.Indexed)
-            {
-                if (matchCount == spec.Index)
-                {
-                    return entity;
-                }
-            }
-            else if (spec.Kind == TargetKind.All)
-            {
-                return entity; // For 'All', just return the first match (or consider throwing an exception)
-            }
-        }
-        return default;
-    }
+        => Domain.Queries.EntityFinder.SelectSingleTarget(actor, spec.Kind, spec.Index, spec.Name, entities);
 
     public static Entity FindContainer(Entity actor, TargetSpec containerArg)
-    {
-        // Search in room first
-        var room = actor.Get<Location>().Room;
-        var roomContents = room.Get<RoomContents>();
-
-        var container = SelectSingleTarget(actor, containerArg, roomContents.Items);
-        if (container != default)
-            return container;
-
-        // Then inventory
-        var inventory = actor.Get<Inventory>();
-        container = SelectSingleTarget(actor, containerArg, inventory.Items);
-        if (container != default)
-            return container;
-
-        return default;
-    }
-
-    // Simple prefix matching, case-insensitive
-    public static bool Matches(Entity e, ReadOnlySpan<char> query, bool isAll = false)
-    {
-        if (e.Has<Dead>() || e.Has<DestroyedTag>()) // don't consider dead/destroyed entities as valid targets
-            return false;
-        if (query.IsEmpty)
-            return isAll;
-        return NameMatcher.Matches(e, query);
-    }
+        => Domain.Queries.EntityFinder.FindContainer(actor, containerArg.Kind, containerArg.Index, containerArg.Name);
 }

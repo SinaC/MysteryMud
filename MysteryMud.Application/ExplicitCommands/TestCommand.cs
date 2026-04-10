@@ -73,6 +73,7 @@ public class TestCommand : IExplicitCommand
             effectIntent.Effect.EffectId = effectId;
             effectIntent.Effect.Source = actor;
             effectIntent.Effect.Target = target;
+            effectIntent.Cancelled = false;
             return;
         }
 

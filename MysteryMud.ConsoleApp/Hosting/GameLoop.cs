@@ -126,6 +126,7 @@ internal class GameLoop
     private readonly MaxResourcesSystem<BaseMana, Mana, DirtyMana, ManaModifier> _maxManaSystem;
     private readonly MaxResourcesSystem<BaseEnergy, Energy, DirtyEnergy, EnergyModifier> _maxEnergySystem;
     private readonly MaxResourcesSystem<BaseRage, Rage, DirtyRage, RageModifier> _maxRageSystem;
+    private readonly AbilityTargetResolutionSystem _abilityTargetResolutionSystem;
     private readonly AbilityValidationSystem _abilityValidationSystem;
     private readonly AbilityCastingSystem _abilityCastingSystem;
     private readonly AbilityExecutionSystem _abilityExecutionSystem;
@@ -182,6 +183,7 @@ internal class GameLoop
         _maxManaSystem = new MaxResourcesSystem<BaseMana, Mana, DirtyMana, ManaModifier>(x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value);
         _maxEnergySystem = new MaxResourcesSystem<BaseEnergy, Energy, DirtyEnergy, EnergyModifier>(x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value);
         _maxRageSystem = new MaxResourcesSystem<BaseRage, Rage, DirtyRage, RageModifier>(x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value);
+        _abilityTargetResolutionSystem = new AbilityTargetResolutionSystem(_logger, _gameMessageService, _intentContainer, _abilityRegistry);
         _abilityValidationSystem = new AbilityValidationSystem(_logger, _gameMessageService, _intentContainer, _abilityRegistry);
         _abilityCastingSystem = new AbilityCastingSystem(_logger, _gameMessageService, _intentContainer, _abilityRegistry);
         _abilityExecutionSystem = new AbilityExecutionSystem(_logger, _gameMessageService, _intentContainer, _abilityExecutedEventBuffer, _abilityRegistry, _effectRegistry, abilityExecutionResolverRegistry);
@@ -276,7 +278,9 @@ internal class GameLoop
             _threatDecaySystem.Tick(state);
             // TODO: NPCTargetSystem.AssignTargets   // Select highest threat targets
             // TODO: GroupCombatSystem.Resolve       // Handle assist/protect/own target attack intents
-            // Process UseAbilityIntents -> set casting (if delayed casting) or generate ExecuteAbilityIntent (instant cast)
+            // Process UseAbilityIntents -> search targets and generate ResolvedAbilityIntent
+            _abilityTargetResolutionSystem.Tick(state);
+            // Process ResolvedAbilityIntents -> set casting (if delayed casting) or generate ExecuteAbilityIntent (instant cast)
             _abilityValidationSystem.Tick(state);
             // Process delayed casting, once cast is effective generate ExecuteAbilityIntent + abilityUsedEvent
             _abilityCastingSystem.Tick(state);

@@ -54,7 +54,6 @@ public class AbilityExecutionSystem
                     continue;
             }
 
-            // TODO: check targets by effect
             // TODO: set cooldown
 
             foreach (var effectId in abilityRuntime.EffectIds)
@@ -64,13 +63,16 @@ public class AbilityExecutionSystem
                     _logger.LogError("Ability {abilityName}: effect {effectId} not found", abilityRuntime.Name, effectId);
                     continue;
                 }
-
-                // add effect action
-                ref var effectIntent = ref _intents.Action.Add();
-                effectIntent.Kind = ActionKind.Effect;
-                effectIntent.Effect.EffectId = effectId;
-                effectIntent.Effect.Source = source;
-                effectIntent.Effect.Target = targets[0]; // TODO:
+                // add effect action for each target
+                foreach (var target in targets)
+                {
+                    ref var effectIntent = ref _intents.Action.Add();
+                    effectIntent.Kind = ActionKind.Effect;
+                    effectIntent.Effect.EffectId = effectId;
+                    effectIntent.Effect.Source = source;
+                    effectIntent.Effect.Target = target;
+                    effectIntent.Cancelled = false;
+                }
             }
 
             // add ability execute event

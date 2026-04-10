@@ -1,7 +1,6 @@
-﻿using MysteryMud.Domain.Ability.Definitions;
-using MysteryMud.GameData.Enums;
+﻿using MysteryMud.GameData.Enums;
 
-namespace MysteryMud.Domain.Ability.Rules;
+namespace MysteryMud.Domain.Ability.Definitions;
 
 public class AffectedByRuleDefinition : AbilityRuleDefinition
 {

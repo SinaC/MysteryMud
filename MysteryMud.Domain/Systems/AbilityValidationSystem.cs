@@ -29,7 +29,7 @@ public class AbilityValidationSystem
 
     public void Tick(GameState state)
     {
-        foreach (ref var intent in _intents.UseAbilitySpan)
+        foreach (ref var intent in _intents.ResolvedAbilitySpan)
         {
             var source = intent.Source;
             var abilityId = intent.AbilityId;
@@ -55,12 +55,17 @@ public class AbilityValidationSystem
                 }
             }
 
+            // cancelled ?
             if (intent.Cancelled)
                 continue;
 
             // already casting a spell
-            if (source.Has<Casting>())
+            ref var casting = ref source.TryGetRef<Casting>(out var isCasting);
+            if (isCasting)
+            {
+                _msg.To(source).Send($"You are already focused on {abilityRuntime.Name}");
                 continue;
+            }
 
             // TODO
             //if (IsOnCooldown(intent.User, def))

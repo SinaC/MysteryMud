@@ -2,7 +2,6 @@
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Parsing;
-using MysteryMud.Application.Queries;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Ability;
@@ -10,6 +9,7 @@ using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Extensions;
+using MysteryMud.Domain.Queries;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
@@ -62,22 +62,13 @@ public class SkillCommand : IExplicitCommand
             }
         }
 
-        // search targets
-        // TODO: depends on ability targeting requirements
-        ref var roomContents = ref actor.Get<Location>().Room.Get<RoomContents>().Characters;
-        var target = EntityFinder.SelectSingleTarget(actor, ctx.Primary, roomContents);
-        if (target == default)
-        {
-            executionContext.Msg.To(actor).Send("You don't see that here.");
-            return;
-        }
-
         // add ability intent
         ref var useAbilityIntent = ref executionContext.Intent.UseAbility.Add();
-        useAbilityIntent.AbilityId = abilityId;
-        useAbilityIntent.Kind = abilityRuntime.Kind;
         useAbilityIntent.Source = actor;
-        useAbilityIntent.Targets = [target]; // TODO
-        useAbilityIntent.Cancelled = false;
+        useAbilityIntent.TargetKind = ctx.Primary.Kind;
+        useAbilityIntent.TargetIndex = ctx.Primary.Index;
+        useAbilityIntent.TargetName = ctx.Primary.Name.ToString();
+        useAbilityIntent.AbilityId = abilityId;
+        useAbilityIntent.AbilityKind = abilityRuntime.Kind;
     }
 }
