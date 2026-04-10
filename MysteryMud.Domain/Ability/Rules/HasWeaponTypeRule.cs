@@ -7,17 +7,19 @@ namespace MysteryMud.Domain.Ability.Rules;
 public class HasWeaponTypeRule : IAbilityValidationRule
 {
     private readonly WeaponKind _required;
+    private readonly AbilityValidationRuleFailActions _failActions;
     private readonly string _failKey;
 
-    public HasWeaponTypeRule(WeaponKind required, string failKey)
+    public HasWeaponTypeRule(WeaponKind required, AbilityValidationRuleFailActions failActions, string failKey)
     {
         _required = required;
+        _failActions = failActions;
         _failKey = failKey;
     }
 
-    public AbilityValidationResult Validate(Entity caster, List<Entity> targets, AbilityRuntime ability)
+    public AbilityValidationResult Validate(Entity target, AbilityRuntime ability)
     {
-        if (!CharacterHelpers.TryGetMainHandWeapon(caster, out var _, out var weapon))
+        if (!CharacterHelpers.TryGetMainHandWeapon(target, out var _, out var weapon))
             return Fail();
         if (weapon.Kind != _required)
             return Fail();
@@ -31,6 +33,7 @@ public class HasWeaponTypeRule : IAbilityValidationRule
         => new()
         {
             Success = false,
+            FailActions = _failActions,
             FailureMessageKey = _failKey
         };
 }

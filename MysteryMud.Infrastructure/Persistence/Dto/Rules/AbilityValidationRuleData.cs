@@ -2,5 +2,7 @@
 
 public abstract class AbilityValidationRuleData
 {
-    public required string Fail { get; init; }
+    public required string Scope { get; init; }
+    public string OnFail { get; init; } = default!;
+    public string Fail { get; init; } = default!; // message to be displayed if failed (only if OnFail is not SkipTarget)
 }

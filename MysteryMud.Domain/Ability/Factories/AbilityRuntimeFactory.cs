@@ -1,6 +1,7 @@
 ﻿using MysteryMud.Domain.Ability.Definitions;
 using MysteryMud.Domain.Ability.Rules;
 using MysteryMud.Domain.Action.Effect;
+using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Ability.Factories;
 
@@ -14,7 +15,8 @@ public static class AbilityRuntimeFactory
             throw new Exception($"Unknown executor {def.Executor} on ability {def.Name}");
         var effectIds = MapEffectIds(effectRegistry, def, def.Effects);
         var failureEffectIds = MapEffectIds(effectRegistry, def, def.FailureEffects);
-        var rules = MapValidationRules(def);
+        var sourceValidationRules = MapValidationRules(def, AbilityValidationRuleScope.Source);
+        var targetValidationRules = MapValidationRules(def, AbilityValidationRuleScope.Target);
         return new AbilityRuntime
         {
             Id = def.Id,
@@ -28,14 +30,15 @@ public static class AbilityRuntimeFactory
             EffectIds = effectIds,
             FailureEffectIds = failureEffectIds,
             Messages = def.Messages,
-            ValidationRules = rules,
+            SourceValidationRules = sourceValidationRules,
+            TargetValidationRules = targetValidationRules,
         };
     }
 
-    private static List<IAbilityValidationRule> MapValidationRules(AbilityDefinition def)
+    private static List<IAbilityValidationRule> MapValidationRules(AbilityDefinition def, AbilityValidationRuleScope scope)
     {
         var rules = new List<IAbilityValidationRule>();
-        foreach (var ruleDef in def.ValidationRules)
+        foreach (var ruleDef in def.ValidationRules.Where(x => x.Scope == scope))
         {
             var rule = ValidationRuleFactory.Create(ruleDef);
             rules.Add(rule);

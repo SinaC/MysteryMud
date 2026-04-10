@@ -2,6 +2,7 @@
 
 public enum AbilityTargetSelection
 {
+    None,
     Random,
     LowestHealth
 }

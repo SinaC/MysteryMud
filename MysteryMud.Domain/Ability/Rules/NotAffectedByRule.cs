@@ -8,21 +8,24 @@ namespace MysteryMud.Domain.Ability.Rules;
 public class NotAffectedByRule : IAbilityValidationRule // opposite of AffectedByRule
 {
     private readonly ulong _effectTagIndex;
+    private readonly AbilityValidationRuleFailActions _failActions;
     private readonly string _failMessageKey;
 
-    public NotAffectedByRule(EffectTagId effectTagId, string failMessageKey)
+    public NotAffectedByRule(EffectTagId effectTagId, AbilityValidationRuleFailActions failActions, string failMessageKey)
     {
         _effectTagIndex = 1UL << (int)effectTagId;
+        _failActions = failActions;
         _failMessageKey = failMessageKey;
     }
 
-    public AbilityValidationResult Validate(Entity caster, List<Entity> targets, AbilityRuntime ability)
+    public AbilityValidationResult Validate(Entity target, AbilityRuntime ability)
     {
-        ref var characterEffects = ref caster.Get<CharacterEffects>();
+        ref var characterEffects = ref target.Get<CharacterEffects>();
         if ((characterEffects.ActiveTags & _effectTagIndex) != 0)
             return new()
             {
                 Success = false,
+                FailActions = _failActions,
                 FailureMessageKey = _failMessageKey
             };
 

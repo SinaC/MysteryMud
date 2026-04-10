@@ -17,5 +17,6 @@ public class AbilityRuntime
     public List<int> EffectIds = [];
     public List<int> FailureEffectIds = [];
     public Dictionary<string, string> Messages = []; // TODO: actor/room messages ?
-    public List<IAbilityValidationRule> ValidationRules = [];
+    public List<IAbilityValidationRule> SourceValidationRules = [];
+    public List<IAbilityValidationRule> TargetValidationRules = [];
 }

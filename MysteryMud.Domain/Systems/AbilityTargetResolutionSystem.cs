@@ -1,7 +1,6 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using MysteryMud.Core;
 using MysteryMud.Core.Intent;
 using MysteryMud.Core.Services;
@@ -10,15 +9,9 @@ using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Components.Zones;
 using MysteryMud.Domain.Queries;
 using MysteryMud.GameData.Enums;
-using MysteryMud.GameData.Intents;
-using System;
-using System.Collections.Generic;
-using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace MysteryMud.Domain.Systems;
 
@@ -92,12 +85,20 @@ public class AbilityTargetResolutionSystem
                 };
             }
 
+            // apply targets selector (none, random, lowest health, ...)
             targets = ApplySelection(targets, targeting);
 
+            // keep targets satisfying each target validation rule
+            targets = ApplyValidationRules(source, targets, abilityRuntime);
+
+            // if no target or one target is not allowed, display message and stops
             if (!ValidateTargets(source, targets, targeting))
             {
-                //EmitFailure(intent);
-                _msg.To(source).Send("You don't see that here."); // TODO: custom message depending expected targets
+                //if (targeting.Scope == AbilityTargetScope.Single) // display message only if single
+                //{
+                //    //EmitFailure(intent);
+                //    _msg.To(source).Send("You don't see that here."); // TODO: custom message depending expected targets
+                //}
                 continue;
             }
 
@@ -201,11 +202,37 @@ public class AbilityTargetResolutionSystem
         // TODO
         //return targeting.Selection switch
         //{
+        //    AbilityTargetSelection.None => targets,
         //    AbilityTargetSelection.Random => TakeRandom(targets, targeting.MaxTargets),
         //    AbilityTargetSelection.LowestHealth => TakeLowestHealth(targets, targeting.MaxTargets),
         //    _ => targets[..targeting.MaxTargets]
         //};
         return targets[..targeting.MaxTargets];
+    }
+
+    private List<Entity> ApplyValidationRules(Entity source, List<Entity> targets, AbilityRuntime abilityRuntime)
+    {
+        var validTargets = new List<Entity>();
+        foreach (var target in targets)
+        {
+            var passed = true;
+            foreach (var rule in abilityRuntime.TargetValidationRules)
+            {
+                var result = rule.Validate(target, abilityRuntime);
+
+                if (!result.Success)
+                {
+                    if (result.FailActions.HasFlag(AbilityValidationRuleFailActions.DisplayMessage) && result.FailureMessageKey is not null)
+                        SendAbilityMessage(source, target, abilityRuntime, result.FailureMessageKey);
+                    passed = false;
+                    break;
+                }
+            }
+            // add target if passed each validation rules
+            if (passed)
+                validTargets.Add(target);
+        }
+        return validTargets;
     }
 
     private List<Entity> ResolveChain(Entity caster, Entity firstTarget, AbilityTargeting targeting)
@@ -269,6 +296,16 @@ public class AbilityTargetResolutionSystem
                 return false;
         }
         return true;
+    }
+
+    private void SendAbilityMessage(Entity actor, Entity target, AbilityRuntime ability, string key)
+    {
+        if (key is null)
+            return;
+        if (ability.Messages.TryGetValue(key, out var msg))
+            _msg.To(actor).Act(msg).With(target);
+        else
+            _logger.LogError("Ability {abilityName} validation rules refers to {key} but it's not found in messages", ability.Name, key);
     }
 }
 

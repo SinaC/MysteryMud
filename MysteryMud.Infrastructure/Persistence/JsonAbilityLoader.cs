@@ -82,7 +82,7 @@ public class JsonAbilityLoader
             Optional = false,
 
             MaxTargets = 0, // no max target
-            Selection = AbilityTargetSelection.Random,
+            Selection = AbilityTargetSelection.None,
 
             Filters = [] // no filter
         }
@@ -101,7 +101,7 @@ public class JsonAbilityLoader
 
             MaxTargets = data.MaxTargets,
             Selection = data.Selection == null
-                ? AbilityTargetSelection.Random
+                ? AbilityTargetSelection.None
                 : Enum.Parse<AbilityTargetSelection>(data.Selection),
 
             Filters = data.Filters?.Select(Enum.Parse<AbilityTargetFilterId>)?.ToList() ?? []
@@ -110,12 +110,22 @@ public class JsonAbilityLoader
     private AbilityRuleDefinition MapRule(AbilityValidationRuleData data)
         => data switch
         {
-            AffectedByRuleData rule => new AffectedByRuleDefinition { FailMessageKey = rule.Fail, EffectTagId = Enum.Parse<EffectTagId>(rule.Tag) },
-            HasWeaponTypeRuleData rule => new HasWeaponTypeRuleDefinition { FailMessageKey = rule.Fail, Required = Enum.Parse<WeaponKind>(rule.Required) },
-            NotAffectedByRuleData rule => new NotAffectedByRuleDefinition { FailMessageKey = rule.Fail, EffectTagId = Enum.Parse<EffectTagId>(rule.Tag) },
-            TargetNotFightingRuleData rule => new TargetNotFightingRuleDefinition { FailMessageKey = rule.Fail },
+            AffectedByRuleData rule => new AffectedByRuleDefinition { Scope = Enum.Parse<AbilityValidationRuleScope>(rule.Scope), FailActions = MapFailActions(data), FailMessageKey = rule.Fail, EffectTagId = Enum.Parse<EffectTagId>(rule.Tag) },
+            HasWeaponTypeRuleData rule => new HasWeaponTypeRuleDefinition { Scope = Enum.Parse<AbilityValidationRuleScope>(rule.Scope), FailActions = MapFailActions(data), FailMessageKey = rule.Fail, Required = Enum.Parse<WeaponKind>(rule.Required) },
+            NotAffectedByRuleData rule => new NotAffectedByRuleDefinition { Scope = Enum.Parse<AbilityValidationRuleScope>(rule.Scope), FailActions = MapFailActions(data), FailMessageKey = rule.Fail, EffectTagId = Enum.Parse<EffectTagId>(rule.Tag) },
+            NotFightingRuleData rule => new NotFightingRuleDefinition { Scope = Enum.Parse<AbilityValidationRuleScope>(rule.Scope), FailActions = MapFailActions(data), FailMessageKey = rule.Fail },
             _ => throw new NotSupportedException($"Unknown rule type: {data.GetType()}")
         };
+
+    private AbilityValidationRuleFailActions MapFailActions(AbilityValidationRuleData data)
+    {
+        var failActions = AbilityValidationRuleFailActions.None;
+        if (data.OnFail == "SkipTarget")
+            failActions |= AbilityValidationRuleFailActions.SkipTarget;
+        if (data.Fail != null)
+            failActions |= AbilityValidationRuleFailActions.DisplayMessage;
+        return failActions;
+    }
 
     private class AbilityValidationRuleDataConverter : JsonConverter<AbilityValidationRuleData>
     {
@@ -131,7 +141,7 @@ public class JsonAbilityLoader
                 "AffectedBy" => JsonSerializer.Deserialize<AffectedByRuleData>(root.GetRawText(), options),
                 "HasWeaponType" => JsonSerializer.Deserialize<HasWeaponTypeRuleData>(root.GetRawText(), options),
                 "NotAffectedBy" => JsonSerializer.Deserialize<NotAffectedByRuleData>(root.GetRawText(), options),
-                "TargetNotFighting" => JsonSerializer.Deserialize<TargetNotFightingRuleData>(root.GetRawText(), options),
+                "NotFighting" => JsonSerializer.Deserialize<NotFightingRuleData>(root.GetRawText(), options),
                 _ => throw new NotSupportedException($"Unknown rule type: {type}")
             };
         }

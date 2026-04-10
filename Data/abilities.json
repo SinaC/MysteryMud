@@ -118,8 +118,8 @@
     },
     "Executor": "BerserkExecutor",
     "ValidationRules": [
-      { "Type": "NotAffectedBy", "Tag": "Berserk", "Fail": "OnAlreadyActive" },
-      { "Type": "NotAffectedBy", "Tag": "Calm", "Fail": "OnBlockedByCalm" }
+      { "Type": "NotAffectedBy", "Tag": "Berserk", "Scope": "Source", "Fail": "OnAlreadyActive" },
+      { "Type": "NotAffectedBy", "Tag": "Calm", "Scope": "Source", "Fail": "OnBlockedByCalm" }
     ],
     "Messages": {
       "OnSuccess": "Your pulse races as you are consumed by rage!",
@@ -177,14 +177,16 @@
     },
     "Executor": "ChanceBased",
     "ValidationRules": [
-      { "Type": "HasWeaponType", "Required": "Dagger", "Fail": "NeedDagger" },
-      { "Type": "TargetNotFighting", "Fail": "TargetAware" }
+	  { "Type": "NotFighting", "Scope": "Source", "Fail": "OnFighting" },
+      { "Type": "HasWeaponType", "Scope": "Source", "Required": "Dagger", "Fail": "NeedDagger" },
+      { "Type": "NotFighting", "Scope": "Target", "Fail": "OnTargetAware" }
     ],
     "Messages": {
       "OnSuccess": "You slip behind your target and deliver a deadly backstab!",
       "OnFailure": "You fail to land a proper backstab.",
       "NeedDagger": "You need to wield a dagger to backstab.",
-      "TargetAware": "Your target is suspicious...you can't sneak up."
+	  "OnFighting": "You are facing the wrong end.",
+      "OnTargetAware": "{0} is suspicious ... you can't sneak up."
     },
     "Effects": ["BackstabDamage"],
     "FailureEffects": ["BackstabFailDamage"]
@@ -201,14 +203,14 @@
       "Allowed": ["AnyCharacter"]
     },
     "ValidationRules": [
-      { "Type": "NotAffectedBy", "Tag": "Berserk", "Fail": "OnBlockedByBerserk" },
-      { "Type": "NotAffectedBy", "Tag": "Calm", "Fail": "OnAlreadyActive" }
+      { "Type": "NotAffectedBy", "Tag": "Berserk", "Scope": "Target", "OnFail": "SkipTarget" },
+      { "Type": "NotAffectedBy", "Tag": "Calm", "Scope": "Target", "OnFail": "SkipTarget" }
     ],
     "Messages": {
-      "OnSuccess": "Success TBD",
-      "OnFailure": "Failure TBD",
-      "OnBlockedByBerserk": "You are too mad to be calmed down.",
-	  "OnAlreadyActive": "You are already calm."
+      "OnSuccess": "A calm falls over the room.",
+      "OnFailure": "There is no one here that can be calmed.",
+      "OnBlockedByBerserk": "{0} is too enraged to be calmed.",
+	  "OnAlreadyActive": "{0} is already calm."
     },
     "Effects": ["CalmBuff"]
   },

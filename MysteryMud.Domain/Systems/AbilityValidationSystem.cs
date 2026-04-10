@@ -41,10 +41,10 @@ public class AbilityValidationSystem
                 continue;
             }
 
-            // check validation rules
-            foreach (var rule in abilityRuntime.ValidationRules)
+            // check source validation rules
+            foreach (var rule in abilityRuntime.SourceValidationRules)
             {
-                var result = rule.Validate(source, targets, abilityRuntime);
+                var result = rule.Validate(source, abilityRuntime);
 
                 if (!result.Success)
                 {
