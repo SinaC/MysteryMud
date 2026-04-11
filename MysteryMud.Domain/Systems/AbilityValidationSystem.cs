@@ -1,14 +1,18 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using CommunityToolkit.HighPerformance;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
+using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Intent;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Ability;
+using MysteryMud.Domain.Ability.Services;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Resources;
 using MysteryMud.GameData.Enums;
+using MysteryMud.GameData.Events;
 
 namespace MysteryMud.Domain.Systems;
 
@@ -17,23 +21,31 @@ public class AbilityValidationSystem
     private readonly ILogger _logger;
     private readonly IGameMessageService _msg;
     private readonly IIntentContainer _intents;
+    private readonly IAbilityTargetResolver _abilityTargetResolver;
+    private readonly IEventBuffer<AbilityUsedEvent> _abilityUsed;
     private readonly AbilityRegistry _abilityRegistry;
+    private readonly AbilityExecutionResolverRegistry _abilityExecutionResolverRegistry;
 
-    public AbilityValidationSystem(ILogger logger, IGameMessageService msg, IIntentContainer intents, AbilityRegistry abilityRegistry)
+    public AbilityValidationSystem(ILogger logger, IGameMessageService msg, IIntentContainer intents, IAbilityTargetResolver abilityTargetResolver, IEventBuffer<AbilityUsedEvent> abilityUsed, AbilityRegistry abilityRegistry, AbilityExecutionResolverRegistry abilityExecutionResolverRegistry)
     {
         _logger = logger;
         _msg = msg;
         _intents = intents;
+        _abilityTargetResolver = abilityTargetResolver;
+        _abilityUsed = abilityUsed;
         _abilityRegistry = abilityRegistry;
+        _abilityExecutionResolverRegistry = abilityExecutionResolverRegistry;
     }
 
     public void Tick(GameState state)
     {
-        foreach (ref var intent in _intents.ResolvedAbilitySpan)
+        foreach (ref var intent in _intents.UseAbilitySpan)
         {
-            var source = intent.Source;
             var abilityId = intent.AbilityId;
-            var targets = intent.Targets;
+            var source = intent.Source;
+            var targetKind = intent.TargetKind;
+            var targetIndex = intent.TargetIndex;
+            var targetName = intent.TargetName;
 
             if (!_abilityRegistry.TryGetValue(abilityId, out var abilityRuntime) || abilityRuntime == null)
             {
@@ -42,17 +54,10 @@ public class AbilityValidationSystem
             }
 
             // check source validation rules
-            foreach (var rule in abilityRuntime.SourceValidationRules)
+            if (!ValidateSource(abilityRuntime, source))
             {
-                var result = rule.Validate(source, abilityRuntime);
-
-                if (!result.Success)
-                {
-                    if (result.FailureMessageKey is not null)
-                        SendAbilityMessage(source, abilityRuntime, result.FailureMessageKey);
-                    intent.Cancelled = true;
-                    break;
-                }
+                intent.Cancelled = true;
+                continue;
             }
 
             // cancelled ?
@@ -65,6 +70,27 @@ public class AbilityValidationSystem
             {
                 _msg.To(source).Send($"You are already focused on {abilityRuntime.Name}");
                 continue;
+            }
+
+            // Resolve targets(Single always at CastStart)
+            List<Entity>? resolvedTargets = null;
+
+            if (abilityRuntime.Targeting.Selection == AbilityTargetSelection.Single ||
+                abilityRuntime.Targeting.ResolveAt == AbilityTargetResolveAt.CastStart)
+            {
+                var result = _abilityTargetResolver.Resolve(source, targetKind, targetIndex, targetName, abilityRuntime.Targeting, state);
+
+                if (result.Status != TargetResolutionStatus.Ok)
+                {
+                    _msg.To(source).Send(result.FailureMessage ?? "Invalid target.");
+                    continue;
+                }
+
+                // Apply target validation rules; for single-target any failure aborts
+                var filtered = FilterTargets(abilityRuntime, result.Targets, source, abortOnFirst: abilityRuntime.Targeting.Selection == AbilityTargetSelection.Single);
+                if (filtered is null)
+                    continue;   // abort signalled
+                resolvedTargets = filtered;
             }
 
             // TODO
@@ -82,8 +108,28 @@ public class AbilityValidationSystem
             // pay resource costs
             ResourceHelpers.PayCosts(source, abilityRuntime);
 
-            // casting time ?
-            if (abilityRuntime.CastTime > 0)
+            // check if ability directly fails (skill learned % for example)
+            if (abilityRuntime.Executor is { Hook: AbilityExecutorHook.Execution })
+            {
+                if (_abilityExecutionResolverRegistry.TryGetResolver(abilityRuntime.Executor.ExecutorId, out var registedResolver) && registedResolver is not null)
+                {
+                    var result = registedResolver.Resolver.Resolve(source, abilityRuntime);
+                    SendAbilityMessage(source, abilityRuntime, result.Outcome);
+                    if (!result.Success)
+                        continue;
+                }
+            }
+
+            // add ability used event
+            ref var abilityUsedEvt = ref _abilityUsed.Add();
+            abilityUsedEvt.AbilityId = abilityId;
+            abilityUsedEvt.Source = source;
+
+            // instant vs delayed cast
+            var isDelayed = abilityRuntime.CastTime > 0;
+
+            // delayed cast ?
+            if (isDelayed)
             {
                 // set Casting component
                 var executeAt = state.CurrentTick + abilityRuntime.CastTime;
@@ -94,9 +140,9 @@ public class AbilityValidationSystem
 
                 source.Add(new Casting
                 {
-                    Source = source,
-                    Targets = targets,
                     AbilityId = abilityId,
+                    Source = source,
+                    ResolvedTargets = resolvedTargets, // null for AoE CastCompletion
                     ExecuteAt = executeAt,
                     LastUpdate = state.CurrentTick,
                 });
@@ -104,18 +150,92 @@ public class AbilityValidationSystem
                 continue;
             }
 
-            // instant execution
+            // instant cast
+
+            // For instant AoE that deferred resolution, resolve now
+            if (resolvedTargets is null)
+            {
+                var result = _abilityTargetResolver.Resolve(source, targetKind, targetIndex, targetName, abilityRuntime.Targeting, state);
+                resolvedTargets = result.Status == TargetResolutionStatus.Ok
+                    ? FilterTargets(abilityRuntime, result.Targets, source, abortOnFirst: false) ?? []
+                    : [];
+            }
+
+            // message for spells
             if (abilityRuntime.Kind == AbilityKind.Spell) // send generic randomized message for spell
             {
                 _msg.To(source).Act(CastMessageHelpers.CasterInstantMessage).With(abilityRuntime.Name);
                 _msg.ToRoom(source).Act(CastMessageHelpers.RoomInstantMessage).With(source);
             }
+
             // add execute ability intent
             ref var executeAbilityIntent = ref _intents.ExecuteAbility.Add();
             executeAbilityIntent.AbilityId = abilityRuntime.Id;
             executeAbilityIntent.Source = source;
-            executeAbilityIntent.Targets = targets;
+            executeAbilityIntent.Targets = resolvedTargets;
         }
+    }
+
+    // Returns filtered list, or null if an Abort-rule fired
+    private List<Entity>? FilterTargets(
+        AbilityRuntime ability,
+        List<Entity> candidates,
+        Entity source,
+        bool abortOnFirst)
+    {
+        var passed = new List<Entity>(candidates.Count);
+
+        foreach (var target in candidates)
+        {
+            bool skip = false;
+
+            foreach (var rule in ability.TargetValidationRules)
+            {
+                var result = rule.Validate(source);
+                if (result.Success) continue;
+
+                switch (result.FailBehaviour)
+                {
+                    case AbilityValidationFailBehaviour.Abort:
+                        if (result.FailMessageKey is not null)
+                            SendAbilityMessage(source, ability, result.FailMessageKey);
+                        if (abortOnFirst) return null;
+                        skip = true;
+                        break;
+
+                    case AbilityValidationFailBehaviour.SkipWithMessage:
+                        if (result.FailMessageKey is not null)
+                            SendAbilityMessage(source, ability, result.FailMessageKey);
+                        skip = true;
+                        break;
+
+                    case AbilityValidationFailBehaviour.Skip:
+                        skip = true;
+                        break;
+                }
+
+                if (skip) break;
+            }
+
+            if (!skip) passed.Add(target);
+        }
+
+        return passed;
+    }
+
+    private bool ValidateSource(AbilityRuntime ability, Entity source)
+    {
+        foreach (var rule in ability.SourceValidationRules)
+        {
+            var result = rule.Validate(source);
+            if (result.Success) continue;
+
+            if (result.FailMessageKey is not null)
+                SendAbilityMessage(source, ability, result.FailMessageKey);
+
+            return false;
+        }
+        return true;
     }
 
     private static string GenerateCannotPayCostsMessage(CannotPayCostsResult result)
@@ -138,7 +258,7 @@ public class AbilityValidationSystem
             _ => "You don't have enough resources."
         };
 
-    private void SendAbilityMessage(Entity actor, AbilityRuntime ability, string key) // TODO: same code found in AbilityExecutionSystem
+    private void SendAbilityMessage(Entity actor, AbilityRuntime ability, string key) // TODO: same code found in AbilityExecutionSystem/AbilityCastingSystem
     {
         if (key is null)
             return;

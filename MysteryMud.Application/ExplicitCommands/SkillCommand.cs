@@ -69,6 +69,6 @@ public class SkillCommand : IExplicitCommand
         useAbilityIntent.TargetIndex = ctx.Primary.Index;
         useAbilityIntent.TargetName = ctx.Primary.Name.ToString();
         useAbilityIntent.AbilityId = abilityId;
-        useAbilityIntent.AbilityKind = abilityRuntime.Kind;
+        useAbilityIntent.Cancelled = false;
     }
 }

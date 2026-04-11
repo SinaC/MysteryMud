@@ -46,12 +46,16 @@ public class AbilityExecutionSystem
                 continue;
             }
 
-            if (_abilityExecutionResolverRegistry.TryGetResolver(abilityRuntime.ExecutorId, out var registedResolver) && registedResolver is not null)
+            // check if ability directly fails (skill learned % for example)
+            if (abilityRuntime.Executor is { Hook: AbilityExecutorHook.Execution })
             {
-                var result = registedResolver.Resolver.Resolve(source, abilityRuntime);
-                SendAbilityMessage(source, abilityRuntime, result.Outcome);
-                if (!result.Success)
-                    continue;
+                if (_abilityExecutionResolverRegistry.TryGetResolver(abilityRuntime.Executor.ExecutorId, out var registedResolver) && registedResolver is not null)
+                {
+                    var result = registedResolver.Resolver.Resolve(source, abilityRuntime);
+                    SendAbilityMessage(source, abilityRuntime, result.Outcome);
+                    if (!result.Success)
+                        continue;
+                }
             }
 
             // TODO: set cooldown
@@ -82,14 +86,14 @@ public class AbilityExecutionSystem
             abilityExecutedEvt.Targets = targets;
         }
     }
-
-    private void SendAbilityMessage(Entity actor, AbilityRuntime ability, string key) // TODO: same code found in AbilityValidationSystem
+    
+    private void SendAbilityMessage(Entity actor, AbilityRuntime ability, string key) // TODO: same code found in AbilityExecutionSystem/AbilityCastingSystem
     {
         if (key is null)
             return;
         if (ability.Messages.TryGetValue(key, out var msg))
             _msg.To(actor).Send(msg);
         else
-            _logger.LogError("Ability {abilityName} executor refers to {key} but it's not found in messages", ability.Name, key);
+            _logger.LogError("Ability {abilityName} validation rules refers to {key} but it's not found in messages", ability.Name, key);
     }
 }

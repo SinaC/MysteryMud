@@ -12,8 +12,8 @@ public class AbilityRuntime
     public int CastTime = 0; // 0 means instant cast
     public int Cooldown = 0;
     public List<ResourceCost> Costs = [];
-    public AbilityTargeting Targeting;
-    public int ExecutorId;
+    public AbilityTargetingDefinition Targeting = new();
+    public AbilityExecutorRuntime? Executor;
     public List<int> EffectIds = [];
     public List<int> FailureEffectIds = [];
     public Dictionary<string, string> Messages = []; // TODO: actor/room messages ?

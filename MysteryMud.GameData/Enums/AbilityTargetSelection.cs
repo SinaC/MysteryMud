@@ -1,8 +1,8 @@
 ﻿namespace MysteryMud.GameData.Enums;
 
+// How many entities the ability acts on.
 public enum AbilityTargetSelection
 {
-    None,
-    Random,
-    LowestHealth
+    Single,
+    AoE
 }

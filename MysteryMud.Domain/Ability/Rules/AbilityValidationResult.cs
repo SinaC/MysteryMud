@@ -5,6 +5,7 @@ namespace MysteryMud.Domain.Ability.Rules;
 public struct AbilityValidationResult
 {
     public bool Success;
-    public AbilityValidationRuleFailActions FailActions;
-    public string? FailureMessageKey; // key like "OnBlockedByCalm"
+
+    public AbilityValidationFailBehaviour FailBehaviour;
+    public string? FailMessageKey;
 }

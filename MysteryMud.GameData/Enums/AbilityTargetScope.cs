@@ -1,7 +1,10 @@
 ﻿namespace MysteryMud.GameData.Enums;
 
+// Where the targeting query looks for candidates
 public enum AbilityTargetScope
 {
-    Single,
-    Room
+    Room,
+    World,
+    Inventory,
+    Self
 }

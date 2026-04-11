@@ -94,6 +94,6 @@ Use the 'spells' command to see the spells you already have (help spells).",
         useAbilityIntent.TargetIndex = ctx.Secondary.Index;
         useAbilityIntent.TargetName = ctx.Secondary.Name.ToString();
         useAbilityIntent.AbilityId = abilityId;
-        useAbilityIntent.AbilityKind = abilityRuntime.Kind;
+        useAbilityIntent.Cancelled = false;
     }
 }

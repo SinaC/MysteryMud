@@ -4,11 +4,10 @@
     "Kind": "Spell",
     "Costs": [{ "Kind": "Mana", "Amount": 15 }],
     "Targeting": {
-      "Kind": "Character",
-      "Scope": "Single",
-      "Allowed": ["AnyCharacter"],
-      "Default": "CurrentOpponent",
-      "Optional": true
+      "Requirement": "Optional",
+      "Selection": "Single",
+      "Scope": "Room",
+      "Filter": "Character"
     },
     "Effects": ["Fireball"]
   },
@@ -18,11 +17,10 @@
     "CastTime": 20,
     "Costs": [{ "Kind": "Mana", "Amount": 10 }],
     "Targeting": {
-      "Kind": "Character",
-      "Scope": "Single",
-      "Allowed": ["AnyCharacter"],
-      "Default": "CurrentOpponent",
-      "Optional": true
+      "Requirement": "Optional",
+      "Selection": "Single",
+      "Scope": "Room",
+      "Filter": "Character"
     },
     "Effects": ["MagicMissile"]
   },
@@ -31,11 +29,10 @@
     "Kind": "Spell",
     "Costs": [{ "Kind": "Mana", "Amount": 20 }],
     "Targeting": {
-      "Kind": "Any",
-      "Scope": "Single",
-      "Allowed": ["Any"],
-      "Default": "CurrentOpponent",
-      "Optional": true
+      "Requirement": "Mandatory",
+      "Selection": "Single",
+      "Scope": "Room",
+      "Filter": "Any"
     },
     "Effects": ["Poison"]
   },
@@ -44,9 +41,10 @@
     "Kind": "Spell",
     "Costs": [{ "Kind": "Mana", "Amount": 18 }],
     "Targeting": {
-      "Kind": "Any",
-      "Scope": "Single",
-      "Allowed": ["Any"]
+      "Requirement": "Mandatory",
+      "Selection": "Single",
+      "Scope": "Room",
+      "Filter": "Any"
     },
     "Effects": ["Bless"]
   },
@@ -56,9 +54,10 @@
     "CastTime": 100,
     "Costs": [{ "Kind": "Mana", "Amount": 10 }],
     "Targeting": {
-      "Kind": "Character",
-      "Scope": "Single",
-      "Allowed": ["AnyCharacter"]
+      "Requirement": "Mandatory",
+      "Selection": "Single",
+      "Scope": "Room",
+      "Filter": "Character"
     },
     "Effects": ["CureLight"]
   },
@@ -67,22 +66,16 @@
     "Kind": "Spell",
     "Costs": [{ "Kind": "Mana", "Amount": 25 }],
     "Targeting": {
-      "Kind": "Character",
-      "Scope": "Single",
-      "Allowed": ["AnyCharacter"]
+      "Requirement": "Mandatory",
+      "Selection": "Single",
+      "Scope": "Room",
+      "Filter": "Character"
     },
     "Effects": ["Armor"]
   },
   {
     "Name": "Kick",
     "Kind": "Skill",
-    "Targeting": {
-      "Kind": "Character",
-      "Scope": "Single",
-      "Allowed": ["AnyCharacter"],
-      "Default": "CurrentOpponent",
-      "Optional": true
-    },
     "Command": {
       "Name": "kick",
       "RequiredLevel": "Player",
@@ -91,6 +84,12 @@
       "HelpText": "Kicking allows the adventurer to receive an extra attack in combat, a powerful\nkick. However, a failed kick may throw an unwary fighter off balance.",
       "Categories": ["ability", "combat"],
       "ThrottlingCategories": ["combat"]
+    },
+    "Targeting": {
+      "Requirement": "Optional",
+      "Selection": "Single",
+      "Scope": "Room",
+      "Filter": "Character"
     },
     "Effects": ["Kick"]
   },
@@ -109,18 +108,24 @@
     "Costs": [
       { "Kind": "Mana", "Amount": 5 }
     ],
-    "Targeting": {
-      "Kind": "Character",
-      "Scope": "Single",
-      "Allowed": ["Self"],
-      "Default": "Self",
-      "Optional": true
+    "Executor": {
+      "Name": "BerserkExecutor",
+      "Hook": "Execution"
     },
-    "Executor": "BerserkExecutor",
-    "ValidationRules": [
-      { "Type": "NotAffectedBy", "Tag": "Berserk", "Scope": "Source", "Fail": "OnAlreadyActive" },
-      { "Type": "NotAffectedBy", "Tag": "Calm", "Scope": "Source", "Fail": "OnBlockedByCalm" }
-    ],
+    "Targeting": {
+      "Requirement": "None",
+      "Selection": "Single",
+      "Scope": "Self",
+      "Filter": "Character"
+    },
+    "ValidationRules": {
+      "Source": [
+        { "Type": "NotAffectedBy", "Tag": "Berserk", "MessageKey": "OnAlreadyActive" }
+      ],
+      "Target": [
+        { "Type": "NotAffectedBy", "Tag": "Calm", "MessageKey": "OnBlockedByCalm" }
+      ]
+    },
     "Messages": {
       "OnSuccess": "Your pulse races as you are consumed by rage!",
       "OnFailure": "Your pulse speeds up, but nothing happens.",
@@ -141,14 +146,16 @@
       "Categories": ["ability", "combat"],
       "ThrottlingCategories": ["combat"]
     },
-    "Targeting": {
-      "Kind": "Character",
-      "Scope": "Single",
-      "Allowed": ["AnyCharacter"],
-      "Default": "CurrentOpponent",
-      "Optional": true
+    "Executor": {
+      "Name": "ChanceBased",
+      "Hook": "Execution"
     },
-    "Executor": "ChanceBased",
+    "Targeting": {
+      "Requirement": "Optional",
+      "Selection": "Single",
+      "Scope": "Room",
+      "Filter": "Character"
+    },
     "Messages": {
       "OnSuccess": "You slam into your opponent, knocking them down!",
       "OnFailure": "You miss your bash and stumble!"
@@ -168,24 +175,30 @@
       "Categories": ["ability", "combat"],
       "ThrottlingCategories": ["combat"]
     },
-    "Targeting": {
-      "Kind": "Character",
-      "Scope": "Single",
-      "Allowed": ["AnyCharacter"],
-      "Default": "None",
-      "Optional": false
+    "Executor": {
+      "Name": "ChanceBased",
+      "Hook": "Execution"
     },
-    "Executor": "ChanceBased",
-    "ValidationRules": [
-	  { "Type": "NotFighting", "Scope": "Source", "Fail": "OnFighting" },
-      { "Type": "HasWeaponType", "Scope": "Source", "Required": "Dagger", "Fail": "NeedDagger" },
-      { "Type": "NotFighting", "Scope": "Target", "Fail": "OnTargetAware" }
-    ],
+    "Targeting": {
+      "Requirement": "Mandatory",
+      "Selection": "Single",
+      "Scope": "Room",
+      "Filter": "Character"
+    },
+    "ValidationRules": {
+      "Source": [
+         { "Type": "NotFighting", "MessageKey": "OnFighting" },
+         { "Type": "HasWeaponType", "Required": "Dagger", "MessageKey": "NeedDagger" }
+      ],
+      "Target": [
+        { "Type": "NotFighting", "Fail": "OnTargetAware" }
+      ]
+    },
     "Messages": {
       "OnSuccess": "You slip behind your target and deliver a deadly backstab!",
       "OnFailure": "You fail to land a proper backstab.",
       "NeedDagger": "You need to wield a dagger to backstab.",
-	  "OnFighting": "You are facing the wrong end.",
+      "OnFighting": "You are facing the wrong end.",
       "OnTargetAware": "{0} is suspicious ... you can't sneak up."
     },
     "Effects": ["BackstabDamage"],
@@ -198,19 +211,20 @@
       { "Kind": "Mana", "Amount": 5 }
     ],
     "Targeting": {
-      "Kind": "Character",
+      "Requirement": "None",
+      "Selection": "AoE",
       "Scope": "Room",
-      "Allowed": ["AnyCharacter"]
+      "Filter": "Character"
     },
-    "ValidationRules": [
-      { "Type": "NotAffectedBy", "Tag": "Berserk", "Scope": "Target", "OnFail": "SkipTarget" },
-      { "Type": "NotAffectedBy", "Tag": "Calm", "Scope": "Target", "OnFail": "SkipTarget" }
-    ],
+    "ValidationRules": {
+      "Target": [
+        { "Type": "NotAffectedBy", "Tag": "Berserk", "OnFail": "Skip" },
+        { "Type": "NotAffectedBy", "Tag": "Calm", "OnFail": "Skip" }
+      ]
+    },
     "Messages": {
       "OnSuccess": "A calm falls over the room.",
-      "OnFailure": "There is no one here that can be calmed.",
-      "OnBlockedByBerserk": "{0} is too enraged to be calmed.",
-	  "OnAlreadyActive": "{0} is already calm."
+      "OnFailure": "There is no one here that can be calmed."
     },
     "Effects": ["CalmBuff"]
   },
@@ -226,14 +240,16 @@
       "Categories": ["ability", "combat"],
       "ThrottlingCategories": ["combat"]
     },
-    "Targeting": {
-      "Kind": "Character",
-      "Scope": "Single",
-      "Allowed": ["AnyCharacter"],
-      "Default": "CurrentOpponent",
-      "Optional": true
+    "Executor": {
+      "Name": "ChanceBased",
+      "Hook": "Execution"
     },
-    "Executor": "ChanceBased",
+    "Targeting": {
+      "Requirement": "Optional",
+      "Selection": "Single",
+      "Scope": "Room",
+      "Filter": "Character"
+    },
     "Messages": {
       "OnSuccess": "You trip your opponent and they fall to the ground!",
       "OnFailure": "You fail to trip your opponent."

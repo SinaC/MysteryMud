@@ -23,7 +23,6 @@ public sealed class IntentBusContainer : IIntentContainer
     private readonly StructBuffer<SacrificeItemIntent> _sacrificeItem = new(128);
     // AbilitySystem
     private readonly StructBuffer<UseAbilityIntent> _useAbility = new(256);
-    private readonly StructBuffer<ResolvedAbilityIntent> _resolvedAbility = new(256);
     private readonly StructBuffer<ExecuteAbilityIntent> _executeAbility = new(256);
     // LootSystem
     private readonly StructBuffer<LootIntent> _loot = new(128);
@@ -52,7 +51,6 @@ public sealed class IntentBusContainer : IIntentContainer
         SacrificeItem = new IntentWriter<SacrificeItemIntent>(_sacrificeItem);
         // AbilitySystem
         UseAbility = new IntentWriter<UseAbilityIntent>(_useAbility);
-        ResolvedAbility = new IntentWriter<ResolvedAbilityIntent>(_resolvedAbility);
         ExecuteAbility = new IntentWriter<ExecuteAbilityIntent>(_executeAbility);
         // LootSystem
         Loot = new IntentWriter<LootIntent>(_loot);
@@ -93,8 +91,6 @@ public sealed class IntentBusContainer : IIntentContainer
     // AbilitySystem
     public IIntentWriter<UseAbilityIntent> UseAbility { get; }
     public Span<UseAbilityIntent> UseAbilitySpan => _useAbility.AsSpan();
-    public IIntentWriter<ResolvedAbilityIntent> ResolvedAbility { get; }
-    public Span<ResolvedAbilityIntent> ResolvedAbilitySpan => _resolvedAbility.AsSpan();
     public IIntentWriter<ExecuteAbilityIntent> ExecuteAbility { get; }
     public Span<ExecuteAbilityIntent> ExecuteAbilitySpan => _executeAbility.AsSpan();
     // LootSystem
@@ -127,7 +123,6 @@ public sealed class IntentBusContainer : IIntentContainer
         _sacrificeItem.Clear();
         // AbilitySystem
         _useAbility.Clear();
-        _resolvedAbility.Clear();
         _executeAbility.Clear();
         // LootSystem
         _loot.Clear();

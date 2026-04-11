@@ -40,7 +40,9 @@ public class JsonAbilityLoader
                 throw new Exception($"Skill ability {entry.Name} must declare a command");
 
             var costs = entry.Costs?.Select(MapResourceCost).ToList() ?? [];
-            var validationRules = entry.ValidationRules?.Select(MapRule).ToList();
+            var executor = MapExecutor(entry.Executor);
+            var sourceValidationRules = entry.ValidationRules?.Source?.Select(MapRule).ToList();
+            var targetValidationRules = entry.ValidationRules?.Target?.Select(MapRule).ToList();
 
             var ability = new AbilityDefinition
             {
@@ -52,9 +54,10 @@ public class JsonAbilityLoader
                 Costs = costs ?? [],
                 Command = command,
                 Targeting = MapTargeting(entry.Targeting),
-                Executor = entry.Executor,
+                Executor = executor,
                 Messages = entry.Messages ?? [],
-                ValidationRules = validationRules ?? [],
+                SourceValidationRules = sourceValidationRules ?? [],
+                TargetValidationRules = targetValidationRules ?? [],
                 Effects = entry.Effects ?? [],
                 FailureEffects = entry.FailureEffects ?? []
             };
@@ -63,6 +66,15 @@ public class JsonAbilityLoader
         return abilities;
     }
 
+    private AbilityExecutorDefinition? MapExecutor(AbilityExecutorData data)
+        => data == null
+            ? null
+            : new()
+            {
+                Executor = data.Name,
+                Hook = MapEnum(data.Hook, AbilityExecutorHook.Execution)
+            };
+
     private ResourceCost MapResourceCost(ResourceCostData data)
         => new()
         {
@@ -70,61 +82,34 @@ public class JsonAbilityLoader
             Amount = data.Amount,
         };
 
-    private AbilityTargeting MapTargeting(AbilityTargetingData data)
+    private AbilityTargetingDefinition MapTargeting(AbilityTargetingData data)
         => data == null
-        ? new AbilityTargeting // if not specified, single character
-        {
-            Kind = AbilityTargetKind.None,
-            Scope = AbilityTargetScope.Single,
-            Allowed = AbilityTargetKindMask.AnyCharacter,
-
-            Default = AbilityDefaultTargetRule.None,
-            Optional = false,
-
-            MaxTargets = 0, // no max target
-            Selection = AbilityTargetSelection.None,
-
-            Filters = [] // no filter
-        }
+        ? new () // if not specified: mandatory/single/room/character
         : new()
         {
-            Kind = Enum.Parse<AbilityTargetKind>(data.Kind),
-            Scope = Enum.Parse<AbilityTargetScope>(data.Scope),
-            Allowed = data.Allowed == null || data.Allowed.Count == 0
-                ? AbilityTargetKindMask.Any
-                : data.Allowed.Aggregate(AbilityTargetKindMask.None, (r, f) => r | Enum.Parse<AbilityTargetKindMask>(f)),
-
-            Default = data.Default == null
-                ? AbilityDefaultTargetRule.None
-                : Enum.Parse<AbilityDefaultTargetRule>(data.Default),
-            Optional = data.Optional,
-
-            MaxTargets = data.MaxTargets,
-            Selection = data.Selection == null
-                ? AbilityTargetSelection.None
-                : Enum.Parse<AbilityTargetSelection>(data.Selection),
-
-            Filters = data.Filters?.Select(Enum.Parse<AbilityTargetFilterId>)?.ToList() ?? []
+            Requirement = MapEnum(data.Requirement, AbilityTargetRequirement.Mandatory),
+            Selection = MapEnum(data.Selection, AbilityTargetSelection.Single),
+            Scope = MapEnum(data.Scope, AbilityTargetScope.Room),
+            Filter = FlagsEnumParser.Parse(data.Filter, AbilityTargetFilter.Character),
+            ResolveAt = MapEnum(data.ResolveAt, AbilityTargetResolveAt.CastStart),
         };
 
     private AbilityRuleDefinition MapRule(AbilityValidationRuleData data)
         => data switch
         {
-            AffectedByRuleData rule => new AffectedByRuleDefinition { Scope = Enum.Parse<AbilityValidationRuleScope>(rule.Scope), FailActions = MapFailActions(data), FailMessageKey = rule.Fail, EffectTagId = Enum.Parse<EffectTagId>(rule.Tag) },
-            HasWeaponTypeRuleData rule => new HasWeaponTypeRuleDefinition { Scope = Enum.Parse<AbilityValidationRuleScope>(rule.Scope), FailActions = MapFailActions(data), FailMessageKey = rule.Fail, Required = Enum.Parse<WeaponKind>(rule.Required) },
-            NotAffectedByRuleData rule => new NotAffectedByRuleDefinition { Scope = Enum.Parse<AbilityValidationRuleScope>(rule.Scope), FailActions = MapFailActions(data), FailMessageKey = rule.Fail, EffectTagId = Enum.Parse<EffectTagId>(rule.Tag) },
-            NotFightingRuleData rule => new NotFightingRuleDefinition { Scope = Enum.Parse<AbilityValidationRuleScope>(rule.Scope), FailActions = MapFailActions(data), FailMessageKey = rule.Fail },
+            AffectedByRuleData rule => new AffectedByRuleDefinition { FailBehaviour = MapEnum(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, EffectTagId = Enum.Parse<EffectTagId>(rule.Tag) },
+            HasWeaponTypeRuleData rule => new HasWeaponTypeRuleDefinition { FailBehaviour = MapEnum(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, Required = Enum.Parse<WeaponKind>(rule.Required) },
+            NotAffectedByRuleData rule => new NotAffectedByRuleDefinition { FailBehaviour = MapEnum(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, EffectTagId = Enum.Parse<EffectTagId>(rule.Tag) },
+            NotFightingRuleData rule => new NotFightingRuleDefinition { FailBehaviour = MapEnum(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey },
             _ => throw new NotSupportedException($"Unknown rule type: {data.GetType()}")
         };
 
-    private AbilityValidationRuleFailActions MapFailActions(AbilityValidationRuleData data)
+    private T MapEnum<T>(string value, T defaultValue)
+        where T : struct, Enum
     {
-        var failActions = AbilityValidationRuleFailActions.None;
-        if (data.OnFail == "SkipTarget")
-            failActions |= AbilityValidationRuleFailActions.SkipTarget;
-        if (data.Fail != null)
-            failActions |= AbilityValidationRuleFailActions.DisplayMessage;
-        return failActions;
+        if (value == null)
+            return defaultValue;
+        return Enum.Parse<T>(value, ignoreCase: true);
     }
 
     private class AbilityValidationRuleDataConverter : JsonConverter<AbilityValidationRuleData>

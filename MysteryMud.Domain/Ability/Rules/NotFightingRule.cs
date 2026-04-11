@@ -7,16 +7,16 @@ namespace MysteryMud.Domain.Ability.Rules;
 
 public class NotFightingRule : IAbilityValidationRule
 {
-    private readonly AbilityValidationRuleFailActions _failActions;
+    private readonly AbilityValidationFailBehaviour _failBehaviour;
     private readonly string _failMessageKey;
 
-    public NotFightingRule(AbilityValidationRuleFailActions failActions, string failMessageKey)
+    public NotFightingRule(AbilityValidationFailBehaviour failBehaviour, string failMessageKey)
     {
-        _failActions = failActions;
+        _failBehaviour = failBehaviour;
         _failMessageKey = failMessageKey;
     }
 
-    public AbilityValidationResult Validate(Entity target, AbilityRuntime ability)
+    public AbilityValidationResult Validate(Entity target)
     {
         if (target.Has<CombatState>())
             return Fail();
@@ -34,7 +34,7 @@ public class NotFightingRule : IAbilityValidationRule
         => new()
         {
             Success = false,
-            FailActions = _failActions,
-            FailureMessageKey = _failMessageKey
+            FailBehaviour = _failBehaviour,
+            FailMessageKey = _failMessageKey
         };
 }

@@ -1,7 +1,6 @@
 ﻿using MysteryMud.Domain.Ability.Definitions;
 using MysteryMud.Domain.Ability.Rules;
 using MysteryMud.Domain.Action.Effect;
-using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Ability.Factories;
 
@@ -11,12 +10,12 @@ public static class AbilityRuntimeFactory
     {
         if (def.Effects == null || def.Effects.Count == 0)
             throw new Exception($"No effect found on ability {def.Name}");
-        if (!abilityExecutionResolverRegistry.TryGetResolver(def.Executor ?? "Default", out var registeredResolver) || registeredResolver == null)
-            throw new Exception($"Unknown executor {def.Executor} on ability {def.Name}");
+
+        var executor = MapAbilityExecutor(abilityExecutionResolverRegistry, def);
         var effectIds = MapEffectIds(effectRegistry, def, def.Effects);
         var failureEffectIds = MapEffectIds(effectRegistry, def, def.FailureEffects);
-        var sourceValidationRules = MapValidationRules(def, AbilityValidationRuleScope.Source);
-        var targetValidationRules = MapValidationRules(def, AbilityValidationRuleScope.Target);
+        var sourceValidationRules = MapValidationRules(def.SourceValidationRules);
+        var targetValidationRules = MapValidationRules(def.TargetValidationRules);
         return new AbilityRuntime
         {
             Id = def.Id,
@@ -26,7 +25,7 @@ public static class AbilityRuntimeFactory
             Cooldown = def.Cooldown,
             Costs = def.Costs,
             Targeting = def.Targeting,
-            ExecutorId = registeredResolver.Id,
+            Executor = executor,
             EffectIds = effectIds,
             FailureEffectIds = failureEffectIds,
             Messages = def.Messages,
@@ -35,10 +34,23 @@ public static class AbilityRuntimeFactory
         };
     }
 
-    private static List<IAbilityValidationRule> MapValidationRules(AbilityDefinition def, AbilityValidationRuleScope scope)
+    private static AbilityExecutorRuntime? MapAbilityExecutor(AbilityExecutionResolverRegistry abilityExecutionResolverRegistry, AbilityDefinition def)
+    {
+        if (def.Executor == null)
+            return null;
+        if (!abilityExecutionResolverRegistry.TryGetResolver(def.Executor.Executor ?? "Default", out var registeredResolver) || registeredResolver == null)
+            throw new Exception($"Unknown executor {def.Executor} on ability {def.Name}");
+        return new AbilityExecutorRuntime
+        {
+            ExecutorId = registeredResolver.Id,
+            Hook = def.Executor.Hook,
+        };
+    }
+
+    private static List<IAbilityValidationRule> MapValidationRules(IEnumerable<AbilityRuleDefinition> ruleDefinitions)
     {
         var rules = new List<IAbilityValidationRule>();
-        foreach (var ruleDef in def.ValidationRules.Where(x => x.Scope == scope))
+        foreach (var ruleDef in ruleDefinitions)
         {
             var rule = ValidationRuleFactory.Create(ruleDef);
             rules.Add(rule);

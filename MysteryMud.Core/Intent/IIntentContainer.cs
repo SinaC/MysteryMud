@@ -23,7 +23,6 @@ public interface IIntentContainer : IIntentWriterContainer
     Span<SacrificeItemIntent> SacrificeItemSpan { get; }
     // AbilitySystem
     Span<UseAbilityIntent> UseAbilitySpan { get; }
-    Span<ResolvedAbilityIntent> ResolvedAbilitySpan { get; }
     Span<ExecuteAbilityIntent> ExecuteAbilitySpan { get; }
     // LootSystem
     Span<LootIntent> LootSpan { get; }

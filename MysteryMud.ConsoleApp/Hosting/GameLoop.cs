@@ -10,6 +10,7 @@ using MysteryMud.Core.Logging;
 using MysteryMud.Core.Scheduler;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Ability;
+using MysteryMud.Domain.Ability.Services;
 using MysteryMud.Domain.Action;
 using MysteryMud.Domain.Action.Attack.Factories;
 using MysteryMud.Domain.Action.Attack.Resolvers;
@@ -44,6 +45,7 @@ internal class GameLoop
     private readonly IIntentContainer _intentContainer;
     private readonly EffectRegistry _effectRegistry;
     private readonly AbilityRegistry _abilityRegistry;
+    private readonly AbilityExecutionResolverRegistry _abilityExecutionResolverRegistry;
     private readonly World _world;
 
     /*
@@ -103,6 +105,7 @@ internal class GameLoop
     private readonly ILookService _lookService;
     private readonly ExperienceService _experienceService;
 
+    private readonly IAbilityTargetResolver _abilityTargetResolver;
     private readonly AggroResolver _aggroResolver;
     private readonly DamageResolver _damageResolver;
     private readonly HealResolver _healResolver;
@@ -126,7 +129,6 @@ internal class GameLoop
     private readonly MaxResourcesSystem<BaseMana, Mana, DirtyMana, ManaModifier> _maxManaSystem;
     private readonly MaxResourcesSystem<BaseEnergy, Energy, DirtyEnergy, EnergyModifier> _maxEnergySystem;
     private readonly MaxResourcesSystem<BaseRage, Rage, DirtyRage, RageModifier> _maxRageSystem;
-    private readonly AbilityTargetResolutionSystem _abilityTargetResolutionSystem;
     private readonly AbilityValidationSystem _abilityValidationSystem;
     private readonly AbilityCastingSystem _abilityCastingSystem;
     private readonly AbilityExecutionSystem _abilityExecutionSystem;
@@ -155,11 +157,13 @@ internal class GameLoop
         _intentContainer = intentContainer;
         _effectRegistry = effectRegistry;
         _abilityRegistry = abilityRegistry;
+        _abilityExecutionResolverRegistry = abilityExecutionResolverRegistry;
         _world = world;
 
         _lookService = new LookService(_gameMessageService);
         _experienceService = new ExperienceService(_gameMessageService, _experienceGrantedEventBuffer, _levelIncreasedEventBuffer);
 
+        _abilityTargetResolver = new AbilityTargetResolver();
         _aggroResolver = new AggroResolver();
         _damageResolver = new DamageResolver(_aggroResolver, _gameMessageService, _damagedEventBuffer, _deathEventBuffer, _killRewardEventBuffer);
         _healResolver = new HealResolver(_aggroResolver, _gameMessageService, _healedEventBuffer);
@@ -167,6 +171,7 @@ internal class GameLoop
         _hitDamageFactory = new HitDamageFactory();
         _weaponProcResolver = new WeaponProcResolver(_logger, _gameMessageService, _intentContainer, _effectRegistry);
         _reactionResolver = new ReactionResolver(_gameMessageService);
+
 
         _effectExecutor = new EffectExecutor(_damageResolver, _healResolver);
         _effectFactory = new EffectFactory(_logger, _gameMessageService, _intentContainer, _effectExecutor);
@@ -183,10 +188,9 @@ internal class GameLoop
         _maxManaSystem = new MaxResourcesSystem<BaseMana, Mana, DirtyMana, ManaModifier>(x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value);
         _maxEnergySystem = new MaxResourcesSystem<BaseEnergy, Energy, DirtyEnergy, EnergyModifier>(x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value);
         _maxRageSystem = new MaxResourcesSystem<BaseRage, Rage, DirtyRage, RageModifier>(x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value);
-        _abilityTargetResolutionSystem = new AbilityTargetResolutionSystem(_logger, _gameMessageService, _intentContainer, _abilityRegistry);
-        _abilityValidationSystem = new AbilityValidationSystem(_logger, _gameMessageService, _intentContainer, _abilityRegistry);
-        _abilityCastingSystem = new AbilityCastingSystem(_logger, _gameMessageService, _intentContainer, _abilityRegistry);
-        _abilityExecutionSystem = new AbilityExecutionSystem(_logger, _gameMessageService, _intentContainer, _abilityExecutedEventBuffer, _abilityRegistry, _effectRegistry, abilityExecutionResolverRegistry);
+        _abilityValidationSystem = new AbilityValidationSystem(_logger, _gameMessageService, _intentContainer, _abilityTargetResolver, _abilityUsedEventBuffer, _abilityRegistry, _abilityExecutionResolverRegistry);
+        _abilityCastingSystem = new AbilityCastingSystem(_logger, _gameMessageService, _intentContainer, _abilityTargetResolver, _abilityRegistry);
+        _abilityExecutionSystem = new AbilityExecutionSystem(_logger, _gameMessageService, _intentContainer, _abilityExecutedEventBuffer, _abilityRegistry, _effectRegistry, _abilityExecutionResolverRegistry);
         _autoAttackSystem = new AutoAttackSystem(_intentContainer);
         _timedEffectSystem = new TimedEffectSystem(_logger, _gameMessageService, _intentContainer, _effectExecutor, _triggeredScheduledEventBuffer, _effectExpiredEventBuffer, _effectTickedEventBuffer);
         _manaRegenSystem = new ManaRegenSystem();
@@ -278,8 +282,6 @@ internal class GameLoop
             _threatDecaySystem.Tick(state);
             // TODO: NPCTargetSystem.AssignTargets   // Select highest threat targets
             // TODO: GroupCombatSystem.Resolve       // Handle assist/protect/own target attack intents
-            // Process UseAbilityIntents -> search targets and generate ResolvedAbilityIntent
-            _abilityTargetResolutionSystem.Tick(state);
             // Process ResolvedAbilityIntents -> set casting (if delayed casting) or generate ExecuteAbilityIntent (instant cast)
             _abilityValidationSystem.Tick(state);
             // Process delayed casting, once cast is effective generate ExecuteAbilityIntent + abilityUsedEvent
