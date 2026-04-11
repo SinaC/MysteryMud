@@ -1,10 +1,10 @@
 ﻿using Arch.Core;
 using MysteryMud.Application.Parsing;
-using MysteryMud.Application.Queries.Matching;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters.Players;
+using MysteryMud.Domain.Queries.Matching;
 
 namespace MysteryMud.Application.Commands;
 

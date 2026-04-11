@@ -1,24 +1,24 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Ability.Rules;
 
-public class TargetNotFightingRule : IAbilityValidationRule
+public class NotFightingRule : IAbilityValidationRule
 {
+    private readonly AbilityValidationFailBehaviour _failBehaviour;
     private readonly string _failMessageKey;
 
-    public TargetNotFightingRule(string failMessageKey)
+    public NotFightingRule(AbilityValidationFailBehaviour failBehaviour, string failMessageKey)
     {
+        _failBehaviour = failBehaviour;
         _failMessageKey = failMessageKey;
     }
 
-    public AbilityValidationResult Validate(Entity caster, List<Entity> targets, AbilityRuntime ability)
+    public AbilityValidationResult Validate(Entity target)
     {
-        if (targets == null || targets.Count == 0)
-            return Success();
-
-        if (targets.Any(x => x.Has<CombatState>()))
+        if (target.Has<CombatState>())
             return Fail();
 
         return Success();
@@ -34,6 +34,7 @@ public class TargetNotFightingRule : IAbilityValidationRule
         => new()
         {
             Success = false,
-            FailureMessageKey = _failMessageKey
+            FailBehaviour = _failBehaviour,
+            FailMessageKey = _failMessageKey
         };
 }

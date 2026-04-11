@@ -1,6 +1,5 @@
 ﻿using MysteryMud.Core.Extensions;
 using MysteryMud.Domain.Ability.Definitions;
-using MysteryMud.Domain.Ability.Rules;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.Infrastructure.Persistence.Dto;
@@ -21,7 +20,7 @@ public class JsonAbilityLoader
 
     public List<AbilityDefinition> Load(string filePath)
     {
-        if(!File.Exists(filePath))
+        if (!File.Exists(filePath))
             throw new FileNotFoundException($"Ability JSON file not found: {filePath}");
 
         var json = File.ReadAllText(filePath);
@@ -41,7 +40,9 @@ public class JsonAbilityLoader
                 throw new Exception($"Skill ability {entry.Name} must declare a command");
 
             var costs = entry.Costs?.Select(MapResourceCost).ToList() ?? [];
-            var validationRules = entry.ValidationRules?.Select(MapRule).ToList();
+            var outcomeResolver = MapOutcomeResolver(entry.OutcomeResolver);
+            var sourceValidationRules = entry.ValidationRules?.Source?.Select(MapRule).ToList();
+            var targetValidationRules = entry.ValidationRules?.Target?.Select(MapRule).ToList();
 
             var ability = new AbilityDefinition
             {
@@ -52,9 +53,11 @@ public class JsonAbilityLoader
                 Cooldown = entry.Cooldown,
                 Costs = costs ?? [],
                 Command = command,
-                Executor = entry.Executor,
+                Targeting = MapTargeting(entry.Targeting),
+                OutcomeResolver = outcomeResolver,
                 Messages = entry.Messages ?? [],
-                ValidationRules = validationRules ?? [],
+                SourceValidationRules = sourceValidationRules ?? [],
+                TargetValidationRules = targetValidationRules ?? [],
                 Effects = entry.Effects ?? [],
                 FailureEffects = entry.FailureEffects ?? []
             };
@@ -63,6 +66,15 @@ public class JsonAbilityLoader
         return abilities;
     }
 
+    private AbilityOutcomeResolverDefinition? MapOutcomeResolver(AbilityOutcomeResolverData data)
+        => data == null
+            ? null
+            : new()
+            {
+                ResolverName = data.Name,
+                Hook = MapEnum(data.Hook, AbilityOutcomeHook.Execution)
+            };
+
     private ResourceCost MapResourceCost(ResourceCostData data)
         => new()
         {
@@ -70,15 +82,53 @@ public class JsonAbilityLoader
             Amount = data.Amount,
         };
 
+    private AbilityTargetingDefinition MapTargeting(AbilityTargetingData data)
+        => data == null
+        ? new () // if not specified: mandatory/single/room/character
+        : new()
+        {
+            Requirement = MapEnum(data.Requirement, AbilityTargetRequirement.Mandatory),
+            Selection = MapEnum(data.Selection, AbilityTargetSelection.Single),
+            Contexts = MapTargetingContexts(data),
+            ResolveAt = MapEnum(data.ResolveAt, AbilityTargetResolveAt.CastStart),
+        };
+
+    private List<AbilityTargetingContextDefinition> MapTargetingContexts(AbilityTargetingData data)
+    {
+        if (data.Scope != null && data.Filter != null)
+            return [new AbilityTargetingContextDefinition
+            {
+                Filter = FlagsEnumParser.Parse(data.Filter, AbilityTargetFilter.Character),
+                Scope = MapEnum(data.Scope, AbilityTargetScope.Room)
+            }];
+        return data.Contexts?.Select(MapTargetingContext)?.ToList()
+            ?? [new()]; // default: one context room/character
+    }
+
+    private AbilityTargetingContextDefinition MapTargetingContext(AbilityTargetingContextData data)
+        => new()
+        {
+            Scope = MapEnum(data.Scope, AbilityTargetScope.Room),
+            Filter = FlagsEnumParser.Parse(data.Filter, AbilityTargetFilter.Character),
+        };
+
     private AbilityRuleDefinition MapRule(AbilityValidationRuleData data)
         => data switch
         {
-            AffectedByRuleData rule => new AffectedByRuleDefinition { FailMessageKey = rule.Fail, EffectTagId = Enum.Parse<EffectTagId>(rule.Tag) },
-            HasWeaponTypeRuleData rule => new HasWeaponTypeRuleDefinition { FailMessageKey = rule.Fail, Required = Enum.Parse<WeaponKind>(rule.Required) },
-            NotAffectedByRuleData rule => new NotAffectedByRuleDefinition { FailMessageKey = rule.Fail, EffectTagId = Enum.Parse<EffectTagId>(rule.Tag) },
-            TargetNotFightingRuleData rule => new TargetNotFightingRuleDefinition { FailMessageKey = rule.Fail },
+            AffectedByRuleData rule => new AffectedByRuleDefinition { FailBehaviour = MapEnum(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, EffectTagId = Enum.Parse<EffectTagId>(rule.Tag) },
+            HasWeaponTypeRuleData rule => new HasWeaponTypeRuleDefinition { FailBehaviour = MapEnum(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, Required = Enum.Parse<WeaponKind>(rule.Required) },
+            NotAffectedByRuleData rule => new NotAffectedByRuleDefinition { FailBehaviour = MapEnum(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, EffectTagId = Enum.Parse<EffectTagId>(rule.Tag) },
+            NotFightingRuleData rule => new NotFightingRuleDefinition { FailBehaviour = MapEnum(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey },
             _ => throw new NotSupportedException($"Unknown rule type: {data.GetType()}")
         };
+
+    private T MapEnum<T>(string value, T defaultValue)
+        where T : struct, Enum
+    {
+        if (value == null)
+            return defaultValue;
+        return Enum.Parse<T>(value, ignoreCase: true);
+    }
 
     private class AbilityValidationRuleDataConverter : JsonConverter<AbilityValidationRuleData>
     {
@@ -94,7 +144,7 @@ public class JsonAbilityLoader
                 "AffectedBy" => JsonSerializer.Deserialize<AffectedByRuleData>(root.GetRawText(), options),
                 "HasWeaponType" => JsonSerializer.Deserialize<HasWeaponTypeRuleData>(root.GetRawText(), options),
                 "NotAffectedBy" => JsonSerializer.Deserialize<NotAffectedByRuleData>(root.GetRawText(), options),
-                "TargetNotFighting" => JsonSerializer.Deserialize<TargetNotFightingRuleData>(root.GetRawText(), options),
+                "NotFighting" => JsonSerializer.Deserialize<NotFightingRuleData>(root.GetRawText(), options),
                 _ => throw new NotSupportedException($"Unknown rule type: {type}")
             };
         }

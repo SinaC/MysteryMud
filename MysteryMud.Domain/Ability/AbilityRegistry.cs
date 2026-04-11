@@ -11,9 +11,9 @@ public class AbilityRegistry
     private readonly WordTrie<AbilityRuntime> _abilityWordTrie = new();
 
     private readonly EffectRegistry _effectRegistry;
-    private readonly AbilityExecutionResolverRegistry _abilityExecutionResolverRegistry;
+    private readonly AbilityOutcomeResolverRegistry _abilityExecutionResolverRegistry;
 
-    public AbilityRegistry(EffectRegistry effectRegistry, AbilityExecutionResolverRegistry abilityExecutionResolverRegistry)
+    public AbilityRegistry(EffectRegistry effectRegistry, AbilityOutcomeResolverRegistry abilityExecutionResolverRegistry)
     {
         _effectRegistry = effectRegistry;
         _abilityExecutionResolverRegistry = abilityExecutionResolverRegistry;

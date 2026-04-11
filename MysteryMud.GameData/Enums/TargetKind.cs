@@ -1,4 +1,4 @@
-﻿namespace MysteryMud.Application.Parsing;
+﻿namespace MysteryMud.GameData.Enums;
 
 public enum TargetKind
 {

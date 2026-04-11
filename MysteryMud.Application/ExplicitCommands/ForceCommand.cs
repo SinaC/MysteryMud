@@ -66,7 +66,7 @@ This is typically used for 'force all save'.",
         ref var people = ref actor.Get<Location>().Room.Get<RoomContents>().Characters;  // TODO: in world
         var target = EntityFinder.SelectSingleTarget(actor, ctx.Primary, people);
 
-        if (target == default)
+        if (target == null)
         {
             executionContext.Msg.To(actor).Send("They aren't here.");
             return;
@@ -79,7 +79,7 @@ This is typically used for 'force all save'.",
         }
 
         // get target position
-        ref var targetPosition = ref target.Get<Position>();
+        ref var targetPosition = ref target.Value.Get<Position>();
 
         var inputStr = ctx.Text.ToString(); // ONE allocation
 
@@ -95,12 +95,12 @@ This is typically used for 'force all save'.",
         }
         else if (findResult == CommandFindResult.WrongPosition)
         {
-            executionContext.Msg.To(actor).Send($"{target.DisplayName} is in the wrong position.");
+            executionContext.Msg.To(actor).Send($"{target.Value.DisplayName} is in the wrong position.");
             return;
         }
         else if (findResult == CommandFindResult.NoPermission)
         {
-            executionContext.Msg.To(actor).Send($"{target.DisplayName} is not allowed to use this command.");
+            executionContext.Msg.To(actor).Send($"{target.Value.DisplayName} is not allowed to use this command.");
             return;
         }
         else if (forcedCommand is null)
@@ -116,7 +116,7 @@ This is typically used for 'force all save'.",
         }
 
         // add forced command request to target command buffer
-        ref var buffer = ref target.Get<CommandBuffer>();
+        ref var buffer = ref target.Value.Get<CommandBuffer>();
         buffer.Add(new CommandRequest
         {
             Command = forcedCommand,
@@ -131,8 +131,8 @@ This is typically used for 'force all save'.",
             Cancelled = false,
             Force = true
         });
-        if (!target.Has<HasCommandTag>())
-            target.Add<HasCommandTag>();
+        if (!target.Value.Has<HasCommandTag>())
+            target.Value.Add<HasCommandTag>();
 
         // if forced commands must be executed before other
         //Array.Copy(buffer.Items, 0, buffer.Items, 1, buffer.Count);

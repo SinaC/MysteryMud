@@ -19,9 +19,9 @@ public class AbilityExecutionSystem
     private readonly IEventBuffer<AbilityExecutedEvent> _abilityExecuted;
     private readonly AbilityRegistry _abilityRegistry;
     private readonly EffectRegistry _effectRegistry;
-    private readonly AbilityExecutionResolverRegistry _abilityExecutionResolverRegistry;
+    private readonly AbilityOutcomeResolverRegistry _abilityExecutionResolverRegistry;
 
-    public AbilityExecutionSystem(ILogger logger, IGameMessageService msg, IIntentContainer intents, IEventBuffer<AbilityExecutedEvent> abilityExecuted, AbilityRegistry abilityRegistry, EffectRegistry effectRegistry, AbilityExecutionResolverRegistry abilityExecutionResolverRegistry)
+    public AbilityExecutionSystem(ILogger logger, IGameMessageService msg, IIntentContainer intents, IEventBuffer<AbilityExecutedEvent> abilityExecuted, AbilityRegistry abilityRegistry, EffectRegistry effectRegistry, AbilityOutcomeResolverRegistry abilityExecutionResolverRegistry)
     {
         _logger = logger;
         _msg = msg;
@@ -46,15 +46,18 @@ public class AbilityExecutionSystem
                 continue;
             }
 
-            if (_abilityExecutionResolverRegistry.TryGetResolver(abilityRuntime.ExecutorId, out var registedResolver) && registedResolver is not null)
+            // check if ability directly fails (skill learned % for example)
+            if (abilityRuntime.OutcomeResolver is { Hook: AbilityOutcomeHook.Execution })
             {
-                var result = registedResolver.Resolver.Resolve(source, abilityRuntime);
-                SendAbilityMessage(source, abilityRuntime, result.Outcome);
-                if (!result.Success)
-                    continue;
+                if (_abilityExecutionResolverRegistry.TryGetResolver(abilityRuntime.OutcomeResolver.ResolverId, out var registedResolver) && registedResolver is not null)
+                {
+                    var result = registedResolver.Resolver.Resolve(source, abilityRuntime);
+                    SendAbilityMessage(source, abilityRuntime, result.Outcome);
+                    if (!result.Success)
+                        continue;
+                }
             }
 
-            // TODO: check targets by effect
             // TODO: set cooldown
 
             foreach (var effectId in abilityRuntime.EffectIds)
@@ -64,13 +67,16 @@ public class AbilityExecutionSystem
                     _logger.LogError("Ability {abilityName}: effect {effectId} not found", abilityRuntime.Name, effectId);
                     continue;
                 }
-
-                // add effect action
-                ref var effectIntent = ref _intents.Action.Add();
-                effectIntent.Kind = ActionKind.Effect;
-                effectIntent.Effect.EffectId = effectId;
-                effectIntent.Effect.Source = source;
-                effectIntent.Effect.Target = targets[0]; // TODO:
+                // add effect action for each target
+                foreach (var target in targets)
+                {
+                    ref var effectIntent = ref _intents.Action.Add();
+                    effectIntent.Kind = ActionKind.Effect;
+                    effectIntent.Effect.EffectId = effectId;
+                    effectIntent.Effect.Source = source;
+                    effectIntent.Effect.Target = target;
+                    effectIntent.Cancelled = false;
+                }
             }
 
             // add ability execute event
@@ -80,14 +86,14 @@ public class AbilityExecutionSystem
             abilityExecutedEvt.Targets = targets;
         }
     }
-
-    private void SendAbilityMessage(Entity actor, AbilityRuntime ability, string key) // TODO: same code found in AbilityValidationSystem
+    
+    private void SendAbilityMessage(Entity actor, AbilityRuntime ability, string key) // TODO: same code found in AbilityExecutionSystem/AbilityCastingSystem
     {
         if (key is null)
             return;
         if (ability.Messages.TryGetValue(key, out var msg))
             _msg.To(actor).Send(msg);
         else
-            _logger.LogError("Ability {abilityName} executor refers to {key} but it's not found in messages", ability.Name, key);
+            _logger.LogError("Ability {abilityName} validation rules refers to {key} but it's not found in messages", ability.Name, key);
     }
 }

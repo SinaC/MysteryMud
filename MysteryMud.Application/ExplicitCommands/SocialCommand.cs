@@ -49,7 +49,7 @@ public class SocialCommand : IExplicitCommand
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
         var useCharacterNotFound = false;
-        Entity victim = default;
+        Entity? victim = null;
 
         if (ctx.TargetCount > 0)
         {
@@ -57,7 +57,7 @@ public class SocialCommand : IExplicitCommand
             ref var roomContents = ref room.Get<RoomContents>();
 
             victim = EntityFinder.SelectSingleTarget(actor, ctx.Primary, roomContents.Characters);
-            if (victim == default)
+            if (victim == null)
             {
                 if (_socialDefinition.CharacterNotFound is null)
                     executionContext.Msg.To(actor).Send("They aren't here.");
@@ -76,7 +76,7 @@ public class SocialCommand : IExplicitCommand
         //
         if (useCharacterNotFound)
             executionContext.Msg.To(actor).Act(_socialDefinition.CharacterNotFound!).With(actor);
-        else if (victim == default)
+        else if (victim == null)
         {
             if (_socialDefinition.CharacterNoArg is not null)
                 executionContext.Msg.To(actor).Act(_socialDefinition.CharacterNoArg).With(actor);
@@ -95,9 +95,9 @@ public class SocialCommand : IExplicitCommand
             if (_socialDefinition.CharacterFound is not null)
                 executionContext.Msg.To(actor).Act(_socialDefinition.CharacterFound).With(actor, victim);
             if (_socialDefinition.VictimFound is not null)
-                executionContext.Msg.To(victim).Act(_socialDefinition.VictimFound).With(actor, victim);
+                executionContext.Msg.To(victim.Value).Act(_socialDefinition.VictimFound).With(actor, victim);
             if (_socialDefinition.OthersFound is not null)
-                executionContext.Msg.ToRoomExcept(actor, victim).Act(_socialDefinition.OthersFound).With(actor, victim);
+                executionContext.Msg.ToRoomExcept(actor, victim.Value).Act(_socialDefinition.OthersFound).With(actor, victim);
 
             // TODO
             // trigger mob program

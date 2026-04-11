@@ -2,7 +2,6 @@
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Parsing;
-using MysteryMud.Application.Queries;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Core.Extensions;
@@ -11,6 +10,7 @@ using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Extensions;
+using MysteryMud.Domain.Queries;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
@@ -85,40 +85,15 @@ Use the 'spells' command to see the spells you already have (help spells).",
         }
         var abilityId = abilityRuntime.Id;
 
-        // TODO: check arguments depending on spell
+        // checks will be done in AbilityValidationSystem
 
-        // TODO: check resource/cooldown/position/...
-        ref var casting = ref actor.TryGetRef<Casting>(out var isCasting);
-        if (isCasting)
-        {
-            if (!_abilityRegistry.TryGetValue(casting.AbilityId, out var castingAbilityRuntime) || castingAbilityRuntime == null)
-            {
-                _logger.LogError("{casterName} is focused on an unknown ability {abilityId}", actor.DebugName, casting.AbilityId);
-                actor.Remove<Casting>(); // remove casting and allow to cast a new spell
-            }
-            else
-            {
-                executionContext.Msg.To(actor).Send($"You are already focused on {castingAbilityRuntime.Name}");
-                return;
-            }
-        }
-
-        // search targets
-        // TODO: depends on ability targeting requirements
-        ref var roomContents = ref actor.Get<Location>().Room.Get<RoomContents>().Characters;
-        var target = EntityFinder.SelectSingleTarget(actor, ctx.Secondary, roomContents);
-        if (target == default)
-        {
-            executionContext.Msg.To(actor).Send("You don't see that here.");
-            return;
-        }
-
-        // add ability intent
+        // add use ability intent
         ref var useAbilityIntent = ref executionContext.Intent.UseAbility.Add();
-        useAbilityIntent.AbilityId = abilityId;
-        useAbilityIntent.Kind = abilityRuntime.Kind;
         useAbilityIntent.Source = actor;
-        useAbilityIntent.Targets = [target]; // TODO
+        useAbilityIntent.TargetKind = ctx.Secondary.Kind;
+        useAbilityIntent.TargetIndex = ctx.Secondary.Index;
+        useAbilityIntent.TargetName = ctx.Secondary.Name.ToString();
+        useAbilityIntent.AbilityId = abilityId;
         useAbilityIntent.Cancelled = false;
     }
 }

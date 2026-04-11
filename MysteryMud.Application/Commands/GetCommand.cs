@@ -43,13 +43,13 @@ public class GetCommand : ICommand
         else
         {
             var container = EntityFinder.FindContainer(actor, ctx.Secondary);
-            if (container == default)
+            if (container == null)
             {
                 executionContext.Msg.To(actor).Send("You don't see that here.");
                 return;
             }
 
-            ref var containerContents = ref container.Get<ContainerContents>();
+            ref var containerContents = ref container.Value.Get<ContainerContents>();
             foreach (var item in EntityFinder.SelectTargets(actor, ctx.Primary, containerContents.Items))
             {
                 // intent to get item from container
@@ -57,7 +57,7 @@ public class GetCommand : ICommand
                 getItemFromContainerIntent.Entity = actor;
                 getItemFromContainerIntent.Item = item;
                 getItemFromContainerIntent.SourceKind = GetSourceKind.Container;
-                getItemFromContainerIntent.Source = container;
+                getItemFromContainerIntent.Source = container.Value;
             }
         }
     }

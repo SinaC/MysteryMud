@@ -3,18 +3,19 @@ using Arch.Core.Extensions;
 using MysteryMud.Core;
 using MysteryMud.Core.Intent;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Systems;
 
 public class AutoAttackSystem
 {
-    private const int defaultHits = 1; // e.g., base autoattack hits
+    private const int DefaultHits = 1; // e.g., base autoattack hits
 
     private readonly IIntentContainer _intentContainer;
 
     public AutoAttackSystem(IIntentContainer intentContainer)
     {
-        this._intentContainer = intentContainer;
+        _intentContainer = intentContainer;
     }
 
     public void Tick(GameState state)
@@ -42,16 +43,17 @@ public class AutoAttackSystem
             }
 
             // Determine number of attacks (multi-hit)
-            int hits = Math.Max(defaultHits, stats.AttackCount); // TODO
+            int hits = Math.Max(DefaultHits, stats.AttackCount); // TODO
 
             // Add attack intent
             ref var attackIntent = ref _intentContainer.Action.Add();
-            attackIntent.Kind = GameData.Enums.ActionKind.Attack;
+            attackIntent.Kind = ActionKind.Attack;
             attackIntent.Attack.Source = actor;
             attackIntent.Attack.Target = target;
             attackIntent.Attack.RemainingHits = hits;
             attackIntent.Attack.IsReaction = false; // autoattack, not a reaction
             attackIntent.Attack.IgnoreDefense = false; // autoattacks are affected by defense
+            attackIntent.Cancelled = false;
 
             // Apply lag before next attack
             combat.RoundDelay = 2; // example: 2 ticks

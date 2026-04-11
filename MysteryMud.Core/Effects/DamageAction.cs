@@ -1,12 +1,13 @@
 ﻿using Arch.Core;
 using MysteryMud.GameData.Enums;
 
-namespace MysteryMud.Core;
+namespace MysteryMud.Core.Effects;
 
-public struct HealAction
+public struct DamageAction
 {
     public Entity Target;
     public Entity Source;
     public decimal Amount;
-    public HealSourceKind SourceKind;
+    public DamageKind DamageKind;
+    public DamageSourceKind SourceKind;
 }

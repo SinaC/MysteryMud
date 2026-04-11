@@ -10,9 +10,10 @@ public record AbilityDefinitionData
     int Cooldown,
     List<ResourceCostData> Costs,
     CommandDefinitionData Command,
-    string Executor,
+    AbilityTargetingData Targeting,
+    AbilityOutcomeResolverData OutcomeResolver,
     Dictionary<string, string> Messages,
-    List<AbilityValidationRuleData> ValidationRules,
+    AbilityValidationRulesData ValidationRules,
     List<string> Effects,
     List<string> FailureEffects
 );
