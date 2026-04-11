@@ -112,16 +112,17 @@ var effectRuntimeFactory = new EffectRuntimeFactory(effectActionFactory);
 var effectRegistry = new EffectRegistry(effectRuntimeFactory);
 effectRegistry.RegisterEffects(effectDefinitions);
 
-// define ability execution resolver registry TODO: autodiscover with reflection
-var abilityExecutionResolverRegistry = new AbilityExecutionResolverRegistry();
-abilityExecutionResolverRegistry.Register("default", new DefaultAbilityExecutionResolver());
-abilityExecutionResolverRegistry.Register("chancebased", new ChanceBasedResolver());
-abilityExecutionResolverRegistry.Register("berserkexecutor", new BerserkResolver());
+// define ability outcome resolver registry
+// TODO: autodiscover with reflection
+var abilityOutcomeResolverRegistry = new AbilityOutcomeResolverRegistry();
+abilityOutcomeResolverRegistry.Register("default", new DefaultOutcomeResolver());
+abilityOutcomeResolverRegistry.Register("chancebased", new ChanceBasedOutcomeResolver());
+abilityOutcomeResolverRegistry.Register("berserk", new BerserkOutcomeResolver());
 
 // load ability definitions
 var abilityLoader = new JsonAbilityLoader();
 var abilityDefinitions = abilityLoader.Load(Path.Combine(basePath, gamePaths.AbilitiesJson));
-var abilityRegistry = new AbilityRegistry(effectRegistry, abilityExecutionResolverRegistry);
+var abilityRegistry = new AbilityRegistry(effectRegistry, abilityOutcomeResolverRegistry);
 abilityRegistry.RegisterAbilities(abilityDefinitions);
 
 // load command definitions
@@ -166,5 +167,5 @@ var commandDispatcher = new CommandDispatcher(commandRegistry);
 //Demo2.Run(logger, world, commandDispatcher, effectRegistry);
 
 // start game server
-var gameServer = new GameServer(logger, world, commandDispatcher, effectRegistry, abilityRegistry, abilityExecutionResolverRegistry);
+var gameServer = new GameServer(logger, world, commandDispatcher, effectRegistry, abilityRegistry, abilityOutcomeResolverRegistry);
 gameServer.Start();

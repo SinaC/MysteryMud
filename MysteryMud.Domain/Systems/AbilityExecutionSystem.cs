@@ -19,9 +19,9 @@ public class AbilityExecutionSystem
     private readonly IEventBuffer<AbilityExecutedEvent> _abilityExecuted;
     private readonly AbilityRegistry _abilityRegistry;
     private readonly EffectRegistry _effectRegistry;
-    private readonly AbilityExecutionResolverRegistry _abilityExecutionResolverRegistry;
+    private readonly AbilityOutcomeResolverRegistry _abilityExecutionResolverRegistry;
 
-    public AbilityExecutionSystem(ILogger logger, IGameMessageService msg, IIntentContainer intents, IEventBuffer<AbilityExecutedEvent> abilityExecuted, AbilityRegistry abilityRegistry, EffectRegistry effectRegistry, AbilityExecutionResolverRegistry abilityExecutionResolverRegistry)
+    public AbilityExecutionSystem(ILogger logger, IGameMessageService msg, IIntentContainer intents, IEventBuffer<AbilityExecutedEvent> abilityExecuted, AbilityRegistry abilityRegistry, EffectRegistry effectRegistry, AbilityOutcomeResolverRegistry abilityExecutionResolverRegistry)
     {
         _logger = logger;
         _msg = msg;
@@ -47,9 +47,9 @@ public class AbilityExecutionSystem
             }
 
             // check if ability directly fails (skill learned % for example)
-            if (abilityRuntime.Executor is { Hook: AbilityExecutorHook.Execution })
+            if (abilityRuntime.OutcomeResolver is { Hook: AbilityOutcomeHook.Execution })
             {
-                if (_abilityExecutionResolverRegistry.TryGetResolver(abilityRuntime.Executor.ExecutorId, out var registedResolver) && registedResolver is not null)
+                if (_abilityExecutionResolverRegistry.TryGetResolver(abilityRuntime.OutcomeResolver.ResolverId, out var registedResolver) && registedResolver is not null)
                 {
                     var result = registedResolver.Resolver.Resolve(source, abilityRuntime);
                     SendAbilityMessage(source, abilityRuntime, result.Outcome);

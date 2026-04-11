@@ -13,7 +13,7 @@ public class AbilityDefinition
     public required List<ResourceCost> Costs { get; init; }
     public CommandDefinition? Command { get; init; } // only for skills
     public AbilityTargetingDefinition Targeting { get; init; } = new();
-    public required AbilityExecutorDefinition? Executor { get; init; }
+    public required AbilityOutcomeResolverDefinition? OutcomeResolver { get; init; }
     public required List<string> Effects { get; init; }
     public required List<string> FailureEffects { get; init; } = [];
     public required Dictionary<string, string> Messages { get; init; } = []; // TODO: actor/room messages ?

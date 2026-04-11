@@ -6,12 +6,12 @@ namespace MysteryMud.Domain.Ability.Factories;
 
 public static class AbilityRuntimeFactory
 {
-    public static AbilityRuntime Create(EffectRegistry effectRegistry, AbilityExecutionResolverRegistry abilityExecutionResolverRegistry, AbilityDefinition def)
+    public static AbilityRuntime Create(EffectRegistry effectRegistry, AbilityOutcomeResolverRegistry abilityOutcomeResolverRegistry, AbilityDefinition def)
     {
         if (def.Effects == null || def.Effects.Count == 0)
             throw new Exception($"No effect found on ability {def.Name}");
 
-        var executor = MapAbilityExecutor(abilityExecutionResolverRegistry, def);
+        var outcomeResolver = MapAbilityOutcomeResolver(abilityOutcomeResolverRegistry, def);
         var effectIds = MapEffectIds(effectRegistry, def, def.Effects);
         var failureEffectIds = MapEffectIds(effectRegistry, def, def.FailureEffects);
         var sourceValidationRules = MapValidationRules(def.SourceValidationRules);
@@ -25,7 +25,7 @@ public static class AbilityRuntimeFactory
             Cooldown = def.Cooldown,
             Costs = def.Costs,
             Targeting = def.Targeting,
-            Executor = executor,
+            OutcomeResolver = outcomeResolver,
             EffectIds = effectIds,
             FailureEffectIds = failureEffectIds,
             Messages = def.Messages,
@@ -34,16 +34,16 @@ public static class AbilityRuntimeFactory
         };
     }
 
-    private static AbilityExecutorRuntime? MapAbilityExecutor(AbilityExecutionResolverRegistry abilityExecutionResolverRegistry, AbilityDefinition def)
+    private static AbilityOutcomeResolverRuntime? MapAbilityOutcomeResolver(AbilityOutcomeResolverRegistry abilityExecutionResolverRegistry, AbilityDefinition def)
     {
-        if (def.Executor == null)
+        if (def.OutcomeResolver == null)
             return null;
-        if (!abilityExecutionResolverRegistry.TryGetResolver(def.Executor.Executor ?? "Default", out var registeredResolver) || registeredResolver == null)
-            throw new Exception($"Unknown executor {def.Executor} on ability {def.Name}");
-        return new AbilityExecutorRuntime
+        if (!abilityExecutionResolverRegistry.TryGetResolver(def.OutcomeResolver.ResolverName ?? "Default", out var registeredResolver) || registeredResolver == null)
+            throw new Exception($"Unknown outcome resolver {def.OutcomeResolver} on ability {def.Name}");
+        return new AbilityOutcomeResolverRuntime
         {
-            ExecutorId = registeredResolver.Id,
-            Hook = def.Executor.Hook,
+            ResolverId = registeredResolver.Id,
+            Hook = def.OutcomeResolver.Hook,
         };
     }
 

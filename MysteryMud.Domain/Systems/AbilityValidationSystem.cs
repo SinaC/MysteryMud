@@ -24,9 +24,9 @@ public class AbilityValidationSystem
     private readonly IAbilityTargetResolver _abilityTargetResolver;
     private readonly IEventBuffer<AbilityUsedEvent> _abilityUsed;
     private readonly AbilityRegistry _abilityRegistry;
-    private readonly AbilityExecutionResolverRegistry _abilityExecutionResolverRegistry;
+    private readonly AbilityOutcomeResolverRegistry _abilityExecutionResolverRegistry;
 
-    public AbilityValidationSystem(ILogger logger, IGameMessageService msg, IIntentContainer intents, IAbilityTargetResolver abilityTargetResolver, IEventBuffer<AbilityUsedEvent> abilityUsed, AbilityRegistry abilityRegistry, AbilityExecutionResolverRegistry abilityExecutionResolverRegistry)
+    public AbilityValidationSystem(ILogger logger, IGameMessageService msg, IIntentContainer intents, IAbilityTargetResolver abilityTargetResolver, IEventBuffer<AbilityUsedEvent> abilityUsed, AbilityRegistry abilityRegistry, AbilityOutcomeResolverRegistry abilityExecutionResolverRegistry)
     {
         _logger = logger;
         _msg = msg;
@@ -109,9 +109,9 @@ public class AbilityValidationSystem
             ResourceHelpers.PayCosts(source, abilityRuntime);
 
             // check if ability directly fails (skill learned % for example)
-            if (abilityRuntime.Executor is { Hook: AbilityExecutorHook.Validation })
+            if (abilityRuntime.OutcomeResolver is { Hook: AbilityOutcomeHook.Validation })
             {
-                if (_abilityExecutionResolverRegistry.TryGetResolver(abilityRuntime.Executor.ExecutorId, out var registedResolver) && registedResolver is not null)
+                if (_abilityExecutionResolverRegistry.TryGetResolver(abilityRuntime.OutcomeResolver.ResolverId, out var registedResolver) && registedResolver is not null)
                 {
                     var result = registedResolver.Resolver.Resolve(source, abilityRuntime);
                     SendAbilityMessage(source, abilityRuntime, result.Outcome);

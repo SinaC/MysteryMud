@@ -45,7 +45,7 @@ internal class GameLoop
     private readonly IIntentContainer _intentContainer;
     private readonly EffectRegistry _effectRegistry;
     private readonly AbilityRegistry _abilityRegistry;
-    private readonly AbilityExecutionResolverRegistry _abilityExecutionResolverRegistry;
+    private readonly AbilityOutcomeResolverRegistry _abilityExecutionResolverRegistry;
     private readonly World _world;
 
     /*
@@ -146,7 +146,7 @@ internal class GameLoop
     private readonly LookSystem _lookSystem;
     private readonly CleanupSystem _cleanupSystem;
 
-    public GameLoop(ILogger logger, IOutputService putputService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, IGameMessageService gameMessageService, IIntentContainer intentContainer, EffectRegistry effectRegistry, AbilityRegistry abilityRegistry, AbilityExecutionResolverRegistry abilityExecutionResolverRegistry, World world)
+    public GameLoop(ILogger logger, IOutputService putputService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, IGameMessageService gameMessageService, IIntentContainer intentContainer, EffectRegistry effectRegistry, AbilityRegistry abilityRegistry, AbilityOutcomeResolverRegistry abilityExecutionResolverRegistry, World world)
     {
         _logger = logger;
         _outputService = putputService;

@@ -1,6 +1,6 @@
 ﻿namespace MysteryMud.Domain.Ability.Resolvers;
 
-public struct AbilityExecutionResult
+public struct AbilityOutcomeResult
 {
     public bool Success;
     public string Outcome; // "OnSuccess" / "OnFailure"

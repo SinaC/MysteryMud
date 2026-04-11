@@ -1,7 +1,3 @@
-
-find a new name for IExecutor (and related resolver, registry, ...) because it's not related to execution but if it can be executed (check skill learned % for example)
-
-
 keep only one event buffer except for death/damage events which will have their own buffer to ensure they are processed separetely and can trigger things like death saves, death effects, etc without being mixed with other events
 
 ======================================

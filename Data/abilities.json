@@ -113,8 +113,8 @@
     "Costs": [
       { "Kind": "Mana", "Amount": 5 }
     ],
-    "Executor": {
-      "Name": "BerserkExecutor",
+    "OutcomeResolver": {
+      "Name": "Berserk",
       "Hook": "Execution"
     },
     "Targeting": {
@@ -151,7 +151,7 @@
       "Categories": ["ability", "combat"],
       "ThrottlingCategories": ["combat"]
     },
-    "Executor": {
+    "OutcomeResolver": {
       "Name": "ChanceBased",
       "Hook": "Execution"
     },
@@ -180,7 +180,7 @@
       "Categories": ["ability", "combat"],
       "ThrottlingCategories": ["combat"]
     },
-    "Executor": {
+    "OutcomeResolver": {
       "Name": "ChanceBased",
       "Hook": "Execution"
     },
@@ -246,7 +246,7 @@
       "Categories": ["ability", "combat"],
       "ThrottlingCategories": ["combat"]
     },
-    "Executor": {
+    "OutcomeResolver": {
       "Name": "ChanceBased",
       "Hook": "Execution"
     },

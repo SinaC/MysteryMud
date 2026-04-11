@@ -40,7 +40,7 @@ public class JsonAbilityLoader
                 throw new Exception($"Skill ability {entry.Name} must declare a command");
 
             var costs = entry.Costs?.Select(MapResourceCost).ToList() ?? [];
-            var executor = MapExecutor(entry.Executor);
+            var outcomeResolver = MapOutcomeResolver(entry.OutcomeResolver);
             var sourceValidationRules = entry.ValidationRules?.Source?.Select(MapRule).ToList();
             var targetValidationRules = entry.ValidationRules?.Target?.Select(MapRule).ToList();
 
@@ -54,7 +54,7 @@ public class JsonAbilityLoader
                 Costs = costs ?? [],
                 Command = command,
                 Targeting = MapTargeting(entry.Targeting),
-                Executor = executor,
+                OutcomeResolver = outcomeResolver,
                 Messages = entry.Messages ?? [],
                 SourceValidationRules = sourceValidationRules ?? [],
                 TargetValidationRules = targetValidationRules ?? [],
@@ -66,13 +66,13 @@ public class JsonAbilityLoader
         return abilities;
     }
 
-    private AbilityExecutorDefinition? MapExecutor(AbilityExecutorData data)
+    private AbilityOutcomeResolverDefinition? MapOutcomeResolver(AbilityOutcomeResolverData data)
         => data == null
             ? null
             : new()
             {
-                Executor = data.Name,
-                Hook = MapEnum(data.Hook, AbilityExecutorHook.Execution)
+                ResolverName = data.Name,
+                Hook = MapEnum(data.Hook, AbilityOutcomeHook.Execution)
             };
 
     private ResourceCost MapResourceCost(ResourceCostData data)

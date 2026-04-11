@@ -4,9 +4,9 @@ using MysteryMud.Domain.Components.Characters;
 
 namespace MysteryMud.Domain.Ability.Resolvers;
 
-public class BerserkResolver : IAbilityExecutionResolver
+public class BerserkOutcomeResolver : IAbilityOutcomeResolver
 {
-    public AbilityExecutionResult Resolve(Entity caster, AbilityRuntime ability)
+    public AbilityOutcomeResult Resolve(Entity caster, AbilityRuntime ability)
     {
         int chance = GetSkill(caster, ability); // however you store skills
 
@@ -21,7 +21,7 @@ public class BerserkResolver : IAbilityExecutionResolver
 
         if (Random.Shared.Next(0,100) < chance)
         {
-            return new AbilityExecutionResult
+            return new AbilityOutcomeResult
             {
                 Success = true,
                 Outcome = "OnSuccess",
@@ -29,7 +29,7 @@ public class BerserkResolver : IAbilityExecutionResolver
             };
         }
 
-        return new AbilityExecutionResult
+        return new AbilityOutcomeResult
         {
             Success = false,
             Outcome = "OnFailure",

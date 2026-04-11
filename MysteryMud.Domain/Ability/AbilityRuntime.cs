@@ -14,7 +14,7 @@ public class AbilityRuntime
     public int Cooldown = 0;
     public List<ResourceCost> Costs = [];
     public AbilityTargetingDefinition Targeting = new();
-    public AbilityExecutorRuntime? Executor;
+    public AbilityOutcomeResolverRuntime? OutcomeResolver;
     public List<int> EffectIds = [];
     public List<int> FailureEffectIds = [];
     public Dictionary<string, string> Messages = []; // TODO: actor/room messages ?

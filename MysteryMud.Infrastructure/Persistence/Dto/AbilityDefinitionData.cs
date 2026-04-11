@@ -11,7 +11,7 @@ public record AbilityDefinitionData
     List<ResourceCostData> Costs,
     CommandDefinitionData Command,
     AbilityTargetingData Targeting,
-    AbilityExecutorData Executor,
+    AbilityOutcomeResolverData OutcomeResolver,
     Dictionary<string, string> Messages,
     AbilityValidationRulesData ValidationRules,
     List<string> Effects,

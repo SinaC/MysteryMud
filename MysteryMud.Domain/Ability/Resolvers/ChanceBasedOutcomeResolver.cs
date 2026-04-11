@@ -2,15 +2,15 @@
 
 namespace MysteryMud.Domain.Ability.Resolvers;
 
-public class ChanceBasedResolver : IAbilityExecutionResolver
+public class ChanceBasedOutcomeResolver : IAbilityOutcomeResolver
 {
-    public AbilityExecutionResult Resolve(Entity caster, AbilityRuntime ability)
+    public AbilityOutcomeResult Resolve(Entity caster, AbilityRuntime ability)
     {
         int chance = GetSkill(caster, ability);
 
         if (Random.Shared.Next(0, 100) < chance)
         {
-            return new AbilityExecutionResult
+            return new AbilityOutcomeResult
             {
                 Success = true,
                 Outcome = "OnSuccess",
@@ -18,7 +18,7 @@ public class ChanceBasedResolver : IAbilityExecutionResolver
             };
         }
 
-        return new AbilityExecutionResult
+        return new AbilityOutcomeResult
         {
             Success = false,
             Outcome = "OnFailure",
