@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Dispatching;
 using MysteryMud.Core.Logging;
 using MysteryMud.Domain.Ability;
+using MysteryMud.Domain.Action.Attack;
 using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Factories;
@@ -33,7 +34,7 @@ public class GameServer
     private readonly IntentBusContainer _intentBusContainer;
     private readonly GameLoop _gameLoop;
 
-    public GameServer(ILogger logger, World world, ICommandDispatcher commandDispatcher, EffectRegistry effectRegistry, AbilityRegistry abilityRegistry, AbilityOutcomeResolverRegistry abilityExecutionResolverRegistry)
+    public GameServer(ILogger logger, World world, ICommandDispatcher commandDispatcher, EffectRegistry effectRegistry, AbilityRegistry abilityRegistry, AbilityOutcomeResolverRegistry abilityExecutionResolverRegistry, WeaponProcRegistry weaponProcRegistry)
     {
         _world = world;
         _logger = logger;
@@ -53,7 +54,7 @@ public class GameServer
         _actService = new ActService();
         _gameMessageService = new GameMessageService(_messageBus, _actService);
         _intentBusContainer = new IntentBusContainer();
-        _gameLoop = new GameLoop(_logger, _outputService, _commandBus, _messageBus, _scheduler, _gameMessageService, _intentBusContainer, effectRegistry, abilityRegistry, abilityExecutionResolverRegistry, _world);
+        _gameLoop = new GameLoop(_logger, _outputService, _commandBus, _messageBus, _scheduler, _gameMessageService, _intentBusContainer, effectRegistry, abilityRegistry, abilityExecutionResolverRegistry, weaponProcRegistry, _world);
     }
 
     public void Start()

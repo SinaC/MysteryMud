@@ -2,7 +2,7 @@
 
 namespace MysteryMud.Infrastructure.Persistence.Dto;
 
-public record EffectDefinitionData
+internal record EffectDefinitionData
 (
     string Name,
     string Tag,

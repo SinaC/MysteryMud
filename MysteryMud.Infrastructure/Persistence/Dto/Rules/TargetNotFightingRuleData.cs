@@ -1,5 +1,5 @@
 ﻿namespace MysteryMud.Infrastructure.Persistence.Dto.Rules;
 
-public class NotFightingRuleData : AbilityValidationRuleData
+internal class NotFightingRuleData : AbilityValidationRuleData
 {
 }

@@ -1,6 +1,6 @@
 ﻿namespace MysteryMud.Infrastructure.Persistence.Dto;
 
-public record ResourceCostData
+internal record ResourceCostData
 (
     string Kind,
     int Amount

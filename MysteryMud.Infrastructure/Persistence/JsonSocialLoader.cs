@@ -6,14 +6,18 @@ namespace MysteryMud.Infrastructure.Persistence;
 
 public class JsonSocialLoader
 {
+    private static readonly JsonSerializerOptions _serializerOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     public List<SocialDefinition> Load(string filePath)
     {
         if (!File.Exists(filePath))
             throw new FileNotFoundException($"Command JSON file not found: {filePath}");
 
-        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         var json = File.ReadAllText(filePath);
-        var data = JsonSerializer.Deserialize<List<SocialDefinitionData>>(json, options) ?? [];
+        var data = JsonSerializer.Deserialize<List<SocialDefinitionData>>(json, _serializerOptions) ?? [];
 
         var socials = new List<SocialDefinition>();
         foreach (var s in data)

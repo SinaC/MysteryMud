@@ -18,19 +18,21 @@ public class WeaponProcResolver
     private readonly ILogger _logger;
     private readonly IGameMessageService _msg;
     private readonly IIntentWriterContainer _intents;
+    private readonly WeaponProcRegistry _weaponProcRegistry;
     private readonly EffectRegistry _effectRegistry;
 
-    public WeaponProcResolver(ILogger logger, IGameMessageService msg, IIntentWriterContainer intents, EffectRegistry effectRegistry)
+    public WeaponProcResolver(ILogger logger, IGameMessageService msg, IIntentWriterContainer intents, WeaponProcRegistry weaponProcRegistry, EffectRegistry effectRegistry)
     {
         _logger = logger;
         _msg = msg;
         _intents = intents;
+        _weaponProcRegistry = weaponProcRegistry;
         _effectRegistry = effectRegistry;
     }
 
     public void Resolve(GameState state, AttackResult attack)
     {
-        if (!CharacterHelpers.IsAlive(attack.Target))
+        if (!CharacterHelpers.IsAlive(attack.Source, attack.Target))
             return;
 
         // search weapon
@@ -43,24 +45,49 @@ public class WeaponProcResolver
         if (!isWeapon)
             return;
 
-        // proc ?
-        if (weapon.ProcEffectId is null) // TODO: loop on effect + apply chance
+        // has proc ?
+        if (weapon.ProcIds == null || weapon.ProcIds.Count == 0)
             return;
-
-        // existing effect ?
-        if (!_effectRegistry.TryGetValue(weapon.ProcEffectId.Value, out var effectRuntime) || effectRuntime == null)
+        foreach (var weaponProcId in weapon.ProcIds)
         {
-            _logger.LogWarning("WeaponProcResolver: weapon {weaponName} tried to proc effect {effectId}", weaponEntity.DebugName, weapon.ProcEffectId);
-            return;
+            // existing weapon proc ?
+            if (!_weaponProcRegistry.TryGet(weaponProcId, out var weaponProcRuntime) || weaponProcRuntime == null)
+            {
+                _logger.LogWarning("WeaponProcResolver: weapon {weaponName} has unknown proc {weaponProcId}", weaponEntity.DebugName, weaponProcId);
+                continue;
+            }
+
+            // TODO: chance
+            // TODO: message ?
+
+            foreach (var weaponProcEffect in weaponProcRuntime.WeaponProcEffectRuntimes)
+            {
+                // existing effect ?
+                if (!_effectRegistry.TryGetValue(weaponProcEffect.EffectId, out var effectRuntime) || effectRuntime == null)
+                {
+                    _logger.LogWarning("WeaponProcResolver: weapon {weaponName} tried to proc effect {effectId}", weaponEntity.DebugName, weaponProcEffect.EffectId);
+                    continue;
+                }
+
+                Entity target = weaponProcEffect.Target switch
+                {
+                    WeaponProcTarget.Opponent => attack.Target,
+                    WeaponProcTarget.Self => attack.Source,
+                    _ => attack.Target,
+                };
+
+                if (!CharacterHelpers.IsAlive(attack.Source, target))
+                    continue;
+
+                _msg.ToAll(attack.Source).Act("{0} apply{0:v} effect {1} to {2}.").With(weaponEntity, effectRuntime.Name, target);
+
+                ref var effectIntent = ref _intents.Action.Add();
+                effectIntent.Kind = ActionKind.Effect;
+                effectIntent.Effect.Source = attack.Source; // TODO: weaponEntity ?
+                effectIntent.Effect.Target = target;
+                effectIntent.Effect.EffectId = effectRuntime.Id;
+                effectIntent.Cancelled = false;
+            }
         }
-
-        _msg.ToAll(attack.Source).Act("{0} apply{0:v} effect {1} to {2}.").With(weaponEntity, effectRuntime.Name, attack.Target);
-
-        ref var effectIntent = ref _intents.Action.Add();
-        effectIntent.Kind = ActionKind.Effect;
-        effectIntent.Effect.Source = attack.Source; // TODO: weaponEntity ?
-        effectIntent.Effect.Target = attack.Target;
-        effectIntent.Effect.EffectId = weapon.ProcEffectId.Value;
-        effectIntent.Cancelled = false;
     }
 }

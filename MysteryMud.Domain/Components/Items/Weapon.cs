@@ -8,5 +8,5 @@ public struct Weapon
     public int DiceCount;
     public int DiceValue;
 
-    public int? ProcEffectId; // TODO: list (id + chance)
+    public List<int> ProcIds;
 }

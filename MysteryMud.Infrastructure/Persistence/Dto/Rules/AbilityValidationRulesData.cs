@@ -1,6 +1,6 @@
 ﻿namespace MysteryMud.Infrastructure.Persistence.Dto.Rules;
 
-public record AbilityValidationRulesData
+internal record AbilityValidationRulesData
 (
     List<AbilityValidationRuleData> Source,
     List<AbilityValidationRuleData> Target

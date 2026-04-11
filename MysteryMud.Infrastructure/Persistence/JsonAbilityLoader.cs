@@ -72,7 +72,7 @@ public class JsonAbilityLoader
             : new()
             {
                 ResolverName = data.Name,
-                Hook = MapEnum(data.Hook, AbilityOutcomeHook.Execution)
+                Hook = EnumParser.Parse(data.Hook, AbilityOutcomeHook.Execution)
             };
 
     private ResourceCost MapResourceCost(ResourceCostData data)
@@ -87,10 +87,10 @@ public class JsonAbilityLoader
         ? new () // if not specified: mandatory/single/room/character
         : new()
         {
-            Requirement = MapEnum(data.Requirement, AbilityTargetRequirement.Mandatory),
-            Selection = MapEnum(data.Selection, AbilityTargetSelection.Single),
+            Requirement = EnumParser.Parse(data.Requirement, AbilityTargetRequirement.Mandatory),
+            Selection = EnumParser.Parse(data.Selection, AbilityTargetSelection.Single),
             Contexts = MapTargetingContexts(data),
-            ResolveAt = MapEnum(data.ResolveAt, AbilityTargetResolveAt.CastStart),
+            ResolveAt = EnumParser.Parse(data.ResolveAt, AbilityTargetResolveAt.CastStart),
         };
 
     private List<AbilityTargetingContextDefinition> MapTargetingContexts(AbilityTargetingData data)
@@ -99,7 +99,7 @@ public class JsonAbilityLoader
             return [new AbilityTargetingContextDefinition
             {
                 Filter = FlagsEnumParser.Parse(data.Filter, AbilityTargetFilter.Character),
-                Scope = MapEnum(data.Scope, AbilityTargetScope.Room)
+                Scope = EnumParser.Parse(data.Scope, AbilityTargetScope.Room)
             }];
         return data.Contexts?.Select(MapTargetingContext)?.ToList()
             ?? [new()]; // default: one context room/character
@@ -108,27 +108,20 @@ public class JsonAbilityLoader
     private AbilityTargetingContextDefinition MapTargetingContext(AbilityTargetingContextData data)
         => new()
         {
-            Scope = MapEnum(data.Scope, AbilityTargetScope.Room),
+            Scope = EnumParser.Parse(data.Scope, AbilityTargetScope.Room),
             Filter = FlagsEnumParser.Parse(data.Filter, AbilityTargetFilter.Character),
         };
 
     private AbilityRuleDefinition MapRule(AbilityValidationRuleData data)
         => data switch
         {
-            AffectedByRuleData rule => new AffectedByRuleDefinition { FailBehaviour = MapEnum(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, EffectTagId = Enum.Parse<EffectTagId>(rule.Tag) },
-            HasWeaponTypeRuleData rule => new HasWeaponTypeRuleDefinition { FailBehaviour = MapEnum(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, Required = Enum.Parse<WeaponKind>(rule.Required) },
-            NotAffectedByRuleData rule => new NotAffectedByRuleDefinition { FailBehaviour = MapEnum(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, EffectTagId = Enum.Parse<EffectTagId>(rule.Tag) },
-            NotFightingRuleData rule => new NotFightingRuleDefinition { FailBehaviour = MapEnum(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey },
+            AffectedByRuleData rule => new AffectedByRuleDefinition { FailBehaviour = EnumParser.Parse(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, EffectTagId = Enum.Parse<EffectTagId>(rule.Tag) },
+            HasWeaponTypeRuleData rule => new HasWeaponTypeRuleDefinition { FailBehaviour = EnumParser.Parse(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, Required = Enum.Parse<WeaponKind>(rule.Required) },
+            NotAffectedByRuleData rule => new NotAffectedByRuleDefinition { FailBehaviour = EnumParser.Parse(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, EffectTagId = Enum.Parse<EffectTagId>(rule.Tag) },
+            NotFightingRuleData rule => new NotFightingRuleDefinition { FailBehaviour = EnumParser.Parse(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey },
             _ => throw new NotSupportedException($"Unknown rule type: {data.GetType()}")
         };
 
-    private T MapEnum<T>(string value, T defaultValue)
-        where T : struct, Enum
-    {
-        if (value == null)
-            return defaultValue;
-        return Enum.Parse<T>(value, ignoreCase: true);
-    }
 
     private class AbilityValidationRuleDataConverter : JsonConverter<AbilityValidationRuleData>
     {

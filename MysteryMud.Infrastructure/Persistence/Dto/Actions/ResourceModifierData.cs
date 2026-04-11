@@ -1,6 +1,6 @@
 ﻿namespace MysteryMud.Infrastructure.Persistence.Dto.Actions;
 
-public class ResourceModifierData : EffectActionData
+internal class ResourceModifierData : EffectActionData
 {
     public required string Resource { get; init; }
     public required string Mode { get; init; }

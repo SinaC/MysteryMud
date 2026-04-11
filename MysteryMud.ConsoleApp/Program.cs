@@ -10,6 +10,7 @@ using MysteryMud.ConsoleApp.Hosting;
 using MysteryMud.Core.Extensions;
 using MysteryMud.Domain.Ability;
 using MysteryMud.Domain.Ability.Resolvers;
+using MysteryMud.Domain.Action.Attack;
 using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Action.Effect.Factories;
 using MysteryMud.Domain.Components;
@@ -73,7 +74,7 @@ trollEffectiveStats.Parry = 0; // for testing, make sure all hits land so we can
 trollEffectiveStats.CounterAttack = 100; // for testing, make sure all we counterattack every time so we can see the counterattack in action
 var sword = ItemFactory.CreateItemInRoom(world, "sword", "a %#FFFFFF>#FFFF00shiny sword%x", market);
 sword.Add(new Equipable { Slot = EquipmentSlotKind.MainHand });
-sword.Add(new Weapon { Kind = WeaponKind.Sword, DiceCount = 5, DiceValue = 10, ProcEffectId = "FlamingWeapon".ComputeUniqueId() }); // add flaming
+sword.Add(new Weapon { Kind = WeaponKind.Sword, DiceCount = 5, DiceValue = 10, ProcIds = ["Flaming".ComputeUniqueId()] }); // add flaming
 var chest = world.Create(
             new ItemTag(),
             new Name { Value = "chest" },
@@ -84,7 +85,7 @@ var chest = world.Create(
         );
 var dagger = ItemFactory.CreateItemInRoom(world, "dagger", "a vampiric dagger", market);
 dagger.Add(new Equipable { Slot = EquipmentSlotKind.MainHand });
-dagger.Add(new Weapon { Kind = WeaponKind.Dagger, DiceCount = 5, DiceValue = 8, ProcEffectId = "VampiricWeapon".ComputeUniqueId() }); // add vampiric
+dagger.Add(new Weapon { Kind = WeaponKind.Dagger, DiceCount = 5, DiceValue = 8, ProcIds = ["Vampiric".ComputeUniqueId()] }); // add vampiric
 market.Get<RoomContents>().Items.Add(chest);
 var gem = ItemFactory.CreateItemInContainer(world, "gem", "a %#FF0000>#FF00FFsparkling gem%x", chest);
 var trash = ItemFactory.CreateItemInRoom(world, "trash", "some trash", market);
@@ -123,7 +124,13 @@ abilityOutcomeResolverRegistry.Register("berserk", new BerserkOutcomeResolver())
 var abilityLoader = new JsonAbilityLoader();
 var abilityDefinitions = abilityLoader.Load(Path.Combine(basePath, gamePaths.AbilitiesJson));
 var abilityRegistry = new AbilityRegistry(effectRegistry, abilityOutcomeResolverRegistry);
-abilityRegistry.RegisterAbilities(abilityDefinitions);
+abilityRegistry.Register(abilityDefinitions);
+
+// load weapon proc definitions
+var weaponProcLoader = new JsonWeaponProcLoader();
+var weaponProcDefinitions = weaponProcLoader.Load(Path.Combine(basePath, gamePaths.WeaponProcsJson));
+var weaponProcRegistry = new WeaponProcRegistry(effectRegistry);
+weaponProcRegistry.Register(weaponProcDefinitions);
 
 // load command definitions
 var commandLoader = new JsonCommandLoader();
@@ -167,5 +174,5 @@ var commandDispatcher = new CommandDispatcher(commandRegistry);
 //Demo2.Run(logger, world, commandDispatcher, effectRegistry);
 
 // start game server
-var gameServer = new GameServer(logger, world, commandDispatcher, effectRegistry, abilityRegistry, abilityOutcomeResolverRegistry);
+var gameServer = new GameServer(logger, world, commandDispatcher, effectRegistry, abilityRegistry, abilityOutcomeResolverRegistry, weaponProcRegistry);
 gameServer.Start();

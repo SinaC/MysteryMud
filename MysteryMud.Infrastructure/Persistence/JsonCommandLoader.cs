@@ -31,7 +31,7 @@ public class JsonCommandLoader
         return commands;
     }
 
-    public static CommandDefinition Map(CommandDefinitionData data)
+    internal static CommandDefinition Map(CommandDefinitionData data) // will be used by JsonAbilitLoader
         => new()
         {
             Id = data.Name.ComputeUniqueId(),

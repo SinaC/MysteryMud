@@ -1,6 +1,6 @@
 ﻿namespace MysteryMud.Infrastructure.Persistence.Dto.Actions;
 
-public class PeriodicDamageData : EffectActionData
+internal class PeriodicDamageData : EffectActionData
 {
     public required string DamageFormula { get; init; }
     public required string DamageKind { get; init; }

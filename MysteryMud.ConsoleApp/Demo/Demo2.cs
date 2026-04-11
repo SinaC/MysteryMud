@@ -9,6 +9,7 @@ using MysteryMud.Core.Commands;
 using MysteryMud.Core.Effects;
 using MysteryMud.Core.Eventing;
 using MysteryMud.Domain.Action;
+using MysteryMud.Domain.Action.Attack;
 using MysteryMud.Domain.Action.Attack.Factories;
 using MysteryMud.Domain.Action.Attack.Resolvers;
 using MysteryMud.Domain.Action.Damage;
@@ -32,7 +33,7 @@ namespace MysteryMud.ConsoleApp.Demo;
 
 static class Demo2
 {
-    public static void Run(ILogger logger, World world, ICommandDispatcher commandDispatcher, EffectRegistry effectRegistry)
+    public static void Run(ILogger logger, World world, ICommandDispatcher commandDispatcher, EffectRegistry effectRegistry, WeaponProcRegistry weaponProcRegistry)
     {
         // get entities for testing
         Span<Entity> characters = stackalloc Entity[10];
@@ -91,7 +92,7 @@ static class Demo2
         var healResolver = new HealResolver(aggroResolver, gameMessageService, healedEventBuffer);
         var hitResolver = new HitResolver(gameMessageService);
         var hitDamageFactory = new HitDamageFactory();
-        var weaponProcResolver = new WeaponProcResolver(logger, gameMessageService, intentBusContainer, effectRegistry);
+        var weaponProcResolver = new WeaponProcResolver(logger, gameMessageService, intentBusContainer, weaponProcRegistry, effectRegistry);
         var reactionResolver = new ReactionResolver(gameMessageService);
         var effectExecutor = new EffectExecutor(damageResolver, healResolver);
         var effectFactory = new EffectFactory(logger, gameMessageService, intentBusContainer, effectExecutor);
