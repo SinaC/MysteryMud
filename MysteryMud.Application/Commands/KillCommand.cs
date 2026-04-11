@@ -27,7 +27,7 @@ public class KillCommand : ICommand
         ref var people = ref actor.Get<Location>().Room.Get<RoomContents>().Characters;
         var target = EntityFinder.SelectSingleTarget(actor, ctx.Primary, people);
 
-        if (target == default)
+        if (target == null)
         {
             executionContext.Msg.To(actor).Send("They aren't here.");
             return;
@@ -49,8 +49,8 @@ public class KillCommand : ICommand
         // TODO: check if target is already fighting
 
         // flag both as in combat with each other, with the target striking back after a delay
-        actor.Add(new CombatState { Target = target, RoundDelay = 0 });
-        if (!target.Has<CombatState>()) // TODO: initiator, last target, ...
-            target.Add(new CombatState { Target = actor, RoundDelay = 1 }); // strikes back
+        actor.Add(new CombatState { Target = target.Value, RoundDelay = 0 });
+        if (!target.Value.Has<CombatState>()) // TODO: initiator, last target, ...
+            target.Value.Add(new CombatState { Target = actor, RoundDelay = 1 }); // strikes back
     }
 }

@@ -89,9 +89,15 @@ public class JsonAbilityLoader
         {
             Requirement = MapEnum(data.Requirement, AbilityTargetRequirement.Mandatory),
             Selection = MapEnum(data.Selection, AbilityTargetSelection.Single),
+            Contexts = data.Contexts?.Select(MapTargetingContext)?.ToList() ?? [new ()], // default: one context room/character
+            ResolveAt = MapEnum(data.ResolveAt, AbilityTargetResolveAt.CastStart),
+        };
+
+    private AbilityTargetingContextDefinition MapTargetingContext(AbilityTargetingContextData data)
+        => new()
+        {
             Scope = MapEnum(data.Scope, AbilityTargetScope.Room),
             Filter = FlagsEnumParser.Parse(data.Filter, AbilityTargetFilter.Character),
-            ResolveAt = MapEnum(data.ResolveAt, AbilityTargetResolveAt.CastStart),
         };
 
     private AbilityRuleDefinition MapRule(AbilityValidationRuleData data)

@@ -52,7 +52,7 @@ public static class EntityFinder
         return results;
     }
 
-    public static Entity SelectSingleTarget(Entity actor, TargetKind targetKind, int targetIndex, ReadOnlySpan<char> targetName, List<Entity> entities)
+    public static Entity? SelectSingleTarget(Entity actor, TargetKind targetKind, int targetIndex, ReadOnlySpan<char> targetName, List<Entity> entities)
     {
         if (targetKind == TargetKind.Self)
         {
@@ -85,10 +85,10 @@ public static class EntityFinder
                 return entity; // For 'All', just return the first match (or consider throwing an exception)
             }
         }
-        return default;
+        return null;
     }
 
-    public static Entity FindContainer(Entity actor, TargetKind targetKind, int targetIndex, ReadOnlySpan<char> targetName)
+    public static Entity? FindContainer(Entity actor, TargetKind targetKind, int targetIndex, ReadOnlySpan<char> targetName)
     {
         // Search in room first
         var room = actor.Get<Location>().Room;
@@ -104,7 +104,7 @@ public static class EntityFinder
         if (container != default)
             return container;
 
-        return default;
+        return null;
     }
 
     // Simple prefix matching, case-insensitive

@@ -8,7 +8,9 @@ using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Queries;
+using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
+using System.Reflection;
 
 namespace MysteryMud.Domain.Ability.Services;
 
@@ -50,55 +52,42 @@ public sealed class AbilityTargetResolver : IAbilityTargetResolver
         if (targeting.Requirement == AbilityTargetRequirement.None)
             return TargetResolutionResult.Success([source]);
 
-        Entity? candidate = null;
-        bool playerSuppliedTarget = !string.IsNullOrWhiteSpace(targetName);
+        var playerSuppliedTarget = targetKind == TargetKind.Self || !string.IsNullOrWhiteSpace(targetName);
 
         if (playerSuppliedTarget)
         {
             // TargetKind.Self is an explicit "self" keyword from the player
             if (targetKind == TargetKind.Self)
-            {
-                candidate = source;
-            }
-            else
+                return TargetResolutionResult.Success([source]);
+
+            // Try each context in order — first match wins
+            foreach (var ctx in targeting.Contexts)
             {
                 // TODO: don't generate a list of entities then search among the list a matching target -> apply name filter while iterating
-                var candidates = GetScopedEntities(world, source, targeting.Scope)
-                    .Where(x => PassesFilter(in x, targeting.Filter)).ToList();
-                candidate = EntityFinder.SelectSingleTarget(source, targetKind, targetIndex, targetName, candidates);
+                var candidates = GetScopedEntities(world, source, ctx.Scope)
+                    .Where(x => PassesFilter(in x, ctx.Filter)).ToList();
+                var candidate = EntityFinder.SelectSingleTarget(source, targetKind, targetIndex, targetName, candidates);
 
-                if (!candidate.HasValue)
-                    return TargetResolutionResult.Failure(
-                        TargetResolutionStatus.TargetNotFound,
-                        "You don't see that here.");
-
-                if (!PassesFilter(candidate.Value, targeting.Filter))
-                    return TargetResolutionResult.Failure(
-                        TargetResolutionStatus.InvalidTarget,
-                        "That is not a valid target for this ability.");
+                if (candidate.HasValue
+                    && PassesFilter(candidate.Value, ctx.Filter))
+                        return TargetResolutionResult.Success([candidate.Value]);
             }
+            return TargetResolutionResult.Failure(TargetResolutionStatus.TargetNotFound, "You don't see that here.");
         }
-        else
+
+        // Optional fallback — try current opponent across character contexts only
+        // No target argument supplied
+        if (targeting.Requirement == AbilityTargetRequirement.Optional)
         {
-            // No target argument supplied
-            if (targeting.Requirement == AbilityTargetRequirement.Optional)
-            {
-                // Fallback 1: current opponent
-                candidate = GetCurrentOpponent(source);
+            // Current opponent
+            var opponent = GetCurrentOpponent(source);
 
-                // Fallback 2: self, if the filter accepts characters
-                if (!candidate.HasValue && targeting.Filter.HasFlag(AbilityTargetFilter.Character))
-                    candidate = source;
-            }
-            // Requirement.Mandatory with no argument → fail
+            // Self fallback if any context accepts characters
+            if (targeting.Contexts.Any(c => c.Filter.HasFlag(AbilityTargetFilter.Character)))
+                return TargetResolutionResult.Success([source]);
         }
 
-        if (!candidate.HasValue)
-            return TargetResolutionResult.Failure(
-                TargetResolutionStatus.NoTarget,
-                "You must specify a target.");
-
-        return TargetResolutionResult.Success([candidate.Value]);
+        return TargetResolutionResult.Failure(TargetResolutionStatus.NoTarget, "You must specify a target.");
     }
 
     // ---- AoE -------------------------------------------------------------
@@ -108,15 +97,22 @@ public sealed class AbilityTargetResolver : IAbilityTargetResolver
         AbilityTargetingDefinition targeting,
         World world)
     {
-        // TODO: don't generate a list of entities then search among the list a matching target -> apply filters while iterating
-        var candidates = GetScopedEntities(world, source, targeting.Scope);
+        // Union all contexts, deduplicate in case scopes overlap
+        var seen = new HashSet<Entity>();
         var results = new List<Entity>();
 
-        foreach (var entity in candidates)
+        foreach (var ctx in targeting.Contexts)
         {
-            if (entity == source) continue;
-            if (!PassesFilter(entity, targeting.Filter)) continue;
-            results.Add(entity);
+            // TODO: don't generate a list of entities then search among the list a matching target -> apply filters while iterating
+            var candidates = GetScopedEntities(world, source, ctx.Scope);
+
+            foreach (var entity in candidates)
+            {
+                if (entity == source) continue;
+                if (!seen.Add(entity)) continue; // already included from another context
+                if (!PassesFilter(entity, ctx.Filter)) continue;
+                results.Add(entity);
+            }
         }
 
         // AoE always succeeds even with 0 targets

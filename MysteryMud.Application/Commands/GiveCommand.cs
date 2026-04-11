@@ -30,7 +30,7 @@ public class GiveCommand : ICommand
 
         // Find target character in room
         var target = EntityFinder.SelectSingleTarget(actor, ctx.Secondary, roomContents.Characters);
-        if (target == default)
+        if (target == null)
         {
             executionContext.Msg.To(actor).Send("They are not here.");
             return;
@@ -42,7 +42,7 @@ public class GiveCommand : ICommand
             ref var giveItemIntent = ref executionContext.Intent.GiveItem.Add();
             giveItemIntent.Entity = actor;
             giveItemIntent.Item = item;
-            giveItemIntent.Target = target;
+            giveItemIntent.Target = target.Value;
         }
     }
 }

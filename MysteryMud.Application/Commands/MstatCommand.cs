@@ -32,28 +32,28 @@ public class MstatCommand : ICommand
         var people = actor.Get<Location>().Room.Get<RoomContents>().Characters;
 
         var target = EntityFinder.SelectSingleTarget(actor, ctx.Primary, people);
-        if (target == default)
+        if (target == null)
         {
             executionContext.Msg.To(actor).Send("No such target.");
             return;
         }
 
         // TODO: ref ?
-        var (name, location, baseStats, effectiveStats, inventory, equipment, characterEffects) = target.Get<Name, Location, BaseStats, EffectiveStats, Inventory, Equipment, CharacterEffects>();
+        var (name, location, baseStats, effectiveStats, inventory, equipment, characterEffects) = target.Value.Get<Name, Location, BaseStats, EffectiveStats, Inventory, Equipment, CharacterEffects>();
         executionContext.Msg.To(actor).Send($"Name: {name.Value}");
-        ref var description = ref target.TryGetRef<Description>(out var hasDescription);
+        ref var description = ref target.Value.TryGetRef<Description>(out var hasDescription);
         if (hasDescription)
             executionContext.Msg.To(actor).Send($"Description: {description.Value}");
         executionContext.Msg.To(actor).Send($"Location: {location.Room.DisplayName}");
-        DisplayHealth(executionContext, actor, target);
-        DisplayResource<Mana, ManaRegen, UsesMana>(executionContext, actor, target, ResourceKind.Mana, x => (x.Current, x.Max), x => x.AmountPerTick);
-        DisplayResource<Energy, EnergyRegen, UsesEnergy>(executionContext, actor, target, ResourceKind.Energy, x => (x.Current, x.Max), x => x.AmountPerTick);
-        DisplayResource<Rage, RageDecay, UsesRage>(executionContext, actor, target, ResourceKind.Rage, x => (x.Current, x.Max), x => x.AmountPerTick);
+        DisplayHealth(executionContext, actor, target.Value);
+        DisplayResource<Mana, ManaRegen, UsesMana>(executionContext, actor, target.Value, ResourceKind.Mana, x => (x.Current, x.Max), x => x.AmountPerTick);
+        DisplayResource<Energy, EnergyRegen, UsesEnergy>(executionContext, actor, target.Value, ResourceKind.Energy, x => (x.Current, x.Max), x => x.AmountPerTick);
+        DisplayResource<Rage, RageDecay, UsesRage>(executionContext, actor, target.Value, ResourceKind.Rage, x => (x.Current, x.Max), x => x.AmountPerTick);
         foreach (var stat in Enum.GetValues<StatKind>())
         {
             executionContext.Msg.To(actor).Send($"{stat}: {effectiveStats.Values[stat]}/{baseStats.Values[stat]}");
         }
-        ref var combatState = ref target.TryGetRef<CombatState>(out var inCombat);
+        ref var combatState = ref target.Value.TryGetRef<CombatState>(out var inCombat);
         if (inCombat)
             executionContext.Msg.To(actor).Send($"Fighting: {combatState.Target.DisplayName} Delay: {combatState.RoundDelay}");
         executionContext.Msg.To(actor).Send($"Inventory:");

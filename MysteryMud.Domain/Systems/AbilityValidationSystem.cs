@@ -109,7 +109,7 @@ public class AbilityValidationSystem
             ResourceHelpers.PayCosts(source, abilityRuntime);
 
             // check if ability directly fails (skill learned % for example)
-            if (abilityRuntime.Executor is { Hook: AbilityExecutorHook.Execution })
+            if (abilityRuntime.Executor is { Hook: AbilityExecutorHook.Validation })
             {
                 if (_abilityExecutionResolverRegistry.TryGetResolver(abilityRuntime.Executor.ExecutorId, out var registedResolver) && registedResolver is not null)
                 {
@@ -191,7 +191,7 @@ public class AbilityValidationSystem
 
             foreach (var rule in ability.TargetValidationRules)
             {
-                var result = rule.Validate(source);
+                var result = rule.Validate(target);
                 if (result.Success) continue;
 
                 switch (result.FailBehaviour)

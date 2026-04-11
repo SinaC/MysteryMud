@@ -56,7 +56,7 @@ public class TestCommand : IExplicitCommand
         //executionContext.Msg.To(actor).Send("RGB: %#FFA500orange%xnocolor");
         //executionContext.Msg.To(actor).Send("GRADIENT: %#FFA500>#00FFA5orange-2-cyan%xnocolor");
 
-        if (target == default)
+        if (target == null)
         {
             executionContext.Msg.To(actor).Send("You don't see that here.");
             return;
@@ -72,7 +72,7 @@ public class TestCommand : IExplicitCommand
             effectIntent.Kind = ActionKind.Effect;
             effectIntent.Effect.EffectId = effectId;
             effectIntent.Effect.Source = actor;
-            effectIntent.Effect.Target = target;
+            effectIntent.Effect.Target = target.Value;
             effectIntent.Cancelled = false;
             return;
         }

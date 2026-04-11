@@ -61,25 +61,25 @@ public class LookCommand : ICommand
 
         // 1️) Try characters in room
         var target = EntityFinder.SelectSingleTarget(actor, ctx.Primary, roomCharacters);
-        if (target != default)
+        if (target != null)
         {
             // intent to look at character
             ref var lookCharacterIntent = ref executionContext.Intent.Look.Add();
             lookCharacterIntent.Viewer = actor;
             lookCharacterIntent.TargetKind = LookTargetKind.Character;
-            lookCharacterIntent.Target = target;
+            lookCharacterIntent.Target = target.Value;
             return;
         }
 
         // 2️) Try items in room
         var item = EntityFinder.SelectSingleTarget(actor, ctx.Primary, roomItems);
-        if (item != default)
+        if (item != null)
         {
             // intent to look at item
             ref var lookItemIntent = ref executionContext.Intent.Look.Add();
             lookItemIntent.Viewer = actor;
             lookItemIntent.TargetKind = LookTargetKind.Item;
-            lookItemIntent.Target = item;
+            lookItemIntent.Target = item.Value;
             return;
         }
         
@@ -88,13 +88,13 @@ public class LookCommand : ICommand
         if (hasInventory)
         {
             var inventoryItem = EntityFinder.SelectSingleTarget(actor, ctx.Primary, inventory.Items);
-            if (inventoryItem != default)
+            if (inventoryItem != null)
             {
                 // intent to look at item
                 ref var lookItemIntent = ref executionContext.Intent.Look.Add();
                 lookItemIntent.Viewer = actor;
                 lookItemIntent.TargetKind = LookTargetKind.Item;
-                lookItemIntent.Target = item;
+                lookItemIntent.Target = item.Value;
                 return;
             }
         }

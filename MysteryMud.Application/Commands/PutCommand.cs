@@ -25,7 +25,7 @@ public class PutCommand : ICommand
         ref var inventory = ref actor.Get<Inventory>();
 
         var container = EntityFinder.FindContainer(actor, ctx.Secondary);
-        if (container == default)
+        if (container == null)
         {
             executionContext.Msg.To(actor).Send("You don't see that here.");
             return;
@@ -37,7 +37,7 @@ public class PutCommand : ICommand
             ref var putItemIntent = ref executionContext.Intent.PutItem.Add();
             putItemIntent.Entity = actor;
             putItemIntent.Item = item;
-            putItemIntent.Container = container;
+            putItemIntent.Container = container.Value;
         }
     }
 }

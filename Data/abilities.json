@@ -6,8 +6,9 @@
     "Targeting": {
       "Requirement": "Optional",
       "Selection": "Single",
-      "Scope": "Room",
-      "Filter": "Character"
+      "Contexts": [
+        { "Scope": "Room",  "Filter": "Character" }
+      ]
     },
     "Effects": ["Fireball"]
   },
@@ -19,8 +20,9 @@
     "Targeting": {
       "Requirement": "Optional",
       "Selection": "Single",
-      "Scope": "Room",
-      "Filter": "Character"
+      "Contexts": [
+        { "Scope": "Room", "Filter": "Character" }
+      ]
     },
     "Effects": ["MagicMissile"]
   },
@@ -31,8 +33,10 @@
     "Targeting": {
       "Requirement": "Mandatory",
       "Selection": "Single",
-      "Scope": "Room",
-      "Filter": "Any"
+      "Contexts": [
+        { "Scope": "Room",      "Filter": "Character" },
+        { "Scope": "Inventory", "Filter": "Item"      }
+      ]
     },
     "Effects": ["Poison"]
   },
@@ -43,8 +47,10 @@
     "Targeting": {
       "Requirement": "Mandatory",
       "Selection": "Single",
-      "Scope": "Room",
-      "Filter": "Any"
+      "Contexts": [
+        { "Scope": "Room",      "Filter": "Character" },
+        { "Scope": "Inventory", "Filter": "Item"      }
+      ]
     },
     "Effects": ["Bless"]
   },
@@ -56,8 +62,9 @@
     "Targeting": {
       "Requirement": "Mandatory",
       "Selection": "Single",
-      "Scope": "Room",
-      "Filter": "Character"
+      "Contexts": [
+        { "Scope": "Room",      "Filter": "Character" }
+      ]
     },
     "Effects": ["CureLight"]
   },
@@ -68,8 +75,9 @@
     "Targeting": {
       "Requirement": "Mandatory",
       "Selection": "Single",
-      "Scope": "Room",
-      "Filter": "Character"
+      "Contexts": [
+        { "Scope": "Room", "Filter": "Character" }
+      ]
     },
     "Effects": ["Armor"]
   },
@@ -88,8 +96,9 @@
     "Targeting": {
       "Requirement": "Optional",
       "Selection": "Single",
-      "Scope": "Room",
-      "Filter": "Character"
+      "Contexts": [
+        { "Scope": "Room", "Filter": "Character" }
+      ]
     },
     "Effects": ["Kick"]
   },
@@ -115,8 +124,9 @@
     "Targeting": {
       "Requirement": "None",
       "Selection": "Single",
-      "Scope": "Self",
-      "Filter": "Character"
+      "Contexts": [
+        { "Scope": "Self", "Filter": "Character" }
+      ]
     },
     "ValidationRules": {
       "Source": [
@@ -153,8 +163,9 @@
     "Targeting": {
       "Requirement": "Optional",
       "Selection": "Single",
-      "Scope": "Room",
-      "Filter": "Character"
+      "Contexts": [
+        { "Scope": "Room", "Filter": "Character" }
+      ]
     },
     "Messages": {
       "OnSuccess": "You slam into your opponent, knocking them down!",
@@ -182,8 +193,9 @@
     "Targeting": {
       "Requirement": "Mandatory",
       "Selection": "Single",
-      "Scope": "Room",
-      "Filter": "Character"
+      "Contexts": [
+        { "Scope": "Room", "Filter": "Character" }
+      ]
     },
     "ValidationRules": {
       "Source": [
@@ -213,8 +225,9 @@
     "Targeting": {
       "Requirement": "None",
       "Selection": "AoE",
-      "Scope": "Room",
-      "Filter": "Character"
+      "Contexts": [
+        { "Scope": "Room", "Filter": "Character" }
+      ]
     },
     "ValidationRules": {
       "Target": [
@@ -247,8 +260,9 @@
     "Targeting": {
       "Requirement": "Optional",
       "Selection": "Single",
-      "Scope": "Room",
-      "Filter": "Character"
+      "Contexts": [
+        { "Scope": "Room", "Filter": "Character" }
+      ]
     },
     "Messages": {
       "OnSuccess": "You trip your opponent and they fall to the ground!",

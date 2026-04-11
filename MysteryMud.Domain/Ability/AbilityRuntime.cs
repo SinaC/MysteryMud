@@ -1,5 +1,6 @@
 ﻿using MysteryMud.Domain.Ability.Definitions;
 using MysteryMud.Domain.Ability.Rules;
+using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Ability;

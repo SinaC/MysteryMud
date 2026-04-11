@@ -100,7 +100,7 @@ public class AbilityCastingSystem
 
             foreach (var rule in ability.TargetValidationRules)
             {
-                var result = rule.Validate(source);
+                var result = rule.Validate(target);
                 if (result.Success) continue;
 
                 if (result.FailBehaviour == AbilityValidationFailBehaviour.SkipWithMessage
