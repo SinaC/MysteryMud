@@ -12,6 +12,20 @@
     "Effects": ["Fireball"]
   },
   {
+    "Name": "Meteor swam",
+    "Kind": "Spell",
+	"CastTime": 30,
+    "Costs": [{ "Kind": "Mana", "Amount": 15 }],
+    "Targeting": {
+      "Requirement": "None",
+      "Selection": "AoE",
+      "Scope": "Room",
+      "Filter": "NPC",
+      "ResolveAt": "CastCompletion"
+    },
+    "Effects": ["MeteorSwarm"]
+  },
+  {
     "Name": "Magic Missile",
     "Kind": "Spell",
     "CastTime": 20,

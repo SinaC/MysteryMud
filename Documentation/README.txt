@@ -1,5 +1,4 @@
 Project structure
-
 Layer             Role
 GameData          Pure data: positions, enums, spell/effect definitions, constants. No behavior. Immutable.
 Core              Fundamental abstractions for your system: interfaces, command definitions, priorities. Agnostic to runtime ECS.
@@ -10,7 +9,6 @@ ConsoleApp        Entry point, console I/O, game loop, game server.
 each layer depends on the previous one
 
 Tick pipeline
-
 1. Input -> Commands -> Intents     // Player commands -> may generate manual LookIntent (Mode=Snapshot) and other intents
 2. LookSystem(Snapshot)             // Process all LookIntents with Mode=Snapshot -> reads current world state before any effects -> produces messages
 3. AISystem                         // NPC behavior -> generates intents
@@ -24,23 +22,22 @@ Tick pipeline
 11. TimedEffectSystem               // Resolve triggered scheduled event and generates scheduleIntent, effectExpiredEvent (to inform), effectTickedEvent (to inform)
 12. RegenSystem                     // Regen health/mana/energy decay rage (4 separate systems)
 13. ThreatDecaySystem               // Decay threat
-14. AbilityTargetResolutionSystem   // Process UseAbilityIntents -> search targets and generate ResolvedAbilityIntent
-15. AbilityValidationSystem         // Process ResolvedAbilityIntents -> set casting (if delayed casting) or generate ExecuteAbilityIntent (instant cast)
-16. AbilityCastingSystem            // Process delayed casting, once cast is effective generate ExecuteAbilityIntent + abilityUsedEvent
-17. AbilityExecutionSystem          // Process ExecuteAbilityIntents -> generate ActionIntent(kind:effect) for each effects in ability + abilityExecutedEvent
-18. NPCTargetSystem                 // Select highest threat targets
-19. GroupCombatSystem.Resolve       // Process assist/protect/own target attack intents
-20. AutoAttackSystem                // Generate ActionIntent(kind:attack) for every entity in combat (CombatState component set)
-21. ActionOrchestrator              // Process ActionIntents. kind:attack -> resolve hit, perform damage, check weapon proc (effect), check reaction (counter attack)  kind: effect -> resolve effect
-22. DeathSystem                     // Flag dead entities
-23. RespawnSystem                   // Auto-resurrect players
-24. LootSystem                      // Process loot & auto-loot
-25. LookSystem(PostUpdate)          // Process LookIntents with Mode=PostUpdate -> reflects final world state after all updates
-26. ScheduleSystem                  // Process scheduleIntents (which can be generated from IA, abilities, TimedEffectSytem, AttackOrchestrator)
-27. CleanupSystem                   // Remove destroyed items / dead NPCs / disconnected players
-28. Output -> MessageBus            // Send all messages to players
+14. AbilityValidationSystem         // Process UseAbilityIntents -> set casting (if delayed casting) or generate ExecuteAbilityIntent (instant cast)
+15. AbilityCastingSystem            // Process delayed casting, once cast is effective generate ExecuteAbilityIntent + abilityUsedEvent
+16. AbilityExecutionSystem          // Process ExecuteAbilityIntents -> generate ActionIntent(kind:effect) for each effects in ability + abilityExecutedEvent
+17. NPCTargetSystem                 // Select highest threat targets
+18. GroupCombatSystem.Resolve       // Process assist/protect/own target attack intents
+19. AutoAttackSystem                // Generate ActionIntent(kind:attack) for every entity in combat (CombatState component set)
+20. ActionOrchestrator              // Process ActionIntents. kind:attack -> resolve hit, perform damage, check weapon proc (effect), check reaction (counter attack)  kind: effect -> resolve effect
+21. DeathSystem                     // Flag dead entities
+22. RespawnSystem                   // Auto-resurrect players
+23. LootSystem                      // Process loot & auto-loot
+24. LookSystem(PostUpdate)          // Process LookIntents with Mode=PostUpdate -> reflects final world state after all updates
+25. ScheduleSystem                  // Process scheduleIntents (which can be generated from IA, abilities, TimedEffectSytem, AttackOrchestrator)
+26. CleanupSystem                   // Remove destroyed items / dead NPCs / disconnected players
+27. Output -> MessageBus            // Send all messages to players
 
-ActionOrchestrator (step 15) details
+ActionOrchestrator (step 20) details
    loop on attack/effect intents
         Attack intent
             ResolveHit 
@@ -152,18 +149,35 @@ Tick Start
 │
 └─> Tick End
 
+Ability targeting (*) for default value
+    Requirement: Mandatory(*), Optional, None
+    Selection: Single(*), AoE
+    if single context
+        Scope: Room(*), World, Inventory, Self
+        Filter: None, Player, NPC, Item, (*)Character=Player+NPC, Any=Player+NPC+Item
+    if multiple context
+        Contexts: ordered list of
+            Scope: Room, World, Inventory, Self
+            Filter: None, Player, NPC, Item, (*)Character=Player+NPC, Any=Player+NPC+Item
+    ResolveAt: CastStart(*), CastCompletion
+
 Entity/Components
 
 Character
   ├Name
+  ├Level
   ├CommandBuffer: list of pending commands
   ├Location: room
+  ├Position: position
   ├BaseStats: level, experience, dictionary stat/value
   ├EffectiveStats: dictionary stat/value
   ├CharacterEffects: effect list, effects by tag, active tags
   ├Inventory: list of items
   ├Equipment: list of equipped items
-  └Health: current and max health
+  ├BaseHealth: base max health
+  ├Health: current and max health
+  ├DirtyHealth: max health needs to be recalculated
+  └HealthRegen: health regen rate
   optional
     HasCommandTag: a command (or more) is waiting in CommandBuffer
     DirtyStats: needs effective stats to be recalculated
@@ -171,7 +185,9 @@ Character
     CombatState: in combat
     DeadTag: is dead will be removed by cleanup system
     Gender: male|female|neutral
-    Mana: current and max mana
+    Form: current form (humanoid, bear, cat)
+    BaseMana, Mana, ManaRegen, UsesMana, DirtyMana: base max mana, current and max mana, mana regen rate, can use mana, max mana needs to be recalculated
+    same for energy, rage
 
 Npc(character+)
   ├NpcTag
@@ -182,7 +198,8 @@ Npc(character+)
 
 Player(character+)
   ├PlayerTag
-  ├CommandThrottle
+  ├Progression: total experience, experience by level
+  ├CommandThrottle: command throttling information to detect spam
   └Connection
   optional
     RespawnState: respawn timer and location when a player dies
@@ -205,25 +222,3 @@ Effect (not stacking if difference source)
  └ HealEffect: Heal
  optional
     ExpiredTag: expired will be removed by cleanup system
-
-Datas
-
-EffectDefinition:
-    Id: name of the effect template (e.g. "Strength Buff")
-    EffectTag: EffectTagId
-    StackingRule: None|Replace|ExtendDuration|ReplaceIfStronger
-    MaxStacks: maximum number of stacks (if stacking is allowed)
-    AffectFlags: bitflags for quick checks (e.g. is buff, is debuff, is dispellable) (TODO)
-    DurationFunc: function to calculate duration of the effect (in tick)
-    TickRate: if 0 -> pure duration effect
-    TickOnApply: if true -> apply immediately first tick
-    StatModifiers: StatModifierDefinition list
-    DotDefinition: dot definition if any
-    HotDefinition: hot definition if any
-    ApplyMessage: message to show when the effect is applied
-    WearOffMessage: message to show when the effect wears off
-DotDefinition
-    DamageFunc: function to calculate damage
-    DamageKind: kind of damage
-HotDefinition
-    HealFunc: function to calculate heal
