@@ -6,9 +6,8 @@
     "Targeting": {
       "Requirement": "Optional",
       "Selection": "Single",
-      "Contexts": [
-        { "Scope": "Room",  "Filter": "Character" }
-      ]
+      "Scope": "Room",
+      "Filter": "Character"
     },
     "Effects": ["Fireball"]
   },
@@ -20,9 +19,8 @@
     "Targeting": {
       "Requirement": "Optional",
       "Selection": "Single",
-      "Contexts": [
-        { "Scope": "Room", "Filter": "Character" }
-      ]
+      "Scope": "Room",
+      "Filter": "Character"
     },
     "Effects": ["MagicMissile"]
   },
@@ -62,9 +60,8 @@
     "Targeting": {
       "Requirement": "Mandatory",
       "Selection": "Single",
-      "Contexts": [
-        { "Scope": "Room",      "Filter": "Character" }
-      ]
+      "Scope": "Room",
+      "Filter": "Character"
     },
     "Effects": ["CureLight"]
   },
@@ -96,9 +93,8 @@
     "Targeting": {
       "Requirement": "Optional",
       "Selection": "Single",
-      "Contexts": [
-        { "Scope": "Room", "Filter": "Character" }
-      ]
+      "Scope": "Room",
+      "Filter": "Character"
     },
     "Effects": ["Kick"]
   },
@@ -124,9 +120,8 @@
     "Targeting": {
       "Requirement": "None",
       "Selection": "Single",
-      "Contexts": [
-        { "Scope": "Self", "Filter": "Character" }
-      ]
+      "Scope": "Self",
+      "Filter": "Character"
     },
     "ValidationRules": {
       "Source": [
@@ -163,9 +158,8 @@
     "Targeting": {
       "Requirement": "Optional",
       "Selection": "Single",
-      "Contexts": [
-        { "Scope": "Room", "Filter": "Character" }
-      ]
+      "Scope": "Room",
+      "Filter": "Character"
     },
     "Messages": {
       "OnSuccess": "You slam into your opponent, knocking them down!",
@@ -193,9 +187,8 @@
     "Targeting": {
       "Requirement": "Mandatory",
       "Selection": "Single",
-      "Contexts": [
-        { "Scope": "Room", "Filter": "Character" }
-      ]
+      "Scope": "Room",
+      "Filter": "Character"
     },
     "ValidationRules": {
       "Source": [
@@ -260,9 +253,8 @@
     "Targeting": {
       "Requirement": "Optional",
       "Selection": "Single",
-      "Contexts": [
-        { "Scope": "Room", "Filter": "Character" }
-      ]
+      "Scope": "Room",
+      "Filter": "Character"
     },
     "Messages": {
       "OnSuccess": "You trip your opponent and they fall to the ground!",

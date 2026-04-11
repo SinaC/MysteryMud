@@ -6,5 +6,9 @@ public record AbilityTargetingData
     string Requirement, // Mandatory(*) / Optional / None
     string Selection,   // Single(*) / AoE
     List<AbilityTargetingContextData> Contexts, // ordered list of target context
-    string ResolveAt    // CastStart(*) / CastCompletion
+    string ResolveAt,    // CastStart(*) / CastCompletion
+
+    // for simple context: simply specify scope and filter
+    string Scope,
+    string Filter
 );
