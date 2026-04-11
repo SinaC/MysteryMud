@@ -49,12 +49,8 @@ public class JsonEffectLoader
             DurationFunc = data.DurationFormula == null
                 ? null
                 : _formulaCompiler.Compile(data.DurationFormula),
-            Tag = data.Tag == null
-                ? EffectTagId.None
-                : Enum.Parse<EffectTagId>(data.Tag, ignoreCase: true),
-            Stacking = data.Stacking == null
-                ? StackingRule.None
-                : Enum.Parse<StackingRule>(data.Stacking, ignoreCase: true),
+            Tag = EnumParser.Parse(data.Tag, EffectTagId.None),
+            Stacking = EnumParser.Parse(data.Stacking, StackingRule.None),
             MaxStacks = data.MaxStacks,
             TickOnApply = data.TickOnApply,
             TickRate = data.TickRate,

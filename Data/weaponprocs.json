@@ -1,0 +1,26 @@
+[
+  {
+    "Name": "Flaming",
+	"Chance": 50,
+    "Effects": [
+      {
+        "Name": "FlamingWeapon",
+		"Target": "Opponent"
+      }
+    ]
+  },
+  {
+    "Name": "Vampiric",
+	"Chance": 50,
+    "Effects": [
+      {
+        "Name": "VampiricWeaponDamage",
+		"Target": "Opponent"
+      },
+	  {
+        "Name": "VampiricWeaponHeal",
+		"Target": "Self"
+      }
+    ]
+  }
+]

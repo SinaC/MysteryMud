@@ -19,14 +19,17 @@ public class AbilityRegistry
         _abilityExecutionResolverRegistry = abilityExecutionResolverRegistry;
     }
 
-    public void RegisterAbilities(IEnumerable<AbilityDefinition> abilities)
+    public void Register(AbilityDefinition ability)
+    {
+        var abilityRuntime = AbilityRuntimeFactory.Create(_effectRegistry, _abilityExecutionResolverRegistry, ability);
+        _abilitiesById.Add(ability.Id, abilityRuntime);
+        _abilityWordTrie.Insert(ability.Name.ToLowerInvariant(), abilityRuntime);
+    }
+
+    public void Register(IEnumerable<AbilityDefinition> abilities)
     {
         foreach (var ability in abilities)
-        {
-            var abilityRuntime = AbilityRuntimeFactory.Create(_effectRegistry, _abilityExecutionResolverRegistry, ability);
-            _abilitiesById.Add(ability.Id, abilityRuntime);
-            _abilityWordTrie.Insert(ability.Name.ToLowerInvariant(), abilityRuntime);
-        }
+            Register(ability);
     }
 
     public bool TryGetValue(int abilityId, out AbilityRuntime? abilityRuntime)

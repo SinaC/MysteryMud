@@ -1,6 +1,6 @@
 ﻿namespace MysteryMud.Infrastructure.Persistence.Dto;
 
-public record CommandDefinitionData(
+internal record CommandDefinitionData(
     string Name,
     string[] Aliases,
     bool CannotBeForced,

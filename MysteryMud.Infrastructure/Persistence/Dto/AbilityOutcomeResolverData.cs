@@ -1,6 +1,6 @@
 ﻿namespace MysteryMud.Infrastructure.Persistence.Dto;
 
-public record AbilityOutcomeResolverData
+internal record AbilityOutcomeResolverData
 (
     string Name,
     string Hook // Execution/Validation

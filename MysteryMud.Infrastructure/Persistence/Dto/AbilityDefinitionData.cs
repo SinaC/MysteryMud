@@ -2,7 +2,7 @@
 
 namespace MysteryMud.Infrastructure.Persistence.Dto;
 
-public record AbilityDefinitionData
+internal record AbilityDefinitionData
 (
     string Name,
     string Kind, // spell/skill/passive/weapon

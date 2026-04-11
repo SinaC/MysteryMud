@@ -1,6 +1,6 @@
 ﻿namespace MysteryMud.Infrastructure.Persistence.Dto;
 
-public record AbilityTargetingData
+internal record AbilityTargetingData
 (
     // (*) default
     string Requirement, // Mandatory(*) / Optional / None

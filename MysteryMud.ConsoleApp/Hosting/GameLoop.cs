@@ -12,6 +12,7 @@ using MysteryMud.Core.Services;
 using MysteryMud.Domain.Ability;
 using MysteryMud.Domain.Ability.Services;
 using MysteryMud.Domain.Action;
+using MysteryMud.Domain.Action.Attack;
 using MysteryMud.Domain.Action.Attack.Factories;
 using MysteryMud.Domain.Action.Attack.Resolvers;
 using MysteryMud.Domain.Action.Damage;
@@ -46,6 +47,7 @@ internal class GameLoop
     private readonly EffectRegistry _effectRegistry;
     private readonly AbilityRegistry _abilityRegistry;
     private readonly AbilityOutcomeResolverRegistry _abilityExecutionResolverRegistry;
+    private readonly WeaponProcRegistry _weaponProcRegistry;
     private readonly World _world;
 
     /*
@@ -146,7 +148,7 @@ internal class GameLoop
     private readonly LookSystem _lookSystem;
     private readonly CleanupSystem _cleanupSystem;
 
-    public GameLoop(ILogger logger, IOutputService putputService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, IGameMessageService gameMessageService, IIntentContainer intentContainer, EffectRegistry effectRegistry, AbilityRegistry abilityRegistry, AbilityOutcomeResolverRegistry abilityExecutionResolverRegistry, World world)
+    public GameLoop(ILogger logger, IOutputService putputService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, IGameMessageService gameMessageService, IIntentContainer intentContainer, EffectRegistry effectRegistry, AbilityRegistry abilityRegistry, AbilityOutcomeResolverRegistry abilityExecutionResolverRegistry, WeaponProcRegistry weaponProcRegistry, World world)
     {
         _logger = logger;
         _outputService = putputService;
@@ -158,6 +160,7 @@ internal class GameLoop
         _effectRegistry = effectRegistry;
         _abilityRegistry = abilityRegistry;
         _abilityExecutionResolverRegistry = abilityExecutionResolverRegistry;
+        _weaponProcRegistry = weaponProcRegistry;
         _world = world;
 
         _lookService = new LookService(_gameMessageService);
@@ -169,7 +172,7 @@ internal class GameLoop
         _healResolver = new HealResolver(_aggroResolver, _gameMessageService, _healedEventBuffer);
         _hitResolver = new HitResolver(_gameMessageService);
         _hitDamageFactory = new HitDamageFactory();
-        _weaponProcResolver = new WeaponProcResolver(_logger, _gameMessageService, _intentContainer, _effectRegistry);
+        _weaponProcResolver = new WeaponProcResolver(_logger, _gameMessageService, _intentContainer, _weaponProcRegistry, _effectRegistry);
         _reactionResolver = new ReactionResolver(_gameMessageService);
 
 

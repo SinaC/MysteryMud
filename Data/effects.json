@@ -136,16 +136,20 @@
     ]
   },
   {
-    "Name": "VampiricWeapon",
+    "Name": "VampiricWeaponDamage",
     "Actions": [
       {
         "Type": "InstantDamage",
         "DamageFormula": "range(1, 1 + weapon.Level / 5)",
         "DamageKind": "Negative"
-      },
-	  {
+      }
+    ]
+  },{
+    "Name": "VampiricWeaponHeal",
+    "Actions": [
+      {
         "Type": "InstantHeal",
-        "HealFormula": "5 + caster.Level"
+        "HealFormula": "range(1, 1 + weapon.Level / 5)"
       }
     ]
   },

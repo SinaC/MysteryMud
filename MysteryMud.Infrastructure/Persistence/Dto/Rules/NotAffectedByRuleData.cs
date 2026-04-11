@@ -1,6 +1,6 @@
 ﻿namespace MysteryMud.Infrastructure.Persistence.Dto.Rules;
 
-public class NotAffectedByRuleData : AbilityValidationRuleData
+internal class NotAffectedByRuleData : AbilityValidationRuleData
 {
     public required string Tag { get; init; }
 }
