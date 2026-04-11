@@ -3,7 +3,7 @@
 public struct AbilityTargeting
 {
     public AbilityTargetKind Kind;              // Character / Item / Any
-    public AbilityTargetScope Scope;            // Single / Room / Chain
+    public AbilityTargetScope Scope;            // Single / Room
     public AbilityTargetKindMask Allowed;       // Fine filtering
 
     public AbilityDefaultTargetRule Default;    // Self / Current opponent / None

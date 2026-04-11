@@ -3,6 +3,5 @@
 public enum AbilityTargetScope
 {
     Single,
-    Room,
-    Chain
+    Room
 }

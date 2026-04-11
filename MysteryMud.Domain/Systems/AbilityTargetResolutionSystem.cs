@@ -61,32 +61,19 @@ public class AbilityTargetResolutionSystem
             //
             List<Entity> targets;
 
-            // TODO:
-            // fix bash/kick
-            //  use bash/kick without any target and not in combat -> it should fail
-            // fix berserk <target>
-            //  use berserk on a target should fail
-
             if (targeting.Scope == AbilityTargetScope.Room)
             {
                 targets = FindAllInRoom(source, targeting.Allowed);
             }
             else
             {
-                var primary = ResolvePrimary(source, targetKind, targetIndex, targetName, targeting);
-
-                targets = targeting.Scope switch
-                {
-                    AbilityTargetScope.Single => primary,
-                    AbilityTargetScope.Chain => primary.Count == 0
-                        ? []
-                        : ResolveChain(source, primary[0], targeting),
-                    _ => primary
-                };
+                targets = ResolvePrimary(source, targetKind, targetIndex, targetName, targeting);
             }
 
             // apply targets selector (none, random, lowest health, ...)
             targets = ApplySelection(targets, targeting);
+
+            // TODO: apply filters
 
             // keep targets satisfying each target validation rule
             targets = ApplyValidationRules(source, targets, abilityRuntime);
@@ -233,58 +220,6 @@ public class AbilityTargetResolutionSystem
                 validTargets.Add(target);
         }
         return validTargets;
-    }
-
-    private List<Entity> ResolveChain(Entity caster, Entity firstTarget, AbilityTargeting targeting)
-    {
-        // TODO
-        return [firstTarget];
-        //var results = new List<Entity>(targeting.MaxTargets);
-        //var visited = new HashSet<Entity>();
-
-        //results.Add(firstTarget);
-        //visited.Add(firstTarget);
-
-        //var current = firstTarget;
-
-        //while (results.Count < targeting.MaxTargets)
-        //{
-        //    var candidates = EntityFinder.FindInRange(
-        //        caster,
-        //        current,
-        //        range: 3, // configurable later
-        //        targeting.Allowed
-        //    );
-
-        //    Entity next = Entity.Null;
-        //    float bestScore = float.MaxValue;
-
-        //    foreach (var c in candidates)
-        //    {
-        //        if (visited.Contains(c))
-        //            continue;
-
-        //        if (!ApplyFilters(caster, c, targeting.Filters))
-        //            continue;
-
-        //        var score = Distance(current, c);
-
-        //        if (score < bestScore)
-        //        {
-        //            bestScore = score;
-        //            next = c;
-        //        }
-        //    }
-
-        //    if (next == Entity.Null)
-        //        break;
-
-        //    results.Add(next);
-        //    visited.Add(next);
-        //    current = next;
-        //}
-
-        //return results;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
