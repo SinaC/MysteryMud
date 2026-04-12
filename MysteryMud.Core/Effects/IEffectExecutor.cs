@@ -2,6 +2,6 @@
 
 public interface IEffectExecutor
 {
-    void ResolveDamage(GameState state, DamageAction damageAction);
-    void ResolveHeal(GameState state, HealAction healAction);
+    DamageResult ResolveDamage(GameState state, DamageAction damageAction);
+    HealResult ResolveHeal(GameState state, HealAction healAction);
 }

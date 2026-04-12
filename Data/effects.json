@@ -149,7 +149,7 @@
     "Actions": [
       {
         "Type": "InstantHeal",
-        "HealFormula": "range(1, 1 + weapon.Level / 5)"
+        "HealFormula": "min(hitDamage, range(1, 1 + weapon.Level / 5))"
       }
     ]
   },

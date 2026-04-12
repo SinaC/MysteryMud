@@ -30,17 +30,21 @@ public class DamageResolver
         _killRewardEvent = killRewardEvent;
     }
 
-    public void Resolve(GameState state, DamageAction dmg) // to be used during combat process
+    public DamageResult Resolve(GameState state, DamageAction dmg) // to be used during combat process
     {
         var source = dmg.Source;
         var target = dmg.Target;
+        var amount = dmg.Amount;
+        var kind = dmg.DamageKind;
         if (!target.IsAlive() || target.Has<Dead>()) // already dead
-            return;
+            return new DamageResult { IsSuccess = false };
 
-        ref var health = ref target.Get<Health>();
+        ref var health = ref target.TryGetRef<Health>(out var hasHealth);
+        if (!hasHealth)
+            return new DamageResult { IsSuccess = false };
 
         // apply damage type modifiers, resistances, vulnerabilities, etc.
-        var modifiedDamage = DamageCalculator.ModifyDamage(target, dmg.Amount, dmg.DamageKind, source);
+        var modifiedDamage = DamageCalculator.ModifyDamage(target, amount, kind, source);
         // TODO: capping
         var finalDamage = modifiedDamage;
         // damage to apply, apply rounding
@@ -60,11 +64,13 @@ public class DamageResolver
         health.Current -= damageToApply;
 
         // generate aggro
-        _aggroResolver.ResolveFromDamage(state, target, source, damageToApply, dmg.DamageKind);
+        _aggroResolver.ResolveFromDamage(state, target, source, damageToApply, kind);
 
         // check for death
+        var killed = false;
         if (health.Current <= 0)
         {
+            killed = true;
             _msg.To(target).Send("%RYou have been KILLED%x");
             _msg.ToRoom(target).Act("{0} is dead").With(target);
 
@@ -90,8 +96,16 @@ public class DamageResolver
         damagedEvt.Target = target;
         damagedEvt.Source = source;
         damagedEvt.Amount = damageToApply;
-        damagedEvt.DamageKind = dmg.DamageKind;
+        damagedEvt.DamageKind = kind;
         damagedEvt.SourceKind = dmg.SourceKind;
+
+        return new DamageResult
+        {
+            IsSuccess = true,
+            Amount = dmg.Amount,
+            Killed = killed,
+            EffectiveAmount = damageToApply
+        };
     }
 
     private static void AddDeadTags(Entity victim)

@@ -86,6 +86,7 @@ var chest = world.Create(
 var dagger = ItemFactory.CreateItemInRoom(world, "dagger", "a vampiric dagger", market);
 dagger.Add(new Equipable { Slot = EquipmentSlotKind.MainHand });
 dagger.Add(new Weapon { Kind = WeaponKind.Dagger, DiceCount = 5, DiceValue = 8, ProcIds = ["Vampiric".ComputeUniqueId()] }); // add vampiric
+dagger.Get<Level>().Value = 20;
 market.Get<RoomContents>().Items.Add(chest);
 var gem = ItemFactory.CreateItemInContainer(world, "gem", "a %#FF0000>#FF00FFsparkling gem%x", chest);
 var trash = ItemFactory.CreateItemInRoom(world, "trash", "some trash", market);

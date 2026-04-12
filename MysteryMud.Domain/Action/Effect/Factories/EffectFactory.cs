@@ -88,20 +88,23 @@ public class EffectFactory
     //    Stacked, // flag as Dirty
     //    Replaced, // create new effect
     //}
-    public void ResolveEffect(GameState state, EffectRuntime effectRuntime, Entity source, Entity target)
+    public void ResolveEffect(GameState state, EffectRuntime effectRuntime, ref EffectData effectData)
     {
         // if duration, handle stacking rules + add expire intent and tick intent (if tick rate > 0)
         if (effectRuntime.DurationFunc != null)
         {
-            ResolveDurationEffect(state, effectRuntime, source, target);
+            ResolveDurationEffect(state, effectRuntime, ref effectData);
             return;
         }
 
-        ResolveInstantEffect(state, effectRuntime, source, target);
+        ResolveInstantEffect(state, effectRuntime, ref effectData);
     }
 
-    private void ResolveDurationEffect(GameState state, EffectRuntime effectRuntime, Entity source, Entity target)
+    private void ResolveDurationEffect(GameState state, EffectRuntime effectRuntime, ref EffectData effectData)
     {
+        var source = effectData.Source;
+        var target = effectData.Target;
+
         ref var targetEffects = ref target.Get<CharacterEffects>();
         var stackingResult = HandleStacking(state, effectRuntime, source, target, ref targetEffects, out var existingEffect, out var existingStackCount);
 
@@ -157,18 +160,11 @@ public class EffectFactory
             Target = target,
 
             IncomingDamage = 0,
-            LastDamage = 0,
+            EffectiveDamageAmount = 0,
 
             StackCount = 1,
 
             State = state,
-        };
-
-        var effectExecutionContext = new EffectExecutionContext
-        {
-            Context = ctx,
-            Executor = _effectExecutor,
-            Msg = _msg
         };
 
         var duration = Math.Max(1, effectRuntime.DurationFunc!.Invoke(ctx));
@@ -205,6 +201,13 @@ public class EffectFactory
         // trigger onApply actions
         if (effectRuntime.OnApply.Length > 0)
         {
+            var effectExecutionContext = new EffectExecutionContext
+            {
+                Context = ctx,
+                Executor = _effectExecutor,
+                Msg = _msg
+            };
+
             foreach (var onApply in effectRuntime.OnApply)
             {
                 if (CharacterHelpers.IsAlive(source, target))
@@ -213,11 +216,15 @@ public class EffectFactory
         }
     }
 
-    private void ResolveInstantEffect(GameState state, EffectRuntime effectRuntime, Entity source, Entity target)
+    private void ResolveInstantEffect(GameState state, EffectRuntime effectRuntime, ref EffectData effectData)
     {
         // trigger onApply actions
         if (effectRuntime.OnApply.Length > 0)
         {
+            var source = effectData.Source;
+            var target = effectData.Target;
+            var effectiveDamageAmount = effectData.EffectiveDamageAmount;
+
             var ctx = new EffectContext
             {
                 Effect = null, // instant effect
@@ -225,7 +232,7 @@ public class EffectFactory
                 Target = target,
 
                 IncomingDamage = 0,
-                LastDamage = 0,
+                EffectiveDamageAmount = effectiveDamageAmount,
 
                 StackCount = 1,
 
@@ -287,7 +294,7 @@ public class EffectFactory
                         Target = target,
 
                         IncomingDamage = 0,
-                        LastDamage = 0,
+                        EffectiveDamageAmount = 0,
 
                         StackCount = instance.StackCount,
 
@@ -326,7 +333,7 @@ public class EffectFactory
                         Target = target,
 
                         IncomingDamage = 0,
-                        LastDamage = 0,
+                        EffectiveDamageAmount = 0,
 
                         StackCount = instance.StackCount,
 

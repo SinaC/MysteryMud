@@ -10,10 +10,9 @@ public ref struct EffectContext
     public Entity Target;
 
     public int IncomingDamage;
-    public int LastDamage;
+    public int EffectiveDamageAmount;
 
     public int StackCount;
 
     public GameState State;
 }
-
