@@ -8,8 +8,7 @@ public class DefaultOutcomeResolver : IAbilityOutcomeResolver
     {
         return new AbilityOutcomeResult
         {
-            Success = true,
-            EffectIdsToApply = ability.EffectIds
+            Success = true
         };
     }
 }

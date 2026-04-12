@@ -24,9 +24,9 @@ public class AbilityValidationSystem
     private readonly IAbilityTargetResolver _abilityTargetResolver;
     private readonly IEventBuffer<AbilityUsedEvent> _abilityUsed;
     private readonly AbilityRegistry _abilityRegistry;
-    private readonly AbilityOutcomeResolverRegistry _abilityExecutionResolverRegistry;
+    private readonly AbilityOutcomeResolverRegistry _abilityOutcomeResolverRegistry;
 
-    public AbilityValidationSystem(ILogger logger, IGameMessageService msg, IIntentContainer intents, IAbilityTargetResolver abilityTargetResolver, IEventBuffer<AbilityUsedEvent> abilityUsed, AbilityRegistry abilityRegistry, AbilityOutcomeResolverRegistry abilityExecutionResolverRegistry)
+    public AbilityValidationSystem(ILogger logger, IGameMessageService msg, IIntentContainer intents, IAbilityTargetResolver abilityTargetResolver, IEventBuffer<AbilityUsedEvent> abilityUsed, AbilityRegistry abilityRegistry, AbilityOutcomeResolverRegistry abilityOutcomeResolverRegistry)
     {
         _logger = logger;
         _msg = msg;
@@ -34,7 +34,7 @@ public class AbilityValidationSystem
         _abilityTargetResolver = abilityTargetResolver;
         _abilityUsed = abilityUsed;
         _abilityRegistry = abilityRegistry;
-        _abilityExecutionResolverRegistry = abilityExecutionResolverRegistry;
+        _abilityOutcomeResolverRegistry = abilityOutcomeResolverRegistry;
     }
 
     public void Tick(GameState state)
@@ -111,7 +111,7 @@ public class AbilityValidationSystem
             // check if ability directly fails (skill learned % for example)
             if (abilityRuntime.OutcomeResolver is { Hook: AbilityOutcomeHook.Validation })
             {
-                if (_abilityExecutionResolverRegistry.TryGetResolver(abilityRuntime.OutcomeResolver.ResolverId, out var registedResolver) && registedResolver is not null)
+                if (_abilityOutcomeResolverRegistry.TryGetResolver(abilityRuntime.OutcomeResolver.ResolverId, out var registedResolver) && registedResolver is not null)
                 {
                     var result = registedResolver.Resolver.Resolve(source, abilityRuntime);
                     SendAbilityMessage(source, abilityRuntime, result.Outcome);

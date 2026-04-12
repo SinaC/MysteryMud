@@ -49,7 +49,6 @@
     "Actions": [
       {
         "Type": "ApplyTag",
-        "Target": "Self",
 		"Tag": "Stun"
       }
     ]
@@ -246,6 +245,7 @@
     "MaxStacks": 3,
     "DurationFormula": "4 * caster.Strength",
     "TickRate": 2,
+    "ApplyMessage": "You feel less sick.",
     "WearOffMessage": "You feel less sick.",
     "Actions": [
       {
@@ -263,12 +263,28 @@
     ]
   },
   {
+    "Name": "PoisonItem",
+    "Tag": "Poison",
+    "Stacking": "None",
+    "DurationFormula": "4 * caster.Strength",
+    "WearOffMessage": "The poison on {0} dries up.",
+    "Actions": [
+      {
+      "Type": "StatModifier",
+      "Stat": "Strength",
+      "Mode": "Flat",
+      "ValueFormula": "-3"
+      }
+    ]
+  },
+  {
     "Name": "Bless",
     "Tag": "Bless",
     "Stacking": "Refresh",
     "MaxStacks": 1,
-    "DurationFormula": "60",
+    "DurationFormula": "4 * caster.Intelligence",
     "TickRate": 3,
+    "ApplyMessage": "You feel righteous.",
     "WearOffMessage": "You feel less righteous.",
     "Actions": [
       {
@@ -287,6 +303,21 @@
       "Type": "PeriodicHeal",
       "Trigger": "OnTick",
       "HealFormula": "3 + caster.Level / 2"
+      }
+    ]
+  },
+  {
+    "Name": "BlessItem",
+    "Tag": "Bless",
+    "Stacking": "None",
+    "DurationFormula": "4 * caster.Intelligence",
+    "WearOffMessage": "{0:v} holy aura fades.",
+    "Actions": [
+      {
+      "Type": "StatModifier",
+      "Stat": "HitRoll",
+      "Mode": "Flat",
+      "ValueFormula": "5"
       }
     ]
   },

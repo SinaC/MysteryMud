@@ -29,8 +29,8 @@ public class JsonAbilityLoader
         var abilities = new List<AbilityDefinition>();
         foreach (var entry in data)
         {
-            if (entry.Effects == null || entry.Effects.Count == 0)
-                throw new Exception($"No effect found on ability {entry.Name}");
+            if ((entry.Effects == null || entry.Effects.Count == 0) && (entry.ConditionalEffects == null || entry.ConditionalEffects.Count==0))
+                throw new Exception($"No effects nor condition effects found on ability {entry.Name}");
 
             var kind = Enum.Parse<AbilityKind>(entry.Kind, ignoreCase: true);
             CommandDefinition? command = entry.Command == null
@@ -43,6 +43,7 @@ public class JsonAbilityLoader
             var outcomeResolver = MapOutcomeResolver(entry.OutcomeResolver);
             var sourceValidationRules = entry.ValidationRules?.Source?.Select(MapRule).ToList();
             var targetValidationRules = entry.ValidationRules?.Target?.Select(MapRule).ToList();
+            var conditionalEffectGroups = MapConditionalEffectGroups(entry.Effects, entry.ConditionalEffects);
 
             var ability = new AbilityDefinition
             {
@@ -58,13 +59,24 @@ public class JsonAbilityLoader
                 Messages = entry.Messages ?? [],
                 SourceValidationRules = sourceValidationRules ?? [],
                 TargetValidationRules = targetValidationRules ?? [],
-                Effects = entry.Effects ?? [],
+                ConditionalEffectGroups = conditionalEffectGroups ?? [],
                 FailureEffects = entry.FailureEffects ?? []
             };
             abilities.Add(ability);
         }
         return abilities;
     }
+
+    private List<AbilityConditionalEffectGroupDefinition> MapConditionalEffectGroups(List<string> effects, List<AbilityConditionalEffectGroupData> conditionalEffectGroups)
+    {
+        if (effects != null && effects.Count > 0) // if effects is found, consider them as a group without condition
+            return [new AbilityConditionalEffectGroupDefinition { Condition = AbilityEffectCondition.None, Effects = effects }];
+
+        return [.. conditionalEffectGroups.Select(MapConditionalEffectGroup)];
+    }
+
+    private AbilityConditionalEffectGroupDefinition MapConditionalEffectGroup(AbilityConditionalEffectGroupData data)
+        => new AbilityConditionalEffectGroupDefinition { Condition = EnumParser.Parse(data.Condition, AbilityEffectCondition.None), Effects = data.Effects };
 
     private AbilityOutcomeResolverDefinition? MapOutcomeResolver(AbilityOutcomeResolverData data)
         => data == null

@@ -13,16 +13,14 @@ public class ChanceBasedOutcomeResolver : IAbilityOutcomeResolver
             return new AbilityOutcomeResult
             {
                 Success = true,
-                Outcome = "OnSuccess",
-                EffectIdsToApply = ability.EffectIds
+                Outcome = "OnSuccess"
             };
         }
 
         return new AbilityOutcomeResult
         {
             Success = false,
-            Outcome = "OnFailure",
-            EffectIdsToApply = ability.FailureEffectIds
+            Outcome = "OnFailure"
         };
     }
 

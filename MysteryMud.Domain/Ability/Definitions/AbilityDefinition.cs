@@ -14,7 +14,7 @@ public class AbilityDefinition
     public CommandDefinition? Command { get; init; } // only for skills
     public AbilityTargetingDefinition Targeting { get; init; } = new();
     public required AbilityOutcomeResolverDefinition? OutcomeResolver { get; init; }
-    public required List<string> Effects { get; init; }
+    public required List<AbilityConditionalEffectGroupDefinition> ConditionalEffectGroups { get; init; }
     public required List<string> FailureEffects { get; init; } = [];
     public required Dictionary<string, string> Messages { get; init; } = []; // TODO: actor/room messages ?
     public required List<AbilityRuleDefinition> SourceValidationRules { get; init; } = [];

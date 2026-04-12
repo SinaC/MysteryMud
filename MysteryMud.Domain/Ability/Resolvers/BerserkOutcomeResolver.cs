@@ -25,7 +25,6 @@ public class BerserkOutcomeResolver : IAbilityOutcomeResolver
             {
                 Success = true,
                 Outcome = "OnSuccess",
-                EffectIdsToApply = ability.EffectIds
             };
         }
 
@@ -33,7 +32,6 @@ public class BerserkOutcomeResolver : IAbilityOutcomeResolver
         {
             Success = false,
             Outcome = "OnFailure",
-            EffectIdsToApply = ability.FailureEffectIds
         };
     }
 
