@@ -74,6 +74,7 @@ public class EffectFormulaCompiler
 
             ref var source = ref ctx.Source;
             ref var target = ref ctx.Target;
+            ref var effectiveDamageAmount = ref ctx.EffectiveDamageAmount;
 
             ref var casterLevel = ref source.Get<Level>();
             ref var targetLevel = ref target.Get<Level>();
@@ -134,6 +135,10 @@ public class EffectFormulaCompiler
 
                     case TokenType.TargetConstitution:
                         stack.Push(targetStats.Values[StatKind.Constitution]);
+                        break;
+
+                    case TokenType.HitDamage: // TODO: how to make distinction between hit damage and effect damage ?
+                        stack.Push(effectiveDamageAmount);
                         break;
 
                     case TokenType.WeaponLevel: // TODO: precompute in put in context ?
@@ -246,6 +251,8 @@ public class EffectFormulaCompiler
         // Weapon
         WeaponLevel,
         WeaponDamage,
+        // Damage
+        HitDamage,
         // Effect
         EffectStackCount,
     }
@@ -445,6 +452,9 @@ public class EffectFormulaCompiler
                     case "weapon.level": tokens.Add(new Token { Type = TokenType.WeaponLevel, StartIndex = start }); break;
                     case "weapon.damage": tokens.Add(new Token { Type = TokenType.WeaponDamage, StartIndex = start }); break;
 
+                    // Damage
+                    case "hitdamage": tokens.Add(new Token { Type = TokenType.HitDamage, StartIndex = start }); break;
+
                     // Effect
                     case "effect.stackcount": tokens.Add(new Token { Type = TokenType.EffectStackCount, StartIndex = start }); break;
 
@@ -535,6 +545,7 @@ public class EffectFormulaCompiler
                 case TokenType.TargetConstitution:
                 case TokenType.WeaponLevel:
                 case TokenType.WeaponDamage:
+                case TokenType.HitDamage:
                 case TokenType.EffectStackCount:
                     output.Add(t);
                     break;

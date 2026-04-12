@@ -104,9 +104,9 @@ public class ActionOrchestrator
         {
             // damage
             var damageAction = _hitDamageFactory.CreateHitDamage(resolvedHit);
-            _damageResolver.Resolve(state, damageAction);
+            var damageResult = _damageResolver.Resolve(state, damageAction);
             // weapon proc
-            _weaponProcResolver.Resolve(state, resolvedHit);
+            _weaponProcResolver.Resolve(state, resolvedHit, damageResult);
         }
 
         if (!CharacterHelpers.IsAlive(attackData.Target))
@@ -140,7 +140,7 @@ public class ActionOrchestrator
             _logger.LogError("Effect id {effectId} not found in the effect registry", effectData.EffectId);
             return;
         }
-        _effectFactory.ResolveEffect(state, effectRuntime, effectData.Source, effectData.Target);
+        _effectFactory.ResolveEffect(state, effectRuntime, ref effectData);
 
         // attack resolved event
         ref var effectResolvedEvt = ref _effectResolved.Add();

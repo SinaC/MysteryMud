@@ -2,6 +2,7 @@
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
+using MysteryMud.Core.Effects;
 using MysteryMud.Core.Intent;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Action.Effect;
@@ -30,7 +31,7 @@ public class WeaponProcResolver
         _effectRegistry = effectRegistry;
     }
 
-    public void Resolve(GameState state, AttackResult attack)
+    public void Resolve(GameState state, AttackResult attack, DamageResult damageResult)
     {
         if (!CharacterHelpers.IsAlive(attack.Source, attack.Target))
             return;
@@ -83,9 +84,10 @@ public class WeaponProcResolver
 
                 ref var effectIntent = ref _intents.Action.Add();
                 effectIntent.Kind = ActionKind.Effect;
+                effectIntent.Effect.EffectId = effectRuntime.Id;
                 effectIntent.Effect.Source = attack.Source; // TODO: weaponEntity ?
                 effectIntent.Effect.Target = target;
-                effectIntent.Effect.EffectId = effectRuntime.Id;
+                effectIntent.Effect.EffectiveDamageAmount = damageResult.EffectiveAmount;
                 effectIntent.Cancelled = false;
             }
         }

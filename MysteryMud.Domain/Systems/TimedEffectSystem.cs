@@ -129,7 +129,7 @@ public class TimedEffectSystem
                 Target = instance.Target,
 
                 IncomingDamage = 0,
-                LastDamage = 0,
+                EffectiveDamageAmount = 0,
 
                 StackCount = instance.StackCount,
 
@@ -160,7 +160,7 @@ public class TimedEffectSystem
                 Target = instance.Target,
 
                 IncomingDamage = 0,
-                LastDamage = 0,
+                EffectiveDamageAmount = 0,
 
                 StackCount = instance.StackCount,
 

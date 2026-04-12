@@ -16,9 +16,9 @@ public class EffectExecutor : IEffectExecutor
         _healResolver = healResolver;
     }
 
-    public void ResolveDamage(GameState state, DamageAction damageAction)
+    public DamageResult ResolveDamage(GameState state, DamageAction damageAction)
         => _damageResolver.Resolve(state, damageAction);
 
-    public void ResolveHeal(GameState state, HealAction healAction)
+    public HealResult ResolveHeal(GameState state, HealAction healAction)
         => _healResolver.Resolve(state, healAction);
 }
