@@ -14,6 +14,7 @@ internal record AbilityDefinitionData
     AbilityOutcomeResolverData OutcomeResolver,
     Dictionary<string, string> Messages,
     AbilityValidationRulesData ValidationRules,
-    List<string> Effects,
+    List<AbilityConditionalEffectGroupData> ConditionalEffects,
+    List<string> Effects, // will be converted to ConditionalEffectGroups with Condition=None
     List<string> FailureEffects
 );

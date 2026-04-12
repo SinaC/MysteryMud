@@ -1,4 +1,5 @@
 ﻿using Arch.Core;
+using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Eventing;
@@ -6,6 +7,10 @@ using MysteryMud.Core.Intent;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Ability;
 using MysteryMud.Domain.Action.Effect;
+using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Components.Characters.Mobiles;
+using MysteryMud.Domain.Components.Characters.Players;
+using MysteryMud.Domain.Components.Items;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
 
@@ -19,9 +24,9 @@ public class AbilityExecutionSystem
     private readonly IEventBuffer<AbilityExecutedEvent> _abilityExecuted;
     private readonly AbilityRegistry _abilityRegistry;
     private readonly EffectRegistry _effectRegistry;
-    private readonly AbilityOutcomeResolverRegistry _abilityExecutionResolverRegistry;
+    private readonly AbilityOutcomeResolverRegistry _abilityOutcomeResolverRegistry;
 
-    public AbilityExecutionSystem(ILogger logger, IGameMessageService msg, IIntentContainer intents, IEventBuffer<AbilityExecutedEvent> abilityExecuted, AbilityRegistry abilityRegistry, EffectRegistry effectRegistry, AbilityOutcomeResolverRegistry abilityExecutionResolverRegistry)
+    public AbilityExecutionSystem(ILogger logger, IGameMessageService msg, IIntentContainer intents, IEventBuffer<AbilityExecutedEvent> abilityExecuted, AbilityRegistry abilityRegistry, EffectRegistry effectRegistry, AbilityOutcomeResolverRegistry abilityOutcomeResolverRegistry)
     {
         _logger = logger;
         _msg = msg;
@@ -29,7 +34,7 @@ public class AbilityExecutionSystem
         _abilityExecuted = abilityExecuted;
         _abilityRegistry = abilityRegistry;
         _effectRegistry = effectRegistry;
-        _abilityExecutionResolverRegistry = abilityExecutionResolverRegistry;
+        _abilityOutcomeResolverRegistry = abilityOutcomeResolverRegistry;
     }
 
     public void Tick(GameState state)
@@ -49,7 +54,7 @@ public class AbilityExecutionSystem
             // check if ability directly fails (skill learned % for example)
             if (abilityRuntime.OutcomeResolver is { Hook: AbilityOutcomeHook.Execution })
             {
-                if (_abilityExecutionResolverRegistry.TryGetResolver(abilityRuntime.OutcomeResolver.ResolverId, out var registedResolver) && registedResolver is not null)
+                if (_abilityOutcomeResolverRegistry.TryGetResolver(abilityRuntime.OutcomeResolver.ResolverId, out var registedResolver) && registedResolver is not null)
                 {
                     var result = registedResolver.Resolver.Resolve(source, abilityRuntime);
                     SendAbilityMessage(source, abilityRuntime, result.Outcome);
@@ -60,22 +65,28 @@ public class AbilityExecutionSystem
 
             // TODO: set cooldown
 
-            foreach (var effectId in abilityRuntime.EffectIds)
+            foreach (var conditionalEffectGroup in abilityRuntime.ConditionalEffectGroups)
             {
-                if (!_effectRegistry.TryGetValue(effectId, out var effectRuntime) || effectRuntime == null)
-                {
-                    _logger.LogError("Ability {abilityName}: effect {effectId} not found", abilityRuntime.Name, effectId);
+                var resolvedTargets = ResolveConditionalTargets(targets, conditionalEffectGroup.Condition);
+                if (resolvedTargets.Count == 0)
                     continue;
-                }
-                // add effect action for each target
-                foreach (var target in targets)
+                foreach (var effectId in conditionalEffectGroup.EffectIds)
                 {
-                    ref var effectIntent = ref _intents.Action.Add();
-                    effectIntent.Kind = ActionKind.Effect;
-                    effectIntent.Effect.EffectId = effectId;
-                    effectIntent.Effect.Source = source;
-                    effectIntent.Effect.Target = target;
-                    effectIntent.Cancelled = false;
+                    if (!_effectRegistry.TryGetValue(effectId, out var effectRuntime) || effectRuntime == null)
+                    {
+                        _logger.LogError("Ability {abilityName}: effect {effectId} not found", abilityRuntime.Name, effectId);
+                        continue;
+                    }
+                    // add effect action for each target
+                    foreach (var target in resolvedTargets)
+                    {
+                        ref var effectIntent = ref _intents.Action.Add();
+                        effectIntent.Kind = ActionKind.Effect;
+                        effectIntent.Effect.EffectId = effectId;
+                        effectIntent.Effect.Source = source;
+                        effectIntent.Effect.Target = target;
+                        effectIntent.Cancelled = false;
+                    }
                 }
             }
 
@@ -86,7 +97,21 @@ public class AbilityExecutionSystem
             abilityExecutedEvt.Targets = targets;
         }
     }
-    
+
+    private List<Entity> ResolveConditionalTargets(List<Entity> targets, AbilityEffectCondition condition)
+    {
+        // TODO: change condition to a string and use a condition registry (with interface similar to OutcomeResolver)
+        switch (condition)
+        {
+            case AbilityEffectCondition.None: return targets;
+            case AbilityEffectCondition.IsCharacter: return targets.Where(x => x.Has<CharacterTag>()).ToList();
+            case AbilityEffectCondition.IsItem: return targets.Where(x => x.Has<ItemTag>()).ToList();
+            case AbilityEffectCondition.IsNPC: return targets.Where(x => x.Has<NpcTag>()).ToList();
+            case AbilityEffectCondition.IsPlayer: return targets.Where(x => x.Has<PlayerTag>()).ToList();
+        }
+        return targets;
+    }
+
     private void SendAbilityMessage(Entity actor, AbilityRuntime ability, string key) // TODO: same code found in AbilityExecutionSystem/AbilityCastingSystem
     {
         if (key is null)

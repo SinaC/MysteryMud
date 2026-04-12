@@ -15,7 +15,7 @@ public class AbilityRuntime
     public List<ResourceCost> Costs = [];
     public AbilityTargetingDefinition Targeting = new();
     public AbilityOutcomeResolverRuntime? OutcomeResolver;
-    public List<int> EffectIds = [];
+    public List<AbilityConditionalEffectGroupRuntime> ConditionalEffectGroups = [];
     public List<int> FailureEffectIds = [];
     public Dictionary<string, string> Messages = []; // TODO: actor/room messages ?
     public List<IAbilityValidationRule> SourceValidationRules = [];

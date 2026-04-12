@@ -50,7 +50,10 @@
         { "Scope": "Inventory", "Filter": "Item"      }
       ]
     },
-    "Effects": ["Poison"]
+    "ConditionalEffects": [
+      { "Condition": "IsCharacter", "Effects": ["Poison"]     },
+      { "Condition": "IsItem",      "Effects": ["PoisonItem"] }
+    ]
   },
   {
     "Name": "Bless",
@@ -64,7 +67,10 @@
         { "Scope": "Inventory", "Filter": "Item"      }
       ]
     },
-    "Effects": ["Bless"]
+    "ConditionalEffects": [
+      { "Condition": "IsCharacter", "Effects": ["Bless"]     },
+      { "Condition": "IsItem",      "Effects": ["BlessItem"] }
+    ]
   },
   {
     "Name": "Cure Light",

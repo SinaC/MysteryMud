@@ -8,11 +8,11 @@ public static class AbilityRuntimeFactory
 {
     public static AbilityRuntime Create(EffectRegistry effectRegistry, AbilityOutcomeResolverRegistry abilityOutcomeResolverRegistry, AbilityDefinition def)
     {
-        if (def.Effects == null || def.Effects.Count == 0)
+        if (def.ConditionalEffectGroups == null || def.ConditionalEffectGroups.Count == 0)
             throw new Exception($"No effect found on ability {def.Name}");
 
         var outcomeResolver = MapAbilityOutcomeResolver(abilityOutcomeResolverRegistry, def);
-        var effectIds = MapEffectIds(effectRegistry, def, def.Effects);
+        var conditionalEffectGroupIds = MapConditionEffectGroupIds(effectRegistry, def);
         var failureEffectIds = MapEffectIds(effectRegistry, def, def.FailureEffects);
         var sourceValidationRules = MapValidationRules(def.SourceValidationRules);
         var targetValidationRules = MapValidationRules(def.TargetValidationRules);
@@ -26,7 +26,7 @@ public static class AbilityRuntimeFactory
             Costs = def.Costs,
             Targeting = def.Targeting,
             OutcomeResolver = outcomeResolver,
-            EffectIds = effectIds,
+            ConditionalEffectGroups = conditionalEffectGroupIds,
             FailureEffectIds = failureEffectIds,
             Messages = def.Messages,
             SourceValidationRules = sourceValidationRules,
@@ -56,6 +56,22 @@ public static class AbilityRuntimeFactory
             rules.Add(rule);
         }
         return rules;
+    }
+
+    private static List<AbilityConditionalEffectGroupRuntime> MapConditionEffectGroupIds(EffectRegistry effectRegistry, AbilityDefinition def)
+    {
+        var conditionalEffectGroups = new List<AbilityConditionalEffectGroupRuntime>();
+        foreach (var conditionalEffectGroupDefinition in def.ConditionalEffectGroups)
+        {
+            var effectIds = MapEffectIds(effectRegistry, def, conditionalEffectGroupDefinition.Effects);
+            var conditionalEffectGroup = new AbilityConditionalEffectGroupRuntime
+            {
+                Condition = conditionalEffectGroupDefinition.Condition,
+                EffectIds = effectIds
+            };
+            conditionalEffectGroups.Add(conditionalEffectGroup);
+        }
+        return conditionalEffectGroups;
     }
 
     private static List<int> MapEffectIds(EffectRegistry effectRegistry, AbilityDefinition def, IEnumerable<string> effectNames)
