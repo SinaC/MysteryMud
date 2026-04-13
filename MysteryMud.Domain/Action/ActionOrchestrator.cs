@@ -135,7 +135,7 @@ public class ActionOrchestrator
         if (!CharacterHelpers.IsAlive(effectData.Source, effectData.Target))
             return;
 
-        if (!_effectRegistry.TryGetValue(effectData.EffectId, out var effectRuntime) || effectRuntime == null)
+        if (!_effectRegistry.TryGetRuntime(effectData.EffectId, out var effectRuntime) || effectRuntime == null)
         {
             _logger.LogError("Effect id {effectId} not found in the effect registry", effectData.EffectId);
             return;

@@ -64,7 +64,7 @@ public class WeaponProcResolver
             foreach (var weaponProcEffect in weaponProcRuntime.WeaponProcEffectRuntimes)
             {
                 // existing effect ?
-                if (!_effectRegistry.TryGetValue(weaponProcEffect.EffectId, out var effectRuntime) || effectRuntime == null)
+                if (!_effectRegistry.TryGetRuntime(weaponProcEffect.EffectId, out var effectRuntime) || effectRuntime == null)
                 {
                     _logger.LogWarning("WeaponProcResolver: weapon {weaponName} tried to proc effect {effectId}", weaponEntity.DebugName, weaponProcEffect.EffectId);
                     continue;

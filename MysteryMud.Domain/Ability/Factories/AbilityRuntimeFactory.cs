@@ -79,7 +79,7 @@ public static class AbilityRuntimeFactory
         var effectIds = new List<int>();
         foreach (var effectName in effectNames)
         {
-            if (!effectRegistry.TryGetValue(effectName, out var effectRuntime) || effectRuntime == null)
+            if (!effectRegistry.TryGetRuntime(effectName, out var effectRuntime) || effectRuntime == null)
                 throw new Exception($"Unknown effect {effectName} found on ability {def.Name}");
             effectIds.Add(effectRuntime.Id);
         }

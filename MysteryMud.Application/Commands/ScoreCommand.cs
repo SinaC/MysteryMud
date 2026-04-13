@@ -17,7 +17,6 @@ public class ScoreCommand : ICommand
 {
     public void Execute(CommandExecutionContext executionContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
-
         // TODO: ref ?
         var (name, baseStats, effectiveStats, characterEffects) = actor.Get<Name, BaseStats, EffectiveStats, CharacterEffects>();
         executionContext.Msg.To(actor).Send($"Name: {name.Value}");
@@ -26,7 +25,7 @@ public class ScoreCommand : ICommand
         DisplayResource<Mana, ManaRegen, UsesMana>(executionContext, actor, ResourceKind.Mana, x => (x.Current, x.Max));
         DisplayResource<Energy, EnergyRegen, UsesEnergy>(executionContext, actor, ResourceKind.Energy, x => (x.Current, x.Max));
         DisplayResource<Rage, RageDecay, UsesRage>(executionContext, actor, ResourceKind.Rage, x => (x.Current, x.Max));
-        foreach (var stat in Enum.GetValues<StatKind>())
+        foreach (var stat in Enum.GetValues<StatKind>().Take((int)StatKind.Count))
         {
             executionContext.Msg.To(actor).Send($"{stat}: {effectiveStats.Values[stat]}/{baseStats.Values[stat]}");
         }
@@ -35,6 +34,7 @@ public class ScoreCommand : ICommand
             executionContext.Msg.To(actor).Send($"Fighting: {combatState.Target.DisplayName} Delay: {combatState.RoundDelay}");
 
         executionContext.Msg.To(actor).Send($"Active tags: {characterEffects.ActiveTags}");
+        // TODO: use IEffectDisplayService
         executionContext.Msg.To(actor).Send($"Effects:");
         foreach (var effect in characterEffects.Effects)
         {

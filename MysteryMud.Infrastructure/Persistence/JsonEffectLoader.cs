@@ -117,10 +117,12 @@ public class JsonEffectLoader
 
             case PeriodicHealData data:
                 {
-                    var amountFunc = _formulaCompiler.Compile(data.HealFormula);
+                    var mode = EnumParser.Parse(data.Mode, EffectFormulaEvaluationMode.Snapshotted);
+                    var amountFunc = _formulaCompiler.Compile(data.HealFormula, mode);
                     return new PeriodicHealActionDefinition
                     {
                         Trigger = trigger,
+                        Mode = mode,
                         AmountFunc = amountFunc
                     };
                 }
@@ -137,11 +139,13 @@ public class JsonEffectLoader
 
             case PeriodicDamageData data:
                 {
-                    var amountFunc = _formulaCompiler.Compile(data.DamageFormula);
+                    var mode = EnumParser.Parse(data.Mode, EffectFormulaEvaluationMode.Snapshotted);
+                    var amountFunc = _formulaCompiler.Compile(data.DamageFormula, mode);
                     var dmgKind = Enum.Parse<DamageKind>(data.DamageKind, ignoreCase: true);
                     return new PeriodicDamageActionDefinition
                     {
                         Trigger = trigger,
+                        Mode = mode,
                         AmountFunc = amountFunc,
                         Kind = dmgKind
                     };

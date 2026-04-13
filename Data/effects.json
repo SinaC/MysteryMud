@@ -245,7 +245,7 @@
     "MaxStacks": 3,
     "DurationFormula": "4 * caster.Strength",
     "TickRate": 2,
-    "ApplyMessage": "You feel less sick.",
+    "ApplyMessage": "You feel very sick.",
     "WearOffMessage": "You feel less sick.",
     "Actions": [
       {

@@ -49,7 +49,7 @@ public class MstatCommand : ICommand
         DisplayResource<Mana, ManaRegen, UsesMana>(executionContext, actor, target.Value, ResourceKind.Mana, x => (x.Current, x.Max), x => x.AmountPerTick);
         DisplayResource<Energy, EnergyRegen, UsesEnergy>(executionContext, actor, target.Value, ResourceKind.Energy, x => (x.Current, x.Max), x => x.AmountPerTick);
         DisplayResource<Rage, RageDecay, UsesRage>(executionContext, actor, target.Value, ResourceKind.Rage, x => (x.Current, x.Max), x => x.AmountPerTick);
-        foreach (var stat in Enum.GetValues<StatKind>())
+        foreach (var stat in Enum.GetValues<StatKind>().Take((int)StatKind.Count))
         {
             executionContext.Msg.To(actor).Send($"{stat}: {effectiveStats.Values[stat]}/{baseStats.Values[stat]}");
         }

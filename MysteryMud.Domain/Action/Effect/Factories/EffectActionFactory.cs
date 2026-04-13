@@ -215,7 +215,7 @@ public class EffectActionFactory
         return ctx =>
         {
             var effectContext = ctx.Context;
-            var amount = definition.AmountFunc(effectContext); // TODO: should used snapshotted value
+            var amount = definition.AmountFunc(effectContext);
             var totalHeal = amount * effectContext.StackCount;
             var healAction = new HealAction
             {
@@ -252,7 +252,7 @@ public class EffectActionFactory
         return ctx =>
         {
             var effectContext = ctx.Context;
-            var amount = definition.AmountFunc(effectContext); // TODO: should used snapshotted value
+            var amount = definition.AmountFunc(effectContext);
             var totalDamage = amount * effectContext.StackCount;
             var damageAction = new DamageAction
             {

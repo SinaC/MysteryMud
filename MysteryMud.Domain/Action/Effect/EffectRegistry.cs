@@ -7,6 +7,7 @@ public class EffectRegistry
 {
     private readonly EffectRuntimeFactory _effectRuntimeFactory;
 
+    private readonly Dictionary<int, EffectDefinition> EffectDefinitionsById = [];
     private readonly Dictionary<int, EffectRuntime> EffectsById = [];
     private readonly Dictionary<string, EffectRuntime> EffectsByName = new(StringComparer.OrdinalIgnoreCase);
 
@@ -15,19 +16,23 @@ public class EffectRegistry
         _effectRuntimeFactory = effectRuntimeFactory;
     }
 
-    public void RegisterEffects(IEnumerable<EffectDefinition> effects)
+    public void RegisterEffects(IEnumerable<EffectDefinition> effectDefinitions)
     {
-        foreach (var effect in effects)
+        foreach (var effectDefinition in effectDefinitions)
         {
-            var effectRuntime = _effectRuntimeFactory.Create(effect);
-            EffectsById.Add(effect.Id, effectRuntime);
-            EffectsByName.Add(effect.Name, effectRuntime);
+            var effectRuntime = _effectRuntimeFactory.Create(effectDefinition);
+            EffectDefinitionsById.Add(effectDefinition.Id, effectDefinition);
+            EffectsById.Add(effectDefinition.Id, effectRuntime);
+            EffectsByName.Add(effectDefinition.Name, effectRuntime);
         }
     }
 
-    public bool TryGetValue(int effectId, out EffectRuntime? effectRuntime)
+    public bool TryGetDefinition(int effectId, out EffectDefinition? effectDefinition)
+       => EffectDefinitionsById.TryGetValue(effectId, out effectDefinition);
+
+    public bool TryGetRuntime(int effectId, out EffectRuntime? effectRuntime)
         => EffectsById.TryGetValue(effectId, out effectRuntime);
 
-    public bool TryGetValue(string effectName, out EffectRuntime? effectRuntime)
+    public bool TryGetRuntime(string effectName, out EffectRuntime? effectRuntime)
         => EffectsByName.TryGetValue(effectName, out effectRuntime);
 }

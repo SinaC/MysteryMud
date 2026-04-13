@@ -63,7 +63,7 @@ public class TestCommand : IExplicitCommand
         }
 
         // search effect and add effect intent if found
-        if (_effectRegistry.TryGetValue(ctx.Text.ToString(), out var effectRuntime) && effectRuntime != null)
+        if (_effectRegistry.TryGetRuntime(ctx.Text.ToString(), out var effectRuntime) && effectRuntime != null)
         {
             var effectId = effectRuntime.Id;
 
