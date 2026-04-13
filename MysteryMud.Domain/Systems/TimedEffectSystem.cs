@@ -120,7 +120,8 @@ public class TimedEffectSystem
 
     private void ExpireEffect(GameState state, Entity effect, ref EffectInstance instance)
     {
-        if (instance.EffectRuntime != null && instance.EffectRuntime.OnExpire != null && instance.EffectRuntime.OnExpire.Length > 0)
+        ref var effectRuntime = ref instance.EffectRuntime;
+        if (effectRuntime != null && effectRuntime.OnExpire != null && effectRuntime.OnExpire.Length > 0)
         {
             var ctx = new EffectContext
             {
@@ -141,7 +142,7 @@ public class TimedEffectSystem
                 Executor = _effectExecutor,
                 Msg = _msg
             };
-            foreach (var onExpire in instance.EffectRuntime.OnExpire)
+            foreach (var onExpire in effectRuntime.OnExpire)
             {
                 if (CharacterHelpers.IsAlive(instance.Source, instance.Target))
                     onExpire(effectExecutionContext);
@@ -151,7 +152,8 @@ public class TimedEffectSystem
 
     private void TickEffect(GameState state, Entity effect, ref EffectInstance instance)
     {
-        if (instance.EffectRuntime != null && instance.EffectRuntime.OnTick.Length > 0)
+        ref var effectRuntime = ref instance.EffectRuntime;
+        if (effectRuntime != null && effectRuntime.OnTick.Length > 0)
         {
             var ctx = new EffectContext
             {
@@ -172,7 +174,7 @@ public class TimedEffectSystem
                 Executor = _effectExecutor,
                 Msg = _msg
             };
-            foreach (var onTick in instance.EffectRuntime.OnTick)
+            foreach (var onTick in effectRuntime.OnTick)
             {
                 if (CharacterHelpers.IsAlive(instance.Source, instance.Target))
                     onTick(effectExecutionContext);

@@ -11,7 +11,9 @@ namespace MysteryMud.Domain.Systems;
 
 public class EffectiveStatsSystem
 {
-    private static readonly StatKind[] _allStats = Enum.GetValues<StatKind>();
+    private static readonly StatKind[] _allStats = Enum.GetValues<StatKind>()
+        .Take((int)StatKind.Count) // Count is used by to InlineArray attribute
+        .ToArray();
 
     public void Tick(GameState state)
     {

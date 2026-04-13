@@ -72,7 +72,7 @@ public class AbilityExecutionSystem
                     continue;
                 foreach (var effectId in conditionalEffectGroup.EffectIds)
                 {
-                    if (!_effectRegistry.TryGetValue(effectId, out var effectRuntime) || effectRuntime == null)
+                    if (!_effectRegistry.TryGetRuntime(effectId, out var effectRuntime) || effectRuntime == null)
                     {
                         _logger.LogError("Ability {abilityName}: effect {effectId} not found", abilityRuntime.Name, effectId);
                         continue;

@@ -94,7 +94,7 @@ public class LookCommand : ICommand
                 ref var lookItemIntent = ref executionContext.Intent.Look.Add();
                 lookItemIntent.Viewer = actor;
                 lookItemIntent.TargetKind = LookTargetKind.Item;
-                lookItemIntent.Target = item.Value;
+                lookItemIntent.Target = inventoryItem.Value;
                 return;
             }
         }

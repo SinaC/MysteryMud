@@ -6,6 +6,7 @@ using MysteryMud.Core.Effects;
 using MysteryMud.Core.Intent;
 using MysteryMud.Core.Logging;
 using MysteryMud.Core.Services;
+using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.Domain.Components.Effects;
@@ -100,6 +101,8 @@ public class EffectFactory
         ResolveInstantEffect(state, effectRuntime, ref effectData);
     }
 
+    // TODO: this will only work for character
+    // TODO: what if no source ?
     private void ResolveDurationEffect(GameState state, EffectRuntime effectRuntime, ref EffectData effectData)
     {
         var source = effectData.Source;
@@ -120,14 +123,24 @@ public class EffectFactory
             return;
         }
 
-        // create effect
+        // snapshot values
+        var snapshottedValues = new EffectValuesSnapshot
+        {
+            SourceLevel = source.Get<Level>().Value,
+            SourceStats = source.Get<EffectiveStats>().Values, // direct copy
+            TargetLevel = target.Get<Level>().Value,
+            TargetStats = target.Get<EffectiveStats>().Values, // direct copy
+        };
+
+        // create effect with snapshotted values
         var effect = state.World.Create(new EffectInstance
         {
             Source = source,
             Target = target,
             StackCount = 1,
             EffectRuntime = effectRuntime,
-        });
+        },
+        snapshottedValues);
         // add effect to target effect cache
         targetEffects.Effects.Add(effect);
 

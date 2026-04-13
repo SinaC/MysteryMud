@@ -1,0 +1,147 @@
+﻿using Arch.Core;
+using Arch.Core.Extensions;
+using MysteryMud.Core;
+using MysteryMud.Core.Services;
+using MysteryMud.Domain.Action.Effect;
+using MysteryMud.Domain.Action.Effect.Definitions;
+using MysteryMud.Domain.Components.Effects;
+using MysteryMud.Domain.Extensions;
+using MysteryMud.GameData.Definitions;
+using MysteryMud.GameData.Enums;
+
+namespace MysteryMud.Application.Services;
+
+public interface IEffectDisplayService
+{
+    void DisplayEffects(GameState state, Entity viewer, List<Entity> effects);
+}
+
+public class EffectDisplayService : IEffectDisplayService
+{
+    private readonly IGameMessageService _msg;
+    private readonly EffectRegistry _effectRegistry;
+
+    public EffectDisplayService(IGameMessageService msg, EffectRegistry effectRegistry)
+    {
+        _msg = msg;
+        _effectRegistry = effectRegistry;
+    }
+
+    public void DisplayEffects(GameState state, Entity viewer, List<Entity> effects)
+    {
+        if (effects.Count == 0)
+        {
+            _msg.To(viewer).Send($"No effects");
+            return;
+        }
+        _msg.To(viewer).Send($"Effects:");
+        foreach (var effect in effects)
+        {
+            DisplayEffect(state, viewer, effect);
+        }
+    }
+
+    private void DisplayEffect(GameState state, Entity viewer, Entity effect)
+    {
+        if (!effect.IsAlive() || effect.Has<ExpiredTag>())
+            return;
+        ref var effectInstance = ref effect.Get<EffectInstance>();
+        if (effectInstance.EffectRuntime != null)
+        {
+            // TODO: how could we display hot/dot
+            var effectId = effectInstance.EffectRuntime.Id;
+            var effectName = effectInstance.EffectRuntime.Name;
+            var stackCount = effectInstance.StackCount;
+            var source = effectInstance.Source;
+            var target = effectInstance.Target;
+            var sourceName = source.DisplayName;
+
+            // get effect definition
+            _effectRegistry.TryGetDefinition(effectId, out var effectDefinition);
+
+            // duration
+            ref var timedEffect = ref effect.TryGetRef<TimedEffect>(out var isTimedEffect);
+            if (isTimedEffect)
+            {
+                var remainingTicks = timedEffect.ExpirationTick - state.CurrentTick;
+                if (timedEffect.TickRate > 0)
+                    _msg.To(viewer).Send($"- {effectName} Source: {sourceName} Stacks: {stackCount} Remaining ticks: {remainingTicks} Tick rate: {timedEffect.TickRate}");
+                else
+                    _msg.To(viewer).Send($"- {effectName} Source: {sourceName} Stacks: {stackCount} Remaining ticks: {remainingTicks}");
+            }
+            else
+                _msg.To(viewer).Send($"- {effectName} Source: {sourceName} Stacks: {stackCount} Permanent");
+
+            // tick
+            if (effectInstance.EffectRuntime.OnTick.Length > 0 && effectDefinition is not null)
+            {
+                foreach (var tickAction in effectDefinition.Actions.Where(x => x.Trigger == TriggerType.OnTick))
+                {
+                    switch (tickAction)
+                    {
+                        case PeriodicDamageActionDefinition periodic:
+                            {
+                                var amount = EvaluateForDisplay(periodic.AmountFunc, effect, ref effectInstance, ref source, ref target, state);
+                                _msg.To(viewer).Send($"  - {amount} {periodic.Kind} damage every {effectDefinition.TickRate} tick");
+                                break;
+                            }
+                        case PeriodicHealActionDefinition periodic:
+                            {
+                                var amount = EvaluateForDisplay(periodic.AmountFunc, effect, ref effectInstance, ref source, ref target, state);
+                                _msg.To(viewer).Send($"  - {amount} heal every {effectDefinition.TickRate} tick");
+                                break;
+                            }
+                    }
+                }
+            }
+
+            // stat modifiers
+            ref var statModifiers = ref effect.TryGetRef<StatModifiers>(out var hasStatModifiers);
+            if (hasStatModifiers)
+            {
+                foreach (var modifier in statModifiers.Values)
+                    _msg.To(viewer).Send($"  - {modifier.Modifier} {modifier.Value} {modifier.Stat}");
+            }
+
+            // resource modifiers
+            DisplayResourceModifier<HealthModifier>(viewer, effect, "Health", x => x.Modifier, x => x.Value);
+            DisplayResourceModifier<ManaModifier>(viewer, effect, "Mana", x => x.Modifier, x => x.Value);
+            DisplayResourceModifier<EnergyModifier>(viewer, effect, "Energy", x => x.Modifier, x => x.Value);
+            DisplayResourceModifier<RageModifier>(viewer, effect, "Rage", x => x.Modifier, x => x.Value);
+
+            // TODO: expire ?
+        }
+    }
+
+    private void DisplayResourceModifier<TResourceModifier>(Entity viewer, Entity effect, string resourceName, Func<TResourceModifier, ModifierKind> getModifierFunc, Func<TResourceModifier, decimal> getValueFunc)
+        where TResourceModifier : struct
+    {
+        ref var resourceModifiers = ref effect.TryGetRef<ResourceModifiers<TResourceModifier>>(out var hasResourceModifiers);
+        if (hasResourceModifiers)
+        {
+            foreach (var modifier in resourceModifiers.Values)
+                _msg.To(viewer).Send($"  - {getModifierFunc(modifier)} {getValueFunc(modifier)} {resourceName}");
+        }
+    }
+
+    public static decimal EvaluateForDisplay(
+        Func<EffectContext, decimal> amountFunc,
+        Entity effectEntity,
+        ref EffectInstance effectInstance,
+        ref Entity source,
+        ref Entity target,
+        GameState state)
+    {
+        var ctx = new EffectContext
+        {
+            Effect = effectEntity,
+            Source = source,
+            Target = target,
+            StackCount = effectInstance.StackCount,
+            EffectiveDamageAmount = 0, // unknown at display time, formula will use 0
+            State = state,
+        };
+
+        return amountFunc(ctx);
+    }
+}

@@ -22,7 +22,7 @@ public static class WeaponProcRuntimeFactory
         var effects = new List<WeaponProcEffectRuntime>();
         foreach (var effectDefinition in definition.EffectDefinitions)
         {
-            if (!effectRegistry.TryGetValue(effectDefinition.EffectName, out var effectRuntime) || effectRuntime == null)
+            if (!effectRegistry.TryGetRuntime(effectDefinition.EffectName, out var effectRuntime) || effectRuntime == null)
                 throw new Exception($"Unknown effect {effectDefinition} found on weapon proc {definition.Name}");
             var effect = new WeaponProcEffectRuntime
             {

@@ -2,9 +2,11 @@
 using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.GameData.Enums;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 
 namespace MysteryMud.Domain.Services;
 
@@ -65,21 +67,46 @@ public class EffectFormulaCompiler
     }
 
     public Func<EffectContext, decimal> Compile(string formula)
+        => Compile(formula, EffectFormulaEvaluationMode.Snapshotted);
+
+    public Func<EffectContext, decimal> Compile(
+        string formula,
+        EffectFormulaEvaluationMode mode)
+    {
+        var compiled = CompileInternal(formula);
+
+        return ctx => compiled(ctx, mode);
+    }
+
+    private Func<EffectContext, EffectFormulaEvaluationMode, decimal> CompileInternal(string formula)
     {
         var rpn = ToRpn(Tokenize(formula));
 
-        return ctx =>
+        return (ctx, mode) =>
         {
             var stack = new Stack<decimal>();
 
             ref var source = ref ctx.Source;
             ref var target = ref ctx.Target;
+
             ref var effectiveDamageAmount = ref ctx.EffectiveDamageAmount;
 
-            ref var casterLevel = ref source.Get<Level>();
-            ref var targetLevel = ref target.Get<Level>();
-            ref var casterStats = ref source.Get<EffectiveStats>();
-            ref var targetStats = ref target.Get<EffectiveStats>();
+            var useSnapshot = mode == EffectFormulaEvaluationMode.Snapshotted && ctx.Effect.HasValue && ctx.Effect.Value.Has<EffectValuesSnapshot>();
+            ref var snapshot = ref (useSnapshot
+                ? ref ctx.Effect!.Value.Get<EffectValuesSnapshot>()
+                : ref Unsafe.NullRef<EffectValuesSnapshot>());
+            ref var casterLevel = ref(useSnapshot
+                ? ref snapshot.SourceLevel
+                : ref source.Get<Level>().Value);
+            ref var targetLevel = ref (useSnapshot
+                ? ref snapshot.TargetLevel
+                : ref target.Get<Level>().Value);
+            ref var casterStats = ref (useSnapshot
+                ? ref snapshot.SourceStats
+                : ref source.Get<EffectiveStats>().Values);
+            ref var targetStats = ref (useSnapshot
+                ? ref snapshot.TargetStats
+                : ref target.Get<EffectiveStats>().Values);
 
             foreach (var token in rpn)
             {
@@ -90,51 +117,51 @@ public class EffectFormulaCompiler
                         break;
 
                     case TokenType.CasterLevel:
-                        stack.Push(casterLevel.Value);
+                        stack.Push(casterLevel);
                         break;
 
                     case TokenType.CasterStrength:
-                        stack.Push(casterStats.Values[StatKind.Strength]);
+                        stack.Push(casterStats[StatKind.Strength]);
                         break;
 
                     case TokenType.CasterIntelligence:
-                        stack.Push(casterStats.Values[StatKind.Intelligence]);
+                        stack.Push(casterStats[StatKind.Intelligence]);
                         break;
 
                     case TokenType.CasterWisdom:
-                        stack.Push(casterStats.Values[StatKind.Wisdom]);
+                        stack.Push(casterStats[StatKind.Wisdom]);
                         break;
 
                     case TokenType.CasterDexterity:
-                        stack.Push(casterStats.Values[StatKind.Dexterity]);
+                        stack.Push(casterStats[StatKind.Dexterity]);
                         break;
 
                     case TokenType.CasterConstitution:
-                        stack.Push(casterStats.Values[StatKind.Constitution]);
+                        stack.Push(casterStats[StatKind.Constitution]);
                         break;
 
                     case TokenType.TargetLevel:
-                        stack.Push(targetLevel.Value);
+                        stack.Push(targetLevel);
                         break;
 
                     case TokenType.TargetStrength:
-                        stack.Push(targetStats.Values[StatKind.Strength]);
+                        stack.Push(targetStats[StatKind.Strength]);
                         break;
 
                     case TokenType.TargetIntelligence:
-                        stack.Push(targetStats.Values[StatKind.Intelligence]);
+                        stack.Push(targetStats[StatKind.Intelligence]);
                         break;
 
                     case TokenType.TargetWisdom:
-                        stack.Push(targetStats.Values[StatKind.Wisdom]);
+                        stack.Push(targetStats[StatKind.Wisdom]);
                         break;
 
                     case TokenType.TargetDexterity:
-                        stack.Push(targetStats.Values[StatKind.Dexterity]);
+                        stack.Push(targetStats[StatKind.Dexterity]);
                         break;
 
                     case TokenType.TargetConstitution:
-                        stack.Push(targetStats.Values[StatKind.Constitution]);
+                        stack.Push(targetStats[StatKind.Constitution]);
                         break;
 
                     case TokenType.HitDamage: // TODO: how to make distinction between hit damage and effect damage ?

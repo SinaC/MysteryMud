@@ -4,6 +4,7 @@ using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.Domain.Components.Rooms;
+using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Factories;
@@ -22,31 +23,27 @@ public static class MobFactory
             new Description { Value = description },
             new BaseStats
             {
-                Values = new Dictionary<StatKind, int>
-                {
-                    [StatKind.Strength] = 15,
-                    [StatKind.Intelligence] = 10,
-                    [StatKind.Wisdom] = 15,
-                    [StatKind.Dexterity] = 12,
-                    [StatKind.Constitution] = 15,
-                    [StatKind.HitRoll] = 0,
-                    [StatKind.DamRoll] = 0,
-                    [StatKind.ArmorClass] = 0
-                }
+                Values = StatValues.From(
+                    (StatKind.Strength, 15),
+                    (StatKind.Intelligence, 10),
+                    (StatKind.Wisdom, 15),
+                    (StatKind.Dexterity, 12),
+                    (StatKind.Constitution, 15),
+                    (StatKind.HitRoll, 0),
+                    (StatKind.DamRoll, 0),
+                    (StatKind.ArmorClass, 0))
             },
             new EffectiveStats
             {
-                Values = new Dictionary<StatKind, int>
-                {
-                    [StatKind.Strength] = 15,
-                    [StatKind.Intelligence] = 10,
-                    [StatKind.Wisdom] = 15,
-                    [StatKind.Dexterity] = 12,
-                    [StatKind.Constitution] = 15,
-                    [StatKind.HitRoll] = 0,
-                    [StatKind.DamRoll] = 0,
-                    [StatKind.ArmorClass] = 0
-                }
+                Values = StatValues.From(
+                    (StatKind.Strength, 15),
+                    (StatKind.Intelligence, 10),
+                    (StatKind.Wisdom, 15),
+                    (StatKind.Dexterity, 12),
+                    (StatKind.Constitution, 15),
+                    (StatKind.HitRoll, 0),
+                    (StatKind.DamRoll, 0),
+                    (StatKind.ArmorClass, 0))
             },
             new Health { Current = 5, Max = 100 },
             new BaseHealth {  Max = 100 },
