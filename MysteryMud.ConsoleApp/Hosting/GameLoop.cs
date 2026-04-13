@@ -17,7 +17,6 @@ using MysteryMud.Domain.Action.Attack.Factories;
 using MysteryMud.Domain.Action.Attack.Resolvers;
 using MysteryMud.Domain.Action.Damage;
 using MysteryMud.Domain.Action.Effect;
-using MysteryMud.Domain.Action.Effect.Factories;
 using MysteryMud.Domain.Action.Heal;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Resources;
@@ -105,6 +104,9 @@ internal class GameLoop
     private readonly EventBuffer<KillRewardEvent> _killRewardEventBuffer = new (); // short-term, only used in ActionOrchestrator but cannot be defined within ActionOrchestrator because EventBuffer is defined in Infrastructure
 
     private readonly ILookService _lookService;
+    private readonly IEffectLifecycleManager _effectLifecycleManager;
+    private readonly IEffectApplicationManager _effectApplicationManager;
+
     private readonly ExperienceService _experienceService;
 
     private readonly IAbilityTargetResolver _abilityTargetResolver;
@@ -117,7 +119,6 @@ internal class GameLoop
     private readonly ReactionResolver _reactionResolver;
     private readonly EffectExecutor _effectExecutor;
 
-    private readonly EffectFactory _effectFactory;
 
     private readonly ActionOrchestrator _actionOrchestrator;
 
@@ -177,9 +178,10 @@ internal class GameLoop
 
 
         _effectExecutor = new EffectExecutor(_damageResolver, _healResolver);
-        _effectFactory = new EffectFactory(_logger, _gameMessageService, _intentContainer, _effectExecutor);
+        _effectLifecycleManager = new EffectLifecycleManager();
+        _effectApplicationManager = new EffectApplicationManager(_logger, _gameMessageService, _intentContainer, _effectExecutor, _effectLifecycleManager);
 
-        _actionOrchestrator = new ActionOrchestrator(_logger, _intentContainer, _attackResolvedEventBuffer, _effectResolvedEventBuffer, _killRewardEventBuffer, _effectRegistry, _experienceService, _effectFactory, _hitResolver, _hitDamageFactory, _damageResolver, _weaponProcResolver, _reactionResolver);
+        _actionOrchestrator = new ActionOrchestrator(_logger, _intentContainer, _attackResolvedEventBuffer, _effectResolvedEventBuffer, _killRewardEventBuffer, _effectRegistry, _effectApplicationManager, _experienceService, _hitResolver, _hitDamageFactory, _damageResolver, _weaponProcResolver, _reactionResolver);
 
         _commandExecutionSystem = new CommandExecutionSystem(_logger);
         _commandThrottleSystem = new CommandThrottleSystem(_gameMessageService);
@@ -206,7 +208,7 @@ internal class GameLoop
         _respawnSystem = new RespawnSystem(_gameMessageService);
         _lootSystem = new LootSystem(_gameMessageService, _intentContainer, _itemLootedEventBuffer);
         _lookSystem = new LookSystem(_lookService, _intentContainer, _lookedEventBuffer);
-        _cleanupSystem = new CleanupSystem(_logger, _effectFactory);
+        _cleanupSystem = new CleanupSystem(_logger, _effectLifecycleManager);
     }
 
     public void Run()

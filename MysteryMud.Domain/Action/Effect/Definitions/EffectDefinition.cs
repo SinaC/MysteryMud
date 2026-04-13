@@ -1,4 +1,5 @@
-﻿using MysteryMud.GameData.Enums;
+﻿using MysteryMud.Domain.Services;
+using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Action.Effect.Definitions;
 
@@ -8,7 +9,7 @@ public class EffectDefinition
     public required string Name { get; init; }
 
     // state-effect
-    public Func<EffectContext, decimal>? DurationFunc { get; init; } // if null -> stateless effect
+    public CompiledFormula? DurationCompiledFormula { get; init; } // if null -> stateless effect
     public EffectTagId Tag { get; init; }
     public StackingRule Stacking { get; init; }
     public int MaxStacks { get; init; } = 1;

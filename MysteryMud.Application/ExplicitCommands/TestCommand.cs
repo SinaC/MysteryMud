@@ -19,11 +19,11 @@ public class TestCommand : IExplicitCommand
 
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetAndText;
 
-    private readonly EffectRegistry _effectRegistry;
+    private readonly IEffectRegistry _effectRegistry;
 
     public CommandDefinition Definition { get; }
 
-    public TestCommand(EffectRegistry effectRegistry)
+    public TestCommand(IEffectRegistry effectRegistry)
     {
         _effectRegistry = effectRegistry;
 

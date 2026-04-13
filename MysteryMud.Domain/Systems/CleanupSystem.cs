@@ -3,7 +3,7 @@ using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Logging;
-using MysteryMud.Domain.Action.Effect.Factories;
+using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
@@ -18,12 +18,12 @@ namespace MysteryMud.Domain.Systems;
 public class CleanupSystem
 {
     private readonly ILogger _logger;
-    private readonly EffectFactory _effectFactory;
+    private readonly IEffectLifecycleManager _effectLifecycleManager;
 
-    public CleanupSystem(ILogger logger, EffectFactory effectFactory)
+    public CleanupSystem(ILogger logger, IEffectLifecycleManager effectLifecycleManager)
     {
         _logger = logger;
-        _effectFactory = effectFactory;
+        _effectLifecycleManager = effectLifecycleManager;
     }
 
     // check disconnected players and remove them from the world
@@ -41,7 +41,7 @@ public class CleanupSystem
             _logger.LogInformation(LogEvents.Cleanup, "Cleaning up expired effect {effectName}", effect.DebugName);
 
             // remove the effect from the target's CharacterEffects
-            _effectFactory.RemoveEffect(state, effect);
+            _effectLifecycleManager.RemoveEffect(state, effect);
         });
 
         // destroy disconnected players

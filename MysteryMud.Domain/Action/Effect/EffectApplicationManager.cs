@@ -8,102 +8,46 @@ using MysteryMud.Core.Logging;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
-using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
-namespace MysteryMud.Domain.Action.Effect.Factories;
+namespace MysteryMud.Domain.Action.Effect;
 
-public class EffectFactory
+public class EffectApplicationManager : IEffectApplicationManager
 {
     private readonly ILogger _logger;
     private readonly IGameMessageService _msg;
     private readonly IIntentWriterContainer _intent;
     private readonly IEffectExecutor _effectExecutor;
+    private readonly IEffectLifecycleManager _effectLifecycleManager;
 
-    public EffectFactory(ILogger logger, IGameMessageService msg, IIntentWriterContainer intent, IEffectExecutor effectExecutor)
+    public EffectApplicationManager(ILogger logger, IGameMessageService msg, IIntentWriterContainer intent, IEffectExecutor effectExecutor, IEffectLifecycleManager effectLifecycleManager)
     {
         _logger = logger;
         _msg = msg;
         _intent = intent;
         _effectExecutor = effectExecutor;
+        _effectLifecycleManager = effectLifecycleManager;
     }
 
-    public void RemoveEffect(GameState state, Entity effect)
-    {
-        if (!effect.IsAlive()) // don't use helpers, effect with ExpiredTag should be removable
-            return;
-
-        ref var effectInstance = ref effect.Get<EffectInstance>();
-        if (!effectInstance.Target.IsAlive())
-            return;
-
-        // remove the effect from the target's CharacterEffects
-        ref var characterEffects = ref effectInstance.Target.Get<CharacterEffects>();
-        characterEffects.Effects.Remove(effect);
-        // remove tag if applicable
-        if (effectInstance.EffectRuntime != null)
-        {
-            if (effectInstance.EffectRuntime.Tag != EffectTagId.None)
-            {
-                int tagIndex = (int)effectInstance.EffectRuntime.Tag;
-                var effectsByTag = characterEffects.EffectsByTag[tagIndex];
-                if (effectsByTag != null)
-                {
-                    effectsByTag.Remove(effect);
-                    if (effectsByTag.Count == 0)
-                        characterEffects.ActiveTags &= ~(1UL << tagIndex); // remove tag from active tags when last effect on that tag is removed
-                }
-            }
-        }
-
-        // if effect has StatModifiers
-        // flag the target's stats as dirty so they will be recalculated without this effect
-        if (effect.Has<StatModifiers>() && !effectInstance.Target.Has<DirtyStats>())
-            effectInstance.Target.Add<DirtyStats>();
-
-        // if effect has ResourceModifiers
-        // flag the target's resources as dirty so they will be recalculated without this effect
-        if (effect.Has<ResourceModifiers<HealthModifier>>() && !effectInstance.Target.Has<DirtyHealth>())
-            effectInstance.Target.Add<DirtyHealth>();
-        if (effect.Has<ResourceModifiers<ManaModifier>>() && !effectInstance.Target.Has<DirtyMana>())
-            effectInstance.Target.Add<DirtyMana>();
-        if (effect.Has<ResourceModifiers<EnergyModifier>>() && !effectInstance.Target.Has<DirtyEnergy>())
-            effectInstance.Target.Add<DirtyEnergy>();
-        if (effect.Has<ResourceModifiers<RageModifier>>() && !effectInstance.Target.Has<DirtyRage>())
-            effectInstance.Target.Add<DirtyRage>();
-
-        // destroy effect
-        state.World.Destroy(effect);
-    }
-
-    //private enum StackingResult
-    //{
-    //    Nop, // don't do anything
-    //    NoExisting, // create new effect
-    //    DifferentSource, // create new effect
-    //    Refreshed, // don't do anything
-    //    Stacked, // flag as Dirty
-    //    Replaced, // create new effect
-    //}
-    public void ResolveEffect(GameState state, EffectRuntime effectRuntime, ref EffectData effectData)
+    public void CreateEffect(GameState state, EffectRuntime effectRuntime, ref EffectData effectData)
     {
         // if duration, handle stacking rules + add expire intent and tick intent (if tick rate > 0)
         if (effectRuntime.DurationFunc != null)
         {
-            ResolveDurationEffect(state, effectRuntime, ref effectData);
+            CreateDurationEffect(state, effectRuntime, ref effectData);
             return;
         }
 
-        ResolveInstantEffect(state, effectRuntime, ref effectData);
+        CreateInstantEffect(state, effectRuntime, ref effectData);
     }
 
     // TODO: this will only work for character
     // TODO: what if no source ?
-    private void ResolveDurationEffect(GameState state, EffectRuntime effectRuntime, ref EffectData effectData)
+    private void CreateDurationEffect(GameState state, EffectRuntime effectRuntime, ref EffectData effectData)
     {
         var source = effectData.Source;
         var target = effectData.Target;
@@ -229,7 +173,7 @@ public class EffectFactory
         }
     }
 
-    private void ResolveInstantEffect(GameState state, EffectRuntime effectRuntime, ref EffectData effectData)
+    private void CreateInstantEffect(GameState state, EffectRuntime effectRuntime, ref EffectData effectData)
     {
         // trigger onApply actions
         if (effectRuntime.OnApply.Length > 0)
@@ -374,14 +318,14 @@ public class EffectFactory
                     return StackingResult.Refreshed;
             case StackingRule.Replace:
                 _logger.LogInformation(LogEvents.Factory, "Replacing Effect from Template {effectTemplateName} Source {sourceName} Target {targetName}", effectRuntime.Name, source.DebugName, instance.Target.DebugName);
-                RemoveEffect(state, effect); // destroy current effect (no wear off message because it's a replacement)
+                _effectLifecycleManager.RemoveEffect(state, effect); // destroy current effect (no wear off message because it's a replacement)
                 return StackingResult.Replaced;
         }
 
         return StackingResult.Nop;
     }
 
-    public Entity? FindEffect(ref CharacterEffects characterEffects, EffectRuntime effectRuntime)
+    private Entity? FindEffect(ref CharacterEffects characterEffects, EffectRuntime effectRuntime)
     {
         if (effectRuntime.Tag == EffectTagId.None)
         {

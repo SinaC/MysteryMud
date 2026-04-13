@@ -46,7 +46,7 @@ public class JsonEffectLoader
             Id = data.Name.ComputeUniqueId(),
             Name = data.Name,
 
-            DurationFunc = data.DurationFormula == null
+            DurationCompiledFormula = data.DurationFormula == null
                 ? null
                 : _formulaCompiler.Compile(data.DurationFormula),
             Tag = EnumParser.Parse(data.Tag, EffectTagId.None),
@@ -77,7 +77,7 @@ public class JsonEffectLoader
                         Trigger = trigger,
                         Stat = stat,
                         Modifier = modifier,
-                        ValueFunc = valueFunc
+                        ValueCompiledFormula = valueFunc
                     };
                 }
 
@@ -91,25 +91,25 @@ public class JsonEffectLoader
                         {
                             Trigger = trigger,
                             Modifier = modifier,
-                            ValueFunc = valueFunc
+                            ValueCompiledFormula = valueFunc
                         },
                         "Mana" => new ManaModifierActionDefinition
                         {
                             Trigger = trigger,
                             Modifier = modifier,
-                            ValueFunc = valueFunc
+                            ValueCompiledFormula = valueFunc
                         },
                         "Energy" => new EnergyModifierActionDefinition
                         {
                             Trigger = trigger,
                             Modifier = modifier,
-                            ValueFunc = valueFunc
+                            ValueCompiledFormula = valueFunc
                         },
                         "Rage" => new RageModifierActionDefinition
                         {
                             Trigger = trigger,
                             Modifier = modifier,
-                            ValueFunc = valueFunc
+                            ValueCompiledFormula = valueFunc
                         },
                         _ => throw new NotSupportedException($"Unknown resource modifier type: {data.Resource}")
                     };
@@ -123,7 +123,7 @@ public class JsonEffectLoader
                     {
                         Trigger = trigger,
                         Mode = mode,
-                        AmountFunc = amountFunc
+                        AmountCompiledFormula = amountFunc
                     };
                 }
 
@@ -133,7 +133,7 @@ public class JsonEffectLoader
                     return new InstantHealActionDefinition
                     {
                         Trigger = trigger,
-                        AmountFunc = amountFunc
+                        AmountCompiledFormula = amountFunc
                     };
                 }
 
@@ -146,7 +146,7 @@ public class JsonEffectLoader
                     {
                         Trigger = trigger,
                         Mode = mode,
-                        AmountFunc = amountFunc,
+                        AmountCompiledFormula = amountFunc,
                         Kind = dmgKind
                     };
                 }
@@ -158,7 +158,7 @@ public class JsonEffectLoader
                     return new InstantDamageActionDefinition
                     {
                         Trigger = trigger,
-                        AmountFunc = amountFunc,
+                        AmountCompiledFormula = amountFunc,
                         Kind = dmgKind
                     };
                 }

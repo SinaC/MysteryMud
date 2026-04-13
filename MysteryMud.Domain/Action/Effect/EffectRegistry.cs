@@ -5,13 +5,13 @@ namespace MysteryMud.Domain.Action.Effect;
 
 public class EffectRegistry : IEffectRegistry
 {
-    private readonly EffectRuntimeFactory _effectRuntimeFactory;
+    private readonly IEffectRuntimeFactory _effectRuntimeFactory;
 
     private readonly Dictionary<int, EffectDefinition> EffectDefinitionsById = [];
     private readonly Dictionary<int, EffectRuntime> EffectsById = [];
     private readonly Dictionary<string, EffectRuntime> EffectsByName = new(StringComparer.OrdinalIgnoreCase);
 
-    public EffectRegistry(EffectRuntimeFactory effectRuntimeFactory)
+    public EffectRegistry(IEffectRuntimeFactory effectRuntimeFactory)
     {
         _effectRuntimeFactory = effectRuntimeFactory;
     }
