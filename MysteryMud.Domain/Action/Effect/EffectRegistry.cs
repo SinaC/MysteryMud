@@ -3,7 +3,7 @@ using MysteryMud.Domain.Action.Effect.Factories;
 
 namespace MysteryMud.Domain.Action.Effect;
 
-public class EffectRegistry
+public class EffectRegistry : IEffectRegistry
 {
     private readonly EffectRuntimeFactory _effectRuntimeFactory;
 
@@ -16,7 +16,7 @@ public class EffectRegistry
         _effectRuntimeFactory = effectRuntimeFactory;
     }
 
-    public void RegisterEffects(IEnumerable<EffectDefinition> effectDefinitions)
+    public void Register(IEnumerable<EffectDefinition> effectDefinitions)
     {
         foreach (var effectDefinition in effectDefinitions)
         {

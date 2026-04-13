@@ -3,7 +3,7 @@ using MysteryMud.Domain.Ability.Resolvers;
 
 namespace MysteryMud.Domain.Ability;
 
-public class AbilityOutcomeResolverRegistry
+public class AbilityOutcomeResolverRegistry : IAbilityOutcomeResolverRegistry
 {
     private readonly Dictionary<string, RegisteredAbilityOutcomeResolver> _resolverByName = new (StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<int, RegisteredAbilityOutcomeResolver> _resolverById = [];
@@ -25,10 +25,4 @@ public class AbilityOutcomeResolverRegistry
 
     public bool TryGetResolver(int id, out RegisteredAbilityOutcomeResolver? resolver)
         => _resolverById.TryGetValue(id, out resolver);
-}
-
-public sealed class RegisteredAbilityOutcomeResolver
-{
-    public required int Id { get; init; }
-    public required IAbilityOutcomeResolver Resolver { get; init; }
 }

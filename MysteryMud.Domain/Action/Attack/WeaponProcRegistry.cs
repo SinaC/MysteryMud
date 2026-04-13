@@ -4,14 +4,14 @@ using MysteryMud.Domain.Action.Effect;
 
 namespace MysteryMud.Domain.Action.Attack;
 
-public class WeaponProcRegistry
+public class WeaponProcRegistry : IWeaponProcRegistry
 {
     private readonly Dictionary<string, WeaponProcRuntime> _procByName = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<int, WeaponProcRuntime> _procById = [];
 
-    private readonly EffectRegistry _effectRegistry;
+    private readonly IEffectRegistry _effectRegistry;
 
-    public WeaponProcRegistry(EffectRegistry effectRegistry)
+    public WeaponProcRegistry(IEffectRegistry effectRegistry)
     {
         _effectRegistry = effectRegistry;
     }
@@ -30,9 +30,9 @@ public class WeaponProcRegistry
             Register(definition);
     }
 
-    public bool TryGet(string name, out WeaponProcRuntime? proc)
+    public bool TryGetRuntime(string name, out WeaponProcRuntime? proc)
         => _procByName.TryGetValue(name, out proc);
 
-    public bool TryGet(int id, out WeaponProcRuntime? proc)
+    public bool TryGetRuntime(int id, out WeaponProcRuntime? proc)
         => _procById.TryGetValue(id, out proc);
 }

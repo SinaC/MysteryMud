@@ -22,11 +22,11 @@ public class AbilityExecutionSystem
     private readonly IGameMessageService _msg;
     private readonly IIntentContainer _intents;
     private readonly IEventBuffer<AbilityExecutedEvent> _abilityExecuted;
-    private readonly AbilityRegistry _abilityRegistry;
-    private readonly EffectRegistry _effectRegistry;
-    private readonly AbilityOutcomeResolverRegistry _abilityOutcomeResolverRegistry;
+    private readonly IAbilityRegistry _abilityRegistry;
+    private readonly IEffectRegistry _effectRegistry;
+    private readonly IAbilityOutcomeResolverRegistry _abilityOutcomeResolverRegistry;
 
-    public AbilityExecutionSystem(ILogger logger, IGameMessageService msg, IIntentContainer intents, IEventBuffer<AbilityExecutedEvent> abilityExecuted, AbilityRegistry abilityRegistry, EffectRegistry effectRegistry, AbilityOutcomeResolverRegistry abilityOutcomeResolverRegistry)
+    public AbilityExecutionSystem(ILogger logger, IGameMessageService msg, IIntentContainer intents, IEventBuffer<AbilityExecutedEvent> abilityExecuted, IAbilityRegistry abilityRegistry, IEffectRegistry effectRegistry, IAbilityOutcomeResolverRegistry abilityOutcomeResolverRegistry)
     {
         _logger = logger;
         _msg = msg;
@@ -45,7 +45,7 @@ public class AbilityExecutionSystem
             var source = intent.Source;
             var targets = intent.Targets;
 
-            if (!_abilityRegistry.TryGetValue(abilityId, out var abilityRuntime) || abilityRuntime == null)
+            if (!_abilityRegistry.TryGetRuntime(abilityId, out var abilityRuntime) || abilityRuntime == null)
             {
                 _logger.LogError("Ability {abilityId} not found", abilityId);
                 continue;

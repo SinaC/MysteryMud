@@ -19,10 +19,10 @@ public class WeaponProcResolver
     private readonly ILogger _logger;
     private readonly IGameMessageService _msg;
     private readonly IIntentWriterContainer _intents;
-    private readonly WeaponProcRegistry _weaponProcRegistry;
-    private readonly EffectRegistry _effectRegistry;
+    private readonly IWeaponProcRegistry _weaponProcRegistry;
+    private readonly IEffectRegistry _effectRegistry;
 
-    public WeaponProcResolver(ILogger logger, IGameMessageService msg, IIntentWriterContainer intents, WeaponProcRegistry weaponProcRegistry, EffectRegistry effectRegistry)
+    public WeaponProcResolver(ILogger logger, IGameMessageService msg, IIntentWriterContainer intents, IWeaponProcRegistry weaponProcRegistry, IEffectRegistry effectRegistry)
     {
         _logger = logger;
         _msg = msg;
@@ -52,7 +52,7 @@ public class WeaponProcResolver
         foreach (var weaponProcId in weapon.ProcIds)
         {
             // existing weapon proc ?
-            if (!_weaponProcRegistry.TryGet(weaponProcId, out var weaponProcRuntime) || weaponProcRuntime == null)
+            if (!_weaponProcRegistry.TryGetRuntime(weaponProcId, out var weaponProcRuntime) || weaponProcRuntime == null)
             {
                 _logger.LogWarning("WeaponProcResolver: weapon {weaponName} has unknown proc {weaponProcId}", weaponEntity.DebugName, weaponProcId);
                 continue;

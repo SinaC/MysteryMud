@@ -24,8 +24,8 @@ public class ActionOrchestrator
     private readonly IEventBuffer<AttackResolvedEvent> _attackResolved;
     private readonly IEventBuffer<EffectResolvedEvent> _effectResolved;
     private readonly IEventBuffer<KillRewardEvent> _killRewards;
+    private readonly IEffectRegistry _effectRegistry;
     private readonly ExperienceService _experienceService;
-    private readonly EffectRegistry _effectRegistry;
     private readonly EffectFactory _effectFactory;
     private readonly DamageResolver _damageResolver;
     private readonly HitResolver _hitResolver;
@@ -33,15 +33,15 @@ public class ActionOrchestrator
     private readonly WeaponProcResolver _weaponProcResolver;
     private readonly ReactionResolver _reactionResolver;
 
-    public ActionOrchestrator(ILogger logger, IIntentContainer intents, IEventBuffer<AttackResolvedEvent> attackResolved, IEventBuffer<EffectResolvedEvent> effectResolved, IEventBuffer<KillRewardEvent> killRewards, ExperienceService experienceService, EffectRegistry effectRegistry, EffectFactory effectFactory, HitResolver hitResolver, HitDamageFactory hitDamageFactory, DamageResolver damageResolver, WeaponProcResolver weaponProcResolver, ReactionResolver reactionResolver)
+    public ActionOrchestrator(ILogger logger, IIntentContainer intents, IEventBuffer<AttackResolvedEvent> attackResolved, IEventBuffer<EffectResolvedEvent> effectResolved, IEventBuffer<KillRewardEvent> killRewards, IEffectRegistry effectRegistry, ExperienceService experienceService, EffectFactory effectFactory, HitResolver hitResolver, HitDamageFactory hitDamageFactory, DamageResolver damageResolver, WeaponProcResolver weaponProcResolver, ReactionResolver reactionResolver)
     {
         _logger = logger;
         _intents = intents;
-        _experienceService = experienceService;
         _killRewards = killRewards;
         _attackResolved = attackResolved;
         _effectResolved = effectResolved;
         _effectRegistry = effectRegistry;
+        _experienceService = experienceService;
         _effectFactory = effectFactory;
         _damageResolver = damageResolver;
         _hitResolver = hitResolver;

@@ -6,7 +6,7 @@ namespace MysteryMud.Domain.Ability.Factories;
 
 public static class AbilityRuntimeFactory
 {
-    public static AbilityRuntime Create(EffectRegistry effectRegistry, AbilityOutcomeResolverRegistry abilityOutcomeResolverRegistry, AbilityDefinition def)
+    public static AbilityRuntime Create(IEffectRegistry effectRegistry, IAbilityOutcomeResolverRegistry abilityOutcomeResolverRegistry, AbilityDefinition def)
     {
         if (def.ConditionalEffectGroups == null || def.ConditionalEffectGroups.Count == 0)
             throw new Exception($"No effect found on ability {def.Name}");
@@ -34,7 +34,7 @@ public static class AbilityRuntimeFactory
         };
     }
 
-    private static AbilityOutcomeResolverRuntime? MapAbilityOutcomeResolver(AbilityOutcomeResolverRegistry abilityExecutionResolverRegistry, AbilityDefinition def)
+    private static AbilityOutcomeResolverRuntime? MapAbilityOutcomeResolver(IAbilityOutcomeResolverRegistry abilityExecutionResolverRegistry, AbilityDefinition def)
     {
         if (def.OutcomeResolver == null)
             return null;
@@ -58,7 +58,7 @@ public static class AbilityRuntimeFactory
         return rules;
     }
 
-    private static List<AbilityConditionalEffectGroupRuntime> MapConditionEffectGroupIds(EffectRegistry effectRegistry, AbilityDefinition def)
+    private static List<AbilityConditionalEffectGroupRuntime> MapConditionEffectGroupIds(IEffectRegistry effectRegistry, AbilityDefinition def)
     {
         var conditionalEffectGroups = new List<AbilityConditionalEffectGroupRuntime>();
         foreach (var conditionalEffectGroupDefinition in def.ConditionalEffectGroups)
@@ -74,7 +74,7 @@ public static class AbilityRuntimeFactory
         return conditionalEffectGroups;
     }
 
-    private static List<int> MapEffectIds(EffectRegistry effectRegistry, AbilityDefinition def, IEnumerable<string> effectNames)
+    private static List<int> MapEffectIds(IEffectRegistry effectRegistry, AbilityDefinition def, IEnumerable<string> effectNames)
     {
         var effectIds = new List<int>();
         foreach (var effectName in effectNames)

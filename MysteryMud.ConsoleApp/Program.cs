@@ -112,7 +112,7 @@ var effectDefinitions = effectLoader.Load(Path.Combine(basePath, gamePaths.Effec
 var effectActionFactory = new EffectActionFactory(logger);
 var effectRuntimeFactory = new EffectRuntimeFactory(effectActionFactory);
 var effectRegistry = new EffectRegistry(effectRuntimeFactory);
-effectRegistry.RegisterEffects(effectDefinitions);
+effectRegistry.Register(effectDefinitions);
 
 // define ability outcome resolver registry
 // TODO: autodiscover with reflection

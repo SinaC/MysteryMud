@@ -50,7 +50,7 @@ public class SkillCommand : IExplicitCommand
         ref var casting = ref actor.TryGetRef<Casting>(out var isCasting);
         if (isCasting)
         {
-            if (!_abilityRegistry.TryGetValue(casting.AbilityId, out var castingAbilityRuntime) || castingAbilityRuntime == null)
+            if (!_abilityRegistry.TryGetRuntime(casting.AbilityId, out var castingAbilityRuntime) || castingAbilityRuntime == null)
             {
                 _logger.LogError("{actorName} is focused on an unknown ability {abilityId}", actor.DebugName, casting.AbilityId);
                 actor.Remove<Casting>(); // remove casting and allow to cast a new spell

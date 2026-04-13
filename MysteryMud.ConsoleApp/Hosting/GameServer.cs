@@ -34,7 +34,7 @@ public class GameServer
     private readonly IntentBusContainer _intentBusContainer;
     private readonly GameLoop _gameLoop;
 
-    public GameServer(ILogger logger, World world, ICommandDispatcher commandDispatcher, EffectRegistry effectRegistry, AbilityRegistry abilityRegistry, AbilityOutcomeResolverRegistry abilityExecutionResolverRegistry, WeaponProcRegistry weaponProcRegistry)
+    public GameServer(ILogger logger, World world, ICommandDispatcher commandDispatcher, IEffectRegistry effectRegistry, IAbilityRegistry abilityRegistry, IAbilityOutcomeResolverRegistry abilityExecutionResolverRegistry, IWeaponProcRegistry weaponProcRegistry)
     {
         _world = world;
         _logger = logger;

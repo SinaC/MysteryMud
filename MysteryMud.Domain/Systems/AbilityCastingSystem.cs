@@ -17,16 +17,16 @@ public class AbilityCastingSystem
     private readonly ILogger _logger;
     private readonly IGameMessageService _msg;
     private readonly IIntentContainer _intents;
+    private readonly IAbilityRegistry _abilityRegistry;
     private readonly IAbilityTargetResolver _abilityTargetResolver;
-    private readonly AbilityRegistry _abilityRegistry;
 
-    public AbilityCastingSystem(ILogger logger, IGameMessageService msg, IIntentContainer intents, IAbilityTargetResolver abilityTargetResolver, AbilityRegistry abilityRegistry)
+    public AbilityCastingSystem(ILogger logger, IGameMessageService msg, IIntentContainer intents, IAbilityRegistry abilityRegistry, IAbilityTargetResolver abilityTargetResolver)
     {
         _logger = logger;
         _msg = msg;
         _intents = intents;
-        _abilityTargetResolver = abilityTargetResolver;
         _abilityRegistry = abilityRegistry;
+        _abilityTargetResolver = abilityTargetResolver;
     }
 
     public void Tick(GameState state)
@@ -53,7 +53,7 @@ public class AbilityCastingSystem
                 return;
             }
 
-            if (!_abilityRegistry.TryGetValue(casting.AbilityId, out var abilityRuntime) || abilityRuntime == null)
+            if (!_abilityRegistry.TryGetRuntime(casting.AbilityId, out var abilityRuntime) || abilityRuntime == null)
             {
                 _logger.LogError("Ability {abilityId} not found", abilityId);
                 return;

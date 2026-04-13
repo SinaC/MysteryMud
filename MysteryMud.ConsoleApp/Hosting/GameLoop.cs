@@ -44,10 +44,10 @@ internal class GameLoop
     private readonly IScheduler _scheduler;
     private readonly IGameMessageService _gameMessageService;
     private readonly IIntentContainer _intentContainer;
-    private readonly EffectRegistry _effectRegistry;
-    private readonly AbilityRegistry _abilityRegistry;
-    private readonly AbilityOutcomeResolverRegistry _abilityExecutionResolverRegistry;
-    private readonly WeaponProcRegistry _weaponProcRegistry;
+    private readonly IEffectRegistry _effectRegistry;
+    private readonly IAbilityRegistry _abilityRegistry;
+    private readonly IAbilityOutcomeResolverRegistry _abilityExecutionResolverRegistry;
+    private readonly IWeaponProcRegistry _weaponProcRegistry;
     private readonly World _world;
 
     /*
@@ -148,7 +148,7 @@ internal class GameLoop
     private readonly LookSystem _lookSystem;
     private readonly CleanupSystem _cleanupSystem;
 
-    public GameLoop(ILogger logger, IOutputService putputService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, IGameMessageService gameMessageService, IIntentContainer intentContainer, EffectRegistry effectRegistry, AbilityRegistry abilityRegistry, AbilityOutcomeResolverRegistry abilityExecutionResolverRegistry, WeaponProcRegistry weaponProcRegistry, World world)
+    public GameLoop(ILogger logger, IOutputService putputService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, IGameMessageService gameMessageService, IIntentContainer intentContainer, IEffectRegistry effectRegistry, IAbilityRegistry abilityRegistry, IAbilityOutcomeResolverRegistry abilityExecutionResolverRegistry, IWeaponProcRegistry weaponProcRegistry, World world)
     {
         _logger = logger;
         _outputService = putputService;
@@ -179,7 +179,7 @@ internal class GameLoop
         _effectExecutor = new EffectExecutor(_damageResolver, _healResolver);
         _effectFactory = new EffectFactory(_logger, _gameMessageService, _intentContainer, _effectExecutor);
 
-        _actionOrchestrator = new ActionOrchestrator(_logger, _intentContainer, _attackResolvedEventBuffer, _effectResolvedEventBuffer, _killRewardEventBuffer, _experienceService, _effectRegistry, _effectFactory, _hitResolver, _hitDamageFactory, _damageResolver, _weaponProcResolver, _reactionResolver);
+        _actionOrchestrator = new ActionOrchestrator(_logger, _intentContainer, _attackResolvedEventBuffer, _effectResolvedEventBuffer, _killRewardEventBuffer, _effectRegistry, _experienceService, _effectFactory, _hitResolver, _hitDamageFactory, _damageResolver, _weaponProcResolver, _reactionResolver);
 
         _commandExecutionSystem = new CommandExecutionSystem(_logger);
         _commandThrottleSystem = new CommandThrottleSystem(_gameMessageService);
@@ -191,8 +191,8 @@ internal class GameLoop
         _maxManaSystem = new MaxResourcesSystem<BaseMana, Mana, DirtyMana, ManaModifier>(x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value);
         _maxEnergySystem = new MaxResourcesSystem<BaseEnergy, Energy, DirtyEnergy, EnergyModifier>(x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value);
         _maxRageSystem = new MaxResourcesSystem<BaseRage, Rage, DirtyRage, RageModifier>(x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value);
-        _abilityValidationSystem = new AbilityValidationSystem(_logger, _gameMessageService, _intentContainer, _abilityTargetResolver, _abilityUsedEventBuffer, _abilityRegistry, _abilityExecutionResolverRegistry);
-        _abilityCastingSystem = new AbilityCastingSystem(_logger, _gameMessageService, _intentContainer, _abilityTargetResolver, _abilityRegistry);
+        _abilityValidationSystem = new AbilityValidationSystem(_logger, _gameMessageService, _intentContainer, _abilityUsedEventBuffer, _abilityRegistry, _abilityExecutionResolverRegistry, _abilityTargetResolver);
+        _abilityCastingSystem = new AbilityCastingSystem(_logger, _gameMessageService, _intentContainer, _abilityRegistry, _abilityTargetResolver);
         _abilityExecutionSystem = new AbilityExecutionSystem(_logger, _gameMessageService, _intentContainer, _abilityExecutedEventBuffer, _abilityRegistry, _effectRegistry, _abilityExecutionResolverRegistry);
         _autoAttackSystem = new AutoAttackSystem(_intentContainer);
         _timedEffectSystem = new TimedEffectSystem(_logger, _gameMessageService, _intentContainer, _effectExecutor, _triggeredScheduledEventBuffer, _effectExpiredEventBuffer, _effectTickedEventBuffer);

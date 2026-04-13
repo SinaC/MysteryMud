@@ -33,7 +33,7 @@ namespace MysteryMud.ConsoleApp.Demo;
 
 static class Demo2
 {
-    public static void Run(ILogger logger, World world, ICommandDispatcher commandDispatcher, EffectRegistry effectRegistry, WeaponProcRegistry weaponProcRegistry)
+    public static void Run(ILogger logger, World world, ICommandDispatcher commandDispatcher, IEffectRegistry effectRegistry, IWeaponProcRegistry weaponProcRegistry)
     {
         // get entities for testing
         Span<Entity> characters = stackalloc Entity[10];
@@ -99,7 +99,7 @@ static class Demo2
 
         var experienceService = new ExperienceService(gameMessageService, experienceGrantedEventBuffer, levelIncreasedEventBuffer);
 
-        var actionOrchestrator = new ActionOrchestrator(logger, intentBusContainer, attackResolvedEventBuffer, effectResolvedEventBuffer, killRewardEventBuffer, experienceService, effectRegistry, effectFactory, hitResolver, hitDamageFactory, damageResolver, weaponProcResolver, reactionResolver);
+        var actionOrchestrator = new ActionOrchestrator(logger, intentBusContainer, attackResolvedEventBuffer, effectResolvedEventBuffer, killRewardEventBuffer, effectRegistry, experienceService, effectFactory, hitResolver, hitDamageFactory, damageResolver, weaponProcResolver, reactionResolver);
 
         var commandExecutionSystem = new CommandExecutionSystem(logger);
         var fleeSystem = new FleeSystem(gameMessageService, intentBusContainer, experienceService, fleeBlockedEventBuffer);
