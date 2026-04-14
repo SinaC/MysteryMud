@@ -9,7 +9,7 @@ public class EffectDefinition
 
     // state-effect
     public EffectCompiledFormula? DurationCompiledFormula { get; init; } // if null -> stateless effect
-    public EffectTagId Tag { get; init; }
+    public CharacterEffectTagId Tag { get; init; } // TODO: what about ItemEffectTagId ?
     public StackingRule Stacking { get; init; }
     public int MaxStacks { get; init; } = 1;
     public bool TickOnApply { get; init; } = false; // if true, tick actions are triggered immediately

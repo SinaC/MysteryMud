@@ -26,7 +26,7 @@ public class EffectLifecycleManager : IEffectLifecycleManager
         // remove tag if applicable
         if (effectInstance.EffectRuntime != null)
         {
-            if (effectInstance.EffectRuntime.Tag != EffectTagId.None)
+            if (effectInstance.EffectRuntime.Tag != CharacterEffectTagId.None)
             {
                 int tagIndex = (int)effectInstance.EffectRuntime.Tag;
                 var effectsByTag = characterEffects.EffectsByTag[tagIndex];
@@ -41,29 +41,29 @@ public class EffectLifecycleManager : IEffectLifecycleManager
 
         // if effect has StatModifiers
         // flag the target's stats as dirty so they will be recalculated without this effect
-        if (effect.Has<StatModifiers>() && !effectInstance.Target.Has<DirtyStats>())
+        if (effect.Has<CharacterStatModifiers>() && !effectInstance.Target.Has<DirtyStats>())
             effectInstance.Target.Add<DirtyStats>();
 
         // if effect has ResourceModifiers
         // flag the target's resources as dirty so they will be recalculated without this effect
-        if (effect.Has<ResourceModifiers<HealthModifier>>() && !effectInstance.Target.Has<DirtyHealth>())
+        if (effect.Has<CharacterResourceModifiers<HealthModifier>>() && !effectInstance.Target.Has<DirtyHealth>())
             effectInstance.Target.Add<DirtyHealth>();
-        if (effect.Has<ResourceModifiers<ManaModifier>>() && !effectInstance.Target.Has<DirtyMana>())
+        if (effect.Has<CharacterResourceModifiers<ManaModifier>>() && !effectInstance.Target.Has<DirtyMana>())
             effectInstance.Target.Add<DirtyMana>();
-        if (effect.Has<ResourceModifiers<EnergyModifier>>() && !effectInstance.Target.Has<DirtyEnergy>())
+        if (effect.Has<CharacterResourceModifiers<EnergyModifier>>() && !effectInstance.Target.Has<DirtyEnergy>())
             effectInstance.Target.Add<DirtyEnergy>();
-        if (effect.Has<ResourceModifiers<RageModifier>>() && !effectInstance.Target.Has<DirtyRage>())
+        if (effect.Has<CharacterResourceModifiers<RageModifier>>() && !effectInstance.Target.Has<DirtyRage>())
             effectInstance.Target.Add<DirtyRage>();
 
         // if effect has ResourceRegebModifiers
         // flag the target's resource regens as dirty so they will be recalculated without this effect
-        if (effect.Has<ResourceRegenModifiers<HealthRegenModifier>>() && !effectInstance.Target.Has<DirtyHealthRegen>())
+        if (effect.Has<CharacterResourceRegenModifiers<HealthRegenModifier>>() && !effectInstance.Target.Has<DirtyHealthRegen>())
             effectInstance.Target.Add<DirtyHealthRegen>();
-        if (effect.Has<ResourceRegenModifiers<ManaRegenModifier>>() && !effectInstance.Target.Has<DirtyManaRegen>())
+        if (effect.Has<CharacterResourceRegenModifiers<ManaRegenModifier>>() && !effectInstance.Target.Has<DirtyManaRegen>())
             effectInstance.Target.Add<DirtyManaRegen>();
-        if (effect.Has<ResourceRegenModifiers<EnergyModifier>>() && !effectInstance.Target.Has<DirtyEnergyRegen>())
+        if (effect.Has<CharacterResourceRegenModifiers<EnergyModifier>>() && !effectInstance.Target.Has<DirtyEnergyRegen>())
             effectInstance.Target.Add<DirtyEnergyRegen>();
-        if (effect.Has<ResourceRegenModifiers<RageDecayModifier>>() && !effectInstance.Target.Has<DirtyRageDecay>())
+        if (effect.Has<CharacterResourceRegenModifiers<RageDecayModifier>>() && !effectInstance.Target.Has<DirtyRageDecay>())
             effectInstance.Target.Add<DirtyRageDecay>();
 
         // destroy effect

@@ -1,6 +1,6 @@
 ﻿namespace MysteryMud.Domain.Components.Effects;
 
-public struct ResourceModifiers<TResourceModifier>
+public struct CharacterResourceModifiers<TResourceModifier>
     where TResourceModifier : struct
 {
     public List<TResourceModifier> Values;

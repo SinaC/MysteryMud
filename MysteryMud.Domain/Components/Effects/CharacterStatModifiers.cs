@@ -2,7 +2,7 @@
 
 namespace MysteryMud.Domain.Components.Effects;
 
-public struct StatModifiers
+public struct CharacterStatModifiers
 {
-    public List<StatModifier> Values;
+    public List<CharacterStatModifier> Values;
 }

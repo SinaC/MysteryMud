@@ -38,7 +38,7 @@ public class EffectiveMaxResourceSystem<TBase, TResource, TDirty, TModifier>
         var query = new QueryDescription()
             .WithAll<TBase, TResource, TDirty>()
             .WithNone<Dead>();
-        state.World.Query(query, (Entity character,
+        state.World.Query(query, (Entity entity,
             ref TBase baseRes,
             ref TResource effectiveRes,
             ref TDirty dirty) =>
@@ -49,7 +49,7 @@ public class EffectiveMaxResourceSystem<TBase, TResource, TDirty, TModifier>
             // TODO: apply modifiers from equipment
 
             // apply modifiers from effects
-            var (flat, percent, multiply, overriding) = ModifierPipeline.CalculateModifiers<ResourceModifiers<TModifier>, TModifier>(character, x => true, x => x.Values, _getModifierKindFunc, _getModifierValueFunc);
+            var (flat, percent, multiply, overriding) = ModifierPipeline.CalculateModifiers<CharacterResourceModifiers<TModifier>, TModifier>(entity, x => true, x => x.Values, _getModifierKindFunc, _getModifierValueFunc);
            
             var rawMax = overriding ?? ((baseMax + flat) * (100 + percent) * multiply / 100);
 
@@ -67,7 +67,7 @@ public class EffectiveMaxResourceSystem<TBase, TResource, TDirty, TModifier>
             _setCurrentAction(ref effectiveRes, current);
 
             // remove dirty tag
-            character.Remove<TDirty>();
+            entity.Remove<TDirty>();
         });
     }
 }

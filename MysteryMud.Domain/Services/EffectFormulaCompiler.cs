@@ -125,23 +125,23 @@ public class EffectFormulaCompiler
                         break;
 
                     case TokenType.CasterStrength:
-                        stack.Push(casterStats[StatKind.Strength]);
+                        stack.Push(casterStats[CharacterStatKind.Strength]);
                         break;
 
                     case TokenType.CasterIntelligence:
-                        stack.Push(casterStats[StatKind.Intelligence]);
+                        stack.Push(casterStats[CharacterStatKind.Intelligence]);
                         break;
 
                     case TokenType.CasterWisdom:
-                        stack.Push(casterStats[StatKind.Wisdom]);
+                        stack.Push(casterStats[CharacterStatKind.Wisdom]);
                         break;
 
                     case TokenType.CasterDexterity:
-                        stack.Push(casterStats[StatKind.Dexterity]);
+                        stack.Push(casterStats[CharacterStatKind.Dexterity]);
                         break;
 
                     case TokenType.CasterConstitution:
-                        stack.Push(casterStats[StatKind.Constitution]);
+                        stack.Push(casterStats[CharacterStatKind.Constitution]);
                         break;
 
                     case TokenType.TargetLevel:
@@ -149,23 +149,23 @@ public class EffectFormulaCompiler
                         break;
 
                     case TokenType.TargetStrength:
-                        stack.Push(targetStats[StatKind.Strength]);
+                        stack.Push(targetStats[CharacterStatKind.Strength]);
                         break;
 
                     case TokenType.TargetIntelligence:
-                        stack.Push(targetStats[StatKind.Intelligence]);
+                        stack.Push(targetStats[CharacterStatKind.Intelligence]);
                         break;
 
                     case TokenType.TargetWisdom:
-                        stack.Push(targetStats[StatKind.Wisdom]);
+                        stack.Push(targetStats[CharacterStatKind.Wisdom]);
                         break;
 
                     case TokenType.TargetDexterity:
-                        stack.Push(targetStats[StatKind.Dexterity]);
+                        stack.Push(targetStats[CharacterStatKind.Dexterity]);
                         break;
 
                     case TokenType.TargetConstitution:
-                        stack.Push(targetStats[StatKind.Constitution]);
+                        stack.Push(targetStats[CharacterStatKind.Constitution]);
                         break;
 
                     case TokenType.HitDamage: // TODO: how to make distinction between hit damage and effect damage ?

@@ -5,8 +5,8 @@ namespace MysteryMud.Domain.Components.Effects;
 public struct EffectValuesSnapshot
 {
     public int SourceLevel;
-    public StatValues SourceStats;
+    public CharacterStatValues SourceStats;
 
     public int TargetLevel;
-    public StatValues TargetStats;
+    public CharacterStatValues TargetStats;
 }

@@ -4,5 +4,5 @@ namespace MysteryMud.Domain.Components.Characters;
 
 public struct BaseStats
 {
-    public StatValues Values;
+    public CharacterStatValues Values;
 }

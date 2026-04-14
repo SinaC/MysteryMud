@@ -1,6 +1,6 @@
 ﻿namespace MysteryMud.GameData.Enums;
 
-public enum EffectTagId : byte
+public enum CharacterEffectTagId : byte
 {
     None = 0,
     Poison = 1,

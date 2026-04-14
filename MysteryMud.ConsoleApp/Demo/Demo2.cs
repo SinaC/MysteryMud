@@ -101,7 +101,7 @@ static class Demo2
         var fleeSystem = new FleeSystem(gameMessageService, intentBusContainer, experienceService, fleeBlockedEventBuffer);
         var movementSystem = new MovementSystem(gameMessageService, intentBusContainer, movedEventBuffer);
         var itemInteractionSystem = new ItemInteractionSystem(gameMessageService, intentBusContainer, itemGotEventBuffer, itemDroppedEventBuffer, itemGivenEventBuffer, itemPutEventBuffer, itemWornEventBuffer, itemRemovedEventBuffer, itemDestroyedEventBuffer, itemSacrifierEventBuffer);
-        var statsSystem = new EffectiveStatsSystem();
+        var effectCharacterStatsSystem = new EffectiveCharacterStatsSystem();
         var autoAttackSystem = new AutoAttackSystem(intentBusContainer);
         var deathSystem = new DeathSystem(gameMessageService, intentBusContainer, deathEventBuffer);
         var lootSystem = new LootSystem(gameMessageService, intentBusContainer, itemLootedEventBuffer);
@@ -181,7 +181,7 @@ static class Demo2
         fleeSystem.Tick(gameState);
         movementSystem.Tick(gameState);
         itemInteractionSystem.Tick(gameState);
-        statsSystem.Tick(gameState);
+        effectCharacterStatsSystem.Tick(gameState);
         autoAttackSystem.Tick(gameState);
         actionOrchestrator.Tick(gameState);
         deathSystem.Tick(gameState);

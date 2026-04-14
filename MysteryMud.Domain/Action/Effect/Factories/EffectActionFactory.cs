@@ -21,7 +21,8 @@ public class EffectActionFactory : IEffectActionFactory
 
     public Action<EffectExecutionContext> Create(EffectActionDefinition actionDefinition) => actionDefinition switch
     {
-        StatModifierActionDefinition definition => CreateStatModifier(definition),
+        CharacterStatModifierActionDefinition definition => CreateCharacterStatModifier(definition),
+        ApplyCharacterTagActionDefinition definition => CreateApplyCharacterTag(definition),
         HealthModifierActionDefinition definition => CreateHealthModifier(definition),
         HealthRegenModifierActionDefinition definition => CreateHealthRegenModifier(definition),
         ManaModifierActionDefinition definition => CreateManaModifier(definition),
@@ -34,11 +35,10 @@ public class EffectActionFactory : IEffectActionFactory
         InstantHealActionDefinition definition => CreateInstantHeal(definition),
         PeriodicDamageActionDefinition definition => CreatePeriodDamage(definition),
         InstantDamageActionDefinition definition => CreateInstantDamage(definition),
-        ApplyTagActionDefinition definition => CreateApplyTag(definition),
         _ => throw new Exception($"Unknown EffectAction {actionDefinition.GetType()}"),
     };
 
-    private Action<EffectExecutionContext> CreateStatModifier(StatModifierActionDefinition definition)
+    private Action<EffectExecutionContext> CreateCharacterStatModifier(CharacterStatModifierActionDefinition definition)
     {
         return ctx =>
         {
@@ -47,19 +47,19 @@ public class EffectActionFactory : IEffectActionFactory
             {
                 var effect = effectContext.Effect.Value;
                 var value = definition.ValueCompiledFormula.Compiled(ctx.Context); // TODO: multiply by stack count ?
-                var modifier = new StatModifier
+                var modifier = new CharacterStatModifier
                 {
                     Stat = definition.Stat,
                     Modifier = definition.Modifier,
                     Value = value
                 };
 
-                ref var statModifiers = ref effect.TryGetRef<StatModifiers>(out var hasStatModifiers);
+                ref var statModifiers = ref effect.TryGetRef<CharacterStatModifiers>(out var hasStatModifiers);
                 if (hasStatModifiers)
                     statModifiers.Values.Add(modifier);
                 else
                 {
-                    effect.Add(new StatModifiers
+                    effect.Add(new CharacterStatModifiers
                     {
                         Values = [modifier]
                     });
@@ -89,12 +89,12 @@ public class EffectActionFactory : IEffectActionFactory
                     Value = value
                 };
 
-                ref var resourceModifiers = ref effect.TryGetRef<ResourceModifiers<HealthModifier>>(out var hasResourceModifiers);
-                if (hasResourceModifiers)
-                    resourceModifiers.Values.Add(modifier);
+                ref var characterResourceModifiers = ref effect.TryGetRef<CharacterResourceModifiers<HealthModifier>>(out var hasCharacterResourceModifiers);
+                if (hasCharacterResourceModifiers)
+                    characterResourceModifiers.Values.Add(modifier);
                 else
                 {
-                    effect.Add(new ResourceModifiers<HealthModifier>
+                    effect.Add(new CharacterResourceModifiers<HealthModifier>
                     {
                         Values = [modifier]
                     });
@@ -124,12 +124,12 @@ public class EffectActionFactory : IEffectActionFactory
                     Value = value
                 };
 
-                ref var resourceModifiers = ref effect.TryGetRef<ResourceRegenModifiers<HealthRegenModifier>>(out var hasResourceModifiers);
-                if (hasResourceModifiers)
-                    resourceModifiers.Values.Add(modifier);
+                ref var characterResourceModifiers = ref effect.TryGetRef<CharacterResourceRegenModifiers<HealthRegenModifier>>(out var hasCharacterResourceModifiers);
+                if (hasCharacterResourceModifiers)
+                    characterResourceModifiers.Values.Add(modifier);
                 else
                 {
-                    effect.Add(new ResourceRegenModifiers<HealthRegenModifier>
+                    effect.Add(new CharacterResourceRegenModifiers<HealthRegenModifier>
                     {
                         Values = [modifier]
                     });
@@ -159,12 +159,12 @@ public class EffectActionFactory : IEffectActionFactory
                     Value = value
                 };
 
-                ref var resourceModifiers = ref effect.TryGetRef<ResourceModifiers<ManaModifier>>(out var hasResourceModifiers);
+                ref var resourceModifiers = ref effect.TryGetRef<CharacterResourceModifiers<ManaModifier>>(out var hasResourceModifiers);
                 if (hasResourceModifiers)
                     resourceModifiers.Values.Add(modifier);
                 else
                 {
-                    effect.Add(new ResourceModifiers<ManaModifier>
+                    effect.Add(new CharacterResourceModifiers<ManaModifier>
                     {
                         Values = [modifier]
                     });
@@ -194,12 +194,12 @@ public class EffectActionFactory : IEffectActionFactory
                     Value = value
                 };
 
-                ref var resourceModifiers = ref effect.TryGetRef<ResourceRegenModifiers<ManaRegenModifier>>(out var hasResourceModifiers);
+                ref var resourceModifiers = ref effect.TryGetRef<CharacterResourceRegenModifiers<ManaRegenModifier>>(out var hasResourceModifiers);
                 if (hasResourceModifiers)
                     resourceModifiers.Values.Add(modifier);
                 else
                 {
-                    effect.Add(new ResourceRegenModifiers<ManaRegenModifier>
+                    effect.Add(new CharacterResourceRegenModifiers<ManaRegenModifier>
                     {
                         Values = [modifier]
                     });
@@ -229,12 +229,12 @@ public class EffectActionFactory : IEffectActionFactory
                     Value = value
                 };
 
-                ref var resourceModifiers = ref effect.TryGetRef<ResourceModifiers<EnergyModifier>>(out var hasResourceModifiers);
+                ref var resourceModifiers = ref effect.TryGetRef<CharacterResourceModifiers<EnergyModifier>>(out var hasResourceModifiers);
                 if (hasResourceModifiers)
                     resourceModifiers.Values.Add(modifier);
                 else
                 {
-                    effect.Add(new ResourceModifiers<EnergyModifier>
+                    effect.Add(new CharacterResourceModifiers<EnergyModifier>
                     {
                         Values = [modifier]
                     });
@@ -264,12 +264,12 @@ public class EffectActionFactory : IEffectActionFactory
                     Value = value
                 };
 
-                ref var resourceModifiers = ref effect.TryGetRef<ResourceRegenModifiers<EnergyRegenModifier>>(out var hasResourceModifiers);
+                ref var resourceModifiers = ref effect.TryGetRef<CharacterResourceRegenModifiers<EnergyRegenModifier>>(out var hasResourceModifiers);
                 if (hasResourceModifiers)
                     resourceModifiers.Values.Add(modifier);
                 else
                 {
-                    effect.Add(new ResourceRegenModifiers<EnergyRegenModifier>
+                    effect.Add(new CharacterResourceRegenModifiers<EnergyRegenModifier>
                     {
                         Values = [modifier]
                     });
@@ -299,12 +299,12 @@ public class EffectActionFactory : IEffectActionFactory
                     Value = value
                 };
 
-                ref var resourceModifiers = ref effect.TryGetRef<ResourceModifiers<RageModifier>>(out var hasResourceModifiers);
+                ref var resourceModifiers = ref effect.TryGetRef<CharacterResourceModifiers<RageModifier>>(out var hasResourceModifiers);
                 if (hasResourceModifiers)
                     resourceModifiers.Values.Add(modifier);
                 else
                 {
-                    effect.Add(new ResourceModifiers<RageModifier>
+                    effect.Add(new CharacterResourceModifiers<RageModifier>
                     {
                         Values = [modifier]
                     });
@@ -333,12 +333,12 @@ public class EffectActionFactory : IEffectActionFactory
                     Value = value
                 };
 
-                ref var resourceModifiers = ref effect.TryGetRef<ResourceRegenModifiers<RageDecayModifier>>(out var hasResourceModifiers);
+                ref var resourceModifiers = ref effect.TryGetRef<CharacterResourceRegenModifiers<RageDecayModifier>>(out var hasResourceModifiers);
                 if (hasResourceModifiers)
                     resourceModifiers.Values.Add(modifier);
                 else
                 {
-                    effect.Add(new ResourceModifiers<RageDecayModifier>
+                    effect.Add(new CharacterResourceModifiers<RageDecayModifier>
                     {
                         Values = [modifier]
                     });
@@ -429,7 +429,7 @@ public class EffectActionFactory : IEffectActionFactory
         };
     }
 
-    private static Action<EffectExecutionContext> CreateApplyTag(ApplyTagActionDefinition definition)
+    private static Action<EffectExecutionContext> CreateApplyCharacterTag(ApplyCharacterTagActionDefinition definition)
     {
         return ctx =>
         {

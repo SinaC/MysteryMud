@@ -87,11 +87,11 @@ public class EffectDisplayService : IEffectDisplayService
                 }
             }
 
-            // stat modifiers
-            ref var statModifiers = ref effect.TryGetRef<StatModifiers>(out var hasStatModifiers);
-            if (hasStatModifiers)
+            // character stat modifiers
+            ref var characterStatModifiers = ref effect.TryGetRef<CharacterStatModifiers>(out var hasCharacterStatModifiers);
+            if (hasCharacterStatModifiers)
             {
-                foreach (var modifier in statModifiers.Values)
+                foreach (var modifier in characterStatModifiers.Values)
                     _msg.To(viewer).Send($"  - {modifier.Modifier} {modifier.Value} {modifier.Stat}");
             }
 
@@ -114,7 +114,7 @@ public class EffectDisplayService : IEffectDisplayService
     private void DisplayResourceModifier<TResourceModifier>(Entity viewer, Entity effect, string resourceName, Func<TResourceModifier, ModifierKind> getModifierFunc, Func<TResourceModifier, decimal> getValueFunc)
         where TResourceModifier : struct
     {
-        ref var resourceModifiers = ref effect.TryGetRef<ResourceModifiers<TResourceModifier>>(out var hasResourceModifiers);
+        ref var resourceModifiers = ref effect.TryGetRef<CharacterResourceModifiers<TResourceModifier>>(out var hasResourceModifiers);
         if (hasResourceModifiers)
         {
             foreach (var modifier in resourceModifiers.Values)
@@ -125,7 +125,7 @@ public class EffectDisplayService : IEffectDisplayService
     private void DisplayResourceRegenModifier<TResourceRegenModifier>(Entity viewer, Entity effect, string resourceName, Func<TResourceRegenModifier, ModifierKind> getModifierFunc, Func<TResourceRegenModifier, decimal> getValueFunc)
         where TResourceRegenModifier : struct
     {
-        ref var resourceRegenModifiers = ref effect.TryGetRef<ResourceRegenModifiers<TResourceRegenModifier>>(out var hasResourceModifiers);
+        ref var resourceRegenModifiers = ref effect.TryGetRef<CharacterResourceRegenModifiers<TResourceRegenModifier>>(out var hasResourceModifiers);
         if (hasResourceModifiers)
         {
             foreach (var modifier in resourceRegenModifiers.Values)

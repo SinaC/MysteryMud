@@ -2,9 +2,9 @@
 
 namespace MysteryMud.GameData.Definitions;
 
-public readonly struct StatModifier
+public readonly struct CharacterStatModifier
 {
-    public required StatKind Stat { get; init; }
+    public required CharacterStatKind Stat { get; init; }
     public required ModifierKind Modifier { get; init; }
     public required decimal Value { get; init; }
 }

@@ -34,7 +34,7 @@ public class ScoreCommand : ICommand
         DisplayResource<Mana, ManaRegen, UsesMana>(actor, ResourceKind.Mana, x => (x.Current, x.Max));
         DisplayResource<Energy, EnergyRegen, UsesEnergy>(actor, ResourceKind.Energy, x => (x.Current, x.Max));
         DisplayResource<Rage, RageDecay, UsesRage>(actor, ResourceKind.Rage, x => (x.Current, x.Max));
-        foreach (var stat in Enum.GetValues<StatKind>().Take((int)StatKind.Count))
+        foreach (var stat in Enum.GetValues<CharacterStatKind>().Take((int)CharacterStatKind.Count))
         {
             _msg.To(actor).Send($"{stat}: {effectiveStats.Values[stat]}/{baseStats.Values[stat]}");
         }
