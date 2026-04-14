@@ -7,7 +7,7 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Action.Attack.Resolvers;
 
-public class AggroResolver
+public class AggroResolver : IAggroResolver
 {
     public void ResolveFromDamage(GameState state, Entity target, Entity source, int damageAmount, DamageKind damageKind)
     {

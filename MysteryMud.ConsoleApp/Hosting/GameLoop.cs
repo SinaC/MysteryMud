@@ -1,7 +1,6 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
-using MysteryMud.Application.Services;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Core.Eventing;
@@ -9,24 +8,13 @@ using MysteryMud.Core.Intent;
 using MysteryMud.Core.Logging;
 using MysteryMud.Core.Scheduler;
 using MysteryMud.Core.Services;
-using MysteryMud.Domain.Ability;
-using MysteryMud.Domain.Ability.Services;
 using MysteryMud.Domain.Action;
-using MysteryMud.Domain.Action.Attack;
-using MysteryMud.Domain.Action.Attack.Factories;
-using MysteryMud.Domain.Action.Attack.Resolvers;
-using MysteryMud.Domain.Action.Damage;
-using MysteryMud.Domain.Action.Effect;
-using MysteryMud.Domain.Action.Heal;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.Domain.Extensions;
-using MysteryMud.Domain.Services;
 using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
-using MysteryMud.GameData.Events;
-using MysteryMud.Infrastructure.Eventing;
 using MysteryMud.Infrastructure.Services;
 
 namespace MysteryMud.ConsoleApp.Hosting;
@@ -41,85 +29,12 @@ internal class GameLoop
     private readonly ICommandBus _commandBus;
     private readonly IMessageBus _messageBus;
     private readonly IScheduler _scheduler;
-    private readonly IGameMessageService _gameMessageService;
+    private readonly IGameMessageService _msg;
     private readonly IIntentContainer _intentContainer;
-    private readonly IEffectRegistry _effectRegistry;
-    private readonly IAbilityRegistry _abilityRegistry;
-    private readonly IAbilityOutcomeResolverRegistry _abilityExecutionResolverRegistry;
-    private readonly IWeaponProcRegistry _weaponProcRegistry;
+    private readonly EventBufferRegistry _buffers;
     private readonly World _world;
 
-    /*
-     * public class EventBus
-{
-    private readonly Dictionary<Type, object> _buffers = new();
-
-    public StructBuffer<T> GetBuffer<T>() where T : struct
-    {
-        if (!_buffers.TryGetValue(typeof(T), out var obj))
-        {
-            obj = new StructBuffer<T>(128);
-            _buffers[typeof(T)] = obj;
-        }
-
-        return (StructBuffer<T>)obj;
-    }
-
-    public void ClearAll()
-    {
-        foreach (var buf in _buffers.Values)
-        {
-            var clearMethod = buf.GetType().GetMethod("Clear");
-            clearMethod!.Invoke(buf, null);
-        }
-    }
-}*/
-    // TODO: deathEvent and damageEvent are purely combat events and should probably remains the only event passed to systems, other events like itemGotEvent, itemDroppedEvent, itemGivenEvent, itemPutEvent can be directly sent to message service without going through event buffer since they are only used for messaging and no system needs to react to them, this way we can avoid the complexity of managing multiple event buffers and also avoid the issue of events being processed in the wrong order (like damage events being processed before attack intents)
-    // TODO: we should replace all these eventbuffers with a more generic event system
-
-    private readonly EventBuffer<FleeBlockedEvent> _fleeBlockedEventBuffer = new();
-    private readonly EventBuffer<MovedEvent> _movedEventBuffer = new();
-    private readonly EventBuffer<ItemGotEvent> _itemGotEventBuffer = new();
-    private readonly EventBuffer<ItemDroppedEvent> _itemDroppedEventBuffer = new();
-    private readonly EventBuffer<ItemGivenEvent> _itemGivenEventBuffer = new();
-    private readonly EventBuffer<ItemPutEvent> _itemPutEventBuffer = new();
-    private readonly EventBuffer<ItemWornEvent> _itemWornEventBuffer = new();
-    private readonly EventBuffer<ItemRemovedEvent> _itemRemovedEventBuffer = new();
-    private readonly EventBuffer<ItemDestroyedEvent> _itemDestroyedEventBuffer = new();
-    private readonly EventBuffer<ItemSacrifiedEvent> _itemSacrifiedEventBuffer = new();
-    private readonly EventBuffer<DamagedEvent> _damagedEventBuffer = new();
-    private readonly EventBuffer<HealedEvent> _healedEventBuffer = new();
-    private readonly EventBuffer<DeathEvent> _deathEventBuffer = new();
-    private readonly EventBuffer<ItemLootedEvent> _itemLootedEventBuffer = new();
-    private readonly EventBuffer<LookedEvent> _lookedEventBuffer = new();
-    private readonly EventBuffer<TriggeredScheduledEvent> _triggeredScheduledEventBuffer = new();
-    private readonly EventBuffer<EffectExpiredEvent> _effectExpiredEventBuffer = new();
-    private readonly EventBuffer<EffectTickedEvent> _effectTickedEventBuffer = new();
-    private readonly EventBuffer<AttackResolvedEvent> _attackResolvedEventBuffer = new();
-    private readonly EventBuffer<EffectResolvedEvent> _effectResolvedEventBuffer = new();
-    private readonly EventBuffer<AbilityUsedEvent> _abilityUsedEventBuffer = new();
-    private readonly EventBuffer<AbilityExecutedEvent> _abilityExecutedEventBuffer = new();
-    private readonly EventBuffer<ExperienceGrantedEvent>  _experienceGrantedEventBuffer = new ();
-    private readonly EventBuffer<LevelIncreasedEvent> _levelIncreasedEventBuffer = new ();
-    private readonly EventBuffer<KillRewardEvent> _killRewardEventBuffer = new (); // short-term, only used in ActionOrchestrator but cannot be defined within ActionOrchestrator because EventBuffer is defined in Infrastructure
-
-    private readonly ILookService _lookService;
-    private readonly IEffectLifecycleManager _effectLifecycleManager;
-    private readonly IEffectApplicationManager _effectApplicationManager;
-
-    private readonly ExperienceService _experienceService;
-
-    private readonly IAbilityTargetResolver _abilityTargetResolver;
-    private readonly AggroResolver _aggroResolver;
-    private readonly DamageResolver _damageResolver;
-    private readonly HealResolver _healResolver;
-    private readonly HitResolver _hitResolver;
-    private readonly HitDamageFactory _hitDamageFactory;
-    private readonly WeaponProcResolver _weaponProcResolver;
-    private readonly ReactionResolver _reactionResolver;
-    private readonly EffectExecutor _effectExecutor;
-
-
+    // MaxResources cannot be injected
     private readonly ActionOrchestrator _actionOrchestrator;
 
     private readonly CommandExecutionSystem _commandExecutionSystem;
@@ -149,66 +64,81 @@ internal class GameLoop
     private readonly LookSystem _lookSystem;
     private readonly CleanupSystem _cleanupSystem;
 
-    public GameLoop(ILogger logger, IOutputService putputService, ICommandBus commandBus, IMessageBus messageBus, IScheduler scheduler, IGameMessageService gameMessageService, IIntentContainer intentContainer, IEffectRegistry effectRegistry, IAbilityRegistry abilityRegistry, IAbilityOutcomeResolverRegistry abilityExecutionResolverRegistry, IWeaponProcRegistry weaponProcRegistry, World world)
+    public GameLoop(
+        ILogger logger,
+        IOutputService putputService,
+        ICommandBus commandBus,
+        IMessageBus messageBus,
+        IScheduler scheduler,
+        IGameMessageService gameMessageService,
+        IIntentContainer intentContainer,
+        EventBufferRegistry eventBufferRegistry,
+        World world,
+        ActionOrchestrator actionOrchestrator,
+        CommandExecutionSystem commandExecutionSystem,
+        CommandThrottleSystem commandThrottleSystem,
+        FleeSystem fleeSystem,
+        MovementSystem movementSystem,
+        ItemInteractionSystem itemInteractionSystem,
+        EffectiveStatsSystem effectiveStatsSystem,
+        MaxResourcesSystem<BaseHealth, Health, DirtyHealth, HealthModifier> maxHeathSystem,
+        MaxResourcesSystem<BaseMana, Mana, DirtyMana, ManaModifier> maxManaSystem,
+        MaxResourcesSystem<BaseEnergy, Energy, DirtyEnergy, EnergyModifier> maxEnergySystem,
+        MaxResourcesSystem<BaseRage, Rage, DirtyRage, RageModifier> maxRageSystem,
+        AbilityValidationSystem abilityValidationSystem,
+        AbilityCastingSystem abilityCastingSystem,
+        AbilityExecutionSystem abilityExecutionSystem,
+        AutoAttackSystem autoAttackSystem,
+        TimedEffectSystem timedEffectSystem,
+        ManaRegenSystem manaRegenSystem,
+        EnergyRegenSystem energyRegenSystem,
+        RageDecaySystem rageDecaySystem,
+        HealthRegenSystem healthRegenSystem,
+        ThreatDecaySystem threatDecaySystem,
+        ScheduleSystem scheduleSystem,
+        DeathSystem deathSystem,
+        RespawnSystem respawnSystem,
+        LootSystem lootSystem,
+        LookSystem lookSystem,
+        CleanupSystem cleanupSystem)
     {
         _logger = logger;
         _outputService = putputService;
         _commandBus = commandBus;
         _messageBus = messageBus;
         _scheduler = scheduler;
-        _gameMessageService = gameMessageService;
+        _msg = gameMessageService;
         _intentContainer = intentContainer;
-        _effectRegistry = effectRegistry;
-        _abilityRegistry = abilityRegistry;
-        _abilityExecutionResolverRegistry = abilityExecutionResolverRegistry;
-        _weaponProcRegistry = weaponProcRegistry;
+        _buffers = eventBufferRegistry;
         _world = world;
 
-        _lookService = new LookService(_gameMessageService);
-        _experienceService = new ExperienceService(_gameMessageService, _experienceGrantedEventBuffer, _levelIncreasedEventBuffer);
-
-        _abilityTargetResolver = new AbilityTargetResolver();
-        _aggroResolver = new AggroResolver();
-        _damageResolver = new DamageResolver(_aggroResolver, _gameMessageService, _damagedEventBuffer, _deathEventBuffer, _killRewardEventBuffer);
-        _healResolver = new HealResolver(_aggroResolver, _gameMessageService, _healedEventBuffer);
-        _hitResolver = new HitResolver(_gameMessageService);
-        _hitDamageFactory = new HitDamageFactory();
-        _weaponProcResolver = new WeaponProcResolver(_logger, _gameMessageService, _intentContainer, _weaponProcRegistry, _effectRegistry);
-        _reactionResolver = new ReactionResolver(_gameMessageService);
-
-
-        _effectExecutor = new EffectExecutor(_damageResolver, _healResolver);
-        _effectLifecycleManager = new EffectLifecycleManager();
-        _effectApplicationManager = new EffectApplicationManager(_logger, _gameMessageService, _intentContainer, _effectExecutor, _effectLifecycleManager);
-
-        _actionOrchestrator = new ActionOrchestrator(_logger, _intentContainer, _attackResolvedEventBuffer, _effectResolvedEventBuffer, _killRewardEventBuffer, _effectRegistry, _effectApplicationManager, _experienceService, _hitResolver, _hitDamageFactory, _damageResolver, _weaponProcResolver, _reactionResolver);
-
-        _commandExecutionSystem = new CommandExecutionSystem(_logger);
-        _commandThrottleSystem = new CommandThrottleSystem(_gameMessageService);
-        _fleeSystem = new FleeSystem(_gameMessageService, _intentContainer, _experienceService, _fleeBlockedEventBuffer);
-        _movementSystem = new MovementSystem(_gameMessageService, _intentContainer, _movedEventBuffer);
-        _itemInteractionSystem = new ItemInteractionSystem(_gameMessageService, _intentContainer, _itemGotEventBuffer, _itemDroppedEventBuffer, _itemGivenEventBuffer, _itemPutEventBuffer, _itemWornEventBuffer, _itemRemovedEventBuffer, _itemDestroyedEventBuffer, _itemSacrifiedEventBuffer);
-        _effectiveStatsSystem = new EffectiveStatsSystem();
-        _maxHeathSystem = new MaxResourcesSystem<BaseHealth, Health, DirtyHealth, HealthModifier>(x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value);
-        _maxManaSystem = new MaxResourcesSystem<BaseMana, Mana, DirtyMana, ManaModifier>(x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value);
-        _maxEnergySystem = new MaxResourcesSystem<BaseEnergy, Energy, DirtyEnergy, EnergyModifier>(x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value);
-        _maxRageSystem = new MaxResourcesSystem<BaseRage, Rage, DirtyRage, RageModifier>(x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value);
-        _abilityValidationSystem = new AbilityValidationSystem(_logger, _gameMessageService, _intentContainer, _abilityUsedEventBuffer, _abilityRegistry, _abilityExecutionResolverRegistry, _abilityTargetResolver);
-        _abilityCastingSystem = new AbilityCastingSystem(_logger, _gameMessageService, _intentContainer, _abilityRegistry, _abilityTargetResolver);
-        _abilityExecutionSystem = new AbilityExecutionSystem(_logger, _gameMessageService, _intentContainer, _abilityExecutedEventBuffer, _abilityRegistry, _effectRegistry, _abilityExecutionResolverRegistry);
-        _autoAttackSystem = new AutoAttackSystem(_intentContainer);
-        _timedEffectSystem = new TimedEffectSystem(_logger, _gameMessageService, _intentContainer, _effectExecutor, _triggeredScheduledEventBuffer, _effectExpiredEventBuffer, _effectTickedEventBuffer);
-        _manaRegenSystem = new ManaRegenSystem();
-        _energyRegenSystem = new EnergyRegenSystem();
-        _rageDecaySystem = new RageDecaySystem();
-        _healthRegenSystem = new HealthRegenSystem();
-        _threatDecaySystem = new ThreatDecaySystem();
-        _scheduleSystem = new ScheduleSystem(_logger, _scheduler, _intentContainer);
-        _deathSystem = new DeathSystem(_gameMessageService, _intentContainer, _deathEventBuffer);
-        _respawnSystem = new RespawnSystem(_gameMessageService);
-        _lootSystem = new LootSystem(_gameMessageService, _intentContainer, _itemLootedEventBuffer);
-        _lookSystem = new LookSystem(_lookService, _intentContainer, _lookedEventBuffer);
-        _cleanupSystem = new CleanupSystem(_logger, _effectLifecycleManager);
+        _actionOrchestrator = actionOrchestrator;
+        _commandExecutionSystem = commandExecutionSystem;
+        _commandThrottleSystem = commandThrottleSystem;
+        _fleeSystem = fleeSystem;
+        _movementSystem = movementSystem;
+        _itemInteractionSystem = itemInteractionSystem;
+        _effectiveStatsSystem = effectiveStatsSystem;
+        _maxHeathSystem = maxHeathSystem;
+        _maxManaSystem = maxManaSystem;
+        _maxEnergySystem = maxEnergySystem;
+        _maxRageSystem = maxRageSystem;
+        _abilityValidationSystem = abilityValidationSystem;
+        _abilityCastingSystem = abilityCastingSystem;
+        _abilityExecutionSystem = abilityExecutionSystem;
+        _autoAttackSystem = autoAttackSystem;
+        _timedEffectSystem = timedEffectSystem;
+        _manaRegenSystem = manaRegenSystem;
+        _energyRegenSystem = energyRegenSystem;
+        _rageDecaySystem = rageDecaySystem;
+        _healthRegenSystem = healthRegenSystem;
+        _threatDecaySystem = threatDecaySystem;
+        _scheduleSystem = scheduleSystem;
+        _deathSystem = deathSystem;
+        _respawnSystem = respawnSystem;
+        _lootSystem = lootSystem;
+        _lookSystem = lookSystem;
+        _cleanupSystem = cleanupSystem;
     }
 
     public void Run()
@@ -243,7 +173,7 @@ internal class GameLoop
 
             var executionContext = new CommandExecutionContext
             {
-                Msg = _gameMessageService,
+                Msg = _msg,
                 Intent = _intentContainer,
             };
 
@@ -272,7 +202,7 @@ internal class GameLoop
             _maxEnergySystem.Tick(state);
             _maxRageSystem.Tick(state);
             // Generate triggered scheduled event (tick or expired)
-            _scheduler.Process(state, _triggeredScheduledEventBuffer);
+            _scheduler.Process(state);
             // Resolve triggered scheduled event and generates scheduleIntent (for next tick), effectExpiredEvent (to inform), effectTickedEvent (to inform)
             _timedEffectSystem.Tick(state);
             // Regen
@@ -320,28 +250,7 @@ internal class GameLoop
             // Clear intents
             _intentContainer.ClearAll();
             // Clear event buffers
-            _fleeBlockedEventBuffer.Clear();
-            _movedEventBuffer.Clear();
-            _itemGotEventBuffer.Clear();
-            _itemDroppedEventBuffer.Clear();
-            _itemGivenEventBuffer.Clear();
-            _itemPutEventBuffer.Clear();
-            _itemWornEventBuffer.Clear();
-            _itemRemovedEventBuffer.Clear();
-            _itemDestroyedEventBuffer.Clear();
-            _itemSacrifiedEventBuffer.Clear();
-            _damagedEventBuffer.Clear();
-            _healedEventBuffer.Clear();
-            _deathEventBuffer.Clear();
-            _itemLootedEventBuffer.Clear();
-            _lookedEventBuffer.Clear();
-            _triggeredScheduledEventBuffer.Clear();
-            _effectExpiredEventBuffer.Clear();
-            _effectTickedEventBuffer.Clear();
-            _attackResolvedEventBuffer.Clear();
-            _effectResolvedEventBuffer.Clear();
-            _abilityUsedEventBuffer.Clear();
-            _abilityExecutedEventBuffer.Clear();
+            _buffers.ClearAll();
         }
     }
 

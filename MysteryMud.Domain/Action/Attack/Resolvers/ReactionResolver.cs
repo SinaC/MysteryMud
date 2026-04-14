@@ -6,7 +6,7 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Action.Attack.Resolvers;
 
-public class ReactionResolver
+public class ReactionResolver : IReactionResolver
 {
     private readonly IGameMessageService _msg;
 

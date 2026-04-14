@@ -8,23 +8,33 @@ public class TelnetServer
 {
     private readonly TcpListener _listener;
     private readonly ConcurrentDictionary<int, TelnetSession> _sessions = new(); // TODO: needed ?
-    private readonly Action<int, ReadOnlySpan<char>> OnInputReceived;
-    private readonly Action<int> OnConnected;
-    private readonly Action<int> OnDisconnected;
 
     private int _nextConnectionId;
 
-    public TelnetServer(int port, Action<int, ReadOnlySpan<char>> onInputReceived, Action<int> onConnected, Action<int> onDisconnected)
+    public Action<int, ReadOnlySpan<char>> OnInputReceived { get; private set; } = default!;
+    public Action<int> OnConnected { get; private set; } = default!;
+    public Action<int> OnDisconnected { get; private set; } = default!;
+
+    public TelnetServer(int port)
     {
         _listener = new TcpListener(IPAddress.Any, port);
+    }
 
-        OnInputReceived = onInputReceived;
-        OnConnected = onConnected;
-        OnDisconnected = onDisconnected;
+    public void Initialize(Action<int, ReadOnlySpan<char>> onInputReceived, Action<int> onConnected, Action<int> onDisconnected)
+    {
+        if (OnInputReceived != null)
+            throw new InvalidOperationException("TelnetServer already initialized.");
+
+        OnInputReceived = onInputReceived ?? throw new ArgumentNullException(nameof(onInputReceived));
+        OnConnected = onConnected ?? throw new ArgumentNullException(nameof(onConnected));
+        OnDisconnected = onDisconnected ?? throw new ArgumentNullException(nameof(onDisconnected));
     }
 
     public async Task Start()
     {
+        if (OnInputReceived is null)
+            throw new InvalidOperationException("TelnetServer.Initialize() must be called before Start().");
+
         _listener.Start();
         //Console.WriteLine("Server listening...");
 

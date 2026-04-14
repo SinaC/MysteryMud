@@ -14,7 +14,7 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Action.Attack.Resolvers;
 
-public class WeaponProcResolver
+public class WeaponProcResolver : IWeaponProcResolver
 {
     private readonly ILogger _logger;
     private readonly IGameMessageService _msg;

@@ -1,60 +1,33 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
-using MysteryMud.Application.Dispatching;
+using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Logging;
-using MysteryMud.Domain.Ability;
-using MysteryMud.Domain.Action.Attack;
-using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Factories;
-using MysteryMud.Domain.Services;
-using MysteryMud.Infrastructure.Eventing;
-using MysteryMud.Infrastructure.Intent;
 using MysteryMud.Infrastructure.Network;
-using MysteryMud.Infrastructure.Scheduler;
 using MysteryMud.Infrastructure.Services;
 
 namespace MysteryMud.ConsoleApp.Hosting;
 
-public class GameServer
+internal class GameServer
 {
-    private readonly World _world;
     private readonly ILogger _logger;
-    private readonly ICommandDispatcher _commandDispatcher;
-
-    private readonly ConnectionService _connections;
+    private readonly IConnectionService _connections;
+    private readonly ICommandBus _commandBus;
     private readonly TelnetServer _telnet;
-    private readonly OutputService _outputService;
-    private readonly CommandBus _commandBus;
-    private readonly MessageBus _messageBus;
-    private readonly Scheduler _scheduler;
-    private readonly ActService _actService;
-    private readonly GameMessageService _gameMessageService;
-    private readonly IntentBusContainer _intentBusContainer;
     private readonly GameLoop _gameLoop;
 
-    public GameServer(ILogger logger, World world, ICommandDispatcher commandDispatcher, IEffectRegistry effectRegistry, IAbilityRegistry abilityRegistry, IAbilityOutcomeResolverRegistry abilityExecutionResolverRegistry, IWeaponProcRegistry weaponProcRegistry)
+    public GameServer(ILogger logger, IConnectionService connections, ICommandBus commandBus, TelnetServer telnetServer, GameLoop gameLoop)
     {
-        _world = world;
         _logger = logger;
-        _commandDispatcher = commandDispatcher;
+        _connections = connections;
+        _commandBus = commandBus;
+        _telnet = telnetServer;
+        _gameLoop = gameLoop;
 
-        _connections = new ConnectionService(_world);
-        _telnet = new TelnetServer(
-            port: 4000,
-            onInputReceived: HandleInputReceived,
-            onConnected: HandleConnected,
-            onDisconnected: HandleDisconnected
-        );
-        _outputService = new OutputService(_logger, _telnet);
-        _commandBus = new CommandBus(_commandDispatcher);
-        _messageBus = new MessageBus(_outputService);
-        _scheduler = new Scheduler(_logger);
-        _actService = new ActService();
-        _gameMessageService = new GameMessageService(_messageBus, _actService);
-        _intentBusContainer = new IntentBusContainer();
-        _gameLoop = new GameLoop(_logger, _outputService, _commandBus, _messageBus, _scheduler, _gameMessageService, _intentBusContainer, effectRegistry, abilityRegistry, abilityExecutionResolverRegistry, weaponProcRegistry, _world);
+        // wire callbacks now that GameServer exists
+        _telnet.Initialize(HandleInputReceived, HandleConnected, HandleDisconnected);
     }
 
     public void Start()

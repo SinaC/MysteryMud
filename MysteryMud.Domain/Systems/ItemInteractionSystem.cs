@@ -25,9 +25,9 @@ public class ItemInteractionSystem
     private readonly IEventBuffer<ItemWornEvent> _itemWornEvents;
     private readonly IEventBuffer<ItemRemovedEvent> _itemRemovedEvents;
     private readonly IEventBuffer<ItemDestroyedEvent> _itemDestroyedEvents;
-    private readonly IEventBuffer<ItemSacrifiedEvent> _itemSacrificedEvents;
+    private readonly IEventBuffer<ItemSacrificiedEvent> _itemSacrificedEvents;
 
-    public ItemInteractionSystem(IGameMessageService gameMessageService, IIntentContainer intentContainer, IEventBuffer<ItemGotEvent> itemGotEvents, IEventBuffer<ItemDroppedEvent> itemDroppedEvents, IEventBuffer<ItemGivenEvent> itemGivenEvents, IEventBuffer<ItemPutEvent> itemPutEvents, IEventBuffer<ItemWornEvent> itemWornEvents, IEventBuffer<ItemRemovedEvent> itemRemovedEvents, IEventBuffer<ItemDestroyedEvent> itemDestroyedEvents, IEventBuffer<ItemSacrifiedEvent> itemSacrificedEvents)
+    public ItemInteractionSystem(IGameMessageService gameMessageService, IIntentContainer intentContainer, IEventBuffer<ItemGotEvent> itemGotEvents, IEventBuffer<ItemDroppedEvent> itemDroppedEvents, IEventBuffer<ItemGivenEvent> itemGivenEvents, IEventBuffer<ItemPutEvent> itemPutEvents, IEventBuffer<ItemWornEvent> itemWornEvents, IEventBuffer<ItemRemovedEvent> itemRemovedEvents, IEventBuffer<ItemDestroyedEvent> itemDestroyedEvents, IEventBuffer<ItemSacrificiedEvent> itemSacrificedEvents)
     {
         _msg = gameMessageService;
         _intentContainer = intentContainer;

@@ -70,7 +70,7 @@ static class Demo2
         var itemWornEventBuffer = new EventBuffer<ItemWornEvent>();
         var itemRemovedEventBuffer = new EventBuffer<ItemRemovedEvent>();
         var itemDestroyedEventBuffer = new EventBuffer<ItemDestroyedEvent>();
-        var itemSacrifierEventBuffer = new EventBuffer<ItemSacrifiedEvent>();
+        var itemSacrifierEventBuffer = new EventBuffer<ItemSacrificiedEvent>();
         var damagedEventBuffer = new EventBuffer<DamagedEvent>();
         var healedEventBuffer = new EventBuffer<HealedEvent>();
         var deathEventBuffer = new EventBuffer<DeathEvent>();

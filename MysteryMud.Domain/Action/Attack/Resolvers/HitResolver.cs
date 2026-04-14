@@ -6,7 +6,7 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Action.Attack.Resolvers;
 
-public class HitResolver
+public class HitResolver : IHitResolver
 {
     private readonly IGameMessageService _msg;
 

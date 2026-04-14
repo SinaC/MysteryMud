@@ -3,7 +3,7 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Action.Attack.Factories;
 
-public class HitDamageFactory
+public class HitDamageFactory : IHitDamageFactory
 {
     public DamageAction CreateHitDamage(AttackResult attackResult) // no need to check if source/target is alive
     {

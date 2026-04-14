@@ -25,14 +25,14 @@ public class ActionOrchestrator
     private readonly IEventBuffer<KillRewardEvent> _killRewards;
     private readonly IEffectRegistry _effectRegistry;
     private readonly IEffectApplicationManager _effectApplicationManager;
-    private readonly ExperienceService _experienceService;
-    private readonly DamageResolver _damageResolver;
-    private readonly HitResolver _hitResolver;
-    private readonly HitDamageFactory _hitDamageFactory;
-    private readonly WeaponProcResolver _weaponProcResolver;
-    private readonly ReactionResolver _reactionResolver;
+    private readonly IExperienceService _experienceService;
+    private readonly IDamageResolver _damageResolver;
+    private readonly IHitResolver _hitResolver;
+    private readonly IHitDamageFactory _hitDamageFactory;
+    private readonly IWeaponProcResolver _weaponProcResolver;
+    private readonly IReactionResolver _reactionResolver;
 
-    public ActionOrchestrator(ILogger logger, IIntentContainer intents, IEventBuffer<AttackResolvedEvent> attackResolved, IEventBuffer<EffectResolvedEvent> effectResolved, IEventBuffer<KillRewardEvent> killRewards, IEffectRegistry effectRegistry, IEffectApplicationManager effectApplicationManager, ExperienceService experienceService, HitResolver hitResolver, HitDamageFactory hitDamageFactory, DamageResolver damageResolver, WeaponProcResolver weaponProcResolver, ReactionResolver reactionResolver)
+    public ActionOrchestrator(ILogger logger, IIntentContainer intents, IEventBuffer<AttackResolvedEvent> attackResolved, IEventBuffer<EffectResolvedEvent> effectResolved, IEventBuffer<KillRewardEvent> killRewards, IEffectRegistry effectRegistry, IEffectApplicationManager effectApplicationManager, IExperienceService experienceService, IHitResolver hitResolver, IHitDamageFactory hitDamageFactory, IDamageResolver damageResolver, IWeaponProcResolver weaponProcResolver, IReactionResolver reactionResolver)
     {
         _logger = logger;
         _intents = intents;
