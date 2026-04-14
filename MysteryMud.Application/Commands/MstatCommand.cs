@@ -55,9 +55,9 @@ public class MstatCommand : ICommand
             _msg.To(actor).Send($"Description: {description.Value}");
         _msg.To(actor).Send($"Location: {location.Room.DisplayName}");
         DisplayHealth(actor, target.Value);
-        DisplayResource<Mana, ManaRegen, UsesMana>(actor, target.Value, ResourceKind.Mana, x => (x.Current, x.Max), x => x.AmountPerTick);
-        DisplayResource<Energy, EnergyRegen, UsesEnergy>(actor, target.Value, ResourceKind.Energy, x => (x.Current, x.Max), x => x.AmountPerTick);
-        DisplayResource<Rage, RageDecay, UsesRage>(actor, target.Value, ResourceKind.Rage, x => (x.Current, x.Max), x => x.AmountPerTick);
+        DisplayResource<Mana, ManaRegen, UsesMana>(actor, target.Value, ResourceKind.Mana, x => (x.Current, x.Max), x => x.CurrentAmountPerSecond, x => x.CurrentAmountPerSecond);
+        DisplayResource<Energy, EnergyRegen, UsesEnergy>(actor, target.Value, ResourceKind.Energy, x => (x.Current, x.Max), x => x.CurrentAmountPerSecond, x => x.CurrentAmountPerSecond);
+        DisplayResource<Rage, RageDecay, UsesRage>(actor, target.Value, ResourceKind.Rage, x => (x.Current, x.Max), x => x.CurrentAmountPerSecond, x => x.CurrentAmountPerSecond);
         foreach (var stat in Enum.GetValues<StatKind>().Take((int)StatKind.Count))
         {
             _msg.To(actor).Send($"{stat}: {effectiveStats.Values[stat]}/{baseStats.Values[stat]}");
@@ -84,13 +84,16 @@ public class MstatCommand : ICommand
     {
         var health = target.Get<Health>();
         ref var healthRegen = ref target.TryGetRef<HealthRegen>(out var hasRegen);
-        var regen = hasRegen
-            ? healthRegen.AmountPerTick
+        var currentRegen = hasRegen
+            ? healthRegen.CurrentAmountPerSecond
             : 0;
-        _msg.To(actor).Send($"Health: {health.Current}/{health.Max} Regen: {regen}");
+        var baseRegen = hasRegen
+            ? healthRegen.BaseAmountPerSecond
+            : 0;
+        _msg.To(actor).Send($"Health: {health.Current}/{health.Max} Regen: {currentRegen}(base: {baseRegen})");
     }
 
-    private void DisplayResource<TResource, TRegen, TUses>(Entity actor, Entity target, ResourceKind kind, Func<TResource, (int current, int max)> getCurrentMaxFunc, Func<TRegen, int> getRegenFunc)
+    private void DisplayResource<TResource, TRegen, TUses>(Entity actor, Entity target, ResourceKind kind, Func<TResource, (int current, int max)> getCurrentMaxFunc, Func<TRegen, int> getCurrentRegenFunc, Func<TRegen, int> getBaseRegenFunc)
         where TResource : struct
         where TRegen : struct
         where TUses : struct
@@ -100,11 +103,14 @@ public class MstatCommand : ICommand
         {
             var (current, max) = getCurrentMaxFunc(resource);
             ref var resourceRegen = ref target.TryGetRef<TRegen>(out var hasRegen);
-            var regen = hasRegen
-                ? getRegenFunc(resourceRegen)
+            var currentRegen = hasRegen
+                ? getCurrentRegenFunc(resourceRegen)
+                : 0;
+            var baseRegen = hasRegen
+                ? getBaseRegenFunc(resourceRegen)
                 : 0;
             var uses = target.Has<TUses>();
-            _msg.To(actor).Send($"{kind}: {current}/{max} Regen/Decay: {regen} CanUse: {uses}");
+            _msg.To(actor).Send($"{kind}: {current}/{max} Regen/Decay: {currentRegen}(base: {baseRegen}) CanUse: {uses}");
         }
     }
 }

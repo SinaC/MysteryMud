@@ -76,20 +76,20 @@ public static class PlayerFactory
         player.Add(
             new Health { Current = 10, Max = 100 },
             new BaseHealth { Max = 100 },
-            new HealthRegen { AmountPerTick = 1 });
+            new HealthRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
         player.Add(
             new Mana { Current = 100, Max = 100 },
             new BaseMana { Max = 100 },
-            new ManaRegen { AmountPerTick = 1 },
+            new ManaRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
             new UsesMana());
         player.Add(
             new Energy { Current = 100, Max = 100 },
             new BaseEnergy { Max = 100 },
-            new EnergyRegen { AmountPerTick = 1 });
+            new EnergyRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
         player.Add(
             new Rage { Current = 0, Max = 100 },
             new BaseRage { Max = 100 },
-            new RageDecay { AmountPerTick = 1 });
+            new RageDecay { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
 
         room.Get<RoomContents>().Characters.Add(player);
 
@@ -148,20 +148,20 @@ public static class PlayerFactory
         player.Add(
             new Health { Current = 10, Max = 100 },
             new BaseHealth { Max = 100 },
-            new HealthRegen { AmountPerTick = 1 });
+            new HealthRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
         player.Add(
             new Mana { Current = 100, Max = 100 },
             new BaseMana { Max = 100 },
-            new ManaRegen { AmountPerTick = 1 },
+            new ManaRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
             new UsesMana());
         player.Add(
             new Energy { Current = 100, Max = 100 },
             new BaseEnergy { Max = 100 },
-            new EnergyRegen { AmountPerTick = 1 });
+            new EnergyRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
         player.Add(
             new Rage { Current = 0, Max = 100 },
             new BaseRage { Max = 100 },
-            new RageDecay { AmountPerTick = 1 });
+            new RageDecay { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
 
         room.Get<RoomContents>().Characters.Add(player);
 
@@ -180,8 +180,8 @@ public static class PlayerFactory
             new CommandBuffer(),
             commandThrottle,
             new Name { Value = "joel" }, // TODO: implement character creation and loading from file, for now just use a placeholder name
-            new Level { Value = 5 },
-            new Progression { Experience = 4995, ExperienceByLevel = 1000, ExperienceToNextLevel = 5000 },
+            new Level { Value = 50 },
+            new Progression { Experience = 49950, ExperienceByLevel = 1000, ExperienceToNextLevel = 50000 },
             new BaseStats
             {
                 Values = StatValues.From(
@@ -221,20 +221,20 @@ public static class PlayerFactory
         player.Add(
             new Health { Current = 10000, Max = 10000 },
             new BaseHealth { Max = 10000 },
-            new HealthRegen { AmountPerTick = 1 });
+            new HealthRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
         player.Add(
             new Mana { Current = 100, Max = 100 },
             new BaseMana { Max = 100 },
-            new ManaRegen { AmountPerTick = 1 },
+            new ManaRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
             new UsesMana());
         player.Add(
             new Energy { Current = 100, Max = 100 },
             new BaseEnergy { Max = 100 },
-            new EnergyRegen { AmountPerTick = 1 });
+            new EnergyRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 11 });
         player.Add(
             new Rage { Current = 0, Max = 100 },
             new BaseRage { Max = 100 },
-            new RageDecay { AmountPerTick = 1 });
+            new RageDecay { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
 
         RoomFactory.StartingRoomEntity.Get<RoomContents>().Characters.Add(player); // move to starting room
     }

@@ -2,7 +2,6 @@
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
-using MysteryMud.Core.Commands;
 using MysteryMud.Core.Eventing;
 using MysteryMud.Core.Intent;
 using MysteryMud.Core.Logging;
@@ -15,15 +14,13 @@ using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
+using MysteryMud.GameData.Time;
 using MysteryMud.Infrastructure.Services;
 
 namespace MysteryMud.ConsoleApp.Hosting;
 
 internal class GameLoop
 {
-    private const int TickRateMs = 100;
-    private const int TickRegenRate = 10;
-
     private readonly ILogger _logger;
     private readonly IOutputService _outputService;
     private readonly ICommandBus _commandBus;
@@ -43,19 +40,23 @@ internal class GameLoop
     private readonly MovementSystem _movementSystem;
     private readonly ItemInteractionSystem _itemInteractionSystem;
     private readonly EffectiveStatsSystem _effectiveStatsSystem;
-    private readonly MaxResourcesSystem<BaseHealth, Health, DirtyHealth, HealthModifier> _maxHeathSystem;
-    private readonly MaxResourcesSystem<BaseMana, Mana, DirtyMana, ManaModifier> _maxManaSystem;
-    private readonly MaxResourcesSystem<BaseEnergy, Energy, DirtyEnergy, EnergyModifier> _maxEnergySystem;
-    private readonly MaxResourcesSystem<BaseRage, Rage, DirtyRage, RageModifier> _maxRageSystem;
+    private readonly EffectiveMaxResourceSystem<BaseHealth, Health, DirtyHealth, HealthModifier> _effectiveMaxHeathSystem;
+    private readonly EffectiveMaxResourceSystem<BaseMana, Mana, DirtyMana, ManaModifier> _effectiveMaxManaSystem;
+    private readonly EffectiveMaxResourceSystem<BaseEnergy, Energy, DirtyEnergy, EnergyModifier> _effectiveMaxEnergySystem;
+    private readonly EffectiveMaxResourceSystem<BaseRage, Rage, DirtyRage, RageModifier> _effectiveMaxRageSystem;
+    private readonly EffectiveResourceRegenSystem<HealthRegen, DirtyHealthRegen, HealthRegenModifier> _effectiveHeathRegenSystem;
+    private readonly EffectiveResourceRegenSystem<ManaRegen, DirtyManaRegen, ManaRegenModifier> _effectiveManaRegenSystem;
+    private readonly EffectiveResourceRegenSystem<EnergyRegen, DirtyEnergyRegen, EnergyRegenModifier> _effectiveEnergyRegenSystem;
+    private readonly EffectiveResourceRegenSystem<RageDecay, DirtyRageDecay, RageDecayModifier> _effectiveRageRegenSystem;
     private readonly AbilityValidationSystem _abilityValidationSystem;
     private readonly AbilityCastingSystem _abilityCastingSystem;
     private readonly AbilityExecutionSystem _abilityExecutionSystem;
     private readonly AutoAttackSystem _autoAttackSystem;
     private readonly TimedEffectSystem _timedEffectSystem;
-    private readonly ManaRegenSystem _manaRegenSystem;
-    private readonly EnergyRegenSystem _energyRegenSystem;
-    private readonly RageDecaySystem _rageDecaySystem;
-    private readonly HealthRegenSystem _healthRegenSystem;
+    private readonly ResourceRegenSystem<Health, HealthRegen> _healthRegenSystem;
+    private readonly ResourceRegenSystem<Mana, ManaRegen> _manaRegenSystem;
+    private readonly ResourceRegenSystem<Energy, EnergyRegen> _energyRegenSystem;
+    private readonly ResourceRegenSystem<Rage, RageDecay> _rageDecaySystem;
     private readonly ThreatDecaySystem _threatDecaySystem;
     private readonly ScheduleSystem _scheduleSystem;
     private readonly DeathSystem _deathSystem;
@@ -81,19 +82,23 @@ internal class GameLoop
         MovementSystem movementSystem,
         ItemInteractionSystem itemInteractionSystem,
         EffectiveStatsSystem effectiveStatsSystem,
-        MaxResourcesSystem<BaseHealth, Health, DirtyHealth, HealthModifier> maxHeathSystem,
-        MaxResourcesSystem<BaseMana, Mana, DirtyMana, ManaModifier> maxManaSystem,
-        MaxResourcesSystem<BaseEnergy, Energy, DirtyEnergy, EnergyModifier> maxEnergySystem,
-        MaxResourcesSystem<BaseRage, Rage, DirtyRage, RageModifier> maxRageSystem,
+        EffectiveMaxResourceSystem<BaseHealth, Health, DirtyHealth, HealthModifier> effectiveMaxHeathSystem,
+        EffectiveMaxResourceSystem<BaseMana, Mana, DirtyMana, ManaModifier> effectiveMaxManaSystem,
+        EffectiveMaxResourceSystem<BaseEnergy, Energy, DirtyEnergy, EnergyModifier> effectiveMaxEnergySystem,
+        EffectiveMaxResourceSystem<BaseRage, Rage, DirtyRage, RageModifier> effectiveMaxRageSystem,
+        EffectiveResourceRegenSystem<HealthRegen, DirtyHealthRegen, HealthRegenModifier> effectiveHeathRegenSystem,
+        EffectiveResourceRegenSystem<ManaRegen, DirtyManaRegen, ManaRegenModifier> effectiveManaRegenSystem,
+        EffectiveResourceRegenSystem<EnergyRegen, DirtyEnergyRegen, EnergyRegenModifier> effectiveEnergyRegenSystem,
+        EffectiveResourceRegenSystem<RageDecay, DirtyRageDecay, RageDecayModifier> effectiveRageRegenSystem,
         AbilityValidationSystem abilityValidationSystem,
         AbilityCastingSystem abilityCastingSystem,
         AbilityExecutionSystem abilityExecutionSystem,
         AutoAttackSystem autoAttackSystem,
         TimedEffectSystem timedEffectSystem,
-        ManaRegenSystem manaRegenSystem,
-        EnergyRegenSystem energyRegenSystem,
-        RageDecaySystem rageDecaySystem,
-        HealthRegenSystem healthRegenSystem,
+        ResourceRegenSystem<Health, HealthRegen> healthRegenSystem,
+        ResourceRegenSystem<Mana, ManaRegen> manaRegenSystem,
+        ResourceRegenSystem<Energy, EnergyRegen> energyRegenSystem,
+        ResourceRegenSystem<Rage, RageDecay> rageDecaySystem,
         ThreatDecaySystem threatDecaySystem,
         ScheduleSystem scheduleSystem,
         DeathSystem deathSystem,
@@ -119,10 +124,14 @@ internal class GameLoop
         _movementSystem = movementSystem;
         _itemInteractionSystem = itemInteractionSystem;
         _effectiveStatsSystem = effectiveStatsSystem;
-        _maxHeathSystem = maxHeathSystem;
-        _maxManaSystem = maxManaSystem;
-        _maxEnergySystem = maxEnergySystem;
-        _maxRageSystem = maxRageSystem;
+        _effectiveMaxHeathSystem = effectiveMaxHeathSystem;
+        _effectiveMaxManaSystem = effectiveMaxManaSystem;
+        _effectiveMaxEnergySystem = effectiveMaxEnergySystem;
+        _effectiveMaxRageSystem = effectiveMaxRageSystem;
+        _effectiveHeathRegenSystem = effectiveHeathRegenSystem;
+        _effectiveManaRegenSystem = effectiveManaRegenSystem;
+        _effectiveEnergyRegenSystem = effectiveEnergyRegenSystem;
+        _effectiveRageRegenSystem = effectiveRageRegenSystem;
         _abilityValidationSystem = abilityValidationSystem;
         _abilityCastingSystem = abilityCastingSystem;
         _abilityExecutionSystem = abilityExecutionSystem;
@@ -153,7 +162,7 @@ internal class GameLoop
 
             Tick(currentTick);
 
-            Thread.Sleep(TickRateMs); // tick rate
+            Thread.Sleep(TimeRate.TicksInMilliseconds); // tick rate
 
             currentTick++;
         }
@@ -168,7 +177,7 @@ internal class GameLoop
             {
                 World = _world,
                 CurrentTick = currentTick,
-                CurrentTimeMs = currentTick * TickRateMs
+                CurrentTimeMs = currentTick * TimeRate.TicksInMilliseconds
             };
 
             // Player commands 
@@ -191,16 +200,21 @@ internal class GameLoop
             // Recalculate stats with DirtyStats
             _effectiveStatsSystem.Tick(state);
             // Recalculate resource with DirtyResource where resource can be Health, Mana, Energy, Rage
-            _maxHeathSystem.Tick(state);
-            _maxManaSystem.Tick(state);
-            _maxEnergySystem.Tick(state);
-            _maxRageSystem.Tick(state);
+            _effectiveMaxHeathSystem.Tick(state);
+            _effectiveMaxManaSystem.Tick(state);
+            _effectiveMaxEnergySystem.Tick(state);
+            _effectiveMaxRageSystem.Tick(state);
+            // Recalculate resource regen with DirtyResourceRegen where resource can be Health, Mana, Energy, Rage
+            _effectiveHeathRegenSystem.Tick(state);
+            _effectiveManaRegenSystem.Tick(state);
+            _effectiveEnergyRegenSystem.Tick(state);
+            _effectiveRageRegenSystem.Tick(state);
             // Generate triggered scheduled event (tick or expired)
             _scheduler.Process(state);
             // Resolve triggered scheduled event and generates scheduleIntent (for next tick), effectExpiredEvent (to inform), effectTickedEvent (to inform)
             _timedEffectSystem.Tick(state);
-            // Regen
-            if (state.CurrentTimeMs % TickRegenRate == 0)
+            // Regen resource
+            if (state.CurrentTick % TimeRate.TicksPerSecond == 0) // once by second
             {
                 _manaRegenSystem.Tick(state);
                 _energyRegenSystem.Tick(state);

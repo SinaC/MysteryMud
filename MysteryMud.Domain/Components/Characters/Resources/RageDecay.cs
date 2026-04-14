@@ -2,5 +2,6 @@
 
 public struct RageDecay
 {
-    public int AmountPerTick;
+    public int CurrentAmountPerSecond;
+    public int BaseAmountPerSecond;
 }

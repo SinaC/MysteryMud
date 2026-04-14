@@ -55,6 +55,17 @@ public class EffectLifecycleManager : IEffectLifecycleManager
         if (effect.Has<ResourceModifiers<RageModifier>>() && !effectInstance.Target.Has<DirtyRage>())
             effectInstance.Target.Add<DirtyRage>();
 
+        // if effect has ResourceRegebModifiers
+        // flag the target's resource regens as dirty so they will be recalculated without this effect
+        if (effect.Has<ResourceRegenModifiers<HealthRegenModifier>>() && !effectInstance.Target.Has<DirtyHealthRegen>())
+            effectInstance.Target.Add<DirtyHealthRegen>();
+        if (effect.Has<ResourceRegenModifiers<ManaRegenModifier>>() && !effectInstance.Target.Has<DirtyManaRegen>())
+            effectInstance.Target.Add<DirtyManaRegen>();
+        if (effect.Has<ResourceRegenModifiers<EnergyModifier>>() && !effectInstance.Target.Has<DirtyEnergyRegen>())
+            effectInstance.Target.Add<DirtyEnergyRegen>();
+        if (effect.Has<ResourceRegenModifiers<RageDecayModifier>>() && !effectInstance.Target.Has<DirtyRageDecay>())
+            effectInstance.Target.Add<DirtyRageDecay>();
+
         // destroy effect
         state.World.Destroy(effect);
     }

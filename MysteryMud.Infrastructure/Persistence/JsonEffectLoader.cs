@@ -115,6 +115,40 @@ public class JsonEffectLoader
                     };
                 }
 
+            case RegenModifierData data:
+                {
+                    var modifier = Enum.Parse<ModifierKind>(data.Mode, ignoreCase: true);
+                    var valueFunc = _formulaCompiler.Compile(data.ValueFormula);
+                    return data.Resource switch
+                    {
+                        "Health" => new HealthRegenModifierActionDefinition
+                        {
+                            Trigger = trigger,
+                            Modifier = modifier,
+                            ValueCompiledFormula = valueFunc
+                        },
+                        "Mana" => new ManaRegenModifierActionDefinition
+                        {
+                            Trigger = trigger,
+                            Modifier = modifier,
+                            ValueCompiledFormula = valueFunc
+                        },
+                        "Energy" => new EnergyRegenModifierActionDefinition
+                        {
+                            Trigger = trigger,
+                            Modifier = modifier,
+                            ValueCompiledFormula = valueFunc
+                        },
+                        "Rage" => new RageRegenModifierActionDefinition
+                        {
+                            Trigger = trigger,
+                            Modifier = modifier,
+                            ValueCompiledFormula = valueFunc
+                        },
+                        _ => throw new NotSupportedException($"Unknown regen resource modifier type: {data.Resource}")
+                    };
+                }
+
             case PeriodicHealData data:
                 {
                     var mode = EnumParser.Parse(data.Mode, EffectFormulaEvaluationMode.Snapshotted);
@@ -191,6 +225,7 @@ public class JsonEffectLoader
             {
                 "StatModifier" => JsonSerializer.Deserialize<StatModifierData>(root.GetRawText(), options),
                 "ResourceModifier" => JsonSerializer.Deserialize<ResourceModifierData>(root.GetRawText(), options),
+                "RegenModifier" => JsonSerializer.Deserialize<RegenModifierData>(root.GetRawText(), options),
                 "PeriodicHeal" => JsonSerializer.Deserialize<PeriodicHealData>(root.GetRawText(), options),
                 "PeriodicDamage" => JsonSerializer.Deserialize<PeriodicDamageData>(root.GetRawText(), options),
                 "InstantDamage" => JsonSerializer.Deserialize<InstantDamageData>(root.GetRawText(), options),

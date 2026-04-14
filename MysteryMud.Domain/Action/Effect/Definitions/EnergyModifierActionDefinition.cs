@@ -1,10 +1,9 @@
-﻿using MysteryMud.Domain.Services;
-using MysteryMud.GameData.Enums;
+﻿using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Action.Effect.Definitions;
 
 public class EnergyModifierActionDefinition : EffectActionDefinition
 {
     public required ModifierKind Modifier { get; init; }
-    public required CompiledFormula ValueCompiledFormula { get; init; }
+    public required EffectCompiledFormula ValueCompiledFormula { get; init; }
 }

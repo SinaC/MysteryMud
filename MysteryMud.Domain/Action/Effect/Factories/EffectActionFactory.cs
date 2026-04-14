@@ -23,9 +23,13 @@ public class EffectActionFactory : IEffectActionFactory
     {
         StatModifierActionDefinition definition => CreateStatModifier(definition),
         HealthModifierActionDefinition definition => CreateHealthModifier(definition),
+        HealthRegenModifierActionDefinition definition => CreateHealthRegenModifier(definition),
         ManaModifierActionDefinition definition => CreateManaModifier(definition),
+        ManaRegenModifierActionDefinition definition => CreateManaRegenModifier(definition),
         EnergyModifierActionDefinition definition => CreateEnergyModifier(definition),
+        EnergyRegenModifierActionDefinition definition => CreateEnergyRegenModifier(definition),
         RageModifierActionDefinition definition => CreateRageModifier(definition),
+        RageRegenModifierActionDefinition definition => CreateRageRegenModifier(definition),
         PeriodicHealActionDefinition definition => CreatePeriodHeal(definition),
         InstantHealActionDefinition definition => CreateInstantHeal(definition),
         PeriodicDamageActionDefinition definition => CreatePeriodDamage(definition),
@@ -105,6 +109,41 @@ public class EffectActionFactory : IEffectActionFactory
         };
     }
 
+    private Action<EffectExecutionContext> CreateHealthRegenModifier(HealthRegenModifierActionDefinition definition)
+    {
+        return ctx =>
+        {
+            var effectContext = ctx.Context;
+            if (effectContext.Effect is not null)
+            {
+                var effect = effectContext.Effect.Value;
+                var value = definition.ValueCompiledFormula.Compiled(ctx.Context); // TODO: multiply by stack count ?
+                var modifier = new HealthRegenModifier
+                {
+                    Modifier = definition.Modifier,
+                    Value = value
+                };
+
+                ref var resourceModifiers = ref effect.TryGetRef<ResourceRegenModifiers<HealthRegenModifier>>(out var hasResourceModifiers);
+                if (hasResourceModifiers)
+                    resourceModifiers.Values.Add(modifier);
+                else
+                {
+                    effect.Add(new ResourceRegenModifiers<HealthRegenModifier>
+                    {
+                        Values = [modifier]
+                    });
+                }
+
+                // add dirty flag to character resources so we will recalculate them with the new modifiers
+                if (!effectContext.Target.Has<DirtyHealthRegen>())
+                    effectContext.Target.Add<DirtyHealthRegen>();
+            }
+            else
+                _logger.LogError("Trying to apply HealthRegenModifier on a null-effect");
+        };
+    }
+
     private Action<EffectExecutionContext> CreateManaModifier(ManaModifierActionDefinition definition)
     {
         return ctx =>
@@ -137,6 +176,41 @@ public class EffectActionFactory : IEffectActionFactory
             }
             else
                 _logger.LogError("Trying to apply ManaModifier on a null-effect");
+        };
+    }
+
+    private Action<EffectExecutionContext> CreateManaRegenModifier(ManaRegenModifierActionDefinition definition)
+    {
+        return ctx =>
+        {
+            var effectContext = ctx.Context;
+            if (effectContext.Effect is not null)
+            {
+                var effect = effectContext.Effect.Value;
+                var value = definition.ValueCompiledFormula.Compiled(ctx.Context); // TODO: multiply by stack count ?
+                var modifier = new ManaRegenModifier
+                {
+                    Modifier = definition.Modifier,
+                    Value = value
+                };
+
+                ref var resourceModifiers = ref effect.TryGetRef<ResourceRegenModifiers<ManaRegenModifier>>(out var hasResourceModifiers);
+                if (hasResourceModifiers)
+                    resourceModifiers.Values.Add(modifier);
+                else
+                {
+                    effect.Add(new ResourceRegenModifiers<ManaRegenModifier>
+                    {
+                        Values = [modifier]
+                    });
+                }
+
+                // add dirty flag to character resources so we will recalculate them with the new modifiers
+                if (!effectContext.Target.Has<DirtyManaRegen>())
+                    effectContext.Target.Add<DirtyManaRegen>();
+            }
+            else
+                _logger.LogError("Trying to apply ManaRegenModifier on a null-effect");
         };
     }
 
@@ -175,6 +249,41 @@ public class EffectActionFactory : IEffectActionFactory
         };
     }
 
+    private Action<EffectExecutionContext> CreateEnergyRegenModifier(EnergyRegenModifierActionDefinition definition)
+    {
+        return ctx =>
+        {
+            var effectContext = ctx.Context;
+            if (effectContext.Effect is not null)
+            {
+                var effect = effectContext.Effect.Value;
+                var value = definition.ValueCompiledFormula.Compiled(effectContext); // TODO: multiply by stack count ?
+                var modifier = new EnergyRegenModifier
+                {
+                    Modifier = definition.Modifier,
+                    Value = value
+                };
+
+                ref var resourceModifiers = ref effect.TryGetRef<ResourceRegenModifiers<EnergyRegenModifier>>(out var hasResourceModifiers);
+                if (hasResourceModifiers)
+                    resourceModifiers.Values.Add(modifier);
+                else
+                {
+                    effect.Add(new ResourceRegenModifiers<EnergyRegenModifier>
+                    {
+                        Values = [modifier]
+                    });
+                }
+
+                // add dirty flag to character resources so we will recalculate them with the new modifiers
+                if (!effectContext.Target.Has<DirtyEnergyRegen>())
+                    effectContext.Target.Add<DirtyEnergyRegen>();
+            }
+            else
+                _logger.LogError("Trying to apply EnergyRegenModifier on a null-effect");
+        };
+    }
+
     private Action<EffectExecutionContext> CreateRageModifier(RageModifierActionDefinition definition)
     {
         return ctx =>
@@ -209,8 +318,42 @@ public class EffectActionFactory : IEffectActionFactory
                 _logger.LogError("Trying to apply RageModifier on a null-effect");
         };
     }
+    private Action<EffectExecutionContext> CreateRageRegenModifier(RageRegenModifierActionDefinition definition)
+    {
+        return ctx =>
+        {
+            var effectContext = ctx.Context;
+            if (effectContext.Effect is not null)
+            {
+                var effect = effectContext.Effect.Value;
+                var value = definition.ValueCompiledFormula.Compiled(effectContext); // TODO: multiply by stack count ?
+                var modifier = new RageDecayModifier
+                {
+                    Modifier = definition.Modifier,
+                    Value = value
+                };
 
-    public static Action<EffectExecutionContext> CreatePeriodHeal(PeriodicHealActionDefinition definition)
+                ref var resourceModifiers = ref effect.TryGetRef<ResourceRegenModifiers<RageDecayModifier>>(out var hasResourceModifiers);
+                if (hasResourceModifiers)
+                    resourceModifiers.Values.Add(modifier);
+                else
+                {
+                    effect.Add(new ResourceModifiers<RageDecayModifier>
+                    {
+                        Values = [modifier]
+                    });
+                }
+
+                // add dirty flag to character resources so we will recalculate them with the new modifiers
+                if (!effectContext.Target.Has<DirtyRageDecay>())
+                    effectContext.Target.Add<DirtyRageDecay>();
+            }
+            else
+                _logger.LogError("Trying to apply RageDecayModifier on a null-effect");
+        };
+    }
+
+    private static Action<EffectExecutionContext> CreatePeriodHeal(PeriodicHealActionDefinition definition)
     {
         return ctx =>
         {
@@ -229,7 +372,7 @@ public class EffectActionFactory : IEffectActionFactory
         };
     }
 
-    public static Action<EffectExecutionContext> CreateInstantHeal(InstantHealActionDefinition definition)
+    private static Action<EffectExecutionContext> CreateInstantHeal(InstantHealActionDefinition definition)
     {
         return ctx =>
         {
@@ -247,7 +390,7 @@ public class EffectActionFactory : IEffectActionFactory
         };
     }
 
-    public static Action<EffectExecutionContext> CreatePeriodDamage(PeriodicDamageActionDefinition definition)
+    private static Action<EffectExecutionContext> CreatePeriodDamage(PeriodicDamageActionDefinition definition)
     {
         return ctx =>
         {
@@ -267,7 +410,7 @@ public class EffectActionFactory : IEffectActionFactory
         };
     }
 
-    public static Action<EffectExecutionContext> CreateInstantDamage(InstantDamageActionDefinition definition)
+    private static Action<EffectExecutionContext> CreateInstantDamage(InstantDamageActionDefinition definition)
     {
         return ctx =>
         {
@@ -286,7 +429,7 @@ public class EffectActionFactory : IEffectActionFactory
         };
     }
 
-    public static Action<EffectExecutionContext> CreateApplyTag(ApplyTagActionDefinition definition)
+    private static Action<EffectExecutionContext> CreateApplyTag(ApplyTagActionDefinition definition)
     {
         return ctx =>
         {

@@ -31,7 +31,7 @@
   },
   {
     "Name": "BashStun",
-    "DurationFormula": "20",
+    "DurationFormula": "2",
 	"Tag": "Stun",
 	"WearOffMessage": "You regain your equilibrium.",
     "Actions": [
@@ -43,7 +43,7 @@
   },
   {
     "Name": "BashSelfStun",
-    "DurationFormula": "10",
+    "DurationFormula": "1",
 	"Tag": "Stun",
 	"WearOffMessage": "You regain your equilibrium.",
     "Actions": [
@@ -67,7 +67,7 @@
     "Tag": "Berserk",
     "Stacking": "None",
     "MaxStacks": 1,
-    "DurationFormula": "600 * caster.Level / 8",
+    "DurationFormula": "caster.Level / 8",
     "WearOffMessage": "You feel your pulse slow down.",
     "Actions": [
       {
@@ -95,7 +95,7 @@
     "Tag": "Calm",
     "Stacking": "None",
     "MaxStacks": 1,
-    "DurationFormula": "600 * caster.Level / 4",
+    "DurationFormula": "caster.Level / 4",
 	"ApplyMessage": "A wave of calm passes over you.",
     "WearOffMessage": "You have lost your peace of mind.",
     "Actions": [
@@ -156,15 +156,15 @@
     "Name": "Kick",
     "Actions": [
       {
-      "Type": "InstantDamage",
-      "DamageFormula": "range(1, caster.Level)",
-      "DamageKind": "Bash"
+        "Type": "InstantDamage",
+        "DamageFormula": "range(1, caster.Level)",
+        "DamageKind": "Bash"
       }
     ]
   },
   {
     "Name": "GiantStrength",
-    "DurationFormula": "60",
+    "DurationFormula": "caster.Level",
     "Actions": [
       {
         "Type": "StatModifier",
@@ -179,10 +179,10 @@
     "DurationFormula": "120",
     "Actions": [
       {
-          "Type": "ResourceModifier",
-          "Resource": "Health",
-          "Mode": "AddPercent",
-          "ValueFormula": "50"
+        "Type": "ResourceModifier",
+        "Resource": "Health",
+        "Mode": "AddPercent",
+        "ValueFormula": "50"
       }
     ]
   },
@@ -191,10 +191,10 @@
     "DurationFormula": "90",
     "Actions": [
       {
-          "Type": "ResourceModifier",
-          "Resource": "Mana",
-          "Mode": "Multiply",
-          "ValueFormula": "1.25"
+        "Type": "ResourceModifier",
+        "Resource": "Mana",
+        "Mode": "Multiply",
+        "ValueFormula": "1.25"
       }
     ]
   },
@@ -202,9 +202,9 @@
     "Name": "Fireball",
     "Actions": [
       {
-      "Type": "InstantDamage",
-      "DamageFormula": "20 + caster.Intelligence * 2",
-      "DamageKind": "Fire"
+        "Type": "InstantDamage",
+        "DamageFormula": "20 + caster.Intelligence * 2",
+        "DamageKind": "Fire"
       }
     ]
   },
@@ -222,19 +222,19 @@
     "Name": "MagicMissile",
     "Actions": [
       {
-      "Type": "InstantDamage",
-      "DamageFormula": "5 + caster.Level",
-      "DamageKind": "Energy"
+        "Type": "InstantDamage",
+        "DamageFormula": "5 + caster.Level",
+        "DamageKind": "Energy"
       },
       {
-      "Type": "InstantDamage",
-      "DamageFormula": "5 + caster.Level",
-      "DamageKind": "Energy"
+        "Type": "InstantDamage",
+        "DamageFormula": "5 + caster.Level",
+        "DamageKind": "Energy"
       },
       {
-      "Type": "InstantDamage",
-      "DamageFormula": "5 + caster.Level",
-      "DamageKind": "Energy"
+        "Type": "InstantDamage",
+        "DamageFormula": "5 + caster.Level",
+        "DamageKind": "Energy"
       }
     ]
   },
@@ -243,22 +243,28 @@
     "Tag": "Poison",
     "Stacking": "Stack",
     "MaxStacks": 3,
-    "DurationFormula": "4 * caster.Strength",
+    "DurationFormula": "caster.Level",
     "TickRate": 2,
     "ApplyMessage": "You feel very sick.",
     "WearOffMessage": "You feel less sick.",
     "Actions": [
       {
-      "Type": "StatModifier",
-      "Stat": "Strength",
-      "Mode": "Flat",
-      "ValueFormula": "-3"
+        "Type": "StatModifier",
+        "Stat": "Strength",
+        "Mode": "Flat",
+        "ValueFormula": "-2"
       },
       {
-      "Type": "PeriodicDamage",
-      "Trigger": "OnTick",
-      "DamageFormula": "1 + effect.stackcount",
-      "DamageKind": "Poison"
+        "Type": "PeriodicDamage",
+        "Trigger": "OnTick",
+        "DamageFormula": "1 + effect.stackcount",
+        "DamageKind": "Poison"
+      },
+      {
+        "Type": "RegenModifier",
+        "Resource": "Health",
+        "Mode": "Multiply",
+        "ValueFormula": "0.25"
       }
     ]
   },
@@ -266,7 +272,7 @@
     "Name": "PoisonItem",
     "Tag": "Poison",
     "Stacking": "None",
-    "DurationFormula": "4 * caster.Strength",
+    "DurationFormula": "caster.Level",
     "WearOffMessage": "The poison on {0} dries up.",
     "Actions": [
       {
@@ -280,29 +286,22 @@
   {
     "Name": "Bless",
     "Tag": "Bless",
-    "Stacking": "Refresh",
-    "MaxStacks": 1,
-    "DurationFormula": "4 * caster.Intelligence",
-    "TickRate": 3,
+    "Stacking": "None",
+    "DurationFormula": "6 + caster.Level",
     "ApplyMessage": "You feel righteous.",
     "WearOffMessage": "You feel less righteous.",
     "Actions": [
       {
-      "Type": "StatModifier",
-      "Stat": "HitRoll",
-      "Mode": "Flat",
-      "ValueFormula": "5"
+        "Type": "StatModifier",
+        "Stat": "HitRoll",
+        "Mode": "Flat",
+        "ValueFormula": "caster.Level / 8"
       },
       {
-      "Type": "StatModifier",
-      "Stat": "Strength",
-      "Mode": "AddPercent",
-      "ValueFormula": "10"
-      },
-      {
-      "Type": "PeriodicHeal",
-      "Trigger": "OnTick",
-      "HealFormula": "3 + caster.Level / 2"
+        "Type": "StatModifier",
+        "Stat": "SavingThrow",
+        "Mode": "Flat",
+        "ValueFormula": "-caster.Level / 8"
       }
     ]
   },
@@ -314,10 +313,10 @@
     "WearOffMessage": "{0:v} holy aura fades.",
     "Actions": [
       {
-      "Type": "StatModifier",
-      "Stat": "HitRoll",
-      "Mode": "Flat",
-      "ValueFormula": "5"
+        "Type": "StatModifier",
+        "Stat": "HitRoll",
+        "Mode": "Flat",
+        "ValueFormula": "5"
       }
     ]
   },
@@ -325,8 +324,8 @@
     "Name": "CureLight",
     "Actions": [
       {
-      "Type": "InstantHeal",
-      "HealFormula": "10 + caster.Level"
+        "Type": "InstantHeal",
+        "HealFormula": "10 + caster.Level"
       }
     ]
   },
@@ -338,10 +337,10 @@
     "WearOffMessage": "You feel less armored.",
     "Actions": [
       {
-      "Type": "StatModifier",
-      "Stat": "ArmorClass",
-      "Mode": "Flat",
-      "ValueFormula": "-20"
+        "Type": "StatModifier",
+        "Stat": "ArmorClass",
+        "Mode": "Flat",
+        "ValueFormula": "-20"
       }
     ]
   }

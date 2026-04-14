@@ -47,6 +47,7 @@ public static class MobFactory
             },
             new Health { Current = 5, Max = 100 },
             new BaseHealth {  Max = 100 },
+            new HealthRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
             new Inventory { Items = [] },
             new Equipment { Slots = [] },
             new CharacterEffects
