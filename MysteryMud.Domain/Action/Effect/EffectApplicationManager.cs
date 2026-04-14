@@ -56,8 +56,7 @@ public class EffectApplicationManager : IEffectApplicationManager
         ref var targetEffects = ref target.Get<CharacterEffects>();
         var stackingResult = HandleStacking(state, effectRuntime, source, target, ref targetEffects, out var existingEffect, out var existingStackCount);
 
-        if (stackingResult == StackingResult.Nop
-            || stackingResult == StackingResult.Refreshed)
+        if (stackingResult is StackingResult.Nop or StackingResult.Refreshed)
             return;
 
         if (stackingResult == StackingResult.Stacked)
@@ -92,11 +91,11 @@ public class EffectApplicationManager : IEffectApplicationManager
         _logger.LogInformation(LogEvents.Factory, "Creating Effect from Template {effectTemplateName} Source {sourceName} Target {targetName}", effectRuntime.Name, source.DebugName, target.DebugName);
 
         // add tag if applicable
-        if (effectRuntime.Tag != EffectTagId.None)
+        if (effectRuntime.Tag != CharacterEffectTagId.None)
         {
             var tagIndex = (int)effectRuntime.Tag;
             // add EffectTag component to effect
-            effect.Add(new EffectTag
+            effect.Add(new CharacterEffectTag
             {
                 Id = effectRuntime.Tag
             });
@@ -126,7 +125,7 @@ public class EffectApplicationManager : IEffectApplicationManager
         };
 
         var duration = Math.Max(1, effectRuntime.DurationFunc!.Invoke(ctx));
-        var expirationTick = TimeConversion.SecondsToTicks((long)(state.CurrentTick + duration));
+        var expirationTick = state.CurrentTick + TimeConversion.SecondsToTicks(duration);
         var nextTick = effectRuntime.TickOnApply
             ? state.CurrentTick
             : state.CurrentTick + effectRuntime.TickRate; // 0: means pure duration
@@ -260,8 +259,8 @@ public class EffectApplicationManager : IEffectApplicationManager
                     };
 
                     // update Duration
-                    var duration = Math.Max(1, effectRuntime.DurationFunc?.Invoke(ctx) ?? 0);
-                    var expirationTick = TimeConversion.SecondsToTicks((long)(state.CurrentTick + duration));
+                    var duration = Math.Max(1, effectRuntime.DurationFunc?.Invoke(ctx) ?? 1);
+                    var expirationTick = state.CurrentTick + TimeConversion.SecondsToTicks(duration);
                     timedEffect.LastRefreshTick = state.CurrentTick;
                     timedEffect.ExpirationTick = expirationTick;
 
@@ -299,8 +298,8 @@ public class EffectApplicationManager : IEffectApplicationManager
                     };
 
                     // update Duration
-                    var duration = Math.Max(1, effectRuntime.DurationFunc?.Invoke(ctx) ?? 0);
-                    var expirationTick = TimeConversion.SecondsToTicks((long)(state.CurrentTick + duration));
+                    var duration = Math.Max(1, effectRuntime.DurationFunc?.Invoke(ctx) ?? 1);
+                    var expirationTick = state.CurrentTick + TimeConversion.SecondsToTicks(duration);
                     timedEffect.LastRefreshTick = state.CurrentTick;
                     timedEffect.ExpirationTick = expirationTick;
 
@@ -328,7 +327,7 @@ public class EffectApplicationManager : IEffectApplicationManager
 
     private Entity? FindEffect(ref CharacterEffects characterEffects, EffectRuntime effectRuntime)
     {
-        if (effectRuntime.Tag == EffectTagId.None)
+        if (effectRuntime.Tag == CharacterEffectTagId.None)
         {
             foreach (var effect in characterEffects.Effects)
             {

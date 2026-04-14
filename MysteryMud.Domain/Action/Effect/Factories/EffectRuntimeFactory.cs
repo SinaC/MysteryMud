@@ -55,7 +55,7 @@ public class EffectRuntimeFactory : IEffectRuntimeFactory
         if (def.TickRate > 0 && onTick.Count == 0)
             throw new Exception($"TickRate is 0 but no Trigger OnTick is defined in effect '{def.Name}'");
 
-        if (def.Actions.Any(x => x is StatModifierActionDefinition) && def.DurationCompiledFormula == null)
+        if (def.Actions.Any(x => x is CharacterStatModifierActionDefinition) && def.DurationCompiledFormula == null)
             throw new Exception($"DurationFormula must be specified if a StatModifierAction is defined in effect '{def.Name}'");
 
         if (def.Actions.Any(x => x is HealthModifierActionDefinition or ManaModifierActionDefinition or EnergyModifierActionDefinition or RageModifierActionDefinition) && def.DurationCompiledFormula == null)

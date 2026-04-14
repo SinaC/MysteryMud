@@ -39,27 +39,27 @@ public static class PlayerFactory
             new Progression { Experience = 0, ExperienceByLevel = 1000, ExperienceToNextLevel = 2000 },
             new BaseStats
             {
-                Values = StatValues.From(
-                    (StatKind.Strength, 15),
-                    (StatKind.Intelligence, 10),
-                    (StatKind.Wisdom, 15),
-                    (StatKind.Dexterity, 12),
-                    (StatKind.Constitution, 15),
-                    (StatKind.HitRoll, 0),
-                    (StatKind.DamRoll, 0),
-                    (StatKind.ArmorClass, 0))
+                Values = CharacterStatValues.From(
+                    (CharacterStatKind.Strength, 15),
+                    (CharacterStatKind.Intelligence, 10),
+                    (CharacterStatKind.Wisdom, 15),
+                    (CharacterStatKind.Dexterity, 12),
+                    (CharacterStatKind.Constitution, 15),
+                    (CharacterStatKind.HitRoll, 0),
+                    (CharacterStatKind.DamRoll, 0),
+                    (CharacterStatKind.ArmorClass, 0))
             },
             new EffectiveStats
             {
-                Values = StatValues.From(
-                    (StatKind.Strength, 15),
-                    (StatKind.Intelligence, 10),
-                    (StatKind.Wisdom, 15),
-                    (StatKind.Dexterity, 12),
-                    (StatKind.Constitution, 15),
-                    (StatKind.HitRoll, 0),
-                    (StatKind.DamRoll, 0),
-                    (StatKind.ArmorClass, 0))
+                Values = CharacterStatValues.From(
+                    (CharacterStatKind.Strength, 15),
+                    (CharacterStatKind.Intelligence, 10),
+                    (CharacterStatKind.Wisdom, 15),
+                    (CharacterStatKind.Dexterity, 12),
+                    (CharacterStatKind.Constitution, 15),
+                    (CharacterStatKind.HitRoll, 0),
+                    (CharacterStatKind.DamRoll, 0),
+                    (CharacterStatKind.ArmorClass, 0))
             },
             new Form { Value = FormType.Humanoid },
             new Inventory { Items = [] },
@@ -111,27 +111,27 @@ public static class PlayerFactory
             new Progression { Experience = 1000000, ExperienceByLevel = 1000, ExperienceToNextLevel = 0 },
             new BaseStats
             {
-                Values = StatValues.From(
-                    (StatKind.Strength, 15),
-                    (StatKind.Intelligence, 10),
-                    (StatKind.Wisdom, 15),
-                    (StatKind.Dexterity, 12),
-                    (StatKind.Constitution, 15),
-                    (StatKind.HitRoll, 0),
-                    (StatKind.DamRoll, 0),
-                    (StatKind.ArmorClass, 0))
+                Values = CharacterStatValues.From(
+                    (CharacterStatKind.Strength, 15),
+                    (CharacterStatKind.Intelligence, 10),
+                    (CharacterStatKind.Wisdom, 15),
+                    (CharacterStatKind.Dexterity, 12),
+                    (CharacterStatKind.Constitution, 15),
+                    (CharacterStatKind.HitRoll, 0),
+                    (CharacterStatKind.DamRoll, 0),
+                    (CharacterStatKind.ArmorClass, 0))
             },
             new EffectiveStats
             {
-                Values = StatValues.From(
-                    (StatKind.Strength, 15),
-                    (StatKind.Intelligence, 10),
-                    (StatKind.Wisdom, 15),
-                    (StatKind.Dexterity, 12),
-                    (StatKind.Constitution, 15),
-                    (StatKind.HitRoll, 0),
-                    (StatKind.DamRoll, 0),
-                    (StatKind.ArmorClass, 0))
+                Values = CharacterStatValues.From(
+                    (CharacterStatKind.Strength, 15),
+                    (CharacterStatKind.Intelligence, 10),
+                    (CharacterStatKind.Wisdom, 15),
+                    (CharacterStatKind.Dexterity, 12),
+                    (CharacterStatKind.Constitution, 15),
+                    (CharacterStatKind.HitRoll, 0),
+                    (CharacterStatKind.DamRoll, 0),
+                    (CharacterStatKind.ArmorClass, 0))
             },
             new Form { Value = FormType.Humanoid },
             new Inventory { Items = [] },
@@ -184,27 +184,27 @@ public static class PlayerFactory
             new Progression { Experience = 49950, ExperienceByLevel = 1000, ExperienceToNextLevel = 50000 },
             new BaseStats
             {
-                Values = StatValues.From(
-                    (StatKind.Strength, 15),
-                    (StatKind.Intelligence, 10),
-                    (StatKind.Wisdom, 15),
-                    (StatKind.Dexterity, 12),
-                    (StatKind.Constitution, 15),
-                    (StatKind.HitRoll, 0),
-                    (StatKind.DamRoll, 0),
-                    (StatKind.ArmorClass, 0))
+                Values = CharacterStatValues.From(
+                    (CharacterStatKind.Strength, 15),
+                    (CharacterStatKind.Intelligence, 10),
+                    (CharacterStatKind.Wisdom, 15),
+                    (CharacterStatKind.Dexterity, 12),
+                    (CharacterStatKind.Constitution, 15),
+                    (CharacterStatKind.HitRoll, 0),
+                    (CharacterStatKind.DamRoll, 0),
+                    (CharacterStatKind.ArmorClass, 0))
             },
             new EffectiveStats
             {
-                Values = StatValues.From(
-                    (StatKind.Strength, 15),
-                    (StatKind.Intelligence, 10),
-                    (StatKind.Wisdom, 15),
-                    (StatKind.Dexterity, 12),
-                    (StatKind.Constitution, 15),
-                    (StatKind.HitRoll, 0),
-                    (StatKind.DamRoll, 0),
-                    (StatKind.ArmorClass, 0))
+                Values = CharacterStatValues.From(
+                    (CharacterStatKind.Strength, 15),
+                    (CharacterStatKind.Intelligence, 10),
+                    (CharacterStatKind.Wisdom, 15),
+                    (CharacterStatKind.Dexterity, 12),
+                    (CharacterStatKind.Constitution, 15),
+                    (CharacterStatKind.HitRoll, 0),
+                    (CharacterStatKind.DamRoll, 0),
+                    (CharacterStatKind.ArmorClass, 0))
             },
             new Form { Value = FormType.Humanoid },
             new Inventory { Items = [] },

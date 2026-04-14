@@ -1,6 +1,6 @@
 ﻿namespace MysteryMud.GameData.Enums;
 
-public enum StatKind
+public enum CharacterStatKind
 {
     Strength = 0,
     Intelligence = 1,

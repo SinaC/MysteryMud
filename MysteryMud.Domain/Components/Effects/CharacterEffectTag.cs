@@ -2,7 +2,7 @@
 
 namespace MysteryMud.Domain.Components.Effects;
 
-public struct EffectTag
+public struct CharacterEffectTag
 {
-    public EffectTagId Id;
+    public CharacterEffectTagId Id;
 }

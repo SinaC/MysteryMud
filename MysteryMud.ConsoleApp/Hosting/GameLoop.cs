@@ -39,7 +39,7 @@ internal class GameLoop
     private readonly FleeSystem _fleeSystem;
     private readonly MovementSystem _movementSystem;
     private readonly ItemInteractionSystem _itemInteractionSystem;
-    private readonly EffectiveStatsSystem _effectiveStatsSystem;
+    private readonly EffectiveCharacterStatsSystem _effectiveCharacterStatsSystem;
     private readonly EffectiveMaxResourceSystem<BaseHealth, Health, DirtyHealth, HealthModifier> _effectiveMaxHeathSystem;
     private readonly EffectiveMaxResourceSystem<BaseMana, Mana, DirtyMana, ManaModifier> _effectiveMaxManaSystem;
     private readonly EffectiveMaxResourceSystem<BaseEnergy, Energy, DirtyEnergy, EnergyModifier> _effectiveMaxEnergySystem;
@@ -81,7 +81,7 @@ internal class GameLoop
         FleeSystem fleeSystem,
         MovementSystem movementSystem,
         ItemInteractionSystem itemInteractionSystem,
-        EffectiveStatsSystem effectiveStatsSystem,
+        EffectiveCharacterStatsSystem effectiveCharacterStatsSystem,
         EffectiveMaxResourceSystem<BaseHealth, Health, DirtyHealth, HealthModifier> effectiveMaxHeathSystem,
         EffectiveMaxResourceSystem<BaseMana, Mana, DirtyMana, ManaModifier> effectiveMaxManaSystem,
         EffectiveMaxResourceSystem<BaseEnergy, Energy, DirtyEnergy, EnergyModifier> effectiveMaxEnergySystem,
@@ -123,7 +123,7 @@ internal class GameLoop
         _fleeSystem = fleeSystem;
         _movementSystem = movementSystem;
         _itemInteractionSystem = itemInteractionSystem;
-        _effectiveStatsSystem = effectiveStatsSystem;
+        _effectiveCharacterStatsSystem = effectiveCharacterStatsSystem;
         _effectiveMaxHeathSystem = effectiveMaxHeathSystem;
         _effectiveMaxManaSystem = effectiveMaxManaSystem;
         _effectiveMaxEnergySystem = effectiveMaxEnergySystem;
@@ -198,7 +198,7 @@ internal class GameLoop
             // Process get/drop/put/give/...
             _itemInteractionSystem.Tick(state);
             // Recalculate stats with DirtyStats
-            _effectiveStatsSystem.Tick(state);
+            _effectiveCharacterStatsSystem.Tick(state);
             // Recalculate resource with DirtyResource where resource can be Health, Mana, Energy, Rage
             _effectiveMaxHeathSystem.Tick(state);
             _effectiveMaxManaSystem.Tick(state);

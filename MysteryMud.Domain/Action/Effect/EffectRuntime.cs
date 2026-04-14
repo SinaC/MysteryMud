@@ -9,7 +9,7 @@ public class EffectRuntime
 
     // state-effect
     public Func<EffectContext, decimal>? DurationFunc; // if null -> stateless effect
-    public EffectTagId Tag = EffectTagId.None;
+    public CharacterEffectTagId Tag = CharacterEffectTagId.None; // TODO: what about ItemEffectTagId ?
     public StackingRule Stacking = StackingRule.None;
     public int MaxStacks = 1;
     public bool TickOnApply = false; // if true, tick actions are triggered immediately
@@ -19,5 +19,5 @@ public class EffectRuntime
     public Action<EffectExecutionContext>[] OnApply = [];
     public Action<EffectExecutionContext>[] OnTick = [];
     public Action<EffectExecutionContext>[] OnExpire = [];
-    //TODO: public Action<EffectContext, DamageAction>[] OnReceiveDamage; = [];
+    //TODO: public Action<EffectContext, DamageAction>[] OnReceiveDamage = [];
 }

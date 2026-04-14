@@ -49,7 +49,7 @@ public class JsonEffectLoader
             DurationCompiledFormula = data.DurationFormula == null
                 ? null
                 : _formulaCompiler.Compile(data.DurationFormula),
-            Tag = EnumParser.Parse(data.Tag, EffectTagId.None),
+            Tag = EnumParser.Parse(data.Tag, CharacterEffectTagId.None), // TODO: what about ItemEffectTagId ?
             Stacking = EnumParser.Parse(data.Stacking, StackingRule.None),
             MaxStacks = data.MaxStacks,
             TickOnApply = data.TickOnApply,
@@ -67,12 +67,12 @@ public class JsonEffectLoader
         var trigger = Enum.Parse<TriggerType>(action.Trigger, ignoreCase: true);
         switch (action)
         {
-            case StatModifierData data:
+            case CharacterStatModifierData data:
                 {
-                    var stat = Enum.Parse<StatKind>(data.Stat, ignoreCase: true);
+                    var stat = Enum.Parse<CharacterStatKind>(data.Stat, ignoreCase: true);
                     var modifier = Enum.Parse<ModifierKind>(data.Mode, ignoreCase: true);
                     var valueFunc = _formulaCompiler.Compile(data.ValueFormula);
-                    return new StatModifierActionDefinition
+                    return new CharacterStatModifierActionDefinition
                     {
                         Trigger = trigger,
                         Stat = stat,
@@ -197,11 +197,11 @@ public class JsonEffectLoader
                     };
                 }
 
-            case ApplyTagActionData data:
+            case ApplyCharacterTagActionData data:
                 {
-                    var effectTagId = Enum.Parse<EffectTagId>(data.Tag);
+                    var effectTagId = Enum.Parse<CharacterEffectTagId>(data.Tag);
                     // TODO: target
-                    return new ApplyTagActionDefinition
+                    return new ApplyCharacterTagActionDefinition
                     {
                         Trigger = trigger,
                         EffectTagId = effectTagId
@@ -223,14 +223,14 @@ public class JsonEffectLoader
 
             return type switch
             {
-                "StatModifier" => JsonSerializer.Deserialize<StatModifierData>(root.GetRawText(), options),
+                "StatModifier" => JsonSerializer.Deserialize<CharacterStatModifierData>(root.GetRawText(), options), // TODO: depends on character or item
                 "ResourceModifier" => JsonSerializer.Deserialize<ResourceModifierData>(root.GetRawText(), options),
                 "RegenModifier" => JsonSerializer.Deserialize<RegenModifierData>(root.GetRawText(), options),
                 "PeriodicHeal" => JsonSerializer.Deserialize<PeriodicHealData>(root.GetRawText(), options),
                 "PeriodicDamage" => JsonSerializer.Deserialize<PeriodicDamageData>(root.GetRawText(), options),
                 "InstantDamage" => JsonSerializer.Deserialize<InstantDamageData>(root.GetRawText(), options),
                 "InstantHeal" => JsonSerializer.Deserialize<InstantHealData>(root.GetRawText(), options),
-                "ApplyTag" => JsonSerializer.Deserialize<ApplyTagActionData>(root.GetRawText(), options),
+                "ApplyTag" => JsonSerializer.Deserialize<ApplyCharacterTagActionData>(root.GetRawText(), options),
                 _ => throw new NotSupportedException($"Unknown action type: {type}")
             };
         }

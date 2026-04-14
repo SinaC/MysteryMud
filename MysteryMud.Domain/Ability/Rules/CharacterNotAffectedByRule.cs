@@ -5,13 +5,13 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Ability.Rules;
 
-public class NotAffectedByRule : IAbilityValidationRule // opposite of AffectedByRule
+public class CharacterNotAffectedByRule : IAbilityValidationRule // opposite of AffectedByRule
 {
     private readonly ulong _effectTagIndex;
     private readonly AbilityValidationFailBehaviour _failBehaviour;
     private readonly string _failMessageKey;
 
-    public NotAffectedByRule(EffectTagId effectTagId, AbilityValidationFailBehaviour failBehaviour, string failMessageKey)
+    public CharacterNotAffectedByRule(CharacterEffectTagId effectTagId, AbilityValidationFailBehaviour failBehaviour, string failMessageKey)
     {
         _effectTagIndex = 1UL << (int)effectTagId;
         _failBehaviour = failBehaviour;

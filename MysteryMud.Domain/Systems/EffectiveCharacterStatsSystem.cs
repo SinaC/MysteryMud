@@ -9,10 +9,10 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Systems;
 
-public class EffectiveStatsSystem
+public class EffectiveCharacterStatsSystem
 {
-    private static readonly StatKind[] _allStats = Enum.GetValues<StatKind>()
-        .Take((int)StatKind.Count) // Count is used by to InlineArray attribute
+    private static readonly CharacterStatKind[] _allStats = Enum.GetValues<CharacterStatKind>()
+        .Take((int)CharacterStatKind.Count) // Count is used by to InlineArray attribute
         .ToArray();
 
     public void Tick(GameState state)
@@ -38,7 +38,7 @@ public class EffectiveStatsSystem
                 // TODO: optimize by only iterating modifiers for this stat, instead of all modifiers for all stats -> index modifiers by stat in the StatModifiers component
                 //  this will allow to remove: x => x.Stat == stat
                 // apply modifiers from effects
-                var (flat, percent, multiply, overriding) = ModifierPipeline.CalculateModifiers<StatModifiers, StatModifier>(character, x => x.Stat == stat, x => x.Values, x => x.Modifier, x => x.Value);
+                var (flat, percent, multiply, overriding) = ModifierPipeline.CalculateModifiers<CharacterStatModifiers, CharacterStatModifier>(character, x => x.Stat == stat, x => x.Values, x => x.Modifier, x => x.Value);
 
                 var rawValue = overriding ?? ((baseValue + flat) * (100 + percent) * multiply / 100);
 

@@ -2,9 +2,9 @@
 
 namespace MysteryMud.Domain.Action.Effect.Definitions;
 
-public class StatModifierActionDefinition : EffectActionDefinition
+public class CharacterStatModifierActionDefinition : EffectActionDefinition
 {
-    public required StatKind Stat { get; init; }
+    public required CharacterStatKind Stat { get; init; }
     public required ModifierKind Modifier { get; init; }
     public required EffectCompiledFormula ValueCompiledFormula { get; init; }
 }

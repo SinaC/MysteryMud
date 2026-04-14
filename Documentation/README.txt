@@ -49,7 +49,7 @@ ActionOrchestrator (step 21) details
                  Applies HP/Threat changes
                  Generates death events if HP ≤ 0
                  Sends messages like “You take 5 damage”
-                 Does not trigger counterattack
+                 Check weapon procs (weapon procs are not a reaction to an hit but a continuation of a hit)
              ReactionPhase (if victim is still alive)
                  Checks conditions: parry -> guaranteed counterattack, hit -> chance to counterattack
                  Generates new AttackIntents for counterattacks
