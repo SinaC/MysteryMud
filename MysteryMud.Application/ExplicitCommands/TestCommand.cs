@@ -5,6 +5,8 @@ using MysteryMud.Application.Queries;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Core.Extensions;
+using MysteryMud.Core.Intent;
+using MysteryMud.Core.Services;
 using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
@@ -20,12 +22,16 @@ public class TestCommand : IExplicitCommand
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetAndText;
 
     private readonly IEffectRegistry _effectRegistry;
+    private readonly IGameMessageService _msg;
+    private readonly IIntentWriterContainer _intents;
 
     public CommandDefinition Definition { get; }
 
-    public TestCommand(IEffectRegistry effectRegistry)
+    public TestCommand(IEffectRegistry effectRegistry, IGameMessageService msg, IIntentWriterContainer intents)
     {
         _effectRegistry = effectRegistry;
+        _msg = msg;
+        _intents = intents;
 
         Definition = new CommandDefinition
         {
@@ -44,21 +50,21 @@ public class TestCommand : IExplicitCommand
         };
     }
 
-    public void Execute(CommandExecutionContext executionContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
         ref var roomContents = ref actor.Get<Location>().Room.Get<RoomContents>().Characters;
         var target = EntityFinder.SelectSingleTarget(actor, ctx.Primary, roomContents);
 
-        //executionContext.Msg.To(actor).Send("Ansi16: %RR%GG%YY%BB%MM%CC%WW%rr%gg%yy%bb%mm%cc%ww%xnocolor");
-        //executionContext.Msg.To(actor).Send("Ansi256: %=214orange%xnocolor");
-        //executionContext.Msg.To(actor).Send("RGB: %#FFA500orange%xnocolor");
-        //executionContext.Msg.To(actor).Send("GRADIENT: %#FFA500>#00FFA5orange-2-cyan%xnocolor");
+        //_msg.To(actor).Send("Ansi16: %RR%GG%YY%BB%MM%CC%WW%rr%gg%yy%bb%mm%cc%ww%xnocolor");
+        //_msg.To(actor).Send("Ansi256: %=214orange%xnocolor");
+        //_msg.To(actor).Send("RGB: %#FFA500orange%xnocolor");
+        //_msg.To(actor).Send("GRADIENT: %#FFA500>#00FFA5orange-2-cyan%xnocolor");
 
         if (target == null)
         {
-            executionContext.Msg.To(actor).Send("You don't see that here.");
+            _msg.To(actor).Send("You don't see that here.");
             return;
         }
 
@@ -67,8 +73,8 @@ public class TestCommand : IExplicitCommand
         {
             var effectId = effectRuntime.Id;
 
-            executionContext.Msg.To(actor).Send($"Applying effect {effectRuntime.Name}");
-            ref var effectIntent = ref executionContext.Intent.Action.Add();
+            _msg.To(actor).Send($"Applying effect {effectRuntime.Name}");
+            ref var effectIntent = ref _intents.Action.Add();
             effectIntent.Kind = ActionKind.Effect;
             effectIntent.Effect.EffectId = effectId;
             effectIntent.Effect.Source = actor;

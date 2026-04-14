@@ -2,6 +2,7 @@
 using MysteryMud.Application.Parsing;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
+using MysteryMud.Core.Services;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Queries.Matching;
@@ -12,13 +13,20 @@ public class TellCommand : ICommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetAndText;
 
-    public void Execute(CommandExecutionContext executionContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    private readonly IGameMessageService _msg;
+
+    public TellCommand(IGameMessageService msg)
+    {
+        _msg = msg;
+    }
+
+    public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
         if (ctx.TargetCount == 0)
         {
-            executionContext.Msg.To(actor).Send("Tell whom?");
+            _msg.To(actor).Send("Tell whom?");
             return;
         }
 
@@ -31,7 +39,7 @@ public class TellCommand : ICommand
         {
             if (NameMatcher.Matches(target, primaryName))
             {
-                executionContext.Msg.To([actor, target]).Act("{0} tell{0:v} {1}: {2}").With(actor, target, message);
+                _msg.To([actor, target]).Act("{0} tell{0:v} {1}: {2}").With(actor, target, message);
                 found = true;
             }
         });
@@ -39,6 +47,6 @@ public class TellCommand : ICommand
         if (found)
             return;
 
-        executionContext.Msg.To(actor).Send("They aren't here.");
+        _msg.To(actor).Send("They aren't here.");
     }
 }

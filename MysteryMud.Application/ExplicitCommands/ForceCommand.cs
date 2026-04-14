@@ -5,8 +5,8 @@ using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Application.Registry;
 using MysteryMud.Core;
-using MysteryMud.Core.Commands;
 using MysteryMud.Core.Extensions;
+using MysteryMud.Core.Services;
 using MysteryMud.Domain.Commands;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
@@ -24,6 +24,7 @@ public class ForceCommand : IExplicitCommand
 
     private readonly ILogger _logger;
     private readonly ICommandRegistry _commandRegistry;
+    private readonly IGameMessageService _msg;
 
     public CommandDefinition Definition { get; } = new CommandDefinition
     {
@@ -44,19 +45,20 @@ This is typically used for 'force all save'.",
         ThrottlingCategories = CommandThrottlingCategories.Admin,
     };
 
-    public ForceCommand(ILogger logger, ICommandRegistry commandRegistry)
+    public ForceCommand(ILogger logger, ICommandRegistry commandRegistry, IGameMessageService msg)
     {
         _logger = logger;
         _commandRegistry = commandRegistry;
+        _msg = msg;
     }
 
-    public void Execute(CommandExecutionContext executionContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
         if (ctx.TargetCount == 0 || ctx.Text.Length == 0)
         {
-            executionContext.Msg.To(actor).Send("Force whom what?");
+            _msg.To(actor).Send("Force whom what?");
             return;
         }
 
@@ -68,13 +70,13 @@ This is typically used for 'force all save'.",
 
         if (target == null)
         {
-            executionContext.Msg.To(actor).Send("They aren't here.");
+            _msg.To(actor).Send("They aren't here.");
             return;
         }
 
         if (target == actor)
         {
-            executionContext.Msg.To(actor).Send("They aren't here.");
+            _msg.To(actor).Send("They aren't here.");
             return;
         }
 
@@ -90,28 +92,28 @@ This is typically used for 'force all save'.",
         var findResult = _commandRegistry.Find(CommandLevelKind.Player, targetPosition.Value, ctx.Text.Slice(forcedCmdStart, forcedCmdLength), out var forcedCommand);
         if (findResult == CommandFindResult.NotFound)
         {
-            executionContext.Msg.To(actor).Send("Command not found.");
+            _msg.To(actor).Send("Command not found.");
             return;
         }
         else if (findResult == CommandFindResult.WrongPosition)
         {
-            executionContext.Msg.To(actor).Send($"{target.Value.DisplayName} is in the wrong position.");
+            _msg.To(actor).Send($"{target.Value.DisplayName} is in the wrong position.");
             return;
         }
         else if (findResult == CommandFindResult.NoPermission)
         {
-            executionContext.Msg.To(actor).Send($"{target.Value.DisplayName} is not allowed to use this command.");
+            _msg.To(actor).Send($"{target.Value.DisplayName} is not allowed to use this command.");
             return;
         }
         else if (forcedCommand is null)
         {
             _logger.LogError("ForceCommand: command registry returned null command when trying to find {cmd}", ctx.Text.ToString());
-            executionContext.Msg.To(actor).Send("Something goes wrong.");
+            _msg.To(actor).Send("Something goes wrong.");
             return;
         }
         else if (forcedCommand!.Definition.CannotBeForced)
         {
-            executionContext.Msg.To(actor).Send("That will NOT be done.");
+            _msg.To(actor).Send("That will NOT be done.");
             return;
         }
 

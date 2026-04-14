@@ -4,6 +4,8 @@ using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
+using MysteryMud.Core.Intent;
+using MysteryMud.Core.Services;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Rooms;
@@ -14,13 +16,22 @@ public class GiveCommand : ICommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetPair;
 
-    public void Execute(CommandExecutionContext executionContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    private readonly IGameMessageService _msg;
+    private readonly IIntentWriterContainer _intents;
+
+    public GiveCommand(IGameMessageService msg, IIntentWriterContainer intents)
+    {
+        _msg = msg;
+        _intents = intents;
+    }
+
+    public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
         if (ctx.TargetCount < 2)
         {
-            executionContext.Msg.To(actor).Send("Give what to whom ?");
+            _msg.To(actor).Send("Give what to whom ?");
             return;
         }
 
@@ -32,14 +43,14 @@ public class GiveCommand : ICommand
         var target = EntityFinder.SelectSingleTarget(actor, ctx.Secondary, roomContents.Characters);
         if (target == null)
         {
-            executionContext.Msg.To(actor).Send("They are not here.");
+            _msg.To(actor).Send("They are not here.");
             return;
         }
 
         foreach (var item in EntityFinder.SelectTargets(actor, ctx.Primary, inventory.Items))
         {
             // intent to give item
-            ref var giveItemIntent = ref executionContext.Intent.GiveItem.Add();
+            ref var giveItemIntent = ref _intents.GiveItem.Add();
             giveItemIntent.Entity = actor;
             giveItemIntent.Item = item;
             giveItemIntent.Target = target.Value;

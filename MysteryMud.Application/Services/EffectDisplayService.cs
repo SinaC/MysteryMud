@@ -12,17 +12,12 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.Services;
 
-public interface IEffectDisplayService
-{
-    void DisplayEffects(GameState state, Entity viewer, List<Entity> effects);
-}
-
 public class EffectDisplayService : IEffectDisplayService
 {
     private readonly IGameMessageService _msg;
-    private readonly EffectRegistry _effectRegistry;
+    private readonly IEffectRegistry _effectRegistry;
 
-    public EffectDisplayService(IGameMessageService msg, EffectRegistry effectRegistry)
+    public EffectDisplayService(IGameMessageService msg, IEffectRegistry effectRegistry)
     {
         _msg = msg;
         _effectRegistry = effectRegistry;

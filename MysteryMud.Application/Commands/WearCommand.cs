@@ -4,6 +4,8 @@ using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
+using MysteryMud.Core.Intent;
+using MysteryMud.Core.Services;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 
@@ -13,13 +15,22 @@ public class WearCommand : ICommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.Target;
 
-    public void Execute(CommandExecutionContext executionContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    private readonly IGameMessageService _msg;
+    private readonly IIntentWriterContainer _intents;
+
+    public WearCommand(IGameMessageService msg, IIntentWriterContainer intents)
+    {
+        _msg = msg;
+        _intents = intents;
+    }
+
+    public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
         if (ctx.TargetCount == 0)
         {
-            executionContext.Msg.To(actor).Send("Wear what ?");
+            _msg.To(actor).Send("Wear what ?");
             return;
         }
 
@@ -30,7 +41,7 @@ public class WearCommand : ICommand
             ref var equipable = ref item.TryGetRef<Equipable>(out var isEquipable);
             if (!isEquipable)
             {
-                executionContext.Msg.To(actor).Send("You can't wear that.");
+                _msg.To(actor).Send("You can't wear that.");
                 return;
             }
 
@@ -40,12 +51,12 @@ public class WearCommand : ICommand
 
             if (equipment.Slots.ContainsKey(slot))
             {
-                executionContext.Msg.To(actor).Send("You already wear.");
+                _msg.To(actor).Send("You already wear.");
                 return;
             }
 
             // intent to wear item
-            ref var wearItemIntent = ref executionContext.Intent.WearItem.Add();
+            ref var wearItemIntent = ref _intents.WearItem.Add();
             wearItemIntent.Actor = actor;
             wearItemIntent.Item = item;
             wearItemIntent.Slot = slot;

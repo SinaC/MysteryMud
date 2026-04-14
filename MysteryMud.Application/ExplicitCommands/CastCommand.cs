@@ -2,8 +2,9 @@
 using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Core;
-using MysteryMud.Core.Commands;
 using MysteryMud.Core.Extensions;
+using MysteryMud.Core.Intent;
+using MysteryMud.Core.Services;
 using MysteryMud.Domain.Ability;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
@@ -17,13 +18,17 @@ public class CastCommand : IExplicitCommand
 
     private readonly ILogger _logger;
     private readonly IAbilityRegistry _abilityRegistry;
+    private readonly IGameMessageService _msg;
+    private readonly IIntentWriterContainer _intents;
 
     public CommandDefinition Definition { get; }
 
-    public CastCommand(ILogger logger, IAbilityRegistry abilityRegistry)
+    public CastCommand(ILogger logger, IAbilityRegistry abilityRegistry, IGameMessageService msg, IIntentWriterContainer intents)
     {
         _logger = logger;
         _abilityRegistry = abilityRegistry;
+        _msg = msg;
+        _intents = intents;
 
         Definition = new CommandDefinition
         {
@@ -67,14 +72,14 @@ Use the 'spells' command to see the spells you already have (help spells).",
         };
     }
 
-    public void Execute(CommandExecutionContext executionContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
         // search ability
         if (!_abilityRegistry.StartsWith(ctx.Primary.Name.ToString(), out var abilityRuntime) || abilityRuntime == null || abilityRuntime.Kind != AbilityKind.Spell)
         {
-            executionContext.Msg.To(actor).Send("You don't know any spells of that name.");
+            _msg.To(actor).Send("You don't know any spells of that name.");
             return;
         }
         var abilityId = abilityRuntime.Id;
@@ -82,7 +87,7 @@ Use the 'spells' command to see the spells you already have (help spells).",
         // checks will be done in AbilityValidationSystem
 
         // add use ability intent
-        ref var useAbilityIntent = ref executionContext.Intent.UseAbility.Add();
+        ref var useAbilityIntent = ref _intents.UseAbility.Add();
         useAbilityIntent.Source = actor;
         useAbilityIntent.TargetKind = ctx.Secondary.Kind;
         useAbilityIntent.TargetIndex = ctx.Secondary.Index;

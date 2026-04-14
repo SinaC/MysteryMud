@@ -4,6 +4,7 @@ using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
+using MysteryMud.Core.Services;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Rooms;
@@ -14,13 +15,20 @@ public class KillCommand : ICommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.Target;
 
-    public void Execute(CommandExecutionContext executionContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    private readonly IGameMessageService _msg;
+
+    public KillCommand(IGameMessageService msg)
+    {
+        _msg = msg;
+    }
+
+    public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
         if (ctx.TargetCount == 0)
         {
-            executionContext.Msg.To(actor).Send("Kill whom ?");
+            _msg.To(actor).Send("Kill whom ?");
             return;
         }
 
@@ -29,20 +37,20 @@ public class KillCommand : ICommand
 
         if (target == null)
         {
-            executionContext.Msg.To(actor).Send("They aren't here.");
+            _msg.To(actor).Send("They aren't here.");
             return;
         }
 
         if (target.Equals(actor))
         {
-            executionContext.Msg.To(actor).Send("You hit yourself. Ouch.");
+            _msg.To(actor).Send("You hit yourself. Ouch.");
             return;
         }
 
         // TODO: check if already in combat, if so, maybe switch targets? Or maybe not allow switching targets?
         if (actor.Has<CombatState>())
         {
-            executionContext.Msg.To(actor).Send("You do the best you can!");
+            _msg.To(actor).Send("You do the best you can!");
             return;
         }    
 

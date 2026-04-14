@@ -151,6 +151,7 @@ abilityOutcomeResolverRegistry.Register("berserk", new BerserkOutcomeResolver())
 // load ability definitions
 var abilityLoader = new JsonAbilityLoader();
 var abilityDefinitions = abilityLoader.Load(Path.Combine(basePath, gamePaths.AbilitiesJson));
+var skillCommandDefinitions = abilityDefinitions.Where(x => x.Kind == AbilityKind.Skill && x.Command is not null).Select(x => x.Command!.Value).ToArray(); 
 var abilityRegistry = new AbilityRegistry(effectRegistry, abilityOutcomeResolverRegistry);
 abilityRegistry.Register(abilityDefinitions);
 
@@ -160,42 +161,13 @@ var weaponProcDefinitions = weaponProcLoader.Load(Path.Combine(basePath, gamePat
 var weaponProcRegistry = new WeaponProcRegistry(effectRegistry);
 weaponProcRegistry.Register(weaponProcDefinitions);
 
+// load social definitions
+var socialLoader = new JsonSocialLoader();
+var socialDefinitions = socialLoader.Load(Path.Combine(basePath, gamePaths.SocialsJson));
+
 // load command definitions
 var commandLoader = new JsonCommandLoader();
 var commandDefinitions = commandLoader.Load(Path.Combine(basePath, gamePaths.CommandsJson));
-
-//// initialize command registry (Infrastructure)
-//var commandRegistry = new CommandRegistry(logger);
-//var explicitCommands = new List<IExplicitCommand>
-//{
-//    new HelpCommand(commandRegistry),
-//    new SocialsCommand(commandRegistry),
-//    new ForceCommand(logger, commandRegistry),
-//    new TestCommand(effectRegistry),
-//    new CastCommand(logger, abilityRegistry)
-//};
-
-//// social commands (one by social definition)
-var socialLoader = new JsonSocialLoader();
-var socialDefinitions = socialLoader.Load(Path.Combine(basePath, gamePaths.SocialsJson));
-//foreach (var socialDefinition in socialDefinitions)
-//{
-//    var socialCommand = new SocialCommand(logger, socialDefinition);
-//    explicitCommands.Add(socialCommand);
-//}
-//// skill commands (from abilities with type Skill)
-var skillCommandDefinitions = abilityDefinitions.Where(x => x.Kind == AbilityKind.Skill && x.Command is not null).Select(x => x.Command!.Value).ToArray();
-//foreach (var skillCommandDefinition in skillCommandDefinitions)
-//{
-//    var skillCommand = new SkillCommand(logger, abilityRegistry, skillCommandDefinition);
-//    explicitCommands.Add(skillCommand);
-//}
-
-//// commands from assemblies
-//commandRegistry.RegisterCommands(commandDefinitions, [typeof(TestCommand).Assembly], explicitCommands);
-
-//// initialize dispatcher and parser (Application)
-//var commandDispatcher = new CommandDispatcher(commandRegistry);
 
 // run demo
 //Demo.Run(logger, world, commandDispatcher);
@@ -229,20 +201,20 @@ services.AddSingleton<ICommandRegistry>(sp =>
     // after the registry exists, to break the cycle
     var explicitCommands = new List<IExplicitCommand>
     {
-        new HelpCommand(registry),
-        new SocialsCommand(registry),
-        new ForceCommand(logger, registry),
-        new TestCommand(sp.GetRequiredService<IEffectRegistry>()),
-        new CastCommand(logger, sp.GetRequiredService<IAbilityRegistry>()),
+        new HelpCommand(registry, sp.GetRequiredService<IGameMessageService>()),
+        new SocialsCommand(registry, sp.GetRequiredService<IGameMessageService>()),
+        new ForceCommand(logger, registry, sp.GetRequiredService<IGameMessageService>()),
+        new TestCommand(sp.GetRequiredService<IEffectRegistry>(), sp.GetRequiredService<IGameMessageService>(), sp.GetRequiredService<IIntentWriterContainer>()),
+        new CastCommand(logger, sp.GetRequiredService<IAbilityRegistry>(), sp.GetRequiredService<IGameMessageService>(), sp.GetRequiredService<IIntentWriterContainer>()),
     };
 
     // Social commands — data-driven
     foreach (var socialDefinition in socialDefinitions)
-        explicitCommands.Add(new SocialCommand(logger, socialDefinition));
+        explicitCommands.Add(new SocialCommand(logger, sp.GetRequiredService<IGameMessageService>(), socialDefinition));
 
     // Skill commands — data-driven
     foreach (var skillCommandDefinition in skillCommandDefinitions)
-        explicitCommands.Add(new SkillCommand(logger, sp.GetRequiredService<IAbilityRegistry>(), skillCommandDefinition));
+        explicitCommands.Add(new SkillCommand(logger, sp.GetRequiredService<IAbilityRegistry>(), sp.GetRequiredService<IGameMessageService>(), sp.GetRequiredService<IIntentWriterContainer>(), skillCommandDefinition));
 
     // Register all IExplicitCommand implementations
     foreach(var explicitCommand in explicitCommands)
@@ -313,6 +285,7 @@ services.AddSingleton<IEffectLifecycleManager, EffectLifecycleManager>();
 services.AddSingleton<IEffectApplicationManager, EffectApplicationManager>();
 services.AddSingleton<IExperienceService, ExperienceService>();
 services.AddSingleton<ILookService, LookService>();
+services.AddSingleton<IEffectDisplayService, EffectDisplayService>();
 
 // Command dispatcher
 services.AddSingleton<ICommandDispatcher, CommandDispatcher>();

@@ -3,7 +3,6 @@ using Arch.Core.Extensions;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Registry;
 using MysteryMud.Core;
-using MysteryMud.Core.Commands;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Commands;
 using MysteryMud.Domain.Components;
@@ -25,7 +24,7 @@ public class CommandDispatcher : ICommandDispatcher
         _msg = msg;
     }
 
-    public void Dispatch(CommandExecutionContext executionContext, GameState state, Entity actor, ReadOnlySpan<char> input)
+    public void Dispatch(GameState state, Entity actor, ReadOnlySpan<char> input)
     {
         if (!actor.IsAlive())
             return;

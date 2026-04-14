@@ -82,8 +82,6 @@ static class Demo2
         var levelIncreasedEventBuffer = new EventBuffer<LevelIncreasedEvent>();
         var killRewardEventBuffer = new EventBuffer<KillRewardEvent>();
 
-        var executionContext = new CommandExecutionContext { Msg = gameMessageService, Intent = intentBusContainer };
-
         // TODO: deathEvent and damageEvent are purely combat events and should probably remains the only event passed to systems, other events like itemGotEvent, itemDroppedEvent, itemGivenEvent, itemPutEvent can be directly sent to message service without going through event buffer since they are only used for messaging and no system needs to react to them, this way we can avoid the complexity of managing multiple event buffers and also avoid the issue of events being processed in the wrong order (like damage events being processed before attack intents)
         // TODO: we should replace all these eventbuffers with a more generic event system
 
@@ -169,8 +167,8 @@ static class Demo2
         ////goblin.Add(new CombatState { Target = troll, RoundDelay = 0 });
         ///
         // scenario 4: player applies 2 times armor on troll
-        commandDispatcher.Dispatch(executionContext, gameState, player, "test troll armor".AsSpan());
-        commandDispatcher.Dispatch(executionContext, gameState, player, "test troll armor".AsSpan());
+        commandDispatcher.Dispatch(gameState, player, "test troll armor".AsSpan());
+        commandDispatcher.Dispatch(gameState, player, "test troll armor".AsSpan());
 
         // start of gameloop
 
@@ -181,7 +179,7 @@ static class Demo2
         //}
 
         // one tick
-        commandExecutionSystem.Execute(executionContext, gameState);
+        commandExecutionSystem.Execute(gameState);
         lookSystem.Tick(gameState, LookMode.Snapshot);
         fleeSystem.Tick(gameState);
         movementSystem.Tick(gameState);
