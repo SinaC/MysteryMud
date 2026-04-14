@@ -2,7 +2,6 @@
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
-using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Extensions;
 
@@ -17,7 +16,7 @@ public class CommandExecutionSystem
         _logger = logger;
     }
 
-    public void Execute(CommandExecutionContext ctx, GameState state)
+    public void Execute(GameState state)
     {
         long now = state.CurrentTimeMs;
 
@@ -48,7 +47,7 @@ public class CommandExecutionSystem
 
                 try
                 {
-                    request.Command.Handler.Execute(ctx, state, entity, request.CommandSpan, request.ArgsSpan);
+                    request.Command.Handler.Execute(state, entity, request.CommandSpan, request.ArgsSpan);
                 }
                 catch (Exception ex)
                 {

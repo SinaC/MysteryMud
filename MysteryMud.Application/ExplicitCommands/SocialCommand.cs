@@ -4,8 +4,8 @@ using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Core;
-using MysteryMud.Core.Commands;
 using MysteryMud.Core.Extensions;
+using MysteryMud.Core.Services;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.GameData.Definitions;
@@ -18,13 +18,16 @@ public class SocialCommand : IExplicitCommand
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.Target;
 
     private readonly ILogger _logger;
+    private readonly IGameMessageService _msg;
+
     private readonly SocialDefinition _socialDefinition;
 
     public CommandDefinition Definition { get; }
 
-    public SocialCommand(ILogger logger, SocialDefinition socialDefinition)
+    public SocialCommand(ILogger logger, IGameMessageService msg, SocialDefinition socialDefinition)
     {
         _logger = logger;
+        _msg = msg;
         _socialDefinition = socialDefinition;
 
         Definition = new CommandDefinition
@@ -44,7 +47,7 @@ public class SocialCommand : IExplicitCommand
         };
     }
 
-    public void Execute(CommandExecutionContext executionContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
@@ -60,13 +63,13 @@ public class SocialCommand : IExplicitCommand
             if (victim == null)
             {
                 if (_socialDefinition.CharacterNotFound is null)
-                    executionContext.Msg.To(actor).Send("They aren't here.");
+                    _msg.To(actor).Send("They aren't here.");
                 else
                 {
                     if (_socialDefinition.CharacterNotFound.Contains("{0"))
                     {
                         _logger.LogError("Social {name} CharacterNotFound phrase contains arguments.", _socialDefinition.Name);
-                        executionContext.Msg.To(actor).Send("They aren't here.");
+                        _msg.To(actor).Send("They aren't here.");
                     }
                     useCharacterNotFound = true;
                 }
@@ -75,29 +78,29 @@ public class SocialCommand : IExplicitCommand
 
         //
         if (useCharacterNotFound)
-            executionContext.Msg.To(actor).Act(_socialDefinition.CharacterNotFound!).With(actor);
+            _msg.To(actor).Act(_socialDefinition.CharacterNotFound!).With(actor);
         else if (victim == null)
         {
             if (_socialDefinition.CharacterNoArg is not null)
-                executionContext.Msg.To(actor).Act(_socialDefinition.CharacterNoArg).With(actor);
+                _msg.To(actor).Act(_socialDefinition.CharacterNoArg).With(actor);
             if (_socialDefinition.OthersNoArg is not null)
-                executionContext.Msg.ToRoom(actor).Act(_socialDefinition.OthersNoArg).With(actor);
+                _msg.ToRoom(actor).Act(_socialDefinition.OthersNoArg).With(actor);
         }
         else if (victim == actor)
         {
             if (_socialDefinition.CharacterAuto is not null)
-                executionContext.Msg.To(actor).Act(_socialDefinition.CharacterAuto).With(actor);
+                _msg.To(actor).Act(_socialDefinition.CharacterAuto).With(actor);
             if (_socialDefinition.OthersAuto is not null)
-                executionContext.Msg.ToRoom(actor).Act(_socialDefinition.OthersAuto).With(actor);
+                _msg.ToRoom(actor).Act(_socialDefinition.OthersAuto).With(actor);
         }
         else
         {
             if (_socialDefinition.CharacterFound is not null)
-                executionContext.Msg.To(actor).Act(_socialDefinition.CharacterFound).With(actor, victim);
+                _msg.To(actor).Act(_socialDefinition.CharacterFound).With(actor, victim);
             if (_socialDefinition.VictimFound is not null)
-                executionContext.Msg.To(victim.Value).Act(_socialDefinition.VictimFound).With(actor, victim);
+                _msg.To(victim.Value).Act(_socialDefinition.VictimFound).With(actor, victim);
             if (_socialDefinition.OthersFound is not null)
-                executionContext.Msg.ToRoomExcept(actor, victim.Value).Act(_socialDefinition.OthersFound).With(actor, victim);
+                _msg.ToRoomExcept(actor, victim.Value).Act(_socialDefinition.OthersFound).With(actor, victim);
 
             // TODO
             // trigger mob program

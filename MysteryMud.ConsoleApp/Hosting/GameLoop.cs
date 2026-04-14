@@ -171,18 +171,12 @@ internal class GameLoop
                 CurrentTimeMs = currentTick * TickRateMs
             };
 
-            var executionContext = new CommandExecutionContext
-            {
-                Msg = _msg,
-                Intent = _intentContainer,
-            };
-
             // Player commands 
-            _commandBus.Process(executionContext, state);
+            _commandBus.Process(state);
             // check spam, wait state, can cancel command
             _commandThrottleSystem.Execute(state);
             // execute command (if not cancelled) → may generate manual LookIntent(Mode= Snapshot)
-            _commandExecutionSystem.Execute(executionContext, state);
+            _commandExecutionSystem.Execute(state);
             // TODO: stop invalid combat: dead entities, entities in different rooms, ...
             // Process all LookIntents with Mode=Snapshot → reads current world state before any effects → produces messages
             _lookSystem.Tick(state, LookMode.Snapshot);

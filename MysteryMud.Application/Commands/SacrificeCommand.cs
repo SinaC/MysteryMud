@@ -4,6 +4,8 @@ using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
+using MysteryMud.Core.Intent;
+using MysteryMud.Core.Services;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
 
@@ -13,13 +15,22 @@ public class SacrificeCommand : ICommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.Target;
 
-    public void Execute(CommandExecutionContext executionContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    private readonly IGameMessageService _msg;
+    private readonly IIntentWriterContainer _intents;
+
+    public SacrificeCommand(IGameMessageService msg, IIntentWriterContainer intents)
+    {
+        _msg = msg;
+        _intents = intents;
+    }
+
+    public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
         if (ctx.TargetCount == 0)
         {
-            executionContext.Msg.To(actor).Send("Sacrifice what ?");
+            _msg.To(actor).Send("Sacrifice what ?");
             return;
         }
 
@@ -30,7 +41,7 @@ public class SacrificeCommand : ICommand
         foreach (var item in EntityFinder.SelectTargets(actor, ctx.Primary, roomContents.Items))
         {
             // intent to sacrifice item
-            ref var intent = ref executionContext.Intent.DestroyItem.Add();
+            ref var intent = ref _intents.DestroyItem.Add();
             intent.Entity = actor;
             intent.Item = item;
         }

@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.HighPerformance;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Application.ExplicitCommands;
 using MysteryMud.Core.Commands;
@@ -12,13 +13,15 @@ namespace MysteryMud.Application.Registry;
 public class CommandRegistry : ICommandRegistry
 {
     private readonly ILogger _logger;
+    private readonly IServiceProvider _serviceProvider;
 
     private readonly Dictionary<int, RegisteredCommand> _commandById = [];
     private RegisteredCommand[] _commands = [];
 
-    public CommandRegistry(ILogger logger)
+    public CommandRegistry(ILogger logger, IServiceProvider serviceProvider)
     {
         _logger = logger;
+        _serviceProvider = serviceProvider;
     }
 
     public void RegisterCommands(IEnumerable<CommandDefinition> definitions, IEnumerable<Assembly> assemblies, IEnumerable<IExplicitCommand> explicitCommands)
@@ -51,7 +54,8 @@ public class CommandRegistry : ICommandRegistry
                 continue;
             }
 
-            var cmd = (ICommand)Activator.CreateInstance(type)!;
+            // DI resolves the command
+            var cmd = (ICommand)_serviceProvider.GetRequiredService(type);
 
             // Add command for main name
             list.Add(CreateRegisteredCommand(def, cmd));

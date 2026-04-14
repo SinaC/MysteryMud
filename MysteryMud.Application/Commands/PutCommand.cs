@@ -4,6 +4,8 @@ using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
+using MysteryMud.Core.Intent;
+using MysteryMud.Core.Services;
 using MysteryMud.Domain.Components.Characters;
 
 namespace MysteryMud.Application.Commands;
@@ -12,13 +14,22 @@ public class PutCommand : ICommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetPair;
 
-    public void Execute(CommandExecutionContext executionContext, GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    private readonly IGameMessageService _msg;
+    private readonly IIntentWriterContainer _intents;
+
+    public PutCommand(IGameMessageService msg, IIntentWriterContainer intents)
+    {
+        _msg = msg;
+        _intents = intents;
+    }
+
+    public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
         if (ctx.TargetCount < 2)
         {
-            executionContext.Msg.To(actor).Send("Put what in what ?");
+            _msg.To(actor).Send("Put what in what ?");
             return;
         }
 
@@ -27,14 +38,14 @@ public class PutCommand : ICommand
         var container = EntityFinder.FindContainer(actor, ctx.Secondary);
         if (container == null)
         {
-            executionContext.Msg.To(actor).Send("You don't see that here.");
+            _msg.To(actor).Send("You don't see that here.");
             return;
         }
 
         foreach (var item in EntityFinder.SelectTargets(actor, ctx.Primary, inventory.Items).Where(x => x != container))
         {
             // intent to put item in container
-            ref var putItemIntent = ref executionContext.Intent.PutItem.Add();
+            ref var putItemIntent = ref _intents.PutItem.Add();
             putItemIntent.Entity = actor;
             putItemIntent.Item = item;
             putItemIntent.Container = container.Value;
