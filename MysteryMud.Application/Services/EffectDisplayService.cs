@@ -6,6 +6,7 @@ using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Action.Effect.Definitions;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Extensions;
+using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
@@ -81,13 +82,13 @@ public class EffectDisplayService : IEffectDisplayService
                     {
                         case PeriodicDamageActionDefinition periodic:
                             {
-                                var amount = EvaluateForDisplay(periodic.AmountFunc, effect, ref effectInstance, ref source, ref target, state);
+                                var amount = EvaluateForDisplay(periodic.AmountCompiledFormula, effect, ref effectInstance, ref source, ref target, state);
                                 _msg.To(viewer).Send($"  - {amount} {periodic.Kind} damage every {effectDefinition.TickRate} tick");
                                 break;
                             }
                         case PeriodicHealActionDefinition periodic:
                             {
-                                var amount = EvaluateForDisplay(periodic.AmountFunc, effect, ref effectInstance, ref source, ref target, state);
+                                var amount = EvaluateForDisplay(periodic.AmountCompiledFormula, effect, ref effectInstance, ref source, ref target, state);
                                 _msg.To(viewer).Send($"  - {amount} heal every {effectDefinition.TickRate} tick");
                                 break;
                             }
@@ -125,7 +126,7 @@ public class EffectDisplayService : IEffectDisplayService
     }
 
     public static decimal EvaluateForDisplay(
-        Func<EffectContext, decimal> amountFunc,
+        CompiledFormula compiledFormula,
         Entity effectEntity,
         ref EffectInstance effectInstance,
         ref Entity source,
@@ -142,6 +143,6 @@ public class EffectDisplayService : IEffectDisplayService
             State = state,
         };
 
-        return amountFunc(ctx);
+        return compiledFormula.Compiled(ctx);
     }
 }

@@ -13,15 +13,15 @@ using MysteryMud.GameData.Events;
 
 namespace MysteryMud.Domain.Action.Damage;
 
-public class DamageResolver
+public class DamageResolver : IDamageResolver
 {
-    private readonly AggroResolver _aggroResolver;
+    private readonly IAggroResolver _aggroResolver;
     private readonly IGameMessageService _msg;
     private readonly IEventBuffer<DamagedEvent> _damaged;
     private readonly IEventBuffer<DeathEvent> _deaths; // long-term events which will be used by other Systems outside ActionOrchestrator
     private readonly IEventBuffer<KillRewardEvent> _killRewardEvent; // short-term events only used inside ActionOrchestrator
 
-    public DamageResolver(AggroResolver aggroResolver, IGameMessageService msg, IEventBuffer<DamagedEvent> damaged, IEventBuffer<DeathEvent> deaths, IEventBuffer<KillRewardEvent> killRewardEvent)
+    public DamageResolver(IAggroResolver aggroResolver, IGameMessageService msg, IEventBuffer<DamagedEvent> damaged, IEventBuffer<DeathEvent> deaths, IEventBuffer<KillRewardEvent> killRewardEvent)
     {
         _aggroResolver = aggroResolver;
         _msg = msg;

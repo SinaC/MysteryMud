@@ -10,7 +10,7 @@ using MysteryMud.GameData.Events;
 
 namespace MysteryMud.Domain.Services;
 
-public class ExperienceService
+public class ExperienceService : IExperienceService
 {
     private readonly IGameMessageService _msg;
     private readonly IEventBuffer<ExperienceGrantedEvent> _experiences;
@@ -121,7 +121,7 @@ public class ExperienceService
     private delegate void SetResourceValueAction<TResource>(ref TResource resource, int value);
 
     private void SetResourceToMax<TResource>(Entity player, Func<TResource, int> getMaxValueFunc, SetResourceValueAction<TResource> setResourceValueAction)
-        where TResource: struct
+        where TResource : struct
     {
         ref var resource = ref player.TryGetRef<TResource>(out var hasResource);
         if (!hasResource)

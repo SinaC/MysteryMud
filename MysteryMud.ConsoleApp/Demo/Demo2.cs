@@ -33,7 +33,7 @@ namespace MysteryMud.ConsoleApp.Demo;
 
 static class Demo2
 {
-    public static void Run(ILogger logger, World world, ICommandDispatcher commandDispatcher, EffectRegistry effectRegistry, WeaponProcRegistry weaponProcRegistry)
+    public static void Run(ILogger logger, World world, ICommandDispatcher commandDispatcher, IEffectRegistry effectRegistry, IWeaponProcRegistry weaponProcRegistry)
     {
         // get entities for testing
         Span<Entity> characters = stackalloc Entity[10];
@@ -70,7 +70,7 @@ static class Demo2
         var itemWornEventBuffer = new EventBuffer<ItemWornEvent>();
         var itemRemovedEventBuffer = new EventBuffer<ItemRemovedEvent>();
         var itemDestroyedEventBuffer = new EventBuffer<ItemDestroyedEvent>();
-        var itemSacrifierEventBuffer = new EventBuffer<ItemSacrifiedEvent>();
+        var itemSacrifierEventBuffer = new EventBuffer<ItemSacrificiedEvent>();
         var damagedEventBuffer = new EventBuffer<DamagedEvent>();
         var healedEventBuffer = new EventBuffer<HealedEvent>();
         var deathEventBuffer = new EventBuffer<DeathEvent>();
@@ -95,11 +95,12 @@ static class Demo2
         var weaponProcResolver = new WeaponProcResolver(logger, gameMessageService, intentBusContainer, weaponProcRegistry, effectRegistry);
         var reactionResolver = new ReactionResolver(gameMessageService);
         var effectExecutor = new EffectExecutor(damageResolver, healResolver);
-        var effectFactory = new EffectFactory(logger, gameMessageService, intentBusContainer, effectExecutor);
+        var effectLifecycleManager = new EffectLifecycleManager();
+        var effectApplicationManager = new EffectApplicationManager(logger, gameMessageService, intentBusContainer, effectExecutor, effectLifecycleManager);
 
         var experienceService = new ExperienceService(gameMessageService, experienceGrantedEventBuffer, levelIncreasedEventBuffer);
 
-        var actionOrchestrator = new ActionOrchestrator(logger, intentBusContainer, attackResolvedEventBuffer, effectResolvedEventBuffer, killRewardEventBuffer, experienceService, effectRegistry, effectFactory, hitResolver, hitDamageFactory, damageResolver, weaponProcResolver, reactionResolver);
+        var actionOrchestrator = new ActionOrchestrator(logger, intentBusContainer, attackResolvedEventBuffer, effectResolvedEventBuffer, killRewardEventBuffer, effectRegistry, effectApplicationManager, experienceService, hitResolver, hitDamageFactory, damageResolver, weaponProcResolver, reactionResolver);
 
         var commandExecutionSystem = new CommandExecutionSystem(logger);
         var fleeSystem = new FleeSystem(gameMessageService, intentBusContainer, experienceService, fleeBlockedEventBuffer);
@@ -110,7 +111,7 @@ static class Demo2
         var deathSystem = new DeathSystem(gameMessageService, intentBusContainer, deathEventBuffer);
         var lootSystem = new LootSystem(gameMessageService, intentBusContainer, itemLootedEventBuffer);
         var lookSystem = new LookSystem(lookService, intentBusContainer, lookedEventBuffer);
-        var cleanupSystem = new CleanupSystem(logger, effectFactory);
+        var cleanupSystem = new CleanupSystem(logger, effectLifecycleManager);
 
         //// subscribe to events for demo purposes
         //var fleeBlockedEventDispatcher = new EventDispatcher<FleeBlockedEvent>();

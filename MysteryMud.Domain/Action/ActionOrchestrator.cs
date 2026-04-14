@@ -7,7 +7,6 @@ using MysteryMud.Domain.Action.Attack.Factories;
 using MysteryMud.Domain.Action.Attack.Resolvers;
 using MysteryMud.Domain.Action.Damage;
 using MysteryMud.Domain.Action.Effect;
-using MysteryMud.Domain.Action.Effect.Factories;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
@@ -24,25 +23,25 @@ public class ActionOrchestrator
     private readonly IEventBuffer<AttackResolvedEvent> _attackResolved;
     private readonly IEventBuffer<EffectResolvedEvent> _effectResolved;
     private readonly IEventBuffer<KillRewardEvent> _killRewards;
-    private readonly ExperienceService _experienceService;
-    private readonly EffectRegistry _effectRegistry;
-    private readonly EffectFactory _effectFactory;
-    private readonly DamageResolver _damageResolver;
-    private readonly HitResolver _hitResolver;
-    private readonly HitDamageFactory _hitDamageFactory;
-    private readonly WeaponProcResolver _weaponProcResolver;
-    private readonly ReactionResolver _reactionResolver;
+    private readonly IEffectRegistry _effectRegistry;
+    private readonly IEffectApplicationManager _effectApplicationManager;
+    private readonly IExperienceService _experienceService;
+    private readonly IDamageResolver _damageResolver;
+    private readonly IHitResolver _hitResolver;
+    private readonly IHitDamageFactory _hitDamageFactory;
+    private readonly IWeaponProcResolver _weaponProcResolver;
+    private readonly IReactionResolver _reactionResolver;
 
-    public ActionOrchestrator(ILogger logger, IIntentContainer intents, IEventBuffer<AttackResolvedEvent> attackResolved, IEventBuffer<EffectResolvedEvent> effectResolved, IEventBuffer<KillRewardEvent> killRewards, ExperienceService experienceService, EffectRegistry effectRegistry, EffectFactory effectFactory, HitResolver hitResolver, HitDamageFactory hitDamageFactory, DamageResolver damageResolver, WeaponProcResolver weaponProcResolver, ReactionResolver reactionResolver)
+    public ActionOrchestrator(ILogger logger, IIntentContainer intents, IEventBuffer<AttackResolvedEvent> attackResolved, IEventBuffer<EffectResolvedEvent> effectResolved, IEventBuffer<KillRewardEvent> killRewards, IEffectRegistry effectRegistry, IEffectApplicationManager effectApplicationManager, IExperienceService experienceService, IHitResolver hitResolver, IHitDamageFactory hitDamageFactory, IDamageResolver damageResolver, IWeaponProcResolver weaponProcResolver, IReactionResolver reactionResolver)
     {
         _logger = logger;
         _intents = intents;
-        _experienceService = experienceService;
         _killRewards = killRewards;
         _attackResolved = attackResolved;
         _effectResolved = effectResolved;
         _effectRegistry = effectRegistry;
-        _effectFactory = effectFactory;
+        _experienceService = experienceService;
+        _effectApplicationManager = effectApplicationManager;
         _damageResolver = damageResolver;
         _hitResolver = hitResolver;
         _hitDamageFactory = hitDamageFactory;
@@ -140,7 +139,7 @@ public class ActionOrchestrator
             _logger.LogError("Effect id {effectId} not found in the effect registry", effectData.EffectId);
             return;
         }
-        _effectFactory.ResolveEffect(state, effectRuntime, ref effectData);
+        _effectApplicationManager.CreateEffect(state, effectRuntime, ref effectData);
 
         // attack resolved event
         ref var effectResolvedEvt = ref _effectResolved.Add();

@@ -7,10 +7,10 @@ namespace MysteryMud.ConsoleApp.Hosting;
 
 public class EffectExecutor : IEffectExecutor
 {
-    private readonly DamageResolver _damageResolver;
-    private readonly HealResolver _healResolver;
+    private readonly IDamageResolver _damageResolver;
+    private readonly IHealResolver _healResolver;
 
-    public EffectExecutor(DamageResolver damageResolver, HealResolver healResolver)
+    public EffectExecutor(IDamageResolver damageResolver, IHealResolver healResolver)
     {
         _damageResolver = damageResolver;
         _healResolver = healResolver;

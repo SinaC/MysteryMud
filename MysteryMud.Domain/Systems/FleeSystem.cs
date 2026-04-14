@@ -16,10 +16,10 @@ public sealed class FleeSystem
 {
     private readonly IGameMessageService _msg;
     private readonly IIntentContainer _intents;
-    private readonly ExperienceService _experienceService;
+    private readonly IExperienceService _experienceService;
     private readonly IEventBuffer<FleeBlockedEvent> _fleeBlockedEvents;
 
-    public FleeSystem(IGameMessageService msg, IIntentContainer intents, ExperienceService experienceService, IEventBuffer<FleeBlockedEvent> fleeBlockedEvents)
+    public FleeSystem(IGameMessageService msg, IIntentContainer intents, IExperienceService experienceService, IEventBuffer<FleeBlockedEvent> fleeBlockedEvents)
     {
         _msg = msg;
         _intents = intents;

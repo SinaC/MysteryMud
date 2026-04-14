@@ -12,12 +12,14 @@ namespace MysteryMud.Infrastructure.Scheduler;
 public class Scheduler : IScheduler
 {
     private readonly ILogger _logger;
+    private readonly IEventBuffer<TriggeredScheduledEvent> _triggeredScheduledEvents;
 
     private readonly PriorityQueue<ScheduledEvent, (long time, ScheduledEventKind eventKind)> _queue = new();
 
-    public Scheduler(ILogger logger)
+    public Scheduler(ILogger logger, IEventBuffer<TriggeredScheduledEvent> triggeredScheduledEvents)
     {
         _logger = logger;
+        _triggeredScheduledEvents = triggeredScheduledEvents;
     }
 
     public void Schedule(GameState state, Entity entity, ScheduledEventKind kind, long executeAt)
@@ -33,18 +35,18 @@ public class Scheduler : IScheduler
         _queue.Enqueue(scheduledEvent, (scheduledEvent.ExecuteAt, scheduledEvent.Kind));
     }
 
-    public void Process(GameState state, IEventBuffer<TriggeredScheduledEvent> triggeredScheduledEvents)
+    public void Process(GameState state)
     {
         // Process all events that are due to execute at or before the current time
         // priority is determined first by execution time, then by event type (to ensure consistent ordering of events scheduled for the same time)
         while (_queue.TryPeek(out var ev, out var priority) && priority.time <= state.CurrentTick)
         {
             _queue.Dequeue();
-            Execute(state, triggeredScheduledEvents, ref ev);
+            Execute(state, ref ev);
         }
     }
 
-    private void Execute(GameState state, IEventBuffer<TriggeredScheduledEvent> triggeredScheduledEvents, ref ScheduledEvent ev)
+    private void Execute(GameState state, ref ScheduledEvent ev)
     {
         _logger.LogDebug("[{system}]: execute {effectName} kind {kind} execute at {executeAt}", nameof(Scheduler), ev.Target.DebugName, ev.Kind, ev.ExecuteAt);
 
@@ -52,14 +54,14 @@ public class Scheduler : IScheduler
         {
             case ScheduledEventKind.Tick:
                 // emit triggered scheduled event
-                ref var tickEvt = ref triggeredScheduledEvents.Add();
+                ref var tickEvt = ref _triggeredScheduledEvents.Add();
                 tickEvt.Effect = ev.Target;
                 tickEvt.Kind = ScheduledEventKind.Tick;
                 break;
 
             case ScheduledEventKind.Expire:
                 // emit triggered scheduled event
-                ref var expiredEvt = ref triggeredScheduledEvents.Add();
+                ref var expiredEvt = ref _triggeredScheduledEvents.Add();
                 expiredEvt.Effect = ev.Target;
                 expiredEvt.Kind = ScheduledEventKind.Expire;
                 break;

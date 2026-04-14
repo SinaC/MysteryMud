@@ -66,16 +66,20 @@ public class EffectFormulaCompiler
         _functions[name] = implementation;
     }
 
-    public Func<EffectContext, decimal> Compile(string formula)
+    public CompiledFormula Compile(string formula)
         => Compile(formula, EffectFormulaEvaluationMode.Snapshotted);
 
-    public Func<EffectContext, decimal> Compile(
+    public CompiledFormula Compile(
         string formula,
         EffectFormulaEvaluationMode mode)
     {
         var compiled = CompileInternal(formula);
 
-        return ctx => compiled(ctx, mode);
+        return new CompiledFormula
+        {
+            Compiled = ctx => compiled(ctx, mode),
+            OriginalExpression = formula
+        };
     }
 
     private Func<EffectContext, EffectFormulaEvaluationMode, decimal> CompileInternal(string formula)

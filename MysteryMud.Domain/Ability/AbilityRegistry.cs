@@ -5,15 +5,15 @@ using MysteryMud.Domain.Action.Effect;
 
 namespace MysteryMud.Domain.Ability;
 
-public class AbilityRegistry
+public class AbilityRegistry : IAbilityRegistry
 {
     private readonly Dictionary<int, AbilityRuntime> _abilitiesById = [];
     private readonly WordTrie<AbilityRuntime> _abilityWordTrie = new();
 
-    private readonly EffectRegistry _effectRegistry;
-    private readonly AbilityOutcomeResolverRegistry _abilityExecutionResolverRegistry;
+    private readonly IEffectRegistry _effectRegistry;
+    private readonly IAbilityOutcomeResolverRegistry _abilityExecutionResolverRegistry;
 
-    public AbilityRegistry(EffectRegistry effectRegistry, AbilityOutcomeResolverRegistry abilityExecutionResolverRegistry)
+    public AbilityRegistry(IEffectRegistry effectRegistry, IAbilityOutcomeResolverRegistry abilityExecutionResolverRegistry)
     {
         _effectRegistry = effectRegistry;
         _abilityExecutionResolverRegistry = abilityExecutionResolverRegistry;
@@ -32,7 +32,7 @@ public class AbilityRegistry
             Register(ability);
     }
 
-    public bool TryGetValue(int abilityId, out AbilityRuntime? abilityRuntime)
+    public bool TryGetRuntime(int abilityId, out AbilityRuntime? abilityRuntime)
         => _abilitiesById.TryGetValue(abilityId, out abilityRuntime);
 
     public bool StartsWith(string key, out AbilityRuntime? value)

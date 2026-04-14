@@ -10,13 +10,13 @@ using MysteryMud.GameData.Events;
 
 namespace MysteryMud.Domain.Action.Heal;
 
-public class HealResolver
+public class HealResolver : IHealResolver
 {
-    private readonly AggroResolver _aggroResolver;
+    private readonly IAggroResolver _aggroResolver;
     private readonly IGameMessageService _msg;
     private readonly IEventBuffer<HealedEvent> _healed;
 
-    public HealResolver(AggroResolver aggroResolver, IGameMessageService msg, IEventBuffer<HealedEvent> healed)
+    public HealResolver(IAggroResolver aggroResolver, IGameMessageService msg, IEventBuffer<HealedEvent> healed)
     {
         _aggroResolver = aggroResolver;
         _msg = msg;
@@ -28,7 +28,7 @@ public class HealResolver
         var source = heal.Source;
         var target = heal.Target;
         var amount = heal.Amount;
-        if (!target.IsAlive() ||target.Has<Dead>()) // already dead
+        if (!target.IsAlive() || target.Has<Dead>()) // already dead
             return new HealResult { IsSuccess = false };
 
         ref var health = ref target.TryGetRef<Health>(out var hasHealth);

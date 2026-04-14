@@ -1,7 +1,7 @@
 ﻿using Arch.Core;
 
 namespace MysteryMud.GameData.Events;
-public struct ItemSacrifiedEvent
+public struct ItemSacrificiedEvent
 {
     public Entity Entity;
     public Entity Item;

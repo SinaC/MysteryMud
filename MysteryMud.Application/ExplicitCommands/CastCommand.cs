@@ -1,16 +1,10 @@
 ﻿using Arch.Core;
-using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Core.Extensions;
 using MysteryMud.Domain.Ability;
-using MysteryMud.Domain.Components;
-using MysteryMud.Domain.Components.Characters;
-using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Extensions;
-using MysteryMud.Domain.Queries;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
@@ -22,11 +16,11 @@ public class CastCommand : IExplicitCommand
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetPair;
 
     private readonly ILogger _logger;
-    private readonly AbilityRegistry _abilityRegistry;
+    private readonly IAbilityRegistry _abilityRegistry;
 
     public CommandDefinition Definition { get; }
 
-    public CastCommand(ILogger logger, AbilityRegistry abilityRegistry)
+    public CastCommand(ILogger logger, IAbilityRegistry abilityRegistry)
     {
         _logger = logger;
         _abilityRegistry = abilityRegistry;

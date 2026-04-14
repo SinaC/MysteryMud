@@ -21,20 +21,20 @@ public class AbilityValidationSystem
     private readonly ILogger _logger;
     private readonly IGameMessageService _msg;
     private readonly IIntentContainer _intents;
-    private readonly IAbilityTargetResolver _abilityTargetResolver;
     private readonly IEventBuffer<AbilityUsedEvent> _abilityUsed;
-    private readonly AbilityRegistry _abilityRegistry;
-    private readonly AbilityOutcomeResolverRegistry _abilityOutcomeResolverRegistry;
+    private readonly IAbilityRegistry _abilityRegistry;
+    private readonly IAbilityOutcomeResolverRegistry _abilityOutcomeResolverRegistry;
+    private readonly IAbilityTargetResolver _abilityTargetResolver;
 
-    public AbilityValidationSystem(ILogger logger, IGameMessageService msg, IIntentContainer intents, IAbilityTargetResolver abilityTargetResolver, IEventBuffer<AbilityUsedEvent> abilityUsed, AbilityRegistry abilityRegistry, AbilityOutcomeResolverRegistry abilityOutcomeResolverRegistry)
+    public AbilityValidationSystem(ILogger logger, IGameMessageService msg, IIntentContainer intents, IEventBuffer<AbilityUsedEvent> abilityUsed, IAbilityRegistry abilityRegistry, IAbilityOutcomeResolverRegistry abilityOutcomeResolverRegistry, IAbilityTargetResolver abilityTargetResolver)
     {
         _logger = logger;
         _msg = msg;
         _intents = intents;
-        _abilityTargetResolver = abilityTargetResolver;
         _abilityUsed = abilityUsed;
         _abilityRegistry = abilityRegistry;
         _abilityOutcomeResolverRegistry = abilityOutcomeResolverRegistry;
+        _abilityTargetResolver = abilityTargetResolver;
     }
 
     public void Tick(GameState state)
@@ -47,7 +47,7 @@ public class AbilityValidationSystem
             var targetIndex = intent.TargetIndex;
             var targetName = intent.TargetName;
 
-            if (!_abilityRegistry.TryGetValue(abilityId, out var abilityRuntime) || abilityRuntime == null)
+            if (!_abilityRegistry.TryGetRuntime(abilityId, out var abilityRuntime) || abilityRuntime == null)
             {
                 _logger.LogError("Ability {abilityId} not found", abilityId);
                 continue;

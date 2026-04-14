@@ -10,7 +10,7 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Action.Effect.Factories;
 
-public class EffectActionFactory
+public class EffectActionFactory : IEffectActionFactory
 {
     private readonly ILogger _logger;
 
@@ -34,7 +34,7 @@ public class EffectActionFactory
         _ => throw new Exception($"Unknown EffectAction {actionDefinition.GetType()}"),
     };
 
-    public Action<EffectExecutionContext> CreateStatModifier(StatModifierActionDefinition definition)
+    private Action<EffectExecutionContext> CreateStatModifier(StatModifierActionDefinition definition)
     {
         return ctx =>
         {
@@ -42,7 +42,7 @@ public class EffectActionFactory
             if (effectContext.Effect is not null)
             {
                 var effect = effectContext.Effect.Value;
-                var value = definition.ValueFunc(ctx.Context); // TODO: multiply by stack count ?
+                var value = definition.ValueCompiledFormula.Compiled(ctx.Context); // TODO: multiply by stack count ?
                 var modifier = new StatModifier
                 {
                     Stat = definition.Stat,
@@ -70,7 +70,7 @@ public class EffectActionFactory
         };
     }
 
-    public Action<EffectExecutionContext> CreateHealthModifier(HealthModifierActionDefinition definition)
+    private Action<EffectExecutionContext> CreateHealthModifier(HealthModifierActionDefinition definition)
     {
         return ctx =>
         {
@@ -78,7 +78,7 @@ public class EffectActionFactory
             if (effectContext.Effect is not null)
             {
                 var effect = effectContext.Effect.Value;
-                var value = definition.ValueFunc(ctx.Context); // TODO: multiply by stack count ?
+                var value = definition.ValueCompiledFormula.Compiled(ctx.Context); // TODO: multiply by stack count ?
                 var modifier = new HealthModifier
                 {
                     Modifier = definition.Modifier,
@@ -105,7 +105,7 @@ public class EffectActionFactory
         };
     }
 
-    public Action<EffectExecutionContext> CreateManaModifier(ManaModifierActionDefinition definition)
+    private Action<EffectExecutionContext> CreateManaModifier(ManaModifierActionDefinition definition)
     {
         return ctx =>
         {
@@ -113,7 +113,7 @@ public class EffectActionFactory
             if (effectContext.Effect is not null)
             {
                 var effect = effectContext.Effect.Value;
-                var value = definition.ValueFunc(ctx.Context); // TODO: multiply by stack count ?
+                var value = definition.ValueCompiledFormula.Compiled(ctx.Context); // TODO: multiply by stack count ?
                 var modifier = new ManaModifier
                 {
                     Modifier = definition.Modifier,
@@ -140,7 +140,7 @@ public class EffectActionFactory
         };
     }
 
-    public Action<EffectExecutionContext> CreateEnergyModifier(EnergyModifierActionDefinition definition)
+    private Action<EffectExecutionContext> CreateEnergyModifier(EnergyModifierActionDefinition definition)
     {
         return ctx =>
         {
@@ -148,7 +148,7 @@ public class EffectActionFactory
             if (effectContext.Effect is not null)
             {
                 var effect = effectContext.Effect.Value;
-                var value = definition.ValueFunc(effectContext); // TODO: multiply by stack count ?
+                var value = definition.ValueCompiledFormula.Compiled(effectContext); // TODO: multiply by stack count ?
                 var modifier = new EnergyModifier
                 {
                     Modifier = definition.Modifier,
@@ -175,7 +175,7 @@ public class EffectActionFactory
         };
     }
 
-    public Action<EffectExecutionContext> CreateRageModifier(RageModifierActionDefinition definition)
+    private Action<EffectExecutionContext> CreateRageModifier(RageModifierActionDefinition definition)
     {
         return ctx =>
         {
@@ -183,7 +183,7 @@ public class EffectActionFactory
             if (effectContext.Effect is not null)
             {
                 var effect = effectContext.Effect.Value;
-                var value = definition.ValueFunc(effectContext); // TODO: multiply by stack count ?
+                var value = definition.ValueCompiledFormula.Compiled(effectContext); // TODO: multiply by stack count ?
                 var modifier = new RageModifier
                 {
                     Modifier = definition.Modifier,
@@ -215,7 +215,7 @@ public class EffectActionFactory
         return ctx =>
         {
             var effectContext = ctx.Context;
-            var amount = definition.AmountFunc(effectContext);
+            var amount = definition.AmountCompiledFormula.Compiled(effectContext);
             var totalHeal = amount * effectContext.StackCount;
             var healAction = new HealAction
             {
@@ -234,7 +234,7 @@ public class EffectActionFactory
         return ctx =>
         {
             var effectContext = ctx.Context;
-            var amount = definition.AmountFunc(effectContext);
+            var amount = definition.AmountCompiledFormula.Compiled(effectContext);
             var totalHeal = amount;
             var healAction = new HealAction
             {
@@ -252,7 +252,7 @@ public class EffectActionFactory
         return ctx =>
         {
             var effectContext = ctx.Context;
-            var amount = definition.AmountFunc(effectContext);
+            var amount = definition.AmountCompiledFormula.Compiled(effectContext);
             var totalDamage = amount * effectContext.StackCount;
             var damageAction = new DamageAction
             {
@@ -272,7 +272,7 @@ public class EffectActionFactory
         return ctx =>
         {
             var effectContext = ctx.Context;
-            var amount = definition.AmountFunc(effectContext);
+            var amount = definition.AmountCompiledFormula.Compiled(effectContext);
             var totalDamage = amount;
             var damageAction = new DamageAction
             {

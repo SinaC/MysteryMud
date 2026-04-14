@@ -3,11 +3,11 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Action.Effect.Factories;
 
-public class EffectRuntimeFactory
+public class EffectRuntimeFactory : IEffectRuntimeFactory
 {
-    private EffectActionFactory _effectActionFactory;
+    private IEffectActionFactory _effectActionFactory;
 
-    public EffectRuntimeFactory(EffectActionFactory effectActionFactory)
+    public EffectRuntimeFactory(IEffectActionFactory effectActionFactory)
     {
         _effectActionFactory = effectActionFactory;
     }
@@ -46,7 +46,7 @@ public class EffectRuntimeFactory
         if (def.ApplyMessage != null)
             onApply.Add(ctx => ctx.Msg.To(ctx.Context.Target).Send(def.ApplyMessage));
 
-        if (def.DurationFunc == null && (onTick.Count > 0 || onExpire.Count > 0))
+        if (def.DurationCompiledFormula == null && (onTick.Count > 0 || onExpire.Count > 0))
             throw new Exception($"DurationFormula must be specified when Trigger OnTick or OnExpire is defined in effect '{def.Name}'");
 
         if (def.TickRate == 0 && onTick.Count > 0)
@@ -55,10 +55,10 @@ public class EffectRuntimeFactory
         if (def.TickRate > 0 && onTick.Count == 0)
             throw new Exception($"TickRate is 0 but no Trigger OnTick is defined in effect '{def.Name}'");
 
-        if (def.Actions.Any(x => x is StatModifierActionDefinition) && def.DurationFunc == null)
+        if (def.Actions.Any(x => x is StatModifierActionDefinition) && def.DurationCompiledFormula == null)
             throw new Exception($"DurationFormula must be specified if a StatModifierAction is defined in effect '{def.Name}'");
 
-        if (def.Actions.Any(x => x is HealthModifierActionDefinition or ManaModifierActionDefinition or EnergyModifierActionDefinition or RageModifierActionDefinition) && def.DurationFunc == null)
+        if (def.Actions.Any(x => x is HealthModifierActionDefinition or ManaModifierActionDefinition or EnergyModifierActionDefinition or RageModifierActionDefinition) && def.DurationCompiledFormula == null)
             throw new Exception($"DurationFormula must be specified if a ResourceModifierAction is defined in effect '{def.Name}'");
 
         return new EffectRuntime
@@ -69,7 +69,7 @@ public class EffectRuntimeFactory
             Stacking = def.Stacking,
             MaxStacks = def.MaxStacks,
 
-            DurationFunc = def.DurationFunc,
+            DurationFunc = def.DurationCompiledFormula?.Compiled,
 
             TickOnApply = def.TickOnApply,
             TickRate = def.TickRate,

@@ -3,7 +3,7 @@ using MysteryMud.Domain.Factories;
 
 namespace MysteryMud.Infrastructure.Services;
 
-public class ConnectionService
+public class ConnectionService : IConnectionService
 {
     private readonly World _world;
 

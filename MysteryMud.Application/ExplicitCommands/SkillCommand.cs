@@ -5,11 +5,8 @@ using MysteryMud.Application.Parsing;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Ability;
-using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
-using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Extensions;
-using MysteryMud.Domain.Queries;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
@@ -20,11 +17,11 @@ public class SkillCommand : IExplicitCommand
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetPair;
 
     private readonly ILogger _logger;
-    private readonly AbilityRegistry _abilityRegistry;
+    private readonly IAbilityRegistry _abilityRegistry;
 
     public CommandDefinition Definition { get; }
 
-    public SkillCommand(ILogger logger, AbilityRegistry abilityRegistry, CommandDefinition definition)
+    public SkillCommand(ILogger logger, IAbilityRegistry abilityRegistry, CommandDefinition definition)
     {
         _logger = logger;
         _abilityRegistry = abilityRegistry;
@@ -50,7 +47,7 @@ public class SkillCommand : IExplicitCommand
         ref var casting = ref actor.TryGetRef<Casting>(out var isCasting);
         if (isCasting)
         {
-            if (!_abilityRegistry.TryGetValue(casting.AbilityId, out var castingAbilityRuntime) || castingAbilityRuntime == null)
+            if (!_abilityRegistry.TryGetRuntime(casting.AbilityId, out var castingAbilityRuntime) || castingAbilityRuntime == null)
             {
                 _logger.LogError("{actorName} is focused on an unknown ability {abilityId}", actor.DebugName, casting.AbilityId);
                 actor.Remove<Casting>(); // remove casting and allow to cast a new spell

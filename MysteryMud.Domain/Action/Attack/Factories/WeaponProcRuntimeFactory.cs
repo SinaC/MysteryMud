@@ -5,7 +5,7 @@ namespace MysteryMud.Domain.Action.Attack.Factories;
 
 public static class WeaponProcRuntimeFactory
 {
-    public static WeaponProcRuntime Create(EffectRegistry effectRegistry, WeaponProcDefinition definition)
+    public static WeaponProcRuntime Create(IEffectRegistry effectRegistry, WeaponProcDefinition definition)
     {
         var effectRuntimes = MapEffects(effectRegistry, definition);
         return new WeaponProcRuntime
@@ -17,7 +17,7 @@ public static class WeaponProcRuntimeFactory
         };
     }
 
-    private static List<WeaponProcEffectRuntime> MapEffects(EffectRegistry effectRegistry, WeaponProcDefinition definition)
+    private static List<WeaponProcEffectRuntime> MapEffects(IEffectRegistry effectRegistry, WeaponProcDefinition definition)
     {
         var effects = new List<WeaponProcEffectRuntime>();
         foreach (var effectDefinition in definition.EffectDefinitions)

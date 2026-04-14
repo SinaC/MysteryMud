@@ -1,1 +1,2 @@
-﻿
+﻿xp is granted on self-kill =D
+cast magic will cast 'magic missile' on self
