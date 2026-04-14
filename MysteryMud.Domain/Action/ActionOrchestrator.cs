@@ -71,7 +71,7 @@ public class ActionOrchestrator
             // process immediate death events to grant xp
             foreach (var killRewardEvt in _killRewards.GetAll())
             {
-                if (killRewardEvt.Killer.Has<Progression>())
+                if (killRewardEvt.Killer != killRewardEvt.Victim && killRewardEvt.Killer.Has<Progression>())
                 {
                     var xpReward = _experienceService.CalculateCombatXp(killRewardEvt.Killer, killRewardEvt.Victim);
                     _experienceService.GrantExperience(killRewardEvt.Killer, xpReward);
