@@ -66,16 +66,16 @@ public class EffectFormulaCompiler
         _functions[name] = implementation;
     }
 
-    public CompiledFormula Compile(string formula)
+    public EffectCompiledFormula Compile(string formula)
         => Compile(formula, EffectFormulaEvaluationMode.Snapshotted);
 
-    public CompiledFormula Compile(
+    public EffectCompiledFormula Compile(
         string formula,
         EffectFormulaEvaluationMode mode)
     {
         var compiled = CompileInternal(formula);
 
-        return new CompiledFormula
+        return new EffectCompiledFormula
         {
             Compiled = ctx => compiled(ctx, mode),
             OriginalExpression = formula

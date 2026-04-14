@@ -10,5 +10,6 @@ public enum StatKind
     HitRoll = 5,
     DamRoll = 6,
     ArmorClass = 7,
+    SavingThrow = 8,
     Count, // always last, used for array sizing
 }

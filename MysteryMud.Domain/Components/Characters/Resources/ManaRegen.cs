@@ -2,5 +2,6 @@
 
 public struct ManaRegen
 {
-    public int AmountPerTick;
+    public int CurrentAmountPerSecond;
+    public int BaseAmountPerSecond;
 }

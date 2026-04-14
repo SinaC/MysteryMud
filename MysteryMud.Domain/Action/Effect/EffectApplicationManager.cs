@@ -13,6 +13,7 @@ using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
+using MysteryMud.GameData.Time;
 
 namespace MysteryMud.Domain.Action.Effect;
 
@@ -125,7 +126,7 @@ public class EffectApplicationManager : IEffectApplicationManager
         };
 
         var duration = Math.Max(1, effectRuntime.DurationFunc!.Invoke(ctx));
-        var expirationTick = (int)(state.CurrentTick + duration);
+        var expirationTick = TimeConversion.SecondsToTicks((long)(state.CurrentTick + duration));
         var nextTick = effectRuntime.TickOnApply
             ? state.CurrentTick
             : state.CurrentTick + effectRuntime.TickRate; // 0: means pure duration
@@ -260,7 +261,7 @@ public class EffectApplicationManager : IEffectApplicationManager
 
                     // update Duration
                     var duration = Math.Max(1, effectRuntime.DurationFunc?.Invoke(ctx) ?? 0);
-                    var expirationTick = (int)(state.CurrentTick + duration);
+                    var expirationTick = TimeConversion.SecondsToTicks((long)(state.CurrentTick + duration));
                     timedEffect.LastRefreshTick = state.CurrentTick;
                     timedEffect.ExpirationTick = expirationTick;
 
@@ -299,7 +300,7 @@ public class EffectApplicationManager : IEffectApplicationManager
 
                     // update Duration
                     var duration = Math.Max(1, effectRuntime.DurationFunc?.Invoke(ctx) ?? 0);
-                    var expirationTick = (int)(state.CurrentTick + duration);
+                    var expirationTick = TimeConversion.SecondsToTicks((long)(state.CurrentTick + duration));
                     timedEffect.LastRefreshTick = state.CurrentTick;
                     timedEffect.ExpirationTick = expirationTick;
 

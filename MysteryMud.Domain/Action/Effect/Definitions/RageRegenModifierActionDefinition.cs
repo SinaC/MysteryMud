@@ -2,7 +2,7 @@
 
 namespace MysteryMud.Domain.Action.Effect.Definitions;
 
-public class HealthModifierActionDefinition : EffectActionDefinition
+public class RageRegenModifierActionDefinition : EffectActionDefinition
 {
     public required ModifierKind Modifier { get; init; }
     public required EffectCompiledFormula ValueCompiledFormula { get; init; }

@@ -10,7 +10,7 @@ namespace MysteryMud.Domain.Systems;
 
 public delegate void SetResourceValueAction<TResource>(ref TResource resource, int value);
 
-public class MaxResourcesSystem<TBase, TResource, TDirty, TModifier>
+public class EffectiveMaxResourceSystem<TBase, TResource, TDirty, TModifier>
     where TBase : struct
     where TResource : struct
     where TDirty : struct
@@ -23,7 +23,7 @@ public class MaxResourcesSystem<TBase, TResource, TDirty, TModifier>
     private readonly Func<TModifier, decimal> _getModifierValueFunc;
     private readonly Func<TModifier, ModifierKind> _getModifierKindFunc;
 
-    public MaxResourcesSystem(Func<TBase, int> getBaseMaxValueFunc, Func<TResource, int> getCurrentFunc, SetResourceValueAction<TResource> setCurrentAction, SetResourceValueAction<TResource> setMaxAction, Func<TModifier, ModifierKind> getModifierKindFunc, Func<TModifier, decimal> getModifierValueFunc)
+    public EffectiveMaxResourceSystem(Func<TBase, int> getBaseMaxValueFunc, Func<TResource, int> getCurrentFunc, SetResourceValueAction<TResource> setCurrentAction, SetResourceValueAction<TResource> setMaxAction, Func<TModifier, ModifierKind> getModifierKindFunc, Func<TModifier, decimal> getModifierValueFunc)
     {
         _getBaseMaxFunc = getBaseMaxValueFunc;
         _getCurrentFunc = getCurrentFunc;
@@ -53,10 +53,12 @@ public class MaxResourcesSystem<TBase, TResource, TDirty, TModifier>
            
             var rawMax = overriding ?? ((baseMax + flat) * (100 + percent) * multiply / 100);
 
+            // TODO: clamp ?
+
             // round final max
             int finalMax = (int)Math.Round(rawMax, MidpointRounding.AwayFromZero);
 
-            // clamp current value
+            // clamp current value to new max
             int current = _getCurrentFunc(effectiveRes);
             current = Math.Min(current, finalMax);
 

@@ -2,5 +2,6 @@
 
 public struct EnergyRegen
 {
-    public int AmountPerTick;
+    public int CurrentAmountPerSecond;
+    public int BaseAmountPerSecond;
 }

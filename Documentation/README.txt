@@ -17,27 +17,28 @@ Tick pipeline
 6. MovementSystem                   // Process MoveIntents -> emits auto-look PostUpdate (Mode=PostUpdate)
 7. ItemInteractionSystem            // Process get/drop/put/give/... intents
 8. EffectiveStatSystem              // Recalculate stats from base stats and stat modifiers (only if DirtyStats tag is set)
-9. MaxResourcesSystem               // Recalculate max health/mana/energy/rage from base max health/mana/energy/rage and resource modifiers (only if DirtyHealth/mana/energy/rage tag is set) (4 separate systems)
-10. Scheduler.Process               // Generate triggered scheduled event (tick or expired)
-11. TimedEffectSystem               // Resolve triggered scheduled event and generates scheduleIntent, effectExpiredEvent (to inform), effectTickedEvent (to inform)
-12. RegenSystem                     // Regen health/mana/energy decay rage (4 separate systems)
-13. ThreatDecaySystem               // Decay threat
-14. AbilityValidationSystem         // Process UseAbilityIntents -> set casting (if delayed casting) or generate ExecuteAbilityIntent (instant cast)
-15. AbilityCastingSystem            // Process delayed casting, once cast is effective generate ExecuteAbilityIntent + abilityUsedEvent
-16. AbilityExecutionSystem          // Process ExecuteAbilityIntents -> generate ActionIntent(kind:effect) for each effects in ability + abilityExecutedEvent
-17. NPCTargetSystem                 // Select highest threat targets
-18. GroupCombatSystem.Resolve       // Process assist/protect/own target attack intents
-19. AutoAttackSystem                // Generate ActionIntent(kind:attack) for every entity in combat (CombatState component set)
-20. ActionOrchestrator              // Process ActionIntents. kind:attack -> resolve hit, perform damage, check weapon proc (effect), check reaction (counter attack)  kind: effect -> resolve effect
-21. DeathSystem                     // Flag dead entities
-22. RespawnSystem                   // Auto-resurrect players
-23. LootSystem                      // Process loot & auto-loot
-24. LookSystem(PostUpdate)          // Process LookIntents with Mode=PostUpdate -> reflects final world state after all updates
-25. ScheduleSystem                  // Process scheduleIntents (which can be generated from IA, abilities, TimedEffectSytem, AttackOrchestrator)
-26. CleanupSystem                   // Remove destroyed items / dead NPCs / disconnected players
-27. Output -> MessageBus            // Send all messages to players
+9. EffectiveMaxResourcesSystem      // Recalculate max health/mana/energy/rage from base max health/mana/energy/rage and resource modifiers (only if DirtyHealth/mana/energy/rage tag is set) (4 separate systems)
+10. EffectiveRespirceRegenSystem    // Recalculate current health/mana/energy/rage regen from base health/mana/energy/rage regen and resource regen modifiers (only if DirtyHealthRegen/mana/energy/rage tag is set) (4 separate systems)
+11. Scheduler.Process               // Generate triggered scheduled event (tick or expired)
+12. TimedEffectSystem               // Resolve triggered scheduled event and generates scheduleIntent, effectExpiredEvent (to inform), effectTickedEvent (to inform)
+13. ResourceRegenSystem             // Regen health/mana/energy decay rage (4 separate systems)
+14. ThreatDecaySystem               // Decay threat
+15. AbilityValidationSystem         // Process UseAbilityIntents -> set casting (if delayed casting) or generate ExecuteAbilityIntent (instant cast)
+16. AbilityCastingSystem            // Process delayed casting, once cast is effective generate ExecuteAbilityIntent + abilityUsedEvent
+17. AbilityExecutionSystem          // Process ExecuteAbilityIntents -> generate ActionIntent(kind:effect) for each effects in ability + abilityExecutedEvent
+18. NPCTargetSystem                 // Select highest threat targets
+19. GroupCombatSystem.Resolve       // Process assist/protect/own target attack intents
+20. AutoAttackSystem                // Generate ActionIntent(kind:attack) for every entity in combat (CombatState component set)
+21. ActionOrchestrator              // Process ActionIntents. kind:attack -> resolve hit, perform damage, check weapon proc (effect), check reaction (counter attack)  kind: effect -> resolve effect
+22. DeathSystem                     // Flag dead entities
+23. RespawnSystem                   // Auto-resurrect players
+24. LootSystem                      // Process loot & auto-loot
+25. LookSystem(PostUpdate)          // Process LookIntents with Mode=PostUpdate -> reflects final world state after all updates
+26. ScheduleSystem                  // Process scheduleIntents (which can be generated from IA, abilities, TimedEffectSytem, AttackOrchestrator)
+27. CleanupSystem                   // Remove destroyed items / dead NPCs / disconnected players
+28. Output -> MessageBus            // Send all messages to players
 
-ActionOrchestrator (step 20) details
+ActionOrchestrator (step 21) details
    loop on attack/effect intents
         Attack intent
             ResolveHit 
@@ -177,7 +178,7 @@ Character
   ├BaseHealth: base max health
   ├Health: current and max health
   ├DirtyHealth: max health needs to be recalculated
-  └HealthRegen: health regen rate
+  └HealthRegen: current and base health regen rate
   optional
     HasCommandTag: a command (or more) is waiting in CommandBuffer
     DirtyStats: needs effective stats to be recalculated
@@ -186,7 +187,7 @@ Character
     DeadTag: is dead will be removed by cleanup system
     Gender: male|female|neutral
     Form: current form (humanoid, bear, cat)
-    BaseMana, Mana, ManaRegen, UsesMana, DirtyMana: base max mana, current and max mana, mana regen rate, can use mana, max mana needs to be recalculated
+    BaseMana, Mana, ManaRegen, UsesMana, DirtyMana, DirtyManaRegen: base max mana, current and max mana, current and base mana regen rate, can use mana, max mana needs to be recalculated, mana regen needs to be recalculated
     same for energy, rage
 
 Npc(character+)
@@ -218,6 +219,7 @@ Effect (not stacking if difference source)
  ├ EffectTag: EffectTagId (bit fields)
  ├ StatModifiers: StatModifier list
  ├ ResourceModifiers: ResourceModifier list
+ ├ ResourceRegenModifiers: ResourceRegenModifier list
  ├ DamageEffect: Damage, DamageKind
  └ HealEffect: Heal
  optional

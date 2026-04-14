@@ -75,7 +75,6 @@ public class ScoreCommand : ICommand
         if (hasResource)
         {
             var (current, max) = getCurrentMaxFunc(resource);
-            ref var resourceRegen = ref actor.TryGetRef<TRegen>(out var hasRegen);
             _msg.To(actor).Send($"{kind}: {current}/{max} CanUse: {uses}");
         }
     }
