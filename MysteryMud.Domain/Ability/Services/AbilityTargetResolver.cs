@@ -10,7 +10,6 @@ using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Queries;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
-using System.Reflection;
 
 namespace MysteryMud.Domain.Ability.Services;
 
@@ -83,8 +82,8 @@ public sealed class AbilityTargetResolver : IAbilityTargetResolver
             var opponent = GetCurrentOpponent(source);
 
             // Self fallback if any context accepts characters
-            if (targeting.Contexts.Any(c => c.Filter.HasFlag(AbilityTargetFilter.Character)))
-                return TargetResolutionResult.Success([source]);
+            if (opponent.HasValue && targeting.Contexts.Any(c => c.Filter.HasFlag(AbilityTargetFilter.Character)))
+                return TargetResolutionResult.Success([opponent.Value]);
         }
 
         return TargetResolutionResult.Failure(TargetResolutionStatus.NoTarget, "You must specify a target.");
