@@ -191,34 +191,31 @@ foreach (var type in commandAssembly.GetTypes()
     services.AddSingleton(type);
 }
 
+// Explicit commands that doesn't depend on ICommandRegistry 
+services.AddSingleton<IExplicitCommand, TestCommand>();
+services.AddSingleton<IExplicitCommand, CastCommand>();
+
+// Social commands - data-driver
+foreach (var socialDefinition in socialDefinitions)
+    services.AddSingleton<IExplicitCommand>(sp => new SocialCommand(logger, sp.GetRequiredService<IGameMessageService>(), socialDefinition));
+
+// Skill commands — data-driven
+foreach (var skillCommandDefinition in skillCommandDefinitions)
+    services.AddSingleton<IExplicitCommand>(sp => new SkillCommand(logger, sp.GetRequiredService<IAbilityRegistry>(), sp.GetRequiredService<IGameMessageService>(), sp.GetRequiredService<IIntentWriterContainer>(), skillCommandDefinition));
+
+
 // RegisterCommands resolves all IExplicitCommand registrations
 services.AddSingleton<CommandRegistry>();
 services.AddSingleton<ICommandRegistry>(sp =>
 {
     var registry = sp.GetRequiredService<CommandRegistry>();
 
-    // Commands that depend on ICommandRegistry must be constructed here,
-    // after the registry exists, to break the cycle
-    var explicitCommands = new List<IExplicitCommand>
-    {
-        new HelpCommand(registry, sp.GetRequiredService<IGameMessageService>()),
-        new SocialsCommand(registry, sp.GetRequiredService<IGameMessageService>()),
-        new ForceCommand(logger, registry, sp.GetRequiredService<IGameMessageService>()),
-        new TestCommand(sp.GetRequiredService<IEffectRegistry>(), sp.GetRequiredService<IGameMessageService>(), sp.GetRequiredService<IIntentWriterContainer>()),
-        new CastCommand(logger, sp.GetRequiredService<IAbilityRegistry>(), sp.GetRequiredService<IGameMessageService>(), sp.GetRequiredService<IIntentWriterContainer>()),
-    };
+    var explicitCommands = sp.GetServices<IExplicitCommand>().ToList(); // TestCommand, CastCommand, socials, skills
 
-    // Social commands — data-driven
-    foreach (var socialDefinition in socialDefinitions)
-        explicitCommands.Add(new SocialCommand(logger, sp.GetRequiredService<IGameMessageService>(), socialDefinition));
-
-    // Skill commands — data-driven
-    foreach (var skillCommandDefinition in skillCommandDefinitions)
-        explicitCommands.Add(new SkillCommand(logger, sp.GetRequiredService<IAbilityRegistry>(), sp.GetRequiredService<IGameMessageService>(), sp.GetRequiredService<IIntentWriterContainer>(), skillCommandDefinition));
-
-    // Register all IExplicitCommand implementations
-    foreach(var explicitCommand in explicitCommands)
-        services.AddSingleton<IExplicitCommand>(explicitCommand);
+    // Add the ones that depend on ICommandRegistry manually — can't go through container
+    explicitCommands.Add(new HelpCommand(registry, sp.GetRequiredService<IGameMessageService>()));
+    explicitCommands.Add(new SocialsCommand(registry, sp.GetRequiredService<IGameMessageService>()));
+    explicitCommands.Add(new ForceCommand(logger, registry, sp.GetRequiredService<IGameMessageService>()));
 
     registry.RegisterCommands(commandDefinitions, [typeof(MstatCommand).Assembly], explicitCommands);
     return registry;

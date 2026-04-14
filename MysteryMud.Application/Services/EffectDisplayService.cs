@@ -44,7 +44,6 @@ public class EffectDisplayService : IEffectDisplayService
         ref var effectInstance = ref effect.Get<EffectInstance>();
         if (effectInstance.EffectRuntime != null)
         {
-            // TODO: how could we display hot/dot
             var effectId = effectInstance.EffectRuntime.Id;
             var effectName = effectInstance.EffectRuntime.Name;
             var stackCount = effectInstance.StackCount;
