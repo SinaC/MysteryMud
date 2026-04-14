@@ -4,6 +4,7 @@ using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Registry;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
+using MysteryMud.Core.Services;
 using MysteryMud.Domain.Commands;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
@@ -16,10 +17,12 @@ public class CommandDispatcher : ICommandDispatcher
     private const int MAX_COMMANDS_PER_TICK = 10;
 
     private readonly ICommandRegistry _commandRegistry;
+    private readonly IGameMessageService _msg;
 
-    public CommandDispatcher(ICommandRegistry commandRegistry)
+    public CommandDispatcher(ICommandRegistry commandRegistry, IGameMessageService msg)
     {
         _commandRegistry = commandRegistry;
+        _msg = msg;
     }
 
     public void Dispatch(CommandExecutionContext executionContext, GameState state, Entity actor, ReadOnlySpan<char> input)
@@ -47,13 +50,13 @@ public class CommandDispatcher : ICommandDispatcher
         switch (findResult)
         {
             case CommandFindResult.NotFound:
-                executionContext.Msg.To(actor).Send("Unknown command.");
+                _msg.To(actor).Send("Unknown command.");
                 return;
             case CommandFindResult.NoPermission:
-                executionContext.Msg.To(actor).Send("Permission denied."); // TODO
+                _msg.To(actor).Send("Permission denied."); // TODO
                 return;
             case CommandFindResult.WrongPosition:
-                executionContext.Msg.To(actor).Send("Invalid position."); // TODO
+                _msg.To(actor).Send("Invalid position."); // TODO
                 return;
         }
 
