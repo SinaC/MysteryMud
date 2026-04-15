@@ -4,6 +4,6 @@ namespace MysteryMud.Domain.Ability.Rules;
 
 public interface IAbilityValidationRule
 {
-    bool CanBeValidated(Entity target);
+    bool IsCandidateForValidation(Entity target);
     AbilityValidationResult Validate(Entity target);
 }

@@ -1,6 +1,6 @@
 ﻿namespace MysteryMud.GameData.Enums;
 
-public enum AbilityEffectCondition
+public enum AbilityValidationRuleCondition
 {
     None,
     IsCharacter,

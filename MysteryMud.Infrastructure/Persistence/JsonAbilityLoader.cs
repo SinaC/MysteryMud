@@ -127,25 +127,25 @@ public class JsonAbilityLoader
         {
             AffectedByRuleData rule => MapAffectedByRule(abilityDefinitionData, rule),
             NotAffectedByRuleData rule => MapNotAffectedByRule(abilityDefinitionData, rule),
-            HasWeaponTypeRuleData rule => new HasWeaponTypeRuleDefinition { FailBehaviour = EnumParser.Parse(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, Required = Enum.Parse<WeaponKind>(rule.Required) },
-            NotFightingRuleData rule => new NotFightingRuleDefinition { FailBehaviour = EnumParser.Parse(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey },
+            HasWeaponTypeRuleData rule => new HasWeaponTypeRuleDefinition { Condition = EnumParser.Parse(rule.Condition, AbilityValidationRuleCondition.IsCharacter), FailBehaviour = EnumParser.Parse(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, Required = Enum.Parse<WeaponKind>(rule.Required) },
+            NotFightingRuleData rule => new NotFightingRuleDefinition { Condition = EnumParser.Parse(rule.Condition, AbilityValidationRuleCondition.IsCharacter), FailBehaviour = EnumParser.Parse(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey },
             _ => throw new NotSupportedException($"Ability '{abilityDefinitionData.Name}' contains an unknown validation rule type: {data.GetType()}")
         };
 
     private AbilityRuleDefinition MapAffectedByRule(AbilityDefinitionData abilityDefinitionData, AffectedByRuleData rule)
     {
         if (rule.TagKind is null || rule.TagKind == "Character")
-            return new CharacterAffectedByRuleDefinition { FailBehaviour = EnumParser.Parse(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, EffectTagId = Enum.Parse<CharacterEffectTagId>(rule.Tag) };
+            return new CharacterAffectedByRuleDefinition { Condition = EnumParser.Parse(rule.Condition, AbilityValidationRuleCondition.IsCharacter), FailBehaviour = EnumParser.Parse(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, EffectTagId = Enum.Parse<CharacterEffectTagId>(rule.Tag) };
         else if (rule.TagKind == "Item")
-            return new ItemAffectedByRuleDefinition { FailBehaviour = EnumParser.Parse(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, EffectTagId = Enum.Parse<ItemEffectTagId>(rule.Tag) };
+            return new ItemAffectedByRuleDefinition { Condition = EnumParser.Parse(rule.Condition, AbilityValidationRuleCondition.IsItem), FailBehaviour = EnumParser.Parse(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, EffectTagId = Enum.Parse<ItemEffectTagId>(rule.Tag) };
         throw new NotSupportedException($"Ability '{abilityDefinitionData.Name}' contains an unknown rule tag kind: {rule.TagKind} on AffectedBy");
     }
     private AbilityRuleDefinition MapNotAffectedByRule(AbilityDefinitionData abilityDefinitionData, NotAffectedByRuleData rule)
     {
         if (rule.TagKind is null || rule.TagKind == "Character")
-            return new CharacterNotAffectedByRuleDefinition { FailBehaviour = EnumParser.Parse(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, EffectTagId = Enum.Parse<CharacterEffectTagId>(rule.Tag) };
+            return new CharacterNotAffectedByRuleDefinition { Condition = EnumParser.Parse(rule.Condition, AbilityValidationRuleCondition.IsCharacter), FailBehaviour = EnumParser.Parse(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, EffectTagId = Enum.Parse<CharacterEffectTagId>(rule.Tag) };
         else if (rule.TagKind == "Item")
-            return new ItemNotAffectedByRuleDefinition { FailBehaviour = EnumParser.Parse(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, EffectTagId = Enum.Parse<ItemEffectTagId>(rule.Tag) };
+            return new ItemNotAffectedByRuleDefinition { Condition = EnumParser.Parse(rule.Condition, AbilityValidationRuleCondition.IsItem), FailBehaviour = EnumParser.Parse(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, EffectTagId = Enum.Parse<ItemEffectTagId>(rule.Tag) };
         throw new NotSupportedException($"Ability '{abilityDefinitionData.Name}' contains an unknown rule tag kind: {rule.TagKind} on NotAffectedBy");
     }
 

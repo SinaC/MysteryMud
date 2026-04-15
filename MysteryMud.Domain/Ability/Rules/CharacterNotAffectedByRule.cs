@@ -5,36 +5,22 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Ability.Rules;
 
-public class CharacterNotAffectedByRule : IAbilityValidationRule // opposite of AffectedByRule
+public class CharacterNotAffectedByRule : AbilityValidationRule // opposite of AffectedByRule
 {
     private readonly ulong _effectTagIndex;
-    private readonly AbilityValidationFailBehaviour _failBehaviour;
-    private readonly string _failMessageKey;
 
-    public CharacterNotAffectedByRule(CharacterEffectTagId effectTagId, AbilityValidationFailBehaviour failBehaviour, string failMessageKey)
+    public CharacterNotAffectedByRule(AbilityValidationRuleCondition condition, AbilityValidationFailBehaviour failBehaviour, string failMessageKey, CharacterEffectTagId effectTagId)
+        : base(condition, failBehaviour, failMessageKey)
     {
         _effectTagIndex = 1UL << (int)effectTagId;
-        _failBehaviour = failBehaviour;
-        _failMessageKey = failMessageKey;
     }
 
-    public bool CanBeValidated(Entity target)
-        => target.Has<CharacterEffects>();
-
-    public AbilityValidationResult Validate(Entity target)
+    public override AbilityValidationResult Validate(Entity target)
     {
         ref var characterEffects = ref target.Get<CharacterEffects>();
         if ((characterEffects.Data.ActiveTags & _effectTagIndex) != 0)
-            return new()
-            {
-                Success = false,
-                FailBehaviour = _failBehaviour,
-                FailMessageKey = _failMessageKey
-            };
+            return Fail();
 
-        return new()
-        {
-            Success = true
-        };
+        return Success();
     }
 }

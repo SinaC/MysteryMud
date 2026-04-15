@@ -8,12 +8,12 @@ public static class ValidationRuleFactory
     public static IAbilityValidationRule Create(AbilityRuleDefinition def)
         => def switch
         {
-            CharacterAffectedByRuleDefinition rule => new CharacterAffectedByRule(rule.EffectTagId, rule.FailBehaviour, rule.FailMessageKey),
-            CharacterNotAffectedByRuleDefinition rule => new CharacterNotAffectedByRule(rule.EffectTagId, rule.FailBehaviour, rule.FailMessageKey),
-            ItemAffectedByRuleDefinition rule => new ItemAffectedByRule(rule.EffectTagId, rule.FailBehaviour, rule.FailMessageKey),
-            ItemNotAffectedByRuleDefinition rule => new ItemNotAffectedByRule(rule.EffectTagId, rule.FailBehaviour, rule.FailMessageKey),
-            HasWeaponTypeRuleDefinition rule => new HasWeaponTypeRule(rule.Required, rule.FailBehaviour, rule.FailMessageKey),
-            NotFightingRuleDefinition rule => new NotFightingRule(rule.FailBehaviour, rule.FailMessageKey),
+            CharacterAffectedByRuleDefinition rule => new CharacterAffectedByRule(rule.Condition, rule.FailBehaviour, rule.FailMessageKey, rule.EffectTagId),
+            CharacterNotAffectedByRuleDefinition rule => new CharacterNotAffectedByRule(rule.Condition, rule.FailBehaviour, rule.FailMessageKey, rule.EffectTagId),
+            ItemAffectedByRuleDefinition rule => new ItemAffectedByRule(rule.Condition, rule.FailBehaviour, rule.FailMessageKey, rule.EffectTagId),
+            ItemNotAffectedByRuleDefinition rule => new ItemNotAffectedByRule(rule.Condition, rule.FailBehaviour, rule.FailMessageKey, rule.EffectTagId),
+            HasWeaponTypeRuleDefinition rule => new HasWeaponTypeRule(rule.Condition, rule.FailBehaviour, rule.FailMessageKey, rule.Required),
+            NotFightingRuleDefinition rule => new NotFightingRule(rule.Condition, rule.FailBehaviour, rule.FailMessageKey),
             _ => throw new Exception($"Unknown validation rule type: {def.GetType()}")
         };
 }

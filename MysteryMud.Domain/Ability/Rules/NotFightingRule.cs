@@ -5,39 +5,18 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Ability.Rules;
 
-public class NotFightingRule : IAbilityValidationRule
+public class NotFightingRule : AbilityValidationRule
 {
-    private readonly AbilityValidationFailBehaviour _failBehaviour;
-    private readonly string _failMessageKey;
-
-    public NotFightingRule(AbilityValidationFailBehaviour failBehaviour, string failMessageKey)
+    public NotFightingRule(AbilityValidationRuleCondition condition, AbilityValidationFailBehaviour failBehaviour, string failMessageKey)
+        : base(condition, failBehaviour, failMessageKey)
     {
-        _failBehaviour = failBehaviour;
-        _failMessageKey = failMessageKey;
     }
 
-    public bool CanBeValidated(Entity target)
-        => target.Has<CharacterTag>();
-
-    public AbilityValidationResult Validate(Entity target)
+    public override AbilityValidationResult Validate(Entity target)
     {
         if (target.Has<CombatState>())
             return Fail();
 
         return Success();
     }
-
-    private AbilityValidationResult Success()
-        => new()
-        {
-            Success = true
-        };
-
-    private AbilityValidationResult Fail()
-        => new()
-        {
-            Success = false,
-            FailBehaviour = _failBehaviour,
-            FailMessageKey = _failMessageKey
-        };
 }

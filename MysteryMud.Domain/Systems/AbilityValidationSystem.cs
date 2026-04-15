@@ -189,7 +189,7 @@ public class AbilityValidationSystem
         {
             bool skip = false;
 
-            foreach (var rule in ability.TargetValidationRules.Where(x => x.CanBeValidated(target)))
+            foreach (var rule in ability.TargetValidationRules.Where(x => x.IsCandidateForValidation(target)))
             {
                 var result = rule.Validate(target);
                 if (result.Success)

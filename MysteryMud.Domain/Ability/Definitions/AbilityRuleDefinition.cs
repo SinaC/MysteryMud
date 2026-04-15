@@ -4,6 +4,8 @@ namespace MysteryMud.Domain.Ability.Definitions;
 
 public abstract class AbilityRuleDefinition
 {
+    public AbilityValidationRuleCondition Condition { get; init; } = AbilityValidationRuleCondition.None;
+
     // Only meaningful for target rules; source rules always abort.
     public AbilityValidationFailBehaviour FailBehaviour { get; init; } = AbilityValidationFailBehaviour.Abort;
 
