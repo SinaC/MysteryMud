@@ -3,7 +3,7 @@ using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Dispatching;
 using MysteryMud.Core;
-using MysteryMud.Core.Eventing;
+using MysteryMud.Core.Bus;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;

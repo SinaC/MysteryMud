@@ -3,10 +3,10 @@ using Arch.Core.Extensions;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Registry;
 using MysteryMud.Core;
-using MysteryMud.Core.Services;
 using MysteryMud.Domain.Commands;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.Dispatching;

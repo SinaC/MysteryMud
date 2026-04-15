@@ -1,6 +1,4 @@
-﻿using MysteryMud.Domain.Action.Attack.Definitions;
-
-namespace MysteryMud.Domain.Action.Attack;
+﻿namespace MysteryMud.Domain.Action.Attack;
 
 public class WeaponProcRuntime
 {

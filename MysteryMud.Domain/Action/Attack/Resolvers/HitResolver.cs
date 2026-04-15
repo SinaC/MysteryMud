@@ -1,6 +1,6 @@
 ﻿using Arch.Core.Extensions;
-using MysteryMud.Core.Services;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 

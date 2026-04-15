@@ -1,6 +1,6 @@
 ﻿using MysteryMud.GameData.Enums;
 
-namespace MysteryMud.GameData.Targeting;
+namespace MysteryMud.Application.Parsing;
 
 public ref struct TargetSpec
 {

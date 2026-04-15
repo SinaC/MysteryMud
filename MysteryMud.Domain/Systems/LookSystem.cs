@@ -1,6 +1,6 @@
 ﻿using MysteryMud.Core;
-using MysteryMud.Core.Eventing;
-using MysteryMud.Core.Intent;
+using MysteryMud.Core.Bus;
+using MysteryMud.Core.Contracts;
 using MysteryMud.Core.Services;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;

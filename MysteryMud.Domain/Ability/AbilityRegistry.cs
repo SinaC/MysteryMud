@@ -1,4 +1,4 @@
-﻿using MysteryMud.Core.Trie;
+﻿using MysteryMud.Core.Utilities;
 using MysteryMud.Domain.Ability.Definitions;
 using MysteryMud.Domain.Ability.Factories;
 using MysteryMud.Domain.Action.Effect;

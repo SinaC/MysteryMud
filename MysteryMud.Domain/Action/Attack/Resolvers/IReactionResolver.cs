@@ -1,4 +1,4 @@
-﻿using MysteryMud.Core.Intent;
+﻿using MysteryMud.Core.Contracts;
 
 namespace MysteryMud.Domain.Action.Attack.Resolvers;
 

@@ -2,14 +2,14 @@
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
+using MysteryMud.Core.Contracts;
 using MysteryMud.Core.Effects;
-using MysteryMud.Core.Intent;
-using MysteryMud.Core.Services;
 using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Helpers;
+using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Action.Attack.Resolvers;

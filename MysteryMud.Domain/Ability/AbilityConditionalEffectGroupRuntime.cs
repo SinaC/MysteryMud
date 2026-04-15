@@ -1,6 +1,6 @@
 ﻿using MysteryMud.GameData.Enums;
 
-namespace MysteryMud.Domain.Ability.Definitions;
+namespace MysteryMud.Domain.Ability;
 
 public class AbilityConditionalEffectGroupRuntime
 {

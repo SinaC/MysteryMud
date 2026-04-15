@@ -1,5 +1,5 @@
 ﻿using MysteryMud.Core.Effects;
-using MysteryMud.Core.Services;
+using MysteryMud.Domain.Services;
 
 namespace MysteryMud.Domain.Action.Effect;
 

@@ -1,7 +1,7 @@
 ﻿using Arch.Core;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
-using MysteryMud.Core.Eventing;
+using MysteryMud.Core.Bus;
 using MysteryMud.Core.Scheduler;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.GameData.Enums;

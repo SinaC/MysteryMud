@@ -1,7 +1,7 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
-using MysteryMud.Core.Eventing;
+using MysteryMud.Core.Bus;
 using MysteryMud.Core.Logging;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Factories;

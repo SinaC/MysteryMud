@@ -1,6 +1,6 @@
 ﻿using Arch.Core;
 using MysteryMud.Core;
-using MysteryMud.Core.Eventing;
+using MysteryMud.Core.Bus;
 using MysteryMud.Infrastructure.Services;
 
 namespace MysteryMud.Infrastructure.Eventing;

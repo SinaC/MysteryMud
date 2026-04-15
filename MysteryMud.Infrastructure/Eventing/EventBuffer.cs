@@ -1,4 +1,5 @@
-﻿using MysteryMud.Core.Eventing;
+﻿using MysteryMud.Core.Bus;
+using MysteryMud.Infrastructure.Buffers;
 
 namespace MysteryMud.Infrastructure.Eventing;
 

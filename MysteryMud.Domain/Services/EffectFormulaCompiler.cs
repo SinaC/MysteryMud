@@ -3,6 +3,7 @@ using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
+using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.GameData.Enums;
 using System.Globalization;
@@ -105,6 +106,9 @@ public class EffectFormulaCompiler
             ref var targetLevel = ref (useSnapshot
                 ? ref snapshot.TargetLevel
                 : ref target.Get<Level>().Value);
+            ref var itemLevel = ref (useSnapshot
+                ? ref snapshot.ItemLevel
+                : ref target.Get<Level>().Value);
             ref var casterStats = ref (useSnapshot
                 ? ref snapshot.SourceStats
                 : ref source.Get<EffectiveStats>().Values);
@@ -172,9 +176,13 @@ public class EffectFormulaCompiler
                         stack.Push(effectiveDamageAmount);
                         break;
 
+                    case TokenType.ItemLevel:
+                        stack.Push(itemLevel);
+                        break;
+
                     case TokenType.WeaponLevel: // TODO: precompute in put in context ?
                         {
-                            if (!CharacterHelpers.TryGetMainHandWeapon(source, out var item, out var _))
+                            if (!source.TryGetMainHandWeapon(out var item, out var _))
                                 stack.Push(1); // TODO:
                             else
                             {
@@ -185,7 +193,7 @@ public class EffectFormulaCompiler
 
                     case TokenType.WeaponDamage: // TODO: precompute in put in context ?
                         {
-                            if (!CharacterHelpers.TryGetMainHandWeapon(source, out var _, out var weapon))
+                            if (!source.TryGetMainHandWeapon(out var _, out var weapon))
                                 stack.Push(1); // TODO:
                             else
                             {
@@ -279,6 +287,8 @@ public class EffectFormulaCompiler
         TargetWisdom,
         TargetDexterity,
         TargetConstitution,
+        // Item
+        ItemLevel,
         // Weapon
         WeaponLevel,
         WeaponDamage,
@@ -479,6 +489,9 @@ public class EffectFormulaCompiler
                     case "target.dexterity": tokens.Add(new Token { Type = TokenType.TargetDexterity, StartIndex = start }); break;
                     case "target.constitution": tokens.Add(new Token { Type = TokenType.TargetConstitution, StartIndex = start }); break;
 
+                    // Item
+                    case "item.level": tokens.Add(new Token { Type = TokenType.ItemLevel, StartIndex = start }); break;
+
                     // Weapon
                     case "weapon.level": tokens.Add(new Token { Type = TokenType.WeaponLevel, StartIndex = start }); break;
                     case "weapon.damage": tokens.Add(new Token { Type = TokenType.WeaponDamage, StartIndex = start }); break;
@@ -574,6 +587,7 @@ public class EffectFormulaCompiler
                 case TokenType.TargetWisdom:
                 case TokenType.TargetDexterity:
                 case TokenType.TargetConstitution:
+                case TokenType.ItemLevel:
                 case TokenType.WeaponLevel:
                 case TokenType.WeaponDamage:
                 case TokenType.HitDamage:
