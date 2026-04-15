@@ -1,10 +1,12 @@
-﻿using Arch.Core.Extensions;
+﻿using Arch.Core;
+using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core.Effects;
 using MysteryMud.Domain.Action.Effect.Definitions;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.Domain.Components.Effects;
+using MysteryMud.Domain.Components.Items;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
@@ -23,6 +25,7 @@ public class EffectActionFactory : IEffectActionFactory
     {
         CharacterStatModifierActionDefinition definition => CreateCharacterStatModifier(definition),
         ApplyCharacterTagActionDefinition definition => CreateApplyCharacterTag(definition),
+        ApplyItemTagActionDefinition definition => CreateApplyItemTag(definition),
         HealthModifierActionDefinition definition => CreateHealthModifier(definition),
         HealthRegenModifierActionDefinition definition => CreateHealthRegenModifier(definition),
         ManaModifierActionDefinition definition => CreateManaModifier(definition),
@@ -37,6 +40,17 @@ public class EffectActionFactory : IEffectActionFactory
         InstantDamageActionDefinition definition => CreateInstantDamage(definition),
         _ => throw new Exception($"Unknown EffectAction {actionDefinition.GetType()}"),
     };
+
+    private static void AddDirtyTag<TDirtyTag>(EffectContext effectContext)
+        where TDirtyTag : struct
+    {
+        var target = effectContext.Target;
+        ref var equipped = ref target.TryGetRef<Equipped>(out var isEquipped);
+        if (isEquipped)
+            target = equipped.Wearer;
+        if (!target.Has<TDirtyTag>())
+            target.Add<TDirtyTag>();
+    }
 
     private Action<EffectExecutionContext> CreateCharacterStatModifier(CharacterStatModifierActionDefinition definition)
     {
@@ -65,9 +79,8 @@ public class EffectActionFactory : IEffectActionFactory
                     });
                 }
 
-                // add dirty flag to character stats so we will recalculate them with the new modifiers
-                if (!effectContext.Target.Has<DirtyStats>())
-                    effectContext.Target.Add<DirtyStats>();
+                // add dirty flag to character (or wearer) stats so we will recalculate them with the new modifiers
+                AddDirtyTag<DirtyStats>(effectContext);
             }
             else
                 _logger.LogError("Trying to apply StatModifier on a null-effect");
@@ -100,9 +113,8 @@ public class EffectActionFactory : IEffectActionFactory
                     });
                 }
 
-                // add dirty flag to character resources so we will recalculate them with the new modifiers
-                if (!effectContext.Target.Has<DirtyHealth>())
-                    effectContext.Target.Add<DirtyHealth>();
+                // add dirty flag to character (or wearer) resources so we will recalculate them with the new modifiers
+                AddDirtyTag<DirtyHealth>(effectContext);
             }
             else
                 _logger.LogError("Trying to apply HealthModifier on a null-effect");
@@ -135,9 +147,8 @@ public class EffectActionFactory : IEffectActionFactory
                     });
                 }
 
-                // add dirty flag to character resources so we will recalculate them with the new modifiers
-                if (!effectContext.Target.Has<DirtyHealthRegen>())
-                    effectContext.Target.Add<DirtyHealthRegen>();
+                // add dirty flag to character (or wearer) resources so we will recalculate them with the new modifiers
+                AddDirtyTag<DirtyHealthRegen>(effectContext);
             }
             else
                 _logger.LogError("Trying to apply HealthRegenModifier on a null-effect");
@@ -170,9 +181,8 @@ public class EffectActionFactory : IEffectActionFactory
                     });
                 }
 
-                // add dirty flag to character resources so we will recalculate them with the new modifiers
-                if (!effectContext.Target.Has<DirtyMana>())
-                    effectContext.Target.Add<DirtyMana>();
+                // add dirty flag to character (or wearer) resources so we will recalculate them with the new modifiers
+                AddDirtyTag<DirtyMana>(effectContext);
             }
             else
                 _logger.LogError("Trying to apply ManaModifier on a null-effect");
@@ -205,9 +215,8 @@ public class EffectActionFactory : IEffectActionFactory
                     });
                 }
 
-                // add dirty flag to character resources so we will recalculate them with the new modifiers
-                if (!effectContext.Target.Has<DirtyManaRegen>())
-                    effectContext.Target.Add<DirtyManaRegen>();
+                // add dirty flag to character (or wearer) resources so we will recalculate them with the new modifiers
+                AddDirtyTag<DirtyManaRegen>(effectContext);
             }
             else
                 _logger.LogError("Trying to apply ManaRegenModifier on a null-effect");
@@ -240,9 +249,8 @@ public class EffectActionFactory : IEffectActionFactory
                     });
                 }
 
-                // add dirty flag to character resources so we will recalculate them with the new modifiers
-                if (!effectContext.Target.Has<DirtyEnergy>())
-                    effectContext.Target.Add<DirtyEnergy>();
+                // add dirty flag to character (or wearer) resources so we will recalculate them with the new modifiers
+                AddDirtyTag<DirtyEnergy>(effectContext);
             }
             else
                 _logger.LogError("Trying to apply EnergyModifier on a null-effect");
@@ -275,9 +283,8 @@ public class EffectActionFactory : IEffectActionFactory
                     });
                 }
 
-                // add dirty flag to character resources so we will recalculate them with the new modifiers
-                if (!effectContext.Target.Has<DirtyEnergyRegen>())
-                    effectContext.Target.Add<DirtyEnergyRegen>();
+                // add dirty flag to character (or wearer) resources so we will recalculate them with the new modifiers
+                AddDirtyTag<DirtyEnergyRegen>(effectContext);
             }
             else
                 _logger.LogError("Trying to apply EnergyRegenModifier on a null-effect");
@@ -310,9 +317,8 @@ public class EffectActionFactory : IEffectActionFactory
                     });
                 }
 
-                // add dirty flag to character resources so we will recalculate them with the new modifiers
-                if (!effectContext.Target.Has<DirtyRage>())
-                    effectContext.Target.Add<DirtyRage>();
+                // add dirty flag to character (or wearer) resources so we will recalculate them with the new modifiers
+                AddDirtyTag<DirtyRage>(effectContext);
             }
             else
                 _logger.LogError("Trying to apply RageModifier on a null-effect");
@@ -344,9 +350,8 @@ public class EffectActionFactory : IEffectActionFactory
                     });
                 }
 
-                // add dirty flag to character resources so we will recalculate them with the new modifiers
-                if (!effectContext.Target.Has<DirtyRageDecay>())
-                    effectContext.Target.Add<DirtyRageDecay>();
+                // add dirty flag to character (or wearer) resources so we will recalculate them with the new modifiers
+                AddDirtyTag<DirtyRageDecay>(effectContext);
             }
             else
                 _logger.LogError("Trying to apply RageDecayModifier on a null-effect");
@@ -430,6 +435,15 @@ public class EffectActionFactory : IEffectActionFactory
     }
 
     private static Action<EffectExecutionContext> CreateApplyCharacterTag(ApplyCharacterTagActionDefinition definition)
+    {
+        return ctx =>
+        {
+            // NOP
+            // TODO: for the moment effect tag is handled at effet level and not action level
+        };
+    }
+
+    private static Action<EffectExecutionContext> CreateApplyItemTag(ApplyItemTagActionDefinition definition)
     {
         return ctx =>
         {

@@ -1,4 +1,8 @@
-﻿using MysteryMud.Domain.Action.Effect.Definitions;
+﻿using Arch.Core.Extensions;
+using CommunityToolkit.HighPerformance;
+using MysteryMud.Domain.Action.Effect.Definitions;
+using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Components.Items;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Action.Effect.Factories;
@@ -14,6 +18,17 @@ public class EffectRuntimeFactory : IEffectRuntimeFactory
 
     public EffectRuntime Create(EffectDefinition def)
     {
+        // Infer which target kinds this effect supports based on its actions
+        var supportedTargets = def.Actions
+            .Select(EffectActionRegistry.GetAllowedTargets)
+            .Aggregate((a, b) => a & b); // intersection: all actions must support the target
+
+        if (supportedTargets == 0)
+            throw new Exception(
+                $"Effect '{def.Name}' has incompatible actions: no target kind satisfies all of them. " +
+                $"Check that character-only and item-only actions are not mixed.");
+
+
         var onApply = new List<Action<EffectExecutionContext>>();
         var onTick = new List<Action<EffectExecutionContext>>();
         var onExpire = new List<Action<EffectExecutionContext>>();
@@ -41,10 +56,10 @@ public class EffectRuntimeFactory : IEffectRuntimeFactory
 
         // wear off message (add OnExpire action)
         if (def.WearOffMessage != null)
-            onExpire.Add(ctx => ctx.Msg.To(ctx.Context.Target).Send(def.WearOffMessage));
+            onExpire.Add(CreateDisplayMessageAction(def.WearOffMessage));
         // apply message
         if (def.ApplyMessage != null)
-            onApply.Add(ctx => ctx.Msg.To(ctx.Context.Target).Send(def.ApplyMessage));
+            onApply.Add(CreateDisplayMessageAction(def.ApplyMessage));
 
         if (def.DurationCompiledFormula == null && (onTick.Count > 0 || onExpire.Count > 0))
             throw new Exception($"DurationFormula must be specified when Trigger OnTick or OnExpire is defined in effect '{def.Name}'");
@@ -65,6 +80,8 @@ public class EffectRuntimeFactory : IEffectRuntimeFactory
         {
             Id = def.Id,
             Name = def.Name,
+            SupportedTargets = supportedTargets,
+
             Tag = def.Tag,
             Stacking = def.Stacking,
             MaxStacks = def.MaxStacks,
@@ -77,6 +94,23 @@ public class EffectRuntimeFactory : IEffectRuntimeFactory
             OnApply = onApply.ToArray(),
             OnTick = onTick.ToArray(),
             OnExpire = onExpire.ToArray(),
+        };
+    }
+
+    private Action<EffectExecutionContext> CreateDisplayMessageAction(string msg)
+    {
+        return ctx =>
+        {
+            var target = ctx.Context.Target;
+            if (target.Has<CharacterTag>())
+                ctx.Msg.To(target).Send(msg);
+            else
+            {
+                if (target.TryGet<Equipped>(out var equipped))
+                    ctx.Msg.To(equipped.Wearer).Act(msg).With(target);
+                else if (target.TryGet<ContainedIn>(out var containedIn) && containedIn.Character.Has<CharacterTag>())
+                    ctx.Msg.To(containedIn.Character).Act(msg).With(target);
+            }
         };
     }
 }

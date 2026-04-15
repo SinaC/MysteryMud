@@ -103,11 +103,11 @@ public class AbilityExecutionSystem
         // TODO: change condition to a string and use a condition registry (with interface similar to OutcomeResolver)
         switch (condition)
         {
-            case AbilityEffectCondition.None: return targets;
             case AbilityEffectCondition.IsCharacter: return targets.Where(x => x.Has<CharacterTag>()).ToList();
             case AbilityEffectCondition.IsItem: return targets.Where(x => x.Has<ItemTag>()).ToList();
             case AbilityEffectCondition.IsNPC: return targets.Where(x => x.Has<NpcTag>()).ToList();
             case AbilityEffectCondition.IsPlayer: return targets.Where(x => x.Has<PlayerTag>()).ToList();
+            case AbilityEffectCondition.IsWeapon: return targets.Where(x => x.Has<Weapon>()).ToList();
         }
         return targets;
     }

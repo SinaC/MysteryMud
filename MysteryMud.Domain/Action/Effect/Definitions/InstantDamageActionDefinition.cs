@@ -2,6 +2,7 @@
 
 namespace MysteryMud.Domain.Action.Effect.Definitions;
 
+[EffectActionTarget(EffectTargetKind.Character)]
 public class InstantDamageActionDefinition : EffectActionDefinition
 {
     public required EffectCompiledFormula AmountCompiledFormula { get; init; }

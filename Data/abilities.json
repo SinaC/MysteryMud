@@ -53,7 +53,21 @@
     "ConditionalEffects": [
       { "Condition": "IsCharacter", "Effects": ["Poison"]     },
       { "Condition": "IsItem",      "Effects": ["PoisonItem"] }
-    ]
+    ],
+    "ValidationRules": {
+        "Target": [
+          { "Condition": "IsWeapon", "Type": "NotAffectedBy", "Tag": "Poison", "TagKind": "Item", "MessageKey": "WeaponAlreadyEnvenomed" },
+          { "Type": "NotAffectedBy", "Tag": "Bless", "TagKind": "Item", "MessageKey": "BlockedByBless" },
+          { "Type": "NotAffectedBy", "Tag": "Poison", "TagKind": "Item", "MessageKey": "ItemAlreadyPoisoned" }
+        ]
+    },
+    "Messages": {
+      "OnSuccess": "TBD",
+      "OnFailure": "TBD FAILURE",
+      "BlockedByBless": "Your spell fails to corrupt {0}.",
+      "ItemAlreadyPoisoned": "{0} is already poisoned.",
+      "WeaponAlreadyEnvenomed": "{0} is already envenomed."
+    }
   },
   {
     "Name": "Bless",
@@ -216,7 +230,7 @@
          { "Type": "HasWeaponType", "Required": "Dagger", "MessageKey": "NeedDagger" }
       ],
       "Target": [
-        { "Type": "NotFighting", "Fail": "OnTargetAware" }
+        { "Type": "NotFighting", "MessageKey": "OnTargetAware" }
       ]
     },
     "Messages": {

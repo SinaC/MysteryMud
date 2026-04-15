@@ -52,8 +52,11 @@ public static class MobFactory
             new Equipment { Slots = [] },
             new CharacterEffects
             {
-                Effects = [],
-                EffectsByTag = new List<Entity>?[32]
+                Data = new EffectsCollection
+                {
+                    Effects = [],
+                    EffectsByTag = new List<Entity>?[32]
+                },
             },
             new Location { Room = room },
             new Position { Value = PositionKind.Standing },

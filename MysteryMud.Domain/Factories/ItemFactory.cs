@@ -16,6 +16,14 @@ public static class ItemFactory
             new Name { Value = name },
             new Level { Value = 1 },
             new Description { Value = description },
+            new ItemEffects
+            {
+                Data = new EffectsCollection
+                {
+                    Effects = [],
+                    EffectsByTag = new List<Entity>?[32]
+                },
+            },
             new Location { Room = room }
         );
         // TODO: check that room has RoomContents component
@@ -30,6 +38,14 @@ public static class ItemFactory
             new Name { Value = name },
             new Level { Value = 1 },
             new Description { Value = description },
+            new ItemEffects
+            {
+                Data = new EffectsCollection
+                {
+                    Effects = [],
+                    EffectsByTag = new List<Entity>?[32]
+                },
+            },
             new ContainedIn { Character = character }
         );
         // TODO: check that character has Inventory component
@@ -44,6 +60,14 @@ public static class ItemFactory
             new Name { Value = name },
             new Level { Value = 1 },
             new Description { Value = description },
+            new ItemEffects
+            {
+                Data = new EffectsCollection
+                {
+                    Effects = [],
+                    EffectsByTag = new List<Entity>?[32]
+                },
+            },
             new ContainedIn { Container = container }
         );
         // TODO: check that container has ContainerContents component

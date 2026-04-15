@@ -6,5 +6,6 @@ public enum AbilityEffectCondition
     IsCharacter,
     IsItem,
     IsNPC,
-    IsPlayer
+    IsPlayer,
+    IsWeapon,
 }

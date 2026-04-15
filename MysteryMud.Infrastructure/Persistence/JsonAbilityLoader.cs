@@ -38,8 +38,8 @@ public class JsonAbilityLoader
 
             var costs = entry.Costs?.Select(MapResourceCost).ToList() ?? [];
             var outcomeResolver = MapOutcomeResolver(entry.OutcomeResolver);
-            var sourceValidationRules = entry.ValidationRules?.Source?.Select(MapRule).ToList();
-            var targetValidationRules = entry.ValidationRules?.Target?.Select(MapRule).ToList();
+            var sourceValidationRules = entry.ValidationRules?.Source?.Select(x => MapRule(entry, x)).ToList();
+            var targetValidationRules = entry.ValidationRules?.Target?.Select(x => MapRule(entry, x)).ToList();
             var conditionalEffectGroups = MapConditionalEffectGroups(entry);
 
             var ability = new AbilityDefinition
@@ -122,16 +122,32 @@ public class JsonAbilityLoader
             Filter = FlagsEnumParser.Parse(data.Filter, AbilityTargetFilter.Character),
         };
 
-    private AbilityRuleDefinition MapRule(AbilityValidationRuleData data)
+    private AbilityRuleDefinition MapRule(AbilityDefinitionData abilityDefinitionData, AbilityValidationRuleData data)
         => data switch
         {
-            CharacterAffectedByRuleData rule => new CharacterAffectedByRuleDefinition { FailBehaviour = EnumParser.Parse(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, EffectTagId = Enum.Parse<CharacterEffectTagId>(rule.Tag) },
-            CharacterNotAffectedByRuleData rule => new CharacterNotAffectedByRuleDefinition { FailBehaviour = EnumParser.Parse(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, EffectTagId = Enum.Parse<CharacterEffectTagId>(rule.Tag) },
-            HasWeaponTypeRuleData rule => new HasWeaponTypeRuleDefinition { FailBehaviour = EnumParser.Parse(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, Required = Enum.Parse<WeaponKind>(rule.Required) },
-            NotFightingRuleData rule => new NotFightingRuleDefinition { FailBehaviour = EnumParser.Parse(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey },
-            _ => throw new NotSupportedException($"Unknown rule type: {data.GetType()}")
+            AffectedByRuleData rule => MapAffectedByRule(abilityDefinitionData, rule),
+            NotAffectedByRuleData rule => MapNotAffectedByRule(abilityDefinitionData, rule),
+            HasWeaponTypeRuleData rule => new HasWeaponTypeRuleDefinition { Condition = EnumParser.Parse(rule.Condition, AbilityValidationRuleCondition.IsCharacter), FailBehaviour = EnumParser.Parse(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, Required = Enum.Parse<WeaponKind>(rule.Required) },
+            NotFightingRuleData rule => new NotFightingRuleDefinition { Condition = EnumParser.Parse(rule.Condition, AbilityValidationRuleCondition.IsCharacter), FailBehaviour = EnumParser.Parse(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey },
+            _ => throw new NotSupportedException($"Ability '{abilityDefinitionData.Name}' contains an unknown validation rule type: {data.GetType()}")
         };
 
+    private AbilityRuleDefinition MapAffectedByRule(AbilityDefinitionData abilityDefinitionData, AffectedByRuleData rule)
+    {
+        if (rule.TagKind is null || rule.TagKind == "Character")
+            return new CharacterAffectedByRuleDefinition { Condition = EnumParser.Parse(rule.Condition, AbilityValidationRuleCondition.IsCharacter), FailBehaviour = EnumParser.Parse(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, EffectTagId = Enum.Parse<CharacterEffectTagId>(rule.Tag) };
+        else if (rule.TagKind == "Item")
+            return new ItemAffectedByRuleDefinition { Condition = EnumParser.Parse(rule.Condition, AbilityValidationRuleCondition.IsItem), FailBehaviour = EnumParser.Parse(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, EffectTagId = Enum.Parse<ItemEffectTagId>(rule.Tag) };
+        throw new NotSupportedException($"Ability '{abilityDefinitionData.Name}' contains an unknown rule tag kind: {rule.TagKind} on AffectedBy");
+    }
+    private AbilityRuleDefinition MapNotAffectedByRule(AbilityDefinitionData abilityDefinitionData, NotAffectedByRuleData rule)
+    {
+        if (rule.TagKind is null || rule.TagKind == "Character")
+            return new CharacterNotAffectedByRuleDefinition { Condition = EnumParser.Parse(rule.Condition, AbilityValidationRuleCondition.IsCharacter), FailBehaviour = EnumParser.Parse(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, EffectTagId = Enum.Parse<CharacterEffectTagId>(rule.Tag) };
+        else if (rule.TagKind == "Item")
+            return new ItemNotAffectedByRuleDefinition { Condition = EnumParser.Parse(rule.Condition, AbilityValidationRuleCondition.IsItem), FailBehaviour = EnumParser.Parse(rule.OnFail, AbilityValidationFailBehaviour.Abort), FailMessageKey = rule.MessageKey, EffectTagId = Enum.Parse<ItemEffectTagId>(rule.Tag) };
+        throw new NotSupportedException($"Ability '{abilityDefinitionData.Name}' contains an unknown rule tag kind: {rule.TagKind} on NotAffectedBy");
+    }
 
     private class AbilityValidationRuleDataConverter : JsonConverter<AbilityValidationRuleData>
     {
@@ -144,8 +160,8 @@ public class JsonAbilityLoader
 
             return type switch
             {
-                "AffectedBy" => JsonSerializer.Deserialize<CharacterAffectedByRuleData>(root.GetRawText(), options), // TODO: depends on character or item
-                "NotAffectedBy" => JsonSerializer.Deserialize<CharacterNotAffectedByRuleData>(root.GetRawText(), options), // TODO: depends on character or item
+                "AffectedBy" => JsonSerializer.Deserialize<AffectedByRuleData>(root.GetRawText(), options), // TODO: depends on character or item
+                "NotAffectedBy" => JsonSerializer.Deserialize<NotAffectedByRuleData>(root.GetRawText(), options), // TODO: depends on character or item
                 "HasWeaponType" => JsonSerializer.Deserialize<HasWeaponTypeRuleData>(root.GetRawText(), options),
                 "NotFighting" => JsonSerializer.Deserialize<NotFightingRuleData>(root.GetRawText(), options),
                 _ => throw new NotSupportedException($"Unknown rule type: {type}")

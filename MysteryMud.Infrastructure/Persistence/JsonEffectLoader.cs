@@ -1,6 +1,8 @@
 ﻿using MysteryMud.Core.Extensions;
+using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Action.Effect.Definitions;
 using MysteryMud.Domain.Services;
+using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.Infrastructure.Persistence.Dto;
 using MysteryMud.Infrastructure.Persistence.Dto.Actions;
@@ -41,6 +43,8 @@ public class JsonEffectLoader
         // map actions
         var actions = data.Actions?.Select(MapAction).ToList() ?? [];
 
+        var tag = MapTag(data, actions);
+
         return new EffectDefinition
         {
             Id = data.Name.ComputeUniqueId(),
@@ -49,7 +53,7 @@ public class JsonEffectLoader
             DurationCompiledFormula = data.DurationFormula == null
                 ? null
                 : _formulaCompiler.Compile(data.DurationFormula),
-            Tag = EnumParser.Parse(data.Tag, CharacterEffectTagId.None), // TODO: what about ItemEffectTagId ?
+            Tag = tag,
             Stacking = EnumParser.Parse(data.Stacking, StackingRule.None),
             MaxStacks = data.MaxStacks,
             TickOnApply = data.TickOnApply,
@@ -60,6 +64,39 @@ public class JsonEffectLoader
 
             Actions = actions
         };
+    }
+
+    private EffectTagRef MapTag(EffectDefinitionData data, IEnumerable<EffectActionDefinition> actions)
+    {
+        if (data.Tag == null)
+            return default;
+
+        // 1. Explicit override always wins
+        if (data.TagKind != null)
+        {
+            return data.TagKind switch
+            {
+                "Character" => EffectTagRef.ForCharacter(Enum.Parse<CharacterEffectTagId>(data.Tag)),
+                "Item" => EffectTagRef.ForItem(Enum.Parse<ItemEffectTagId>(data.Tag)),
+                _ => throw new ArgumentOutOfRangeException()
+            };
+        }
+
+        // 2. Infer from actions
+        var inferredKind = actions
+            .Select(EffectActionRegistry.GetAllowedTargets)
+            .Aggregate((a, b) => a & b);
+
+        // 3. Unambiguous inference
+        if (inferredKind == EffectTargetKind.Character)
+            return EffectTagRef.ForCharacter(Enum.Parse<CharacterEffectTagId>(data.Tag));
+        if (inferredKind == EffectTargetKind.Item)
+            return EffectTagRef.ForItem(Enum.Parse<ItemEffectTagId>(data.Tag));
+
+        // 4. Still ambiguous — fail loudly
+        throw new Exception(
+            $"Effect '{data.Name}': tag '{data.Tag}' is ambiguous (actions support both Character and Item). " +
+            $"Add \"TagKind\": \"Character\" or \"TagKind\": \"Item\" to resolve.");
     }
 
     private EffectActionDefinition MapAction(EffectActionData action)
@@ -200,8 +237,17 @@ public class JsonEffectLoader
             case ApplyCharacterTagActionData data:
                 {
                     var effectTagId = Enum.Parse<CharacterEffectTagId>(data.Tag);
-                    // TODO: target
                     return new ApplyCharacterTagActionDefinition
+                    {
+                        Trigger = trigger,
+                        EffectTagId = effectTagId
+                    };
+                }
+
+            case ApplyItemTagActionData data:
+                {
+                    var effectTagId = Enum.Parse<ItemEffectTagId>(data.Tag);
+                    return new ApplyItemTagActionDefinition
                     {
                         Trigger = trigger,
                         EffectTagId = effectTagId
@@ -231,6 +277,7 @@ public class JsonEffectLoader
                 "InstantDamage" => JsonSerializer.Deserialize<InstantDamageData>(root.GetRawText(), options),
                 "InstantHeal" => JsonSerializer.Deserialize<InstantHealData>(root.GetRawText(), options),
                 "ApplyTag" => JsonSerializer.Deserialize<ApplyCharacterTagActionData>(root.GetRawText(), options),
+                "ApplyItemTag" => JsonSerializer.Deserialize<ApplyItemTagActionData>(root.GetRawText(), options),
                 _ => throw new NotSupportedException($"Unknown action type: {type}")
             };
         }

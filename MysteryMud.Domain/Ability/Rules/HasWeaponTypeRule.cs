@@ -4,36 +4,22 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Ability.Rules;
 
-public class HasWeaponTypeRule : IAbilityValidationRule
+public class HasWeaponTypeRule : AbilityValidationRule
 {
     private readonly WeaponKind _required;
-    private readonly AbilityValidationFailBehaviour _failBehaviour;
-    private readonly string _failMessageKey;
 
-    public HasWeaponTypeRule(WeaponKind required, AbilityValidationFailBehaviour failBehaviour, string failMessageKey)
+    public HasWeaponTypeRule(AbilityValidationRuleCondition condition, AbilityValidationFailBehaviour failBehaviour, string failMessageKey, WeaponKind required)
+        : base(condition, failBehaviour, failMessageKey)
     {
         _required = required;
-        _failBehaviour = failBehaviour;
-        _failMessageKey = failMessageKey;
     }
 
-    public AbilityValidationResult Validate(Entity target)
+    public override AbilityValidationResult Validate(Entity target)
     {
         if (!CharacterHelpers.TryGetMainHandWeapon(target, out var _, out var weapon))
             return Fail();
         if (weapon.Kind != _required)
             return Fail();
-        return new AbilityValidationResult
-        {
-            Success = true,
-        };
+        return Success();
     }
-
-    private AbilityValidationResult Fail()
-        => new()
-        {
-            Success = false,
-            FailBehaviour = _failBehaviour,
-            FailMessageKey = _failMessageKey
-        };
 }

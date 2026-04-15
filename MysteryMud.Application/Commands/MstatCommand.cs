@@ -76,8 +76,8 @@ public class MstatCommand : ICommand
             else
                 _msg.To(actor).Send($"{slot}: nothing");
         }
-        _msg.To(actor).Send($"Active tags: {characterEffects.ActiveTags}");
-        _effectDisplayService.DisplayEffects(state, actor, characterEffects.Effects);
+        _msg.To(actor).Send($"Active tags: {characterEffects.Data.ActiveTags}");
+        _effectDisplayService.DisplayEffects(state, actor, characterEffects.Data.Effects);
     }
 
     private void DisplayHealth(Entity actor, Entity target)

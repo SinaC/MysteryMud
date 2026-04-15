@@ -43,13 +43,15 @@ public class EffectiveMaxResourceSystem<TBase, TResource, TDirty, TModifier>
             ref TResource effectiveRes,
             ref TDirty dirty) =>
         {
+            ref var characterEffects = ref entity.Get<CharacterEffects>(); // TODO: other kind of entity
+
             // get base max
             int baseMax = _getBaseMaxFunc(baseRes);
 
             // TODO: apply modifiers from equipment
 
             // apply modifiers from effects
-            var (flat, percent, multiply, overriding) = ModifierPipeline.CalculateModifiers<CharacterResourceModifiers<TModifier>, TModifier>(entity, x => true, x => x.Values, _getModifierKindFunc, _getModifierValueFunc);
+            var (flat, percent, multiply, overriding) = ModifierPipeline.CalculateModifiers<CharacterResourceModifiers<TModifier>, TModifier>(characterEffects, x => true, x => x.Values, _getModifierKindFunc, _getModifierValueFunc);
            
             var rawMax = overriding ?? ((baseMax + flat) * (100 + percent) * multiply / 100);
 

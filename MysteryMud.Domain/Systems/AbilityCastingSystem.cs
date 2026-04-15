@@ -98,31 +98,33 @@ public class AbilityCastingSystem
         {
             bool skip = false;
 
-            foreach (var rule in ability.TargetValidationRules)
+            foreach (var rule in ability.TargetValidationRules.Where(x => x.IsCandidateForValidation(target)))
             {
                 var result = rule.Validate(target);
-                if (result.Success) continue;
+                if (result.Success)
+                    continue;
 
                 if (result.FailBehaviour == AbilityValidationFailBehaviour.SkipWithMessage
                     && result.FailMessageKey is not null)
-                    SendAbilityMessage(source, ability, result.FailMessageKey);
+                    ActAbilityMessage(source, ability, result.FailMessageKey, target);
 
                 skip = true;
                 break;
             }
 
-            if (!skip) passed.Add(target);
+            if (!skip)
+                passed.Add(target);
         }
 
         return passed;
     }
 
-    private void SendAbilityMessage(Entity actor, AbilityRuntime ability, string key) // TODO: same code found in AbilityExecutionSystem
+    private void ActAbilityMessage(Entity actor, AbilityRuntime ability, string key, Entity target) // TODO: same code found in AbilityExecutionSystem
     {
         if (key is null)
             return;
         if (ability.Messages.TryGetValue(key, out var msg))
-            _msg.To(actor).Send(msg);
+            _msg.To(actor).Act(msg).With(target);
         else
             _logger.LogError("Ability {abilityName} validation rules refers to {key} but it's not found in messages", ability.Name, key);
     }

@@ -6,6 +6,7 @@ internal record EffectDefinitionData
 (
     string Name,
     string Tag,
+    string TagKind,
     string Stacking,
     int MaxStacks,
     string DurationFormula,

@@ -7,7 +7,7 @@
         "HelpText": "Destroys an item from your inventory.",
         "Syntaxes": ["[cmd] <item>"],
         "Categories": ["item", "inventory"],
-		"ThrottlingCategories": ["utility"]
+        "ThrottlingCategories": ["utility"]
     },
     {
         "Name": "drop",
@@ -19,7 +19,7 @@
                      "[cmd] <amount> silver|gold",
                      "[cmd] all"],
         "Categories": ["item", "inventory"],
-		"ThrottlingCategories": ["utility"]
+        "ThrottlingCategories": ["utility"]
     },
     {
         "Name": "east",
@@ -29,7 +29,7 @@
         "HelpText": "Use this command to walk in east direction.",
         "Syntaxes": ["[cmd]"],
         "Categories": ["movement"],
-		"ThrottlingCategories": ["movement"]
+        "ThrottlingCategories": ["movement"]
     },
     {
         "Name": "equipment",
@@ -39,7 +39,7 @@
         "HelpText": "[cmd] lists your equipment (armor, weapons, and held items).",
         "Syntaxes": ["[cmd]"],
         "Categories": ["information"],
-		"ThrottlingCategories": ["utility"]
+        "ThrottlingCategories": ["utility"]
     },
     {
         "Name": "flee",
@@ -49,7 +49,7 @@
         "HelpText": "Once you start a fight, you can't just walk away from it.  If the fight\nis not going well, you can attempt to [cmd], or another character can\nRESCUE you.  (You can also RECALL, but this is less likely to work,\nand costs more experience points, then fleeing).\n\nIf you lose your link during a fight, then your character will keep\nfighting, and will attempt to RECALL from time to time.  Your chances\nof making the recall are reduced, and you will lose much more experience.",
         "Syntaxes": ["[cmd]"],
         "Categories": ["combat", "movement"],
-		"ThrottlingCategories": ["movement", "combat"]
+        "ThrottlingCategories": ["movement", "combat"]
     },
     {
         "Name": "get",
@@ -61,7 +61,7 @@
         "Syntaxes": ["[cmd] <item>",
                      "[cmd] <item> <container>"],
         "Categories": ["item", "inventory"],
-		"ThrottlingCategories": ["utility"]
+        "ThrottlingCategories": ["utility"]
     },
     {
         "Name": "give",
@@ -72,7 +72,7 @@
         "Syntaxes": ["[cmd] <item> <character>",
                      "[cmd] <amount> coin|coins|silver|gold <character>"],
         "Categories": ["item", "equipment"],
-		"ThrottlingCategories": ["utility"]
+        "ThrottlingCategories": ["utility"]
     },
     {
         "Name": "inventory",
@@ -82,7 +82,7 @@
         "HelpText": "[cmd] lists your inventory.",
         "Syntaxes": ["[cmd]"],
         "Categories": ["information"],
-		"ThrottlingCategories": ["utility"]
+        "ThrottlingCategories": ["utility"]
     },
     {
         "Name": "kill",
@@ -92,7 +92,7 @@
         "HelpText": "[cmd] is used to kill mobiles (monsters) you see all over the world.\nTo kill other players, you have to use MURDER.",
         "Syntaxes": ["[cmd] <character>"],
         "Categories": ["combat"],
-		"ThrottlingCategories": ["combat"]
+        "ThrottlingCategories": ["combat"]
     },
     {
         "Name": "look",
@@ -109,7 +109,7 @@
                      "[cmd] <keyword>",
                      "[cmd] <direction>"],
         "Categories": ["information"],
-		"ThrottlingCategories": ["utility"]
+        "ThrottlingCategories": ["utility"]
     },
     {
         "Name": "mstat",
@@ -120,7 +120,7 @@
         "HelpText": "Display information about a character (player or mobile)",
         "Syntaxes": ["[cmd] <character>"],
         "Categories": ["information"],
-		"ThrottlingCategories": ["admin"]
+        "ThrottlingCategories": ["admin"]
     },
     {
         "Name": "north",
@@ -130,7 +130,18 @@
         "HelpText": "Use this command to walk in north direction.",
         "Syntaxes": ["[cmd]"],
         "Categories": ["movement"],
-		"ThrottlingCategories": ["movement"]
+        "ThrottlingCategories": ["movement"]
+    },
+    {
+        "Name": "ostat",
+        "Aliases": ["istat"],
+        "RequiredLevel": "Player",
+        "MinimumPosition": "Standing",
+        "Priority": 0,
+        "HelpText": "Display information about an item (in inventory or room)",
+        "Syntaxes": ["[cmd] <item>"],
+        "Categories": ["information"],
+        "ThrottlingCategories": ["admin"]
     },
     {
         "Name": "put",
@@ -140,7 +151,7 @@
         "HelpText": "[cmd] puts an object into a container.\n[cmd] understand the object names 'ALL' for all objects and\n'ALL.object' for all objects with the same name.\n[cmd] X.sword is also allowed to put the Xth sword of the list.",
         "Syntaxes": ["[cmd] <item> [in] <container>"],
         "Categories": ["item", "equipment"],
-		"ThrottlingCategories": ["utility"]
+        "ThrottlingCategories": ["utility"]
     },
     {
         "Name": "remove",
@@ -150,7 +161,7 @@
         "HelpText": "[cmd] will take any object from your equipment and put it back into your\ninventory.",
         "Syntaxes": ["[cmd] <item>"],
         "Categories": ["item", "equipment"],
-		"ThrottlingCategories": ["utility"]
+        "ThrottlingCategories": ["utility"]
     },
     {
         "Name": "sacrifice",
@@ -161,7 +172,7 @@
         "HelpText": "[cmd] offers an object to your god, who may reward you.\nThe nature of the reward depends upon the type of object.",
         "Syntaxes": ["[cmd] all", "[cmd] <item>"],
         "Categories": ["item"],
-		"ThrottlingCategories": ["utility"]
+        "ThrottlingCategories": ["utility"]
     },
     {
         "Name": "say",
@@ -172,9 +183,9 @@
         "HelpText": "[cmd] sends a message to all awake players/mobs in your room (In Character channel).",
         "Syntaxes": ["[cmd] <message>"],
         "Categories": ["communication"],
-		"ThrottlingCategories": ["social"]
+        "ThrottlingCategories": ["social"]
     },
-	{
+    {
         "Name": "score",
         "RequiredLevel": "Player",
         "MinimumPosition": "Standing",
@@ -182,7 +193,7 @@
         "HelpText": "[cmd] shows much more detailed statistics to you only. Your ability scores\nare shown as true value(current value), so for example\nStr: 23/15 means you have a 15 strength from training, but a 23 strength\nfrom other factors (skills, spells or items).",
         "Syntaxes": ["[cmd]"],
         "Categories": ["information"],
-		"ThrottlingCategories": ["utility"]
+        "ThrottlingCategories": ["utility"]
     },
     {
         "Name": "south",
@@ -192,7 +203,7 @@
         "HelpText": "Use this command to walk in south direction.",
         "Syntaxes": ["[cmd]"],
         "Categories": ["movement"],
-		"ThrottlingCategories": ["movement"]
+        "ThrottlingCategories": ["movement"]
     },
     {
         "Name": "tell",
@@ -202,7 +213,7 @@
         "HelpText": "[cmd] sends a message to one player anywhere in the world.",
         "Syntaxes": ["[cmd] <player name> <message>"],
         "Categories": ["communication"],
-		"ThrottlingCategories": ["social"]
+        "ThrottlingCategories": ["social"]
     },
     {
         "Name": "wear",
@@ -213,7 +224,7 @@
         "Syntaxes": ["[cmd] <item>",
                      "[cmd] all"],
         "Categories": ["item", "equipment"],
-		"ThrottlingCategories": ["utility"]
+        "ThrottlingCategories": ["utility"]
     },
     {
         "Name": "west",
@@ -223,6 +234,6 @@
         "HelpText": "Use this command to walk in west direction.",
         "Syntaxes": ["[cmd]"],
         "Categories": ["movement"],
-		"ThrottlingCategories": ["movement"]
+        "ThrottlingCategories": ["movement"]
     }
 ]

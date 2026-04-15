@@ -65,6 +65,7 @@
   {
     "Name": "BerserkBuff",
     "Tag": "Berserk",
+    "TagKind": "Character",
     "Stacking": "None",
     "MaxStacks": 1,
     "DurationFormula": "caster.Level / 8",
@@ -93,6 +94,7 @@
   {
     "Name": "CalmBuff",
     "Tag": "Calm",
+    "TagKind": "Character",
     "Stacking": "None",
     "MaxStacks": 1,
     "DurationFormula": "caster.Level / 4",
@@ -115,7 +117,8 @@
   },
   {
     "Name": "TripKnockdown",
-	"Tag": "Stun",
+    "Tag": "Stun",
+    "TagKind": "Character",
     "DurationFormula": "1",
     "Actions": [
       {
@@ -241,6 +244,7 @@
   {
     "Name": "Poison",
     "Tag": "Poison",
+    "TagKind": "Character",
     "Stacking": "Stack",
     "MaxStacks": 3,
     "DurationFormula": "caster.Level",
@@ -271,6 +275,7 @@
   {
     "Name": "PoisonItem",
     "Tag": "Poison",
+    "TagKind": "Item",
     "Stacking": "None",
     "DurationFormula": "caster.Level",
     "WearOffMessage": "The poison on {0} dries up.",
@@ -286,6 +291,7 @@
   {
     "Name": "Bless",
     "Tag": "Bless",
+    "TagKind": "Character",
     "Stacking": "None",
     "DurationFormula": "6 + caster.Level",
     "ApplyMessage": "You feel righteous.",
@@ -308,6 +314,7 @@
   {
     "Name": "BlessItem",
     "Tag": "Bless",
+    "TagKind": "Item",
     "Stacking": "None",
     "DurationFormula": "4 * caster.Intelligence",
     "WearOffMessage": "{0:v} holy aura fades.",

@@ -1,4 +1,5 @@
-﻿using MysteryMud.GameData.Enums;
+﻿using MysteryMud.GameData.Definitions;
+using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Action.Effect;
 
@@ -7,9 +8,10 @@ public class EffectRuntime
     public int Id;
     public string Name = default!;
 
+    public EffectTargetKind SupportedTargets;
     // state-effect
     public Func<EffectContext, decimal>? DurationFunc; // if null -> stateless effect
-    public CharacterEffectTagId Tag = CharacterEffectTagId.None; // TODO: what about ItemEffectTagId ?
+    public EffectTagRef Tag;
     public StackingRule Stacking = StackingRule.None;
     public int MaxStacks = 1;
     public bool TickOnApply = false; // if true, tick actions are triggered immediately

@@ -3,6 +3,7 @@ using Arch.Core.Extensions;
 using MysteryMud.Core;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
+using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
@@ -26,19 +27,36 @@ public class EffectiveCharacterStatsSystem
                      ref DirtyStats dirty) =>
         {
             ref var characterEffects = ref character.Get<CharacterEffects>();
+            ref var equipment = ref character.Get<Equipment>();
 
             // TODO: optimize by only recalculating stats that are dirty, instead of all stats for the character. this would require tracking which stats are dirty, either by having a separate DirtyStats component for each stat, or by having a bitfield in the DirtyStats component that tracks which stats are dirty
+            // TODO: optimize by only iterating modifiers for this stat, instead of all modifiers for all stats -> index modifiers by stat in the StatModifiers component
             foreach (var stat in _allStats)
             {
                 // apply base stat
                 var baseValue = baseStats.Values[stat];
 
-                // TODO: apply modifiers from equipment
+                decimal flat = 0, percent = 0, multiply = 1;
+                decimal? overriding = null;
 
-                // TODO: optimize by only iterating modifiers for this stat, instead of all modifiers for all stats -> index modifiers by stat in the StatModifiers component
+                // apply modifiers from equipment
+                foreach (var (slot, equipedItem) in equipment.Slots)
+                {
+                    ref var itemEffects = ref equipedItem.Get<ItemEffects>();
+                    var characterModifiersFromItem = ModifierPipeline.CalculateModifiers<CharacterStatModifiers, CharacterStatModifier>(itemEffects, x => x.Stat == stat, x => x.Values, x => x.Modifier, x => x.Value);
+                    flat += characterModifiersFromItem.flat;
+                    percent += characterModifiersFromItem.percent;
+                    multiply *= characterModifiersFromItem.multiply;
+                    overriding ??= characterModifiersFromItem.overriding;
+                }
+
                 //  this will allow to remove: x => x.Stat == stat
                 // apply modifiers from effects
-                var (flat, percent, multiply, overriding) = ModifierPipeline.CalculateModifiers<CharacterStatModifiers, CharacterStatModifier>(character, x => x.Stat == stat, x => x.Values, x => x.Modifier, x => x.Value);
+                var characterModifiersFromCharacter = ModifierPipeline.CalculateModifiers<CharacterStatModifiers, CharacterStatModifier>(characterEffects, x => x.Stat == stat, x => x.Values, x => x.Modifier, x => x.Value);
+                flat += characterModifiersFromCharacter.flat;
+                percent += characterModifiersFromCharacter.percent;
+                multiply *= characterModifiersFromCharacter.multiply;
+                overriding ??= characterModifiersFromCharacter.overriding;
 
                 var rawValue = overriding ?? ((baseValue + flat) * (100 + percent) * multiply / 100);
 

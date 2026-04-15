@@ -189,23 +189,25 @@ public class AbilityValidationSystem
         {
             bool skip = false;
 
-            foreach (var rule in ability.TargetValidationRules)
+            foreach (var rule in ability.TargetValidationRules.Where(x => x.IsCandidateForValidation(target)))
             {
                 var result = rule.Validate(target);
-                if (result.Success) continue;
+                if (result.Success)
+                    continue;
 
                 switch (result.FailBehaviour)
                 {
                     case AbilityValidationFailBehaviour.Abort:
                         if (result.FailMessageKey is not null)
-                            SendAbilityMessage(source, ability, result.FailMessageKey);
-                        if (abortOnFirst) return null;
+                            ActAbilityMessage(source, ability, result.FailMessageKey, target);
+                        if (abortOnFirst)
+                            return null;
                         skip = true;
                         break;
 
                     case AbilityValidationFailBehaviour.SkipWithMessage:
                         if (result.FailMessageKey is not null)
-                            SendAbilityMessage(source, ability, result.FailMessageKey);
+                            ActAbilityMessage(source, ability, result.FailMessageKey, target);
                         skip = true;
                         break;
 
@@ -214,10 +216,12 @@ public class AbilityValidationSystem
                         break;
                 }
 
-                if (skip) break;
+                if (skip)
+                    break;
             }
 
-            if (!skip) passed.Add(target);
+            if (!skip)
+                passed.Add(target);
         }
 
         return passed;
@@ -228,7 +232,8 @@ public class AbilityValidationSystem
         foreach (var rule in ability.SourceValidationRules)
         {
             var result = rule.Validate(source);
-            if (result.Success) continue;
+            if (result.Success)
+                continue;
 
             if (result.FailMessageKey is not null)
                 SendAbilityMessage(source, ability, result.FailMessageKey);
@@ -264,6 +269,16 @@ public class AbilityValidationSystem
             return;
         if (ability.Messages.TryGetValue(key, out var msg))
             _msg.To(actor).Send(msg);
+        else
+            _logger.LogError("Ability {abilityName} validation rules refers to {key} but it's not found in messages", ability.Name, key);
+    }
+
+    private void ActAbilityMessage(Entity actor, AbilityRuntime ability, string key, Entity target) // TODO: same code found in AbilityExecutionSystem
+    {
+        if (key is null)
+            return;
+        if (ability.Messages.TryGetValue(key, out var msg))
+            _msg.To(actor).Act(msg).With(target);
         else
             _logger.LogError("Ability {abilityName} validation rules refers to {key} but it's not found in messages", ability.Name, key);
     }
