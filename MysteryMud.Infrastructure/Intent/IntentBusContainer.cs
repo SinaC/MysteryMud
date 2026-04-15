@@ -1,5 +1,6 @@
-﻿using MysteryMud.Core.Intent;
+﻿using MysteryMud.Core.Contracts;
 using MysteryMud.GameData.Intents;
+using MysteryMud.Infrastructure.Buffers;
 
 namespace MysteryMud.Infrastructure.Intent;
 

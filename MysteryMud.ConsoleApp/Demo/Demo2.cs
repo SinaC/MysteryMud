@@ -5,7 +5,7 @@ using MysteryMud.Application.Dispatching;
 using MysteryMud.Application.Services;
 using MysteryMud.ConsoleApp.Hosting;
 using MysteryMud.Core;
-using MysteryMud.Core.Eventing;
+using MysteryMud.Core.Bus;
 using MysteryMud.Domain.Action;
 using MysteryMud.Domain.Action.Attack;
 using MysteryMud.Domain.Action.Attack.Factories;

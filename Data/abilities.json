@@ -56,7 +56,7 @@
     ],
     "ValidationRules": {
         "Target": [
-          { "Condition": "IsWeapon", "Type": "NotAffectedBy", "Tag": "Poison", "TagKind": "Item", "MessageKey": "WeaponAlreadyEnvenomed" },
+          { "Type": "NotAffectedBy", "Tag": "Poison", "TagKind": "Item", "MessageKey": "WeaponAlreadyEnvenomed", "Condition": "IsWeapon" },
           { "Type": "NotAffectedBy", "Tag": "Bless", "TagKind": "Item", "MessageKey": "BlockedByBless" },
           { "Type": "NotAffectedBy", "Tag": "Poison", "TagKind": "Item", "MessageKey": "ItemAlreadyPoisoned" }
         ]

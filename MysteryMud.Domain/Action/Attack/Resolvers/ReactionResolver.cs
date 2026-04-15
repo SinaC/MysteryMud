@@ -1,7 +1,7 @@
 ﻿using Arch.Core.Extensions;
-using MysteryMud.Core.Intent;
-using MysteryMud.Core.Services;
+using MysteryMud.Core.Contracts;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Action.Attack.Resolvers;

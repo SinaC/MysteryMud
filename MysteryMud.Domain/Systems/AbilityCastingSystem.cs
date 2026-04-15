@@ -2,12 +2,12 @@
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
-using MysteryMud.Core.Intent;
-using MysteryMud.Core.Services;
+using MysteryMud.Core.Contracts;
 using MysteryMud.Domain.Ability;
 using MysteryMud.Domain.Ability.Services;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Helpers;
+using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Systems;

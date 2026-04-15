@@ -1,7 +1,7 @@
 ﻿using Arch.Core;
 using MysteryMud.Application.Dispatching;
 using MysteryMud.Core;
-using MysteryMud.Core.Eventing;
+using MysteryMud.Core.Bus;
 using System.Buffers;
 using System.Collections.Concurrent;
 

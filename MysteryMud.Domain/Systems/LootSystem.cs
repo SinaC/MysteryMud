@@ -1,11 +1,11 @@
 ﻿using Arch.Core.Extensions;
 using MysteryMud.Core;
-using MysteryMud.Core.Eventing;
-using MysteryMud.Core.Intent;
-using MysteryMud.Core.Services;
+using MysteryMud.Core.Bus;
+using MysteryMud.Core.Contracts;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Helpers;
+using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Events;
 
 namespace MysteryMud.Domain.Systems;

@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
-using MysteryMud.Core.Intent;
+using MysteryMud.Core.Contracts;
 using MysteryMud.Core.Scheduler;
 using MysteryMud.Domain.Extensions;
 

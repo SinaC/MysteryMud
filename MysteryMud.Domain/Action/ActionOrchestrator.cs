@@ -1,8 +1,8 @@
 ﻿using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
-using MysteryMud.Core.Eventing;
-using MysteryMud.Core.Intent;
+using MysteryMud.Core.Bus;
+using MysteryMud.Core.Contracts;
 using MysteryMud.Domain.Action.Attack.Factories;
 using MysteryMud.Domain.Action.Attack.Resolvers;
 using MysteryMud.Domain.Action.Damage;

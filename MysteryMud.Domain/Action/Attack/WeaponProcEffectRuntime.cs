@@ -1,6 +1,6 @@
 ﻿using MysteryMud.GameData.Enums;
 
-namespace MysteryMud.Domain.Action.Attack.Definitions;
+namespace MysteryMud.Domain.Action.Attack;
 
 public struct WeaponProcEffectRuntime
 {

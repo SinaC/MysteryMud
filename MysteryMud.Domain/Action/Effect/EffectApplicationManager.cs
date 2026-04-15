@@ -2,15 +2,15 @@
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
+using MysteryMud.Core.Contracts;
 using MysteryMud.Core.Effects;
-using MysteryMud.Core.Intent;
 using MysteryMud.Core.Logging;
-using MysteryMud.Core.Services;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Helpers;
+using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Time;
