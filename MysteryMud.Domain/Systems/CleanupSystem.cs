@@ -174,7 +174,7 @@ public class CleanupSystem
     {
         // remove all effects on victim
         ref var characterEffects = ref victim.Get<CharacterEffects>();
-        foreach (var effect in characterEffects.Effects)
+        foreach (var effect in characterEffects.Data.Effects)
             world.Destroy(effect);
     }
 

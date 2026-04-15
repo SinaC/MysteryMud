@@ -16,6 +16,9 @@ public class NotFightingRule : IAbilityValidationRule
         _failMessageKey = failMessageKey;
     }
 
+    public bool CanBeValidated(Entity target)
+        => target.Has<CharacterTag>();
+
     public AbilityValidationResult Validate(Entity target)
     {
         if (target.Has<CombatState>())

@@ -37,12 +37,14 @@ public class EffectiveResourceRegenSystem<TResourceRegen, TResourceDirtyRegen, T
             ref TResourceRegen resourceRegen,
             ref TResourceDirtyRegen resourceDirtyRegen) =>
         {
+            ref var characterEffects = ref entity.Get<CharacterEffects>(); // TODO: other kind of entity
+
             var baseRegen = _getBaseFunc(resourceRegen);
 
             // TODO: apply modifiers from equipment
 
             // apply modifiers from effects
-            var (flat, percent, multiply, overriding) = ModifierPipeline.CalculateModifiers<CharacterResourceRegenModifiers<TResourceRegenModifier>, TResourceRegenModifier>(entity, x => true, x => x.Values, _getModifierKindFunc, _getModifierValueFunc);
+            var (flat, percent, multiply, overriding) = ModifierPipeline.CalculateModifiers<CharacterResourceRegenModifiers<TResourceRegenModifier>, TResourceRegenModifier>(characterEffects, x => true, x => x.Values, _getModifierKindFunc, _getModifierValueFunc);
            
             var rawCurrent = overriding ?? ((baseRegen + flat) * (100 + percent) * multiply / 100);
 

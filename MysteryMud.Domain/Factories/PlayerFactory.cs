@@ -66,8 +66,11 @@ public static class PlayerFactory
             new Equipment { Slots = [] },
             new CharacterEffects
             {
-                Effects = [],
-                EffectsByTag = new List<Entity>?[32]
+                Data = new EffectsCollection
+                {
+                    Effects = [],
+                    EffectsByTag = new List<Entity>?[32]
+                },
             },
             new Position { Value = PositionKind.Standing },
             new Location { Room = room },
@@ -138,17 +141,20 @@ public static class PlayerFactory
             new Equipment { Slots = [] },
             new CharacterEffects
             {
-                Effects = [],
-                EffectsByTag = new List<Entity>?[32]
+                Data = new EffectsCollection
+                {
+                    Effects = [],
+                    EffectsByTag = new List<Entity>?[32]
+                },
             },
             new Position { Value = PositionKind.Standing },
             new Location { Room = room },
             new DirtyStats() // dirty by default
         );
         player.Add(
-            new Health { Current = 10, Max = 100 },
-            new BaseHealth { Max = 100 },
-            new HealthRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
+            new Health { Current = 10000, Max = 10000 },
+            new BaseHealth { Max = 10000 },
+            new HealthRegen { BaseAmountPerSecond = 100, CurrentAmountPerSecond = 100 });
         player.Add(
             new Mana { Current = 100, Max = 100 },
             new BaseMana { Max = 100 },
@@ -211,8 +217,11 @@ public static class PlayerFactory
             new Equipment { Slots = [] },
             new CharacterEffects
             {
-                Effects = [],
-                EffectsByTag = new List<Entity>?[32]
+                Data = new EffectsCollection
+                {
+                    Effects = [],
+                    EffectsByTag = new List<Entity>?[32]
+                },
             },
             new Location { Room = RoomFactory.StartingRoomEntity },
             new Position { Value = PositionKind.Standing },

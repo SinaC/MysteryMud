@@ -2,6 +2,7 @@
 
 namespace MysteryMud.Domain.Action.Effect.Definitions;
 
+[EffectActionTarget(EffectTargetKind.Character | EffectTargetKind.Item)]
 public class HealthRegenModifierActionDefinition : EffectActionDefinition
 {
     public required ModifierKind Modifier { get; init; }

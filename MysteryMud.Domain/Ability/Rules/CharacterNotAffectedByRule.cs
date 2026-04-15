@@ -18,10 +18,13 @@ public class CharacterNotAffectedByRule : IAbilityValidationRule // opposite of 
         _failMessageKey = failMessageKey;
     }
 
+    public bool CanBeValidated(Entity target)
+        => target.Has<CharacterEffects>();
+
     public AbilityValidationResult Validate(Entity target)
     {
         ref var characterEffects = ref target.Get<CharacterEffects>();
-        if ((characterEffects.ActiveTags & _effectTagIndex) != 0)
+        if ((characterEffects.Data.ActiveTags & _effectTagIndex) != 0)
             return new()
             {
                 Success = false,

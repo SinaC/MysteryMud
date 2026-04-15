@@ -42,8 +42,8 @@ public class ScoreCommand : ICommand
         if (inCombat)
             _msg.To(actor).Send($"Fighting: {combatState.Target.DisplayName} Delay: {combatState.RoundDelay}");
 
-        _msg.To(actor).Send($"Active tags: {characterEffects.ActiveTags}");
-        _effectDisplayService.DisplayEffects(state, actor, characterEffects.Effects);
+        _msg.To(actor).Send($"Active tags: {characterEffects.Data.ActiveTags}");
+        _effectDisplayService.DisplayEffects(state, actor, characterEffects.Data.Effects);
     }
 
     private void DisplayLevelAndExperience(Entity actor)

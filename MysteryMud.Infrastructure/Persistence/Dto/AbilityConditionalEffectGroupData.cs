@@ -2,6 +2,6 @@
 
 internal record AbilityConditionalEffectGroupData
 (
-    string Condition, // None, IsCharacter, IsItem, IsNPC, IsPlayer
+    string Condition, // None, IsCharacter, IsItem, IsNPC, IsPlayer, IsWeapon
     List<string> Effects
 );

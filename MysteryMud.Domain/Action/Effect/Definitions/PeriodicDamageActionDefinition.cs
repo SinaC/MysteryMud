@@ -2,6 +2,7 @@
 
 namespace MysteryMud.Domain.Action.Effect.Definitions;
 
+[EffectActionTarget(EffectTargetKind.Character)]
 public class PeriodicDamageActionDefinition : EffectActionDefinition
 {
     public EffectFormulaEvaluationMode Mode { get; init; }

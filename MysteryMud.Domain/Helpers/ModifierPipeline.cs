@@ -2,21 +2,27 @@
 using Arch.Core.Extensions;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
+using MysteryMud.Domain.Components.Items;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Helpers;
 
 public static class ModifierPipeline
 {
-    public static (decimal flat, decimal percent, decimal multiply, decimal? overriding) CalculateModifiers<TModifiers, TModifier>(Entity character, Func<TModifier, bool> keepModifierFunc, Func<TModifiers, IEnumerable<TModifier>> getModifiersFunc, Func<TModifier, ModifierKind> getModifierKindFunc, Func<TModifier, decimal> getModifierValueFunc)
+    public static (decimal flat, decimal percent, decimal multiply, decimal? overriding) CalculateModifiers<TModifiers, TModifier>(CharacterEffects characterEffects, Func<TModifier, bool> keepModifierFunc, Func<TModifiers, IEnumerable<TModifier>> getModifiersFunc, Func<TModifier, ModifierKind> getModifierKindFunc, Func<TModifier, decimal> getModifierValueFunc)
+        => CalculateModifiers(characterEffects.Data.Effects, keepModifierFunc, getModifiersFunc, getModifierKindFunc, getModifierValueFunc);
+
+    public static (decimal flat, decimal percent, decimal multiply, decimal? overriding) CalculateModifiers<TModifiers, TModifier>(ItemEffects itemEffects, Func<TModifier, bool> keepModifierFunc, Func<TModifiers, IEnumerable<TModifier>> getModifiersFunc, Func<TModifier, ModifierKind> getModifierKindFunc, Func<TModifier, decimal> getModifierValueFunc)
+        => CalculateModifiers(itemEffects.Data.Effects, keepModifierFunc, getModifiersFunc, getModifierKindFunc, getModifierValueFunc);
+
+    private static (decimal flat, decimal percent, decimal multiply, decimal? overriding) CalculateModifiers<TModifiers, TModifier>(IEnumerable<Entity> effects, Func<TModifier, bool> keepModifierFunc, Func<TModifiers, IEnumerable<TModifier>> getModifiersFunc, Func<TModifier, ModifierKind> getModifierKindFunc, Func<TModifier, decimal> getModifierValueFunc)
     {
         var flat = 0m;
         var percent = 0m;
         var multiply = 1m;
         var overriding = (decimal?)null;
 
-        ref var characterEffects = ref character.Get<CharacterEffects>();
-        foreach (var effect in characterEffects.Effects)
+        foreach (var effect in effects)
         {
             if (!EffectHelpers.IsAlive(effect))
                 continue;

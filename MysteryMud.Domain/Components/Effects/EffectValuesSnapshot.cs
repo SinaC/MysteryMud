@@ -9,4 +9,6 @@ public struct EffectValuesSnapshot
 
     public int TargetLevel;
     public CharacterStatValues TargetStats;
+
+    public int ItemLevel;
 }

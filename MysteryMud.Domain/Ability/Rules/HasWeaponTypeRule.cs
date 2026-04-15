@@ -1,4 +1,6 @@
 ﻿using Arch.Core;
+using Arch.Core.Extensions;
+using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.GameData.Enums;
 
@@ -16,6 +18,9 @@ public class HasWeaponTypeRule : IAbilityValidationRule
         _failBehaviour = failBehaviour;
         _failMessageKey = failMessageKey;
     }
+
+    public bool CanBeValidated(Entity target)
+        => target.Has<CharacterTag>();
 
     public AbilityValidationResult Validate(Entity target)
     {

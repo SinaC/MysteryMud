@@ -14,6 +14,17 @@ public class EffectRuntimeFactory : IEffectRuntimeFactory
 
     public EffectRuntime Create(EffectDefinition def)
     {
+        // Infer which target kinds this effect supports based on its actions
+        var supportedTargets = def.Actions
+            .Select(EffectActionRegistry.GetAllowedTargets)
+            .Aggregate((a, b) => a & b); // intersection: all actions must support the target
+
+        if (supportedTargets == 0)
+            throw new Exception(
+                $"Effect '{def.Name}' has incompatible actions: no target kind satisfies all of them. " +
+                $"Check that character-only and item-only actions are not mixed.");
+
+
         var onApply = new List<Action<EffectExecutionContext>>();
         var onTick = new List<Action<EffectExecutionContext>>();
         var onExpire = new List<Action<EffectExecutionContext>>();
@@ -65,6 +76,8 @@ public class EffectRuntimeFactory : IEffectRuntimeFactory
         {
             Id = def.Id,
             Name = def.Name,
+            SupportedTargets = supportedTargets,
+
             Tag = def.Tag,
             Stacking = def.Stacking,
             MaxStacks = def.MaxStacks,
