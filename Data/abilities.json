@@ -295,5 +295,18 @@
       "OnFailure": "You fail to trip your opponent."
     },
     "Effects": ["TripKnockdown"]
+  },
+  {
+    "Name": "Weaken",
+    "Kind": "Spell",
+    "Costs": [{ "Kind": "Mana", "Amount": 25 }],
+    "Targeting": {
+      "Requirement": "Optional",
+      "Selection": "Single",
+      "Contexts": [
+        { "Scope": "Room", "Filter": "Character" }
+      ]
+    },
+    "Effects": ["Weaken"]
   }
 ]

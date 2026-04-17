@@ -43,7 +43,7 @@ public class JsonEffectLoader
         // map actions
         var actions = data.Actions?.Select(MapAction).ToList() ?? [];
 
-        var isHarmful = MapHarmful(data, actions);
+        var isHarmful = MapIsHarmful(data);
         var tag = MapTag(data, actions);
 
         return new EffectDefinition
@@ -68,11 +68,11 @@ public class JsonEffectLoader
         };
     }
 
-    private bool MapHarmful(EffectDefinitionData data, IEnumerable<EffectActionDefinition> actions)
+    private bool MapIsHarmful(EffectDefinitionData data)
     {
         if (data.IsHarmful is not null)
             return data.IsHarmful.Value;
-        return actions.Any(x => x is InstantDamageActionDefinition or PeriodicDamageActionDefinition);
+        return data.Actions.Any(x => x.IsDebuff == true || (x is InstantDamageData or PeriodicDamageData));
     }
 
     private EffectTagRef MapTag(EffectDefinitionData data, IEnumerable<EffectActionDefinition> actions)

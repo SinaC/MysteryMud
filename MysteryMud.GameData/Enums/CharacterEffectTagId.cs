@@ -13,6 +13,7 @@ public enum CharacterEffectTagId : byte
     Calm = 8,
     Berserk = 9,
     Stun = 10,
+    Weaken = 11,
 
     Max = 32
 }
