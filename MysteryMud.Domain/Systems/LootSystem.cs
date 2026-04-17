@@ -1,12 +1,15 @@
-﻿using Arch.Core.Extensions;
+﻿using Arch.Core;
+using Arch.Core.Extensions;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Contracts;
+using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Events;
+using MysteryMud.GameData.Intents;
 
 namespace MysteryMud.Domain.Systems;
 
@@ -23,24 +26,101 @@ public sealed class LootSystem
         _itemLootedEvents = itemLootedEvents;
     }
 
+    // Quest items — each eligible player gets their own copy, regardless of group loot rules
+    // Priority loot — killer(or master looter) gets first pick with autoloot
+    // Group loot — remaining items distributed to group members with autoloot
+    // Autosac guard — only trigger if corpse is truly empty after all of the above
+
     public void Tick(GameState state)
     {
-        foreach (ref var intent in _intents.LootSpan)
+        foreach (ref var intent in _intents.CorpseLootSpan)
         {
-            ref var containerContent = ref intent.Corpse.Get<ContainerContents>();
-            foreach (var content in containerContent.Items.ToArray())
-            {
-                // get item, add to inventory, remove from corpse
-                if (ItemHelpers.TryGetItemFromContainer(intent.Looter, intent.Corpse, content, out var reason))
-                {
-                    _msg.To(intent.Looter).Send($"You loot {content.DisplayName} from {intent.Corpse.DisplayName}.");
+            var killer = intent.Killer;
+            var killerGroup = intent.Group;
+            var corpse = intent.Corpse;
 
-                    // item looted event
-                    ref var itemLootedEvt = ref _itemLootedEvents.Add();
-                    itemLootedEvt.Entity = intent.Looter;
-                    itemLootedEvt.Item = content;
-                    itemLootedEvt.Corpse = intent.Corpse;
+            // killer died during ActionOrchestrator (e.g. killed by a proc or reaction)
+            if (!CharacterHelpers.IsAlive(killer))
+                continue;
+
+            // Phase 1: generate and distribute quest items
+            DistributeQuestItems(state, ref intent);
+
+            // Phase 2: autoloot for killer (priority)
+            if (killer.HasAutoLoot())
+                LootAll(killer, corpse);
+
+            // Phase 3: autoloot for rest of group
+            if (killerGroup != Entity.Null)
+            {
+                ref var group = ref killerGroup.TryGetRef<Group>(out var isInGroup);
+                if (isInGroup)
+                {
+                    foreach (var member in group.Members)
+                    {
+                        if (member == killer) continue;
+                        if (!CharacterHelpers.IsAlive(member)) continue; // <- member died too
+                        if (!CharacterHelpers.SameRoom(intent.Killer, member)) continue; // <- member not anymore in same room
+                        if (member.HasAutoLoot())
+                            LootAll(member, corpse);
+                    }
                 }
+            }
+
+            // Phase 4: autosac only if corpse is truly empty
+            ref var contents = ref corpse.Get<ContainerContents>();
+            if (contents.Items.Count == 0)
+                TriggerAutosac(killer, corpse);
+        }
+    }
+
+    private void TriggerAutosac(Entity killer, Entity corpse)
+    {
+        if (!killer.HasAutoSacrifice())
+            return;
+        // TODO: in sacrifice command, we use DestroyItem intent but ItemInteractionSystem is handled before LootSystem
+    }
+
+    private void DistributeQuestItems(GameState state, ref CorpseLootIntent intent)
+    {
+        //if (intent.Group == Entity.Null) return;
+
+        //ref var group = ref killerGroup.TryGetRef<Group>(out var isInGroup);
+        //if (isInGroup)
+        //
+        //{
+        //foreach (var member in group.Members)
+        //{
+        //    if (!CharacterHelpers.IsAlive(member)) continue; // ← dead members don't get quest items
+        //    if (!HasQuestObjective(member, intent.Corpse)) continue;
+
+        //    var questItem = CreateQuestItem(state, member, intent.Corpse);
+        //    questItem.Add(new ItemOwner { Owner = member });
+
+        //    // if member has autoloot, go straight to inventory, otherwise land in corpse
+        //    if (HasAutoloot(member))
+        //        MoveToInventory(member, questItem);
+        //    else
+        //        AddToCorpse(intent.Corpse, questItem);
+        //}
+        //}
+    }
+
+    private void LootAll(Entity looter, Entity corpse)
+    {
+        ref var containerContent = ref corpse.Get<ContainerContents>();
+        foreach (var content in containerContent.Items.ToArray())
+        {
+            // get item, add to inventory, remove from corpse
+            if (ItemHelpers.TryGetItemFromContainer(looter, corpse, content, out var reason))
+            {
+                _msg.To(looter).Send($"You loot {content.DisplayName} from {corpse.DisplayName}.");
+
+                // item looted event
+                ref var itemLootedEvt = ref _itemLootedEvents.Add();
+                itemLootedEvt.Entity = looter;
+                itemLootedEvt.Item = content;
+                itemLootedEvt.Corpse = corpse;
             }
         }
     }

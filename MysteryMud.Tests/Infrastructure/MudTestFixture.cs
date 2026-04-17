@@ -14,15 +14,18 @@ namespace MysteryMud.Tests.Infrastructure;
 
 internal class MudTestFixture : IDisposable
 {
-    public World World { get; } = World.Create();
+    public World World { get; }
     public GameState State { get; }
+    public TestGameMessageService GameMessage { get; } = new();
     public TestIntentContainer Intents { get; } = new();
     public TestEventBuffer<RoomEnteredEvent> RoomEnteredEvents { get; } = new();
     public TestEventBuffer<DeathEvent> DeathEvents { get; } = new();
+    public TestEventBuffer<ItemLootedEvent> ItemLootedEvents { get; } = new();
     // ... other buffers
 
     public MudTestFixture()
     {
+        World = World.Create();
         State = new GameState { World = World, CurrentTick = 0, CurrentTimeMs = 0 };
     }
 
@@ -32,7 +35,7 @@ internal class MudTestFixture : IDisposable
             .WithTag<CharacterTag>()
             .WithTag<PlayerTag>()
             .With(new CommandLevel { Value = CommandLevelKind.Player })
-            .With(new CommandBuffer())
+            //.With(new CommandBuffer())
             .WithName(name)
             .WithLevel(1)
             .With(new BaseStats { })
@@ -54,7 +57,7 @@ internal class MudTestFixture : IDisposable
             .WithTag<CharacterTag>()
             .WithTag<NpcTag>()
             .With(new CommandLevel { Value = CommandLevelKind.Player })
-            .With(new CommandBuffer())
+            //.With(new CommandBuffer())
             .WithName(name)
             .WithLevel(1)
             .With(new BaseStats { })
@@ -72,6 +75,7 @@ internal class MudTestFixture : IDisposable
             })
             .With(new Position { Value = PositionKind.Standing })
             .With(new ThreatTable { Threat = [] });
+
     public EntityBuilder Room(string name = "room", string description = "a room")
         => new EntityBuilder(World)
             .WithTag<Room>()
@@ -84,50 +88,47 @@ internal class MudTestFixture : IDisposable
                 Items = []
             });
 
-    public void Dispose() => World.Destroy(World);
-}
-
-public class EntityBuilder
-{
-    private readonly World _world;
-    private readonly List<object> _components = new();
-
-    public EntityBuilder(World world)
-    {
-        _world = world;
-    }
-
-    public EntityBuilder With(object component) { _components.Add(component); return this; }
-    public EntityBuilder WithTag<T>() where T : struct { _components.Add(new T()); return this; }
-    public EntityBuilder WithName(string name) { _components.Add(new Name { Value = name }); return this; }
-    public EntityBuilder WithDescription(string name) { _components.Add(new Description { Value = name }); return this; }
-    public EntityBuilder WithLevel(int level) { _components.Add(new Level { Value = level }); return this; }
-    public EntityBuilder WithHealth(int current, int max) { _components.Add(new Health { Current = current, Max = max }); return this; }
-    public EntityBuilder WithLocation(Entity room) { _components.Add(new Location { Room = room }); return this; }
-    public EntityBuilder WithAutoAssist() { _components.Add(new AutoAssist()); return this; }
-    public EntityBuilder WithNpcAssist(AssistFlags flags) { _components.Add(new NpcAssistBehavior { Flags = flags }); return this; }
-    public EntityBuilder InGroup(Entity group) { _components.Add(new GroupMember { Group = group }); return this; }
-    // ... etc.
-
-    public Entity Build()
-    {
-        // create entity with all components
-        var entity = _world.Create();
-
-        var isCharacter = _components.Any(x => x is CharacterTag);
-        var isItem = _components.Any(x => x is ItemTag);
-        foreach (var component in _components)
-        {
-            entity.Add(component);
-            if (component is Location location)
+    public EntityBuilder Item(string name = "item", string description = "an item")
+        => new EntityBuilder(World)
+            .WithTag<ItemTag>()
+            .WithName(name)
+            .WithLevel(1)
+            .WithDescription(description)
+            .With(new ItemEffects
             {
-                if (isCharacter)
-                    location.Room.Get<RoomContents>().Characters.Add(entity);
-                else if (isItem)
-                    location.Room.Get<RoomContents>().Items.Add(entity);
-            }
-        }
+                Data = new EffectsCollection
+                {
+                    Effects = [],
+                    EffectsByTag = new List<Entity>?[32]
+                },
+            });
 
-        return entity;
+    public EntityBuilder Corpse(string name = "corpse", string description = "a corpse", IEnumerable<Entity> items = default!)
+        => new EntityBuilder(World)
+            .WithTag<ItemTag>()
+            .WithName(name)
+            .WithLevel(1)
+            .WithDescription(description)
+            .With(new ItemEffects
+            {
+                Data = new EffectsCollection
+                {
+                    Effects = [],
+                    EffectsByTag = new List<Entity>?[32]
+                },
+            })
+            .With(new Container { Capacity = 1000 })
+            .With(new ContainerContents { Items = [.. items] });
+
+    public EntityBuilder Group()
+        => new EntityBuilder(World)
+            .With(new Group { Members = [] });
+
+    public void AddGroupMembers(Entity group, params Entity[] members)
+    {
+        group.Get<Group>().Members.AddRange(members);
     }
+
+    public void Dispose()
+        => World.Destroy(World);
 }

@@ -25,7 +25,7 @@ public interface IIntentContainer : IIntentWriterContainer
     Span<UseAbilityIntent> UseAbilitySpan { get; }
     Span<ExecuteAbilityIntent> ExecuteAbilitySpan { get; }
     // LootSystem
-    Span<LootIntent> LootSpan { get; }
+    Span<CorpseLootIntent> CorpseLootSpan { get; }
     // LookSystem
     Span<LookIntent> LookSpan { get; }
     // ScheduleSystem

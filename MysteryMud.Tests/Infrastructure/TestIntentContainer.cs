@@ -18,7 +18,7 @@ internal class TestIntentContainer : IIntentContainer
     public readonly TestIntentBuffer<SacrificeItemIntent> SacrificeItem = new();
     public readonly TestIntentBuffer<UseAbilityIntent> UseAbility = new();
     public readonly TestIntentBuffer<ExecuteAbilityIntent> ExecuteAbility = new();
-    public readonly TestIntentBuffer<LootIntent> Loot = new();
+    public readonly TestIntentBuffer<CorpseLootIntent> CorpseLoot = new();
     public readonly TestIntentBuffer<LookIntent> Look = new();
     public readonly TestIntentBuffer<ScheduleIntent> Schedule = new();
 
@@ -36,7 +36,7 @@ internal class TestIntentContainer : IIntentContainer
     IIntentWriter<SacrificeItemIntent> IIntentWriterContainer.SacrificeItem => SacrificeItem;
     IIntentWriter<UseAbilityIntent> IIntentWriterContainer.UseAbility => UseAbility;
     IIntentWriter<ExecuteAbilityIntent> IIntentWriterContainer.ExecuteAbility => ExecuteAbility;
-    IIntentWriter<LootIntent> IIntentWriterContainer.Loot => Loot;
+    IIntentWriter<CorpseLootIntent> IIntentWriterContainer.CorpseLoot => CorpseLoot;
     IIntentWriter<LookIntent> IIntentWriterContainer.Look => Look;
     IIntentWriter<ScheduleIntent> IIntentWriterContainer.Schedule => Schedule;
 
@@ -55,7 +55,7 @@ internal class TestIntentContainer : IIntentContainer
     public Span<SacrificeItemIntent> SacrificeItemSpan => SacrificeItem.Span;
     public Span<UseAbilityIntent> UseAbilitySpan => UseAbility.Span;
     public Span<ExecuteAbilityIntent> ExecuteAbilitySpan => ExecuteAbility.Span;
-    public Span<LootIntent> LootSpan => Loot.Span;
+    public Span<CorpseLootIntent> CorpseLootSpan => CorpseLoot.Span;
     public Span<LookIntent> LookSpan => Look.Span;
     public Span<ScheduleIntent> ScheduleSpan => Schedule.Span;
 
@@ -66,6 +66,6 @@ internal class TestIntentContainer : IIntentContainer
         PutItem.Clear(); WearItem.Clear(); RemoveItem.Clear();
         DestroyItem.Clear(); SacrificeItem.Clear();
         UseAbility.Clear(); ExecuteAbility.Clear();
-        Loot.Clear(); Look.Clear(); Schedule.Clear();
+        CorpseLoot.Clear(); Look.Clear(); Schedule.Clear();
     }
 }

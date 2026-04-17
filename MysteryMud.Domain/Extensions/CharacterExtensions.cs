@@ -1,6 +1,7 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.GameData.Enums;
 
@@ -11,6 +12,23 @@ public static class CharacterExtensions
     extension(Entity entity)
     {
         public PositionKind Position => entity.TryGet<Position>(out var position) ? position.Value : PositionKind.Dead;
+    }
+
+    public static bool HasAutoAssist(this Entity entity)
+        => HasAuto(entity, AutoFlags.Assist);
+
+    public static bool HasAutoLoot(this Entity entity)
+        => HasAuto(entity, AutoFlags.Loot);
+
+    public static bool HasAutoSacrifice(this Entity entity)
+        => HasAuto(entity, AutoFlags.Sacrifice);
+
+    public static bool HasAuto(this Entity entity, AutoFlags flag)
+    {
+        ref var autoBehavior = ref entity.TryGetRef<AutoBehaviour>(out var hasAutoBehavior);
+        if (!hasAutoBehavior)
+            return false;
+        return autoBehavior.Flags.HasFlag(flag);
     }
 
     public static bool TryGetMainHandWeapon(this Entity entity, out Entity item, out Weapon weapon)
