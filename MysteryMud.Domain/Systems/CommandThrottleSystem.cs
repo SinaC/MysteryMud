@@ -122,7 +122,6 @@ public class CommandThrottleSystem
                     // add to history
                     throttle.AddHistory(request.CommandId, now);
 
-
                     // optional WAIT_STATE lag (category-based)
                     throttle.NextAllowedTime = now + GetCommandLag(ref def);
                 }

@@ -15,6 +15,7 @@ using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Time;
+using MysteryMud.Infrastructure.Eventing;
 using MysteryMud.Infrastructure.Services;
 
 namespace MysteryMud.ConsoleApp.Hosting;
@@ -36,6 +37,7 @@ internal class GameLoop
 
     private readonly CommandExecutionSystem _commandExecutionSystem;
     private readonly CommandThrottleSystem _commandThrottleSystem;
+    private readonly AutoAssistSystem _autoAssistSystem;
     private readonly FleeSystem _fleeSystem;
     private readonly MovementSystem _movementSystem;
     private readonly ItemInteractionSystem _itemInteractionSystem;
@@ -78,6 +80,7 @@ internal class GameLoop
         ActionOrchestrator actionOrchestrator,
         CommandExecutionSystem commandExecutionSystem,
         CommandThrottleSystem commandThrottleSystem,
+        AutoAssistSystem autoAssistSystem,
         FleeSystem fleeSystem,
         MovementSystem movementSystem,
         ItemInteractionSystem itemInteractionSystem,
@@ -120,6 +123,7 @@ internal class GameLoop
         _actionOrchestrator = actionOrchestrator;
         _commandExecutionSystem = commandExecutionSystem;
         _commandThrottleSystem = commandThrottleSystem;
+        _autoAssistSystem = autoAssistSystem;
         _fleeSystem = fleeSystem;
         _movementSystem = movementSystem;
         _itemInteractionSystem = itemInteractionSystem;
@@ -184,8 +188,10 @@ internal class GameLoop
             _commandBus.Process(state);
             // check spam, wait state, can cancel command
             _commandThrottleSystem.Execute(state);
-            // execute command (if not cancelled) → may generate manual LookIntent(Mode= Snapshot)
+            // execute command (if not cancelled) -> may generate manual LookIntent(Mode= Snapshot)
             _commandExecutionSystem.Execute(state);
+            // catches player-initiated combat (checking NewCombatant tag)
+            _autoAssistSystem.TickCombatInitiated(state);
             // TODO: stop invalid combat: dead entities, entities in different rooms, ...
             // Process all LookIntents with Mode=Snapshot → reads current world state before any effects → produces messages
             _lookSystem.Tick(state, LookMode.Snapshot);
@@ -195,6 +201,8 @@ internal class GameLoop
             // TODO: ChaseSystem                      // NPC chase movement
             // Process MoveIntents → emits auto-look PostUpdate (Mode=PostUpdate)
             _movementSystem.Tick(state);
+            // catches room-entry assists, consumes RoomEnteredEvent
+            _autoAssistSystem.TickMovement(state);
             // Process get/drop/put/give/...
             _itemInteractionSystem.Tick(state);
             // Recalculate stats with DirtyStats
@@ -235,6 +243,8 @@ internal class GameLoop
             _autoAttackSystem.Tick(state);
             // Process ActionIntents. kind:attack -> resolve hit, perform damage, check weapon proc (effect), check reaction (counter attack)  kind: effect -> resolve effect
             _actionOrchestrator.Tick(state);
+            // catches mid-round combat triggers (checking NewCombatant tag)
+            _autoAssistSystem.TickCombatInitiated(state);
             // Process dead entities: remove from combat, remove casting, create corpse -> generate loot intent
             _deathSystem.Tick(state);
             // Auto-resurrect players

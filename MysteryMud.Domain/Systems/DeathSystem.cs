@@ -40,17 +40,6 @@ public sealed class DeathSystem
         deathEvent.Victim.Remove<Casting>();
         RemoveFromCombat(world, deathEvent.Victim);
         CreateCorpse(world, deathEvent.Victim, deathEvent.Killer);
-
-        // TODO
-        //// Queue XP reward
-        //ctx.QueueIntent(new GrantRewardIntent
-        //{
-        //    Target = death.Killer,
-        //    RewardSpec = new RewardSpec { XP = death.ExperienceValue }
-        //});
-        // TODO: RewardSystem
-        //-Applies coins, XP, items
-        //- Pushes messages to players
     }
 
     // TODO: this could be optimized by having a "Targeting" component that lists all entities targeting a given entity, so we don't have to scan everyone in the world for combat state every time someone dies. We would need to maintain this list as combat states are added/removed, but it would make removing combat state on death much more efficient.

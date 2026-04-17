@@ -13,7 +13,7 @@ using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Enums;
 
-namespace MysteryMud.Application.Commands.Commands;
+namespace MysteryMud.Application.Commands.Commands.Admin;
 
 public class MstatCommand : ICommand
 {

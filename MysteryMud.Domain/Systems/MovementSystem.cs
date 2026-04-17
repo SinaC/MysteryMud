@@ -15,13 +15,13 @@ public class MovementSystem
 {
     private readonly IGameMessageService _msg;
     private readonly IIntentContainer _intentContainer;
-    private readonly IEventBuffer<MovedEvent> _movedEvents;
+    private readonly IEventBuffer<RoomEnteredEvent> _roomEnteredEvent;
 
-    public MovementSystem(IGameMessageService msg, IIntentContainer intentContainer, IEventBuffer<MovedEvent> movedEvents)
+    public MovementSystem(IGameMessageService msg, IIntentContainer intentContainer, IEventBuffer<RoomEnteredEvent> roomEnteredEvent)
     {
         _msg = msg;
         _intentContainer = intentContainer;
-        _movedEvents = movedEvents;
+        _roomEnteredEvent = roomEnteredEvent;
     }
 
     public void Tick(GameState state)
@@ -61,12 +61,12 @@ public class MovementSystem
             // TODO: remove casting and display phrase
 
             // event
-            ref var movedEvt = ref _movedEvents.Add();
-            movedEvt.Actor = intent.Actor;
-            movedEvt.FromRoom = intent.FromRoom;
-            movedEvt.ToRoom = intent.ToRoom;
-            movedEvt.Direction = intent.Direction;
-            movedEvt.AutoLook = intent.AutoLook;
+            ref var roomEnteredMovedEvt = ref _roomEnteredEvent.Add();
+            roomEnteredMovedEvt.Entity = intent.Actor;
+            roomEnteredMovedEvt.FromRoom = intent.FromRoom;
+            roomEnteredMovedEvt.ToRoom = intent.ToRoom;
+            roomEnteredMovedEvt.Direction = intent.Direction;
+            roomEnteredMovedEvt.AutoLook = intent.AutoLook;
         }
     }
 }

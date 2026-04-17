@@ -9,34 +9,39 @@ ConsoleApp        Entry point, console I/O, game loop, game server.
 each layer depends on the previous one
 
 Tick pipeline
-1. Input -> Commands -> Intents     // Player commands -> may generate manual LookIntent (Mode=Snapshot) and other intents
-2. LookSystem(Snapshot)             // Process all LookIntents with Mode=Snapshot -> reads current world state before any effects -> produces messages
-3. AISystem                         // NPC behavior -> generates intents
-4. FleeSystem                       // Convert flee -> MoveIntents
-5. ChaseSystem                      // NPC chase movement
-6. MovementSystem                   // Process MoveIntents -> emits auto-look PostUpdate (Mode=PostUpdate)
-7. ItemInteractionSystem            // Process get/drop/put/give/... intents
-8. EffectiveStatSystem              // Recalculate stats from base stats and stat modifiers (only if DirtyStats tag is set)
-9. EffectiveMaxResourcesSystem      // Recalculate max health/mana/energy/rage from base max health/mana/energy/rage and resource modifiers (only if DirtyHealth/mana/energy/rage tag is set) (4 separate systems)
-10. EffectiveRespirceRegenSystem    // Recalculate current health/mana/energy/rage regen from base health/mana/energy/rage regen and resource regen modifiers (only if DirtyHealthRegen/mana/energy/rage tag is set) (4 separate systems)
-11. Scheduler.Process               // Generate triggered scheduled event (tick or expired)
-12. TimedEffectSystem               // Resolve triggered scheduled event and generates scheduleIntent, effectExpiredEvent (to inform), effectTickedEvent (to inform)
-13. ResourceRegenSystem             // Regen health/mana/energy decay rage (4 separate systems)
-14. ThreatDecaySystem               // Decay threat
-15. AbilityValidationSystem         // Process UseAbilityIntents -> set casting (if delayed casting) or generate ExecuteAbilityIntent (instant cast)
-16. AbilityCastingSystem            // Process delayed casting, once cast is effective generate ExecuteAbilityIntent + abilityUsedEvent
-17. AbilityExecutionSystem          // Process ExecuteAbilityIntents -> generate ActionIntent(kind:effect) for each effects in ability + abilityExecutedEvent
-18. NPCTargetSystem                 // Select highest threat targets
-19. GroupCombatSystem.Resolve       // Process assist/protect/own target attack intents
-20. AutoAttackSystem                // Generate ActionIntent(kind:attack) for every entity in combat (CombatState component set)
-21. ActionOrchestrator              // Process ActionIntents. kind:attack -> resolve hit, perform damage, check weapon proc (effect), check reaction (counter attack)  kind: effect -> resolve effect
-22. DeathSystem                     // Flag dead entities
-23. RespawnSystem                   // Auto-resurrect players
-24. LootSystem                      // Process loot & auto-loot
-25. LookSystem(PostUpdate)          // Process LookIntents with Mode=PostUpdate -> reflects final world state after all updates
-26. ScheduleSystem                  // Process scheduleIntents (which can be generated from IA, abilities, TimedEffectSytem, AttackOrchestrator)
-27. CleanupSystem                   // Remove destroyed items / dead NPCs / disconnected players
-28. Output -> MessageBus            // Send all messages to players
+1. CommandBus.Process               // Read player inputs from command bus, extract command, check existence/permission/position and add CommandRequests in player CommandBuffer + set tag HasCommand
+2. CommandThrottleSystem            // Check spam, wait state, can cancel command for each entity with HasCommandTag
+3. CommandExecutionSystem           // Execute command (if not cancelled) -> execute directly or set combat state or generate look intent or generate effect intent or item interaction intents or other intents
+4. AutoAssistSystem (pass 1)        // Catches player-initiated combat (checking NewCombatant tag)
+5. LookSystem(Snapshot)             // Process all LookIntents with Mode=Snapshot -> reads current world state before any effects -> produces messages
+6. AISystem                         // NPC behavior -> generates intents
+7. FleeSystem                       // Convert flee -> MoveIntents
+8. ChaseSystem                      // NPC chase movement
+9. MovementSystem                   // Process MoveIntents -> emits auto-look PostUpdate (Mode=PostUpdate)
+10. AutoAssistSystem (pass 2)       // Catches room-entry assists, consumes RoomEnteredEvent
+11. ItemInteractionSystem           // Process get/drop/put/give/... intents
+12. EffectiveStatSystem             // Recalculate stats from base stats and stat modifiers (only if DirtyStats tag is set)
+13. EffectiveMaxResourcesSystem     // Recalculate max health/mana/energy/rage from base max health/mana/energy/rage and resource modifiers (only if DirtyHealth/mana/energy/rage tag is set) (4 separate systems)
+14. EffectiveRespirceRegenSystem    // Recalculate current health/mana/energy/rage regen from base health/mana/energy/rage regen and resource regen modifiers (only if DirtyHealthRegen/mana/energy/rage tag is set) (4 separate systems)
+15. Scheduler.Process               // Generate triggered scheduled event (tick or expired)
+16. TimedEffectSystem               // Resolve triggered scheduled event and generates scheduleIntent, effectExpiredEvent (to inform), effectTickedEvent (to inform)
+17. ResourceRegenSystem             // Regen health/mana/energy decay rage (4 separate systems)
+18. ThreatDecaySystem               // Decay threat
+19. AbilityValidationSystem         // Process UseAbilityIntents -> set casting (if delayed casting) or generate ExecuteAbilityIntent (instant cast)
+20. AbilityCastingSystem            // Process delayed casting, once cast is effective generate ExecuteAbilityIntent + abilityUsedEvent
+21. AbilityExecutionSystem          // Process ExecuteAbilityIntents -> generate ActionIntent(kind:effect) for each effects in ability + abilityExecutedEvent
+22. NPCTargetSystem                 // Select highest threat targets
+23. GroupTacticsSystem              // Protect, Assist targeting, Group target coordination
+24. AutoAttackSystem                // Generate ActionIntent(kind:attack) for every entity in combat (CombatState component set)
+25. ActionOrchestrator              // Process ActionIntents. kind:attack -> resolve hit, perform damage, check weapon proc (effect), check reaction (counter attack)  kind: effect -> resolve effect
+26. AutoAssistSystem (pass 3)       // Catches mid-round combat triggers (checking NewCombatant tag)
+27. DeathSystem                     // Flag dead entities
+28. RespawnSystem                   // Auto-resurrect players
+29. LootSystem                      // Process loot & auto-loot
+30. LookSystem(PostUpdate)          // Process LookIntents with Mode=PostUpdate -> reflects final world state after all updates
+31. ScheduleSystem                  // Process scheduleIntents (which can be generated from IA, abilities, TimedEffectSytem, AttackOrchestrator)
+32. CleanupSystem                   // Remove destroyed items / dead NPCs / disconnected players
+33. Output -> MessageBus            // Send all messages to players
 
 ActionOrchestrator (step 21) details
    loop on attack/effect intents

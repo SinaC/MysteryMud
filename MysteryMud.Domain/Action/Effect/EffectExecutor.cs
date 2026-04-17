@@ -3,7 +3,7 @@ using MysteryMud.Core.Effects;
 using MysteryMud.Domain.Action.Damage;
 using MysteryMud.Domain.Action.Heal;
 
-namespace MysteryMud.ConsoleApp.Hosting;
+namespace MysteryMud.Domain.Action.Effect;
 
 public class EffectExecutor : IEffectExecutor
 {

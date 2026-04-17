@@ -3,8 +3,9 @@ using Arch.Core.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using MysteryMud.Application.Commands.Commands;
+using MysteryMud.Application.Commands.Commands.Admin;
 using MysteryMud.Application.Commands.ExplicitCommands;
+using MysteryMud.Application.Commands.ExplicitCommands.Admin;
 using MysteryMud.Application.Dispatching;
 using MysteryMud.Application.Registry;
 using MysteryMud.Application.Services;
@@ -231,7 +232,7 @@ services.AddSingleton<IWeaponProcRegistry>(weaponProcRegistry);
 services.AddSingleton<EventBufferRegistry>();
 // Each IEventBuffer<T> resolves to its slot in the registry
 services.AddSingleton<IEventBuffer<FleeBlockedEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().FleeBlocked);
-services.AddSingleton<IEventBuffer<MovedEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().Moved);
+services.AddSingleton<IEventBuffer<RoomEnteredEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().RoomEntered);
 services.AddSingleton<IEventBuffer<ItemGotEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().ItemGot);
 services.AddSingleton<IEventBuffer<ItemDroppedEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().ItemDropped);
 services.AddSingleton<IEventBuffer<ItemGivenEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().ItemGiven);
@@ -293,6 +294,7 @@ services.AddSingleton<ActionOrchestrator>();
 // Systems
 services.AddSingleton<CommandExecutionSystem>();
 services.AddSingleton<CommandThrottleSystem>();
+services.AddSingleton<AutoAssistSystem>();
 services.AddSingleton<FleeSystem>();
 services.AddSingleton<MovementSystem>();
 services.AddSingleton<ItemInteractionSystem>();
