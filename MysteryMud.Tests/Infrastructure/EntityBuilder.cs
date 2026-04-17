@@ -43,6 +43,8 @@ internal class EntityBuilder
         => WithAuto(AutoFlags.Loot);
     public EntityBuilder WithNpcAssist(AssistFlags flags)
         => With(new NpcAssistBehavior { Flags = flags });
+    public EntityBuilder WithOwner(Entity owner)
+        => With(new ItemOwner { Owner = owner });
     public EntityBuilder InGroup(Entity group)
         => With(new GroupMember { Group = group });
     // ... etc.

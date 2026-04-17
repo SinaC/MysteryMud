@@ -25,6 +25,8 @@ public interface IIntentWriterContainer
     IIntentWriter<ExecuteAbilityIntent> ExecuteAbility { get; }
     // LootSystem
     IIntentWriter<CorpseLootIntent> CorpseLoot { get; }
+    // AutoSacrificeSystem
+    IIntentWriter<AutoSacrificeIntent> AutoSacrifice { get; }
     // LookSystem
     IIntentWriter<LookIntent> Look { get; }
     // ScheduleSystem

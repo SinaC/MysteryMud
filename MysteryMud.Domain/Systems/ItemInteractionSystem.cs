@@ -17,6 +17,7 @@ namespace MysteryMud.Domain.Systems;
 public class ItemInteractionSystem
 {
     private readonly IGameMessageService _msg;
+    private readonly ISacrificeService _sacrificeService;
     private readonly IIntentContainer _intentContainer;
     private readonly IEventBuffer<ItemGotEvent> _itemGotEvents;
     private readonly IEventBuffer<ItemDroppedEvent> _itemDroppedEvents;
@@ -27,9 +28,10 @@ public class ItemInteractionSystem
     private readonly IEventBuffer<ItemDestroyedEvent> _itemDestroyedEvents;
     private readonly IEventBuffer<ItemSacrificiedEvent> _itemSacrificedEvents;
 
-    public ItemInteractionSystem(IGameMessageService gameMessageService, IIntentContainer intentContainer, IEventBuffer<ItemGotEvent> itemGotEvents, IEventBuffer<ItemDroppedEvent> itemDroppedEvents, IEventBuffer<ItemGivenEvent> itemGivenEvents, IEventBuffer<ItemPutEvent> itemPutEvents, IEventBuffer<ItemWornEvent> itemWornEvents, IEventBuffer<ItemRemovedEvent> itemRemovedEvents, IEventBuffer<ItemDestroyedEvent> itemDestroyedEvents, IEventBuffer<ItemSacrificiedEvent> itemSacrificedEvents)
+    public ItemInteractionSystem(IGameMessageService gameMessageService, ISacrificeService sacrificeService, IIntentContainer intentContainer, IEventBuffer<ItemGotEvent> itemGotEvents, IEventBuffer<ItemDroppedEvent> itemDroppedEvents, IEventBuffer<ItemGivenEvent> itemGivenEvents, IEventBuffer<ItemPutEvent> itemPutEvents, IEventBuffer<ItemWornEvent> itemWornEvents, IEventBuffer<ItemRemovedEvent> itemRemovedEvents, IEventBuffer<ItemDestroyedEvent> itemDestroyedEvents, IEventBuffer<ItemSacrificiedEvent> itemSacrificedEvents)
     {
         _msg = gameMessageService;
+        _sacrificeService = sacrificeService;
         _intentContainer = intentContainer;
         _itemGotEvents = itemGotEvents;
         _itemDroppedEvents = itemDroppedEvents;
@@ -212,21 +214,7 @@ public class ItemInteractionSystem
 
     private void HandleSacrifice(GameState state, SacrificeItemIntent sacrificeItemIntent)
     {
-        // TODO: validation
-
-        DestroyItem(sacrificeItemIntent.Item);
-
-        // TODO
-        //if (intent.Reward)
-        //{
-        //    ctx.QueueIntent(new GrantRewardIntent
-        //    {
-        //    Target = intent.Source,
-        //        RewardSpec = intent.RewardSpec
-        //});
-        //}
-
-        _msg.To(sacrificeItemIntent.Entity).Send($"You sacrifice {sacrificeItemIntent.Item.DisplayName}.");
+        _sacrificeService.Sacrifice(sacrificeItemIntent.Entity, sacrificeItemIntent.Item);
 
         // event
         ref var itemDestroyedEvt = ref _itemSacrificedEvents.Add();
