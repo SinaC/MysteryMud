@@ -35,6 +35,10 @@ public static class ItemHelpers
     {
         reason = null;
 
+        ref var itemOwner = ref item.TryGetRef<ItemOwner>(out var hasOwner);
+        if (hasOwner && getter != itemOwner.Owner)
+            return false;
+
         ref var containerContents = ref container.Get<ContainerContents>();
         ref var inventory = ref getter.Get<Inventory>();
         ref var containedIn = ref item.Get<ContainedIn>();
@@ -132,5 +136,22 @@ public static class ItemHelpers
         item.Remove<Equipped>();
 
         actor.Add<DirtyStats>();
+    }
+
+    public static void DestroyItem(Entity item)
+    {
+        if (!IsAlive(item))
+            return;
+
+        item.Add<DestroyedTag>();
+
+        if (item.Has<Container>())
+        {
+            var container = item.Get<ContainerContents>();
+            foreach (var containedItem in container.Items)
+            {
+                DestroyItem(containedItem); // recursive call to destroy contained items
+            }
+        }
     }
 }

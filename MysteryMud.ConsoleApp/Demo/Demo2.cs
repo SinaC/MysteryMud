@@ -92,13 +92,14 @@ static class Demo2
         var effectApplicationManager = new EffectApplicationManager(logger, gameMessageService, intentBusContainer, effectExecutor, effectLifecycleManager);
 
         var experienceService = new ExperienceService(gameMessageService, experienceGrantedEventBuffer, levelIncreasedEventBuffer);
+        var sacrificeService = new SacrificeService(gameMessageService);
 
         var actionOrchestrator = new ActionOrchestrator(logger, intentBusContainer, attackResolvedEventBuffer, effectResolvedEventBuffer, killRewardEventBuffer, effectRegistry, effectApplicationManager, experienceService, hitResolver, hitDamageFactory, damageResolver, weaponProcResolver, reactionResolver);
 
         var commandExecutionSystem = new CommandExecutionSystem(logger);
         var fleeSystem = new FleeSystem(gameMessageService, intentBusContainer, experienceService, fleeBlockedEventBuffer);
         var movementSystem = new MovementSystem(gameMessageService, intentBusContainer, roomEnteredEventBuffer);
-        var itemInteractionSystem = new ItemInteractionSystem(gameMessageService, intentBusContainer, itemGotEventBuffer, itemDroppedEventBuffer, itemGivenEventBuffer, itemPutEventBuffer, itemWornEventBuffer, itemRemovedEventBuffer, itemDestroyedEventBuffer, itemSacrifierEventBuffer);
+        var itemInteractionSystem = new ItemInteractionSystem(gameMessageService, sacrificeService, intentBusContainer, itemGotEventBuffer, itemDroppedEventBuffer, itemGivenEventBuffer, itemPutEventBuffer, itemWornEventBuffer, itemRemovedEventBuffer, itemDestroyedEventBuffer, itemSacrifierEventBuffer);
         var effectCharacterStatsSystem = new EffectiveCharacterStatsSystem();
         var autoAttackSystem = new AutoAttackSystem(intentBusContainer);
         var deathSystem = new DeathSystem(gameMessageService, intentBusContainer, deathEventBuffer);

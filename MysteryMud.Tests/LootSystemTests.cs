@@ -28,7 +28,7 @@ public class LootSystemTests : IDisposable
     {
         // arrange
         var room = _f.Room("market").Build();
-        var killer = _f.Player().WithLocation(room).WithAutoLoot().WithAutoAssist().Build();
+        var killer = _f.Player().WithLocation(room).WithAutoLoot().Build();
         var sword = _f.Item("sword").Build();
         var corpse = _f.Corpse(items: [sword]).WithLocation(room).Build();
 
@@ -45,56 +45,58 @@ public class LootSystemTests : IDisposable
         Assert.Contains(sword, killer.Get<Inventory>().Items);
     }
 
-    //[Fact]
-    //public void QuestItem_GoesToQuestHolder_NotKiller()
-    //{
-    //    var room = _f.Room("market").Build();
-    //    var group = _f.Group().Build();
-    //    var killer = _f.Player("Killer").WithLocation(room).WithAutoLoot().Build();
-    //    var quester = _f.Player("Quester").WithLocation(room).WithAutoLoot()
-    //                    .With(new ActiveQuests { Quests = [questRequiringOrcKill] }).Build();
-    //    _f.AddGroupMembers(group, killer, quester);
+    [Fact]
+    public void QuestItem_GoesToQuestHolder_NotKiller()
+    {
+        var group = _f.Group().Build();
+        var room = _f.Room("market").Build();
+        var killer = _f.Player("Killer").WithLocation(room).WithAutoLoot()
+            .InGroup(group).Build();
+        var quester = _f.Player("Quester").WithLocation(room).WithAutoLoot()
+            .InGroup(group).Build();
+        _f.AddGroupMembers(group, killer, quester);
 
-    //    var questItem = CreateItem(_f.World, "orc_head", owner: quester); // tagged owner
-    //    var sword = CreateItem(_f.World, "sword");
-    //    var corpse = CreateCorpseWithItems(_f.World, room, [sword, questItem]);
+        var questItem = _f.Item("orc_head").WithOwner(quester).Build();
+        var sword = _f.Item("sword").Build();
+        var corpse = _f.Corpse(items: [questItem, sword]).Build();
 
-    //    _f.Intents.CorpseLoot.Add(new CorpseLootIntent
-    //    {
-    //        Corpse = corpse,
-    //        Killer = killer,
-    //        Group = group
-    //    });
+        _f.Intents.CorpseLoot.Add(new CorpseLootIntent
+        {
+            Corpse = corpse,
+            Killer = killer,
+            Group = group
+        });
 
-    //    _sut.Tick(_f.State);
+        _sut.Tick(_f.State);
 
-    //    Assert.DoesNotContain(questItem, killer.Get<Inventory>().Items);
-    //    Assert.Contains(questItem, quester.Get<Inventory>().Items);
-    //    Assert.Contains(sword, killer.Get<Inventory>().Items); // killer gets non-quest loot
-    //}
+        Assert.DoesNotContain(questItem, killer.Get<Inventory>().Items);
+        Assert.Contains(questItem, quester.Get<Inventory>().Items);
+        Assert.Contains(sword, killer.Get<Inventory>().Items); // killer gets non-quest loot
+    }
 
-    //[Fact]
-    //public void Autosac_NotTriggered_WhenCorpseHasUnautolooted_QuestItem()
-    //{
-    //    var room = _f.Room("market").Build();
-    //    var killer = _f.Player("Killer").WithLocation(room).WithAutoLoot().Build();
-    //    var quester = _f.Player("Quester").WithLocation(room) // no autoloot
-    //                    .With(new ActiveQuests { ... }).Build();
-    //    var group = CreateGroup(_f.World, killer, quester);
+    [Fact]
+    public void Autosac_NotTriggered_WhenCorpseHasUnautolooted()
+    {
+        var group = _f.Group().Build();
+        var room = _f.Room("market").Build();
+        var killer = _f.Player("Killer").WithLocation(room).WithAutoLoot().InGroup(group).Build();
+        var quester = _f.Player("Quester").WithLocation(room) // no autoloot
+            .InGroup(group).Build();
+        _f.AddGroupMembers(group, killer, quester);
 
-    //    var questItem = CreateItem(_f.World, "orc_head", owner: quester);
-    //    var corpse = CreateCorpseWithItems(_f.World, room, [questItem]);
+        var questItem = _f.Item("orc_head").WithOwner(quester).Build();
+        var corpse = _f.Corpse(items: [questItem]).Build();
 
-    //    _f.Intents.CorpseLoot.Add(new CorpseLootIntent
-    //    {
-    //        Corpse = corpse,
-    //        Killer = killer,
-    //        Group = group
-    //    });
+        _f.Intents.CorpseLoot.Add(new CorpseLootIntent
+        {
+            Corpse = corpse,
+            Killer = killer,
+            Group = group
+        });
 
-    //    _sut.Tick(_f.State);
+        _sut.Tick(_f.State);
 
-    //    Assert.False(_f.AutosacIntents.Any(i => i.Corpse == corpse));
-    //    Assert.Contains(questItem, corpse.Get<ContainerContents>().Items); // still there
-    //}
+        Assert.False(_f.Intents.AutoSacrifice.Any(i => i.Corpse == corpse));
+        Assert.Contains(questItem, corpse.Get<ContainerContents>().Items); // still there
+    }
 }

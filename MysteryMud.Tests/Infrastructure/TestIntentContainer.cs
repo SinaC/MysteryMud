@@ -19,6 +19,7 @@ internal class TestIntentContainer : IIntentContainer
     public readonly TestIntentBuffer<UseAbilityIntent> UseAbility = new();
     public readonly TestIntentBuffer<ExecuteAbilityIntent> ExecuteAbility = new();
     public readonly TestIntentBuffer<CorpseLootIntent> CorpseLoot = new();
+    public readonly TestIntentBuffer<AutoSacrificeIntent> AutoSacrifice = new();
     public readonly TestIntentBuffer<LookIntent> Look = new();
     public readonly TestIntentBuffer<ScheduleIntent> Schedule = new();
 
@@ -37,6 +38,7 @@ internal class TestIntentContainer : IIntentContainer
     IIntentWriter<UseAbilityIntent> IIntentWriterContainer.UseAbility => UseAbility;
     IIntentWriter<ExecuteAbilityIntent> IIntentWriterContainer.ExecuteAbility => ExecuteAbility;
     IIntentWriter<CorpseLootIntent> IIntentWriterContainer.CorpseLoot => CorpseLoot;
+    IIntentWriter<AutoSacrificeIntent> IIntentWriterContainer.AutoSacrifice => AutoSacrifice;
     IIntentWriter<LookIntent> IIntentWriterContainer.Look => Look;
     IIntentWriter<ScheduleIntent> IIntentWriterContainer.Schedule => Schedule;
 
@@ -56,6 +58,7 @@ internal class TestIntentContainer : IIntentContainer
     public Span<UseAbilityIntent> UseAbilitySpan => UseAbility.Span;
     public Span<ExecuteAbilityIntent> ExecuteAbilitySpan => ExecuteAbility.Span;
     public Span<CorpseLootIntent> CorpseLootSpan => CorpseLoot.Span;
+    public Span<AutoSacrificeIntent> AutoSacrificeSpan => AutoSacrifice.Span;
     public Span<LookIntent> LookSpan => Look.Span;
     public Span<ScheduleIntent> ScheduleSpan => Schedule.Span;
 

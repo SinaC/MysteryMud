@@ -68,17 +68,16 @@ public sealed class LootSystem
             }
 
             // Phase 4: autosac only if corpse is truly empty
-            ref var contents = ref corpse.Get<ContainerContents>();
-            if (contents.Items.Count == 0)
-                TriggerAutosac(killer, corpse);
+            ref var contents = ref intent.Corpse.Get<ContainerContents>();
+            if (contents.Items.Count == 0
+                && intent.Killer.HasAutoSacrifice()
+                && CharacterHelpers.IsAlive(intent.Killer))
+            {
+                ref var sacIntent = ref _intents.AutoSacrifice.Add();
+                sacIntent.Actor = intent.Killer;
+                sacIntent.Corpse = intent.Corpse; // the corpse itself
+            }
         }
-    }
-
-    private void TriggerAutosac(Entity killer, Entity corpse)
-    {
-        if (!killer.HasAutoSacrifice())
-            return;
-        // TODO: in sacrifice command, we use DestroyItem intent but ItemInteractionSystem is handled before LootSystem
     }
 
     private void DistributeQuestItems(GameState state, ref CorpseLootIntent intent)

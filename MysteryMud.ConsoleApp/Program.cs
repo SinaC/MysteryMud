@@ -258,18 +258,19 @@ services.AddSingleton<IEventBuffer<LevelIncreasedEvent>>(sp => sp.GetRequiredSer
 services.AddSingleton<IEventBuffer<KillRewardEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().KillReward);
 
 // Core services
-services.AddSingleton<IOutputService, OutputService>();
 services.AddSingleton<ICommandBus, CommandBus>();
 services.AddSingleton<IMessageBus, MessageBus>();
 services.AddSingleton<IScheduler, Scheduler>();
-services.AddSingleton<IActService, ActService>();
-services.AddSingleton<IGameMessageService, GameMessageService>();
+
+// Infrastructure services
+services.AddSingleton<IOutputService, OutputService>();
 services.AddSingleton<IntentBusContainer>();
 services.AddSingleton<IIntentContainer>(sp => sp.GetRequiredService<IntentBusContainer>());
 services.AddSingleton<IIntentWriterContainer>(sp => sp.GetRequiredService<IntentBusContainer>());
 services.AddSingleton<IConnectionService, ConnectionService>();
 
-// Resolvers & factories (domain)
+
+// Resolvers & factories & services (domain)
 services.AddSingleton<IAbilityTargetResolver, AbilityTargetResolver>();
 services.AddSingleton<IAggroResolver, AggroResolver>();
 services.AddSingleton<IDamageResolver, DamageResolver>();
@@ -282,7 +283,10 @@ services.AddSingleton<IEffectExecutor, EffectExecutor>();
 services.AddSingleton<IEffectLifecycleManager, EffectLifecycleManager>();
 services.AddSingleton<IEffectApplicationManager, EffectApplicationManager>();
 services.AddSingleton<IExperienceService, ExperienceService>();
+services.AddSingleton<IActService, ActService>();
+services.AddSingleton<IGameMessageService, GameMessageService>();
 services.AddSingleton<ILookService, LookService>();
+services.AddSingleton<ISacrificeService, SacrificeService>();
 services.AddSingleton<IEffectDisplayService, EffectDisplayService>();
 
 // Command dispatcher
@@ -321,6 +325,7 @@ services.AddSingleton<ScheduleSystem>();
 services.AddSingleton<DeathSystem>();
 services.AddSingleton<RespawnSystem>();
 services.AddSingleton<LootSystem>();
+services.AddSingleton<AutoSacrificeSystem>();
 services.AddSingleton<LookSystem>();
 services.AddSingleton<CleanupSystem>();
 

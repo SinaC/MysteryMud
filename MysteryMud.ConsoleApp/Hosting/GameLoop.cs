@@ -27,7 +27,6 @@ internal class GameLoop
     private readonly ICommandBus _commandBus;
     private readonly IMessageBus _messageBus;
     private readonly IScheduler _scheduler;
-    private readonly IGameMessageService _msg;
     private readonly IIntentContainer _intentContainer;
     private readonly EventBufferRegistry _buffers;
     private readonly World _world;
@@ -64,12 +63,13 @@ internal class GameLoop
     private readonly DeathSystem _deathSystem;
     private readonly RespawnSystem _respawnSystem;
     private readonly LootSystem _lootSystem;
+    private readonly AutoSacrificeSystem _autoSacrificeSystem;
     private readonly LookSystem _lookSystem;
     private readonly CleanupSystem _cleanupSystem;
 
     public GameLoop(
         ILogger logger,
-        IOutputService putputService,
+        IOutputService outputService,
         ICommandBus commandBus,
         IMessageBus messageBus,
         IScheduler scheduler,
@@ -107,15 +107,15 @@ internal class GameLoop
         DeathSystem deathSystem,
         RespawnSystem respawnSystem,
         LootSystem lootSystem,
+        AutoSacrificeSystem autoSacrificeSystem,
         LookSystem lookSystem,
         CleanupSystem cleanupSystem)
     {
         _logger = logger;
-        _outputService = putputService;
+        _outputService = outputService ?? throw new ArgumentNullException(nameof(outputService));
         _commandBus = commandBus;
         _messageBus = messageBus;
         _scheduler = scheduler;
-        _msg = gameMessageService;
         _intentContainer = intentContainer;
         _buffers = eventBufferRegistry;
         _world = world;
@@ -150,6 +150,7 @@ internal class GameLoop
         _deathSystem = deathSystem;
         _respawnSystem = respawnSystem;
         _lootSystem = lootSystem;
+        _autoSacrificeSystem = autoSacrificeSystem;
         _lookSystem = lookSystem;
         _cleanupSystem = cleanupSystem;
     }
@@ -251,6 +252,8 @@ internal class GameLoop
             _respawnSystem.Tick(state);
             // Handle loot & auto-loot
             _lootSystem.Tick(state);
+            // Handle auto sacrifice
+            _autoSacrificeSystem.Tick(state);
             // Process LookIntents with Mode=PostUpdate → reflects final world state after all updates
             _lookSystem.Tick(state, LookMode.PostUpdate);
             // Handle scheduleIntents (which can be generated from IA, abilities, TimedEffectSytem, AttackOrchestrator)
