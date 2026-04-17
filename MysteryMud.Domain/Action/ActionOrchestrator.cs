@@ -1,4 +1,5 @@
-﻿using Arch.Core.Extensions;
+﻿using Arch.Core;
+using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
@@ -8,6 +9,7 @@ using MysteryMud.Domain.Action.Attack.Resolvers;
 using MysteryMud.Domain.Action.Damage;
 using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Components.Characters.Players;
+using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Enums;
@@ -70,14 +72,10 @@ public class ActionOrchestrator
                     break;
             }
 
-            // process immediate death events to grant xp
-            foreach (var killRewardEvt in _killRewards.GetAll())
+            // process immediate kill reward events to grant xp
+            foreach (ref var killRewardEvt in _killRewards.GetAll())
             {
-                if (killRewardEvt.Killer != killRewardEvt.Victim && killRewardEvt.Killer.Has<Progression>())
-                {
-                    var xpReward = _experienceService.CalculateCombatXp(killRewardEvt.Killer, killRewardEvt.Victim);
-                    _experienceService.GrantExperience(killRewardEvt.Killer, xpReward);
-                }
+                GrantReward(ref killRewardEvt);
             }
 
             _killRewards.Clear(); // clear after processing
@@ -161,5 +159,32 @@ public class ActionOrchestrator
         effectResolvedEvt.Source = effectData.Source;
         effectResolvedEvt.Target = effectData.Target;
         effectResolvedEvt.EffectId = effectData.EffectId;
+    }
+
+    private void GrantReward(ref KillRewardEvent killRewardEvt)
+    {
+        if (killRewardEvt.RewardOwner != killRewardEvt.Victim && killRewardEvt.RewardOwner.Has<Progression>())
+            GrantExperience(killRewardEvt.RewardOwner, killRewardEvt.Victim);
+
+        if (killRewardEvt.RewardOwnerGroup != Entity.Null)
+        {
+            ref var group = ref killRewardEvt.RewardOwnerGroup.TryGetRef<Group>(out var isInGroup);
+            if (isInGroup)
+            {
+                foreach (var member in group.Members)
+                {
+                    if (member == killRewardEvt.RewardOwner) continue;
+                    if (!CharacterHelpers.IsAlive(member)) continue; // <- member died too
+                    if (!CharacterHelpers.SameRoom(killRewardEvt.RewardOwner, member)) continue; // <- member not anymore in same room
+                    GrantExperience(member, killRewardEvt.Victim);
+                }
+            }
+        }
+    }
+
+    private void GrantExperience(Entity target, Entity victim)
+    {
+        var xpReward = _experienceService.CalculateCombatXp(target, victim);
+        _experienceService.GrantExperience(target, xpReward);
     }
 }

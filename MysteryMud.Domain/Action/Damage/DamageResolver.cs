@@ -8,6 +8,7 @@ using MysteryMud.Domain.Action.Calculators;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Factories;
+using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Events;
 
@@ -78,6 +79,11 @@ public class DamageResolver : IDamageResolver
 
             health.Current = 0;
 
+            var rewardOwner = CharacterHelpers.DetermineLootOwner(target, source);
+            var rewardOwnerGroup = rewardOwner.Has<GroupMember>()
+                ? rewardOwner.Get<GroupMember>().Group
+                : Entity.Null;
+
             // add death event
             ref var deathEvt = ref _deaths.Add();
             deathEvt.Victim = target;
@@ -85,10 +91,10 @@ public class DamageResolver : IDamageResolver
 
             // add kill reward event
             ref var killRewardEvt = ref _killRewardEvent.Add();
-            killRewardEvt.Killer = source;
+            killRewardEvt.RewardOwner = rewardOwner;
+            killRewardEvt.RewardOwnerGroup = rewardOwnerGroup;
             killRewardEvt.Victim = target;
             killRewardEvt.GrantXp = true;
-            killRewardEvt.GrantLoop = false;
         }
 
         // damaged event

@@ -5,7 +5,9 @@ using MysteryMud.Core.Bus;
 using MysteryMud.Core.Contracts;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Rooms;
+using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Events;
 
@@ -80,17 +82,22 @@ public sealed class FleeSystem
         }
     }
 
-    private static void RemoveFromCombat(World world, Entity victim)
+    private static void RemoveFromCombat(World world, Entity fleeingEntity)
     {
+        var previousTarget = fleeingEntity.Get<CombatState>().Target;
+
         // remove from combat
-        victim.Remove<CombatState>();
+        fleeingEntity.Remove<CombatState>();
         // remove combat state for anyone targeting this entity
         var query = new QueryDescription()
           .WithAll<CombatState>();
         world.Query(query, (Entity actor, ref CombatState combat) =>
         {
-            if (combat.Target == victim)
+            if (combat.Target == fleeingEntity)
                 actor.Remove<CombatState>();
         });
+
+        if (fleeingEntity.Has<PlayerTag>())
+            CharacterHelpers.ForfeitClaim(previousTarget, fleeingEntity);
     }
 }
