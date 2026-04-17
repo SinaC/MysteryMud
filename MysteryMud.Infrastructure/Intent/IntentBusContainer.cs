@@ -26,7 +26,7 @@ public sealed class IntentBusContainer : IIntentContainer
     private readonly StructBuffer<UseAbilityIntent> _useAbility = new(256);
     private readonly StructBuffer<ExecuteAbilityIntent> _executeAbility = new(256);
     // LootSystem
-    private readonly StructBuffer<LootIntent> _loot = new(128);
+    private readonly StructBuffer<CorpseLootIntent> _corpseLoot = new(128);
     // LookSystem
     private readonly StructBuffer<LookIntent> _look = new(128);
     // ScheduleSystem
@@ -54,7 +54,7 @@ public sealed class IntentBusContainer : IIntentContainer
         UseAbility = new IntentWriter<UseAbilityIntent>(_useAbility);
         ExecuteAbility = new IntentWriter<ExecuteAbilityIntent>(_executeAbility);
         // LootSystem
-        Loot = new IntentWriter<LootIntent>(_loot);
+        CorpseLoot = new IntentWriter<CorpseLootIntent>(_corpseLoot);
         // LookSystem
         Look = new IntentWriter<LookIntent>(_look);
         // ScheduleSystem
@@ -95,8 +95,8 @@ public sealed class IntentBusContainer : IIntentContainer
     public IIntentWriter<ExecuteAbilityIntent> ExecuteAbility { get; }
     public Span<ExecuteAbilityIntent> ExecuteAbilitySpan => _executeAbility.AsSpan();
     // LootSystem
-    public IIntentWriter<LootIntent> Loot { get; }
-    public Span<LootIntent> LootSpan => _loot.AsSpan();
+    public IIntentWriter<CorpseLootIntent> CorpseLoot { get; }
+    public Span<CorpseLootIntent> CorpseLootSpan => _corpseLoot.AsSpan();
     // LootSystem
     public IIntentWriter<LookIntent> Look { get; }
     public Span<LookIntent> LookSpan => _look.AsSpan();
@@ -126,7 +126,7 @@ public sealed class IntentBusContainer : IIntentContainer
         _useAbility.Clear();
         _executeAbility.Clear();
         // LootSystem
-        _loot.Clear();
+        _corpseLoot.Clear();
         // LookSystem
         _look.Clear();
         // ScheduleSystem

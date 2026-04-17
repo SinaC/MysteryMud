@@ -5,6 +5,7 @@ using MysteryMud.Core.Bus;
 using MysteryMud.Core.Contracts;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Factories;
@@ -85,9 +86,11 @@ public sealed class DeathSystem
         }
         corpse.Add(containerContents);
 
-        // trigger autoloot (TODO: only for player and if autoloot enabled)
-        ref var lootIntent = ref _intents.Loot.Add();
-        lootIntent.Looter = killer;
-        lootIntent.Corpse = corpse;
+        // autoloot/autosac for killer and group members
+        var hasGroup = killer.TryGet<GroupMember>(out var group);
+        ref var corpseLootIntent = ref _intents.CorpseLoot.Add();
+        corpseLootIntent.Killer = killer;
+        corpseLootIntent.Corpse = corpse;
+        corpseLootIntent.Group = group.Group;
     }
 }

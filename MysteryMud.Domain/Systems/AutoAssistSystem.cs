@@ -7,6 +7,7 @@ using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Rooms;
+using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
@@ -83,7 +84,7 @@ public class AutoAssistSystem
         if (candidate.Has<GroupMember>() && victim.Has<GroupMember>())
         {
             if (candidate.Get<GroupMember>().Group == victim.Get<GroupMember>().Group)
-                if (candidate.Has<AutoAssist>())
+                if (candidate.HasAutoAssist())
                 {
                     reason = AssistReason.Group;
                     return true;
@@ -116,7 +117,7 @@ public class AutoAssistSystem
             {
                 if (member == combatant) continue;
                 if (!CharacterHelpers.SameRoom(combatant, member)) continue;
-                if (!member.Has<AutoAssist>()) continue;
+                if (!member.HasAutoAssist()) continue;
                 TryAssist(member, aggressor, AssistReason.Group);
                 // also pull in their charmies
                 if (member.Has<Charmies>())

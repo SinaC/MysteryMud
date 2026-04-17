@@ -29,13 +29,13 @@ public class AutoAssistSystemTests : IDisposable
     public void GroupMember_WithAutoAssist_AssistsWhenMemberAttacked()
     {
         var room = _f.Room("temple").Build();
-        var group = CreateGroup(_f.World);
+        var group = _f.Group().Build();
 
         var alice = _f.Player("Alice").WithLocation(room).InGroup(group).WithAutoAssist().Build();
         var bob = _f.Player("Bob").WithLocation(room).InGroup(group).WithAutoAssist().Build();
         var orc = _f.Npc("Orc").WithLocation(room).Build();
 
-        AddGroupMembers(group, alice, bob);
+        _f.AddGroupMembers(group, alice, bob);
 
         // orc attacks alice
         alice.Add(new CombatState { Target = orc }); alice.Add<NewCombatantTag>();
@@ -51,13 +51,13 @@ public class AutoAssistSystemTests : IDisposable
     public void GroupMember_WithoutAutoAssist_DoesNotAssist()
     {
         var room = _f.Room("temple").Build();
-        var group = CreateGroup(_f.World);
+        var group = _f.Group().Build();
 
         var alice = _f.Player("Alice").WithLocation(room).InGroup(group).WithAutoAssist().Build();
         var bob = _f.Player("Bob").WithLocation(room).InGroup(group).Build(); // no AutoAssist
         var orc = _f.Npc("Orc").WithLocation(room).Build();
 
-        AddGroupMembers(group, alice, bob);
+        _f.AddGroupMembers(group, alice, bob);
         alice.Add(new CombatState { Target = orc }); alice.Add<NewCombatantTag>();
         orc.Add(new CombatState { Target = alice }); orc.Add<NewCombatantTag>();
 
@@ -71,13 +71,13 @@ public class AutoAssistSystemTests : IDisposable
     {
         var room1 = _f.Room("market").Build();
         var room2 = _f.Room("temple").Build();
-        var group = CreateGroup(_f.World);
+        var group = _f.Group().Build();
 
         var alice = _f.Player("Alice").WithLocation(room1).InGroup(group).WithAutoAssist().Build();
         var bob = _f.Player("Bob").WithLocation(room2).InGroup(group).WithAutoAssist().Build();
         var orc = _f.Npc("Orc").WithLocation(room1).Build();
 
-        AddGroupMembers(group, alice, bob);
+        _f.AddGroupMembers(group, alice, bob);
         alice.Add(new CombatState { Target = orc }); alice.Add<NewCombatantTag>();
         orc.Add(new CombatState { Target = alice }); orc.Add<NewCombatantTag>();
 
@@ -126,16 +126,5 @@ public class AutoAssistSystemTests : IDisposable
 
         Assert.True(guard.Has<CombatState>());
         Assert.Equal(orc, guard.Get<CombatState>().Target);
-    }
-
-    //
-    private Entity CreateGroup(World world)
-    {
-        return world.Create(new Group { Members = [] });
-    }
-
-    private void AddGroupMembers(Entity group, params Entity[] members)
-    {
-        group.Get<Group>().Members.AddRange(members);
     }
 }

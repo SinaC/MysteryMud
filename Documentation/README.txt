@@ -23,7 +23,7 @@ Tick pipeline
 12. EffectiveStatSystem             // Recalculate stats from base stats and stat modifiers (only if DirtyStats tag is set)
 13. EffectiveMaxResourcesSystem     // Recalculate max health/mana/energy/rage from base max health/mana/energy/rage and resource modifiers (only if DirtyHealth/mana/energy/rage tag is set) (4 separate systems)
 14. EffectiveRespirceRegenSystem    // Recalculate current health/mana/energy/rage regen from base health/mana/energy/rage regen and resource regen modifiers (only if DirtyHealthRegen/mana/energy/rage tag is set) (4 separate systems)
-15. Scheduler.Process               // Generate triggered scheduled event (tick or expired)
+15. Scheduler                       // Generate triggered scheduled event (tick or expired)
 16. TimedEffectSystem               // Resolve triggered scheduled event and generates scheduleIntent, effectExpiredEvent (to inform), effectTickedEvent (to inform)
 17. ResourceRegenSystem             // Regen health/mana/energy decay rage (4 separate systems)
 18. ThreatDecaySystem               // Decay threat

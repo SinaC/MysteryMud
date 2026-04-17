@@ -24,4 +24,10 @@ internal class TestIntentBuffer<TIntent> : IIntentWriter<TIntent> where TIntent 
     public bool IsEmpty => _count == 0;
     public bool Any(Func<TIntent, bool> predicate) => Span.ToArray().Any(predicate);
     public TIntent First(Func<TIntent, bool> predicate) => Span.ToArray().First(predicate);
+    public void Add(TIntent intent)
+    {
+        if (_count == _items.Length)
+            Array.Resize(ref _items, _items.Length * 2);
+        _items[_count++] = intent;
+    }
 }
