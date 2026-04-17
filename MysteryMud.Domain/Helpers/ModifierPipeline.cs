@@ -62,4 +62,49 @@ public static class ModifierPipeline
 
         return (flat, percent, multiply, overriding);
     }
+
+    // Accumulates modifiers for ALL stats in one pass into pre-allocated span buffers.
+    // Avoids the O(stats × modifiers) cost of calling CalculateModifiers per stat.
+    public static void AccumulateModifiers<TModifiers, TModifier>(
+        IEnumerable<Entity> effects,
+        Func<TModifier, CharacterStatKind> getStatFunc,
+        Func<TModifiers, IEnumerable<TModifier>> getModifiersFunc,
+        Func<TModifier, ModifierKind> getModifierKindFunc,
+        Func<TModifier, decimal> getModifierValueFunc,
+        Span<decimal> flat,
+        Span<decimal> percent,
+        Span<decimal> multiply,
+        Span<decimal> overriding,
+        Span<bool> hasOverriding)
+    {
+        foreach (var effect in effects)
+        {
+            if (!EffectHelpers.IsAlive(effect))
+                continue;
+
+            ref var modifiers = ref effect.TryGetRef<TModifiers>(out var hasModifiers);
+            if (!hasModifiers)
+                continue;
+
+            ref var effectInstance = ref effect.Get<EffectInstance>();
+            var stackCount = effectInstance.StackCount;
+
+            foreach (var modifier in getModifiersFunc(modifiers))
+            {
+                var i = (int)getStatFunc(modifier);
+                var value = getModifierValueFunc(modifier) * stackCount;
+
+                switch (getModifierKindFunc(modifier))
+                {
+                    case ModifierKind.Flat: flat[i] += value; break;
+                    case ModifierKind.AddPercent: percent[i] += value; break;
+                    case ModifierKind.Multiply: multiply[i] *= value; break;
+                    case ModifierKind.Override:
+                        overriding[i] = value;
+                        hasOverriding[i] = true;
+                        break;
+                }
+            }
+        }
+    }
 }

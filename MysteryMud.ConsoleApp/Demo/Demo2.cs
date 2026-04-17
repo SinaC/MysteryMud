@@ -3,7 +3,6 @@ using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Dispatching;
 using MysteryMud.Application.Services;
-using MysteryMud.ConsoleApp.Hosting;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Domain.Action;
@@ -22,9 +21,8 @@ using MysteryMud.Domain.Services;
 using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
-using MysteryMud.Infrastructure.Eventing;
+using MysteryMud.Infrastructure.Buffers;
 using MysteryMud.Infrastructure.Intent;
-using MysteryMud.Infrastructure.Services;
 
 namespace MysteryMud.ConsoleApp.Demo;
 
@@ -59,7 +57,7 @@ static class Demo2
         // initialize systems and buffers
         var intentBusContainer = new IntentBusContainer();
         var fleeBlockedEventBuffer = new EventBuffer<FleeBlockedEvent>();
-        var movedEventBuffer = new EventBuffer<MovedEvent>();
+        var roomEnteredEventBuffer = new EventBuffer<RoomEnteredEvent>();
         var itemGotEventBuffer = new EventBuffer<ItemGotEvent>();
         var itemDroppedEventBuffer = new EventBuffer<ItemDroppedEvent>();
         var itemGivenEventBuffer = new EventBuffer<ItemGivenEvent>();
@@ -99,7 +97,7 @@ static class Demo2
 
         var commandExecutionSystem = new CommandExecutionSystem(logger);
         var fleeSystem = new FleeSystem(gameMessageService, intentBusContainer, experienceService, fleeBlockedEventBuffer);
-        var movementSystem = new MovementSystem(gameMessageService, intentBusContainer, movedEventBuffer);
+        var movementSystem = new MovementSystem(gameMessageService, intentBusContainer, roomEnteredEventBuffer);
         var itemInteractionSystem = new ItemInteractionSystem(gameMessageService, intentBusContainer, itemGotEventBuffer, itemDroppedEventBuffer, itemGivenEventBuffer, itemPutEventBuffer, itemWornEventBuffer, itemRemovedEventBuffer, itemDestroyedEventBuffer, itemSacrifierEventBuffer);
         var effectCharacterStatsSystem = new EffectiveCharacterStatsSystem();
         var autoAttackSystem = new AutoAttackSystem(intentBusContainer);

@@ -1,12 +1,12 @@
 ﻿using MysteryMud.GameData.Events;
-using MysteryMud.Infrastructure.Eventing;
+using MysteryMud.Infrastructure.Buffers;
 
-namespace MysteryMud.ConsoleApp.Hosting;
+namespace MysteryMud.Infrastructure.Eventing;
 
 public class EventBufferRegistry
 {
     public EventBuffer<FleeBlockedEvent> FleeBlocked { get; } = new();
-    public EventBuffer<MovedEvent> Moved { get; } = new();
+    public EventBuffer<RoomEnteredEvent> RoomEntered { get; } = new();
     public EventBuffer<ItemGotEvent> ItemGot { get; } = new();
     public EventBuffer<ItemDroppedEvent> ItemDropped { get; } = new();
     public EventBuffer<ItemGivenEvent> ItemGiven { get; } = new();
@@ -34,7 +34,7 @@ public class EventBufferRegistry
     public void ClearAll()
     {
         FleeBlocked.Clear();
-        Moved.Clear();
+        RoomEntered.Clear();
         ItemGot.Clear();
         ItemDropped.Clear();
         ItemGiven.Clear();

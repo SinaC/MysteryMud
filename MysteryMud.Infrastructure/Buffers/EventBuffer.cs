@@ -1,7 +1,6 @@
 ﻿using MysteryMud.Core.Bus;
-using MysteryMud.Infrastructure.Buffers;
 
-namespace MysteryMud.Infrastructure.Eventing;
+namespace MysteryMud.Infrastructure.Buffers;
 
 public sealed class EventBuffer<TEvent> : IEventBuffer<TEvent>
     where TEvent : struct

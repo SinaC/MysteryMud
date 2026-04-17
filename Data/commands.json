@@ -114,7 +114,7 @@
     {
         "Name": "mstat",
         "Aliases": ["cstat"],
-        "RequiredLevel": "Player",
+        "RequiredLevel": "Admin",
         "MinimumPosition": "Standing",
         "Priority": 0,
         "HelpText": "Display information about a character (player or mobile)",
@@ -135,6 +135,17 @@
     {
         "Name": "ostat",
         "Aliases": ["istat"],
+        "RequiredLevel": "Admin",
+        "MinimumPosition": "Standing",
+        "Priority": 0,
+        "HelpText": "Display information about an item (in inventory or room)",
+        "Syntaxes": ["[cmd] <item>"],
+        "Categories": ["information"],
+        "ThrottlingCategories": ["admin"]
+    },
+    {
+        "Name": "peace",
+        "Aliases": [],
         "RequiredLevel": "Player",
         "MinimumPosition": "Standing",
         "Priority": 0,

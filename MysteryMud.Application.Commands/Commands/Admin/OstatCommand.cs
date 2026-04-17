@@ -11,7 +11,7 @@ using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Services;
 
-namespace MysteryMud.Application.Commands.Commands;
+namespace MysteryMud.Application.Commands.Commands.Admin;
 
 public class OstatCommand : ICommand
 {

@@ -3,11 +3,11 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.GameData.Events;
 
-public struct MovedEvent
+public struct RoomEnteredEvent
 {
-    public Entity Actor;
+    public Entity Entity;
     public Entity FromRoom;
     public Entity ToRoom;
-    public DirectionKind Direction;
+    public DirectionKind? Direction; // can be null in case of teleport
     public bool AutoLook;
 }

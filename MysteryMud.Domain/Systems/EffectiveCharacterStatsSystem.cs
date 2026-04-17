@@ -29,41 +29,47 @@ public class EffectiveCharacterStatsSystem
             ref var characterEffects = ref character.Get<CharacterEffects>();
             ref var equipment = ref character.Get<Equipment>();
 
-            // TODO: optimize by only recalculating stats that are dirty, instead of all stats for the character. this would require tracking which stats are dirty, either by having a separate DirtyStats component for each stat, or by having a bitfield in the DirtyStats component that tracks which stats are dirty
-            // TODO: optimize by only iterating modifiers for this stat, instead of all modifiers for all stats -> index modifiers by stat in the StatModifiers component
+            // accumulators indexed by stat — stack alloc, no heap pressure
+            var statCount = _allStats.Length;
+            Span<decimal> flat = stackalloc decimal[statCount];
+            Span<decimal> percent = stackalloc decimal[statCount];
+            Span<decimal> multiply = stackalloc decimal[statCount];
+            Span<decimal> overriding = stackalloc decimal[statCount];
+            Span<bool> hasOverriding = stackalloc bool[statCount];
+            multiply.Fill(1m);
+
+            // single pass over equipment modifiers — O(slots × modifiers_per_item)
+            foreach (var (slot, equippedItem) in equipment.Slots)
+            {
+                ref var itemEffects = ref equippedItem.Get<ItemEffects>();
+                ModifierPipeline.AccumulateModifiers<CharacterStatModifiers, CharacterStatModifier>(
+                    itemEffects.Data.Effects,
+                    x => x.Stat,           // route modifier to correct stat bucket
+                    x => x.Values,
+                    x => x.Modifier,
+                    x => x.Value,
+                    flat, percent, multiply, overriding, hasOverriding);
+            }
+
+            // single pass over all character effects
+            ModifierPipeline.AccumulateModifiers<CharacterStatModifiers, CharacterStatModifier>(
+                characterEffects.Data.Effects,
+                x => x.Stat,
+                x => x.Values,
+                x => x.Modifier,
+                x => x.Value,
+                flat, percent, multiply, overriding, hasOverriding);
+
+            // now apply — one pass over stats, no modifier scanning
             foreach (var stat in _allStats)
             {
-                // apply base stat
+                var i = (int)stat;
                 var baseValue = baseStats.Values[stat];
+                var rawValue = hasOverriding[i]
+                    ? overriding[i]
+                    : ((baseValue + flat[i]) * (100 + percent[i]) * multiply[i] / 100);
 
-                decimal flat = 0, percent = 0, multiply = 1;
-                decimal? overriding = null;
-
-                // apply modifiers from equipment
-                foreach (var (slot, equipedItem) in equipment.Slots)
-                {
-                    ref var itemEffects = ref equipedItem.Get<ItemEffects>();
-                    var characterModifiersFromItem = ModifierPipeline.CalculateModifiers<CharacterStatModifiers, CharacterStatModifier>(itemEffects, x => x.Stat == stat, x => x.Values, x => x.Modifier, x => x.Value);
-                    flat += characterModifiersFromItem.flat;
-                    percent += characterModifiersFromItem.percent;
-                    multiply *= characterModifiersFromItem.multiply;
-                    overriding ??= characterModifiersFromItem.overriding;
-                }
-
-                //  this will allow to remove: x => x.Stat == stat
-                // apply modifiers from effects
-                var characterModifiersFromCharacter = ModifierPipeline.CalculateModifiers<CharacterStatModifiers, CharacterStatModifier>(characterEffects, x => x.Stat == stat, x => x.Values, x => x.Modifier, x => x.Value);
-                flat += characterModifiersFromCharacter.flat;
-                percent += characterModifiersFromCharacter.percent;
-                multiply *= characterModifiersFromCharacter.multiply;
-                overriding ??= characterModifiersFromCharacter.overriding;
-
-                var rawValue = overriding ?? ((baseValue + flat) * (100 + percent) * multiply / 100);
-
-                // TODO: capping
-                var finalValue = rawValue;
-
-                effectiveStats.Values[stat] = (int)Math.Round(finalValue, MidpointRounding.AwayFromZero);
+                effectiveStats.Values[stat] = (int)Math.Round(rawValue, MidpointRounding.AwayFromZero);
             }
 
             // mark as clean

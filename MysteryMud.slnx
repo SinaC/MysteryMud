@@ -15,4 +15,5 @@
   <Project Path="MysteryMud.Domain/MysteryMud.Domain.csproj" Id="9310135b-5176-4452-842b-6ef716f63899" />
   <Project Path="MysteryMud.GameData/MysteryMud.GameData.csproj" Id="067a5c51-4372-458a-9c12-50e2ddb327ad" />
   <Project Path="MysteryMud.Infrastructure/MysteryMud.Infrastructure.csproj" Id="97c83200-37f1-4445-8597-9168922d3750" />
+  <Project Path="MysteryMud.Tests/MysteryMud.Tests.csproj" Id="5c2190a8-5d50-465b-8491-00cfce5338bc" />
 </Solution>
