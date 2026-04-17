@@ -20,10 +20,7 @@ public class AutoAssistSystemTests : IDisposable
         _sut = new AutoAssistSystem(_f.RoomEnteredEvents);
     }
 
-    public void Dispose()
-    {
-        _f.Dispose();
-    }
+    public void Dispose() => _f.Dispose();
 
     [Fact]
     public void GroupMember_WithAutoAssist_AssistsWhenMemberAttacked()

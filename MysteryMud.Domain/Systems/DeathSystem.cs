@@ -39,6 +39,17 @@ public sealed class DeathSystem
     private void HandleDeath(World world, ref DeathEvent deathEvent)
     {
         deathEvent.Victim.Remove<Casting>();
+
+        if (deathEvent.Victim.Has<PlayerTag>())
+        {
+            // forfeit claim on whoever they were fighting
+            if (deathEvent.Victim.Has<CombatState>())
+            {
+                var target = deathEvent.Victim.Get<CombatState>().Target;
+                CharacterHelpers.ForfeitClaim(target, deathEvent.Victim);
+            }
+        }
+
         RemoveFromCombat(world, deathEvent.Victim);
         CreateCorpse(world, deathEvent.Victim, deathEvent.Killer);
     }
@@ -86,11 +97,19 @@ public sealed class DeathSystem
         }
         corpse.Add(containerContents);
 
-        // autoloot/autosac for killer and group members
-        var hasGroup = killer.TryGet<GroupMember>(out var group);
+        var lootOwner = CharacterHelpers.DetermineLootOwner(victim, killer);
+        var lootOwnerGroup = lootOwner.Has<GroupMember>()
+            ? lootOwner.Get<GroupMember>().Group
+            : Entity.Null;
+
+        // autoloot for killer and group members
         ref var corpseLootIntent = ref _intents.CorpseLoot.Add();
-        corpseLootIntent.Killer = killer;
         corpseLootIntent.Corpse = corpse;
-        corpseLootIntent.Group = group.Group;
+        corpseLootIntent.LootOwner = lootOwner;
+        corpseLootIntent.LootOwnerGroup = lootOwnerGroup;
+
+        // TODO: display to killer why he/she didn't get the loot ?
+        //if (lootOwner != killer && killer.Has<PlayerTag>())
+        //    _msg.To(killer).Send($"{victim.DisplayName} was already engaged by {lootOwner.DisplayName}.");
     }
 }

@@ -16,6 +16,11 @@ public class PeaceCommand : ICommand
         {
             character.Remove<CombatState>();
             character.Remove<NewCombatantTag>();
+
+            if (!character.Has<CombatInitiator>()) continue;
+            ref var initiator = ref character.Get<CombatInitiator>();
+            for (int i = 0; i < initiator.Claims.Count; i++)
+                initiator.Claims[i] = initiator.Claims[i] with { Forfeited = true };
         }
     }
 }

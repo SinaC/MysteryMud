@@ -35,8 +35,8 @@ public sealed class LootSystem
     {
         foreach (ref var intent in _intents.CorpseLootSpan)
         {
-            var killer = intent.Killer;
-            var killerGroup = intent.Group;
+            var killer = intent.LootOwner;
+            var killerGroup = intent.LootOwnerGroup;
             var corpse = intent.Corpse;
 
             // killer died during ActionOrchestrator (e.g. killed by a proc or reaction)
@@ -60,7 +60,7 @@ public sealed class LootSystem
                     {
                         if (member == killer) continue;
                         if (!CharacterHelpers.IsAlive(member)) continue; // <- member died too
-                        if (!CharacterHelpers.SameRoom(intent.Killer, member)) continue; // <- member not anymore in same room
+                        if (!CharacterHelpers.SameRoom(intent.LootOwner, member)) continue; // <- member not anymore in same room
                         if (member.HasAutoLoot())
                             LootAll(member, corpse);
                     }
@@ -70,11 +70,11 @@ public sealed class LootSystem
             // Phase 4: autosac only if corpse is truly empty
             ref var contents = ref intent.Corpse.Get<ContainerContents>();
             if (contents.Items.Count == 0
-                && intent.Killer.HasAutoSacrifice()
-                && CharacterHelpers.IsAlive(intent.Killer))
+                && intent.LootOwner.HasAutoSacrifice()
+                && CharacterHelpers.IsAlive(intent.LootOwner))
             {
                 ref var sacIntent = ref _intents.AutoSacrifice.Add();
-                sacIntent.Actor = intent.Killer;
+                sacIntent.Actor = intent.LootOwner;
                 sacIntent.Corpse = intent.Corpse; // the corpse itself
             }
         }

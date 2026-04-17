@@ -93,9 +93,9 @@ RoomFactory.LinkRoom(world, common, market, DirectionKind.North);
 var admin = PlayerFactory.CreateAdmin(world, "admin", market);
 var goblin = MobileFactory.CreateMob(world, "goblin", "a goblin", market);
 var troll = MobileFactory.CreateMob(world, "troll", "a troll", market);
-troll.Get<Health>().Current = 10000;
-troll.Get<Health>().Max = 10000;
-troll.Get<BaseHealth>().Max = 10000;
+troll.Get<Health>().Current = 1000;
+troll.Get<Health>().Max = 1000;
+troll.Get<BaseHealth>().Max = 1000;
 ref var trollEffectiveStats = ref troll.Get<EffectiveStats>();
 trollEffectiveStats.Dodge = 0; // for testing, make sure all hits land so we can see the counterattack in action
 trollEffectiveStats.Parry = 0; // for testing, make sure all hits land so we can see the counterattack in action

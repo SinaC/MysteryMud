@@ -6,7 +6,10 @@ using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Components.Characters.Mobiles;
+using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Rooms;
+using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 
 namespace MysteryMud.Application.Commands.Commands;
@@ -59,10 +62,13 @@ public class KillCommand : ICommand
         // flag both as in combat with each other, with the target striking back after a delay
         actor.Add(new CombatState { Target = target.Value, RoundDelay = 0 });
         actor.Add<NewCombatantTag>();
-        if (!target.Value.Has<CombatState>()) // TODO: initiator, last target, ...
+
+        if (!target.Value.Has<CombatState>())
         {
             target.Value.Add(new CombatState { Target = actor, RoundDelay = 1 }); // strikes back
             target.Value.Add<NewCombatantTag>();
         }
+
+        CharacterHelpers.EnterCombat(state, actor, target.Value);
     }
 }

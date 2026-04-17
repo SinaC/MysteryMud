@@ -18,10 +18,7 @@ public class LootSystemTests : IDisposable
         _sut = new LootSystem(_f.GameMessage, _f.Intents, _f.ItemLootedEvents);
     }
 
-    public void Dispose()
-    {
-        _f.Dispose();
-    }
+    public void Dispose() => _f.Dispose();
 
     [Fact]
     public void Killer_WithAutoloot_LootsAllItemsFromCorpse()
@@ -35,8 +32,8 @@ public class LootSystemTests : IDisposable
         _f.Intents.CorpseLoot.Add(new CorpseLootIntent
         {
             Corpse = corpse,
-            Killer = killer,
-            Group = Entity.Null
+            LootOwner = killer,
+            LootOwnerGroup = Entity.Null
         });
 
         _sut.Tick(_f.State);
@@ -63,8 +60,8 @@ public class LootSystemTests : IDisposable
         _f.Intents.CorpseLoot.Add(new CorpseLootIntent
         {
             Corpse = corpse,
-            Killer = killer,
-            Group = group
+            LootOwner = killer,
+            LootOwnerGroup = group
         });
 
         _sut.Tick(_f.State);
@@ -90,8 +87,8 @@ public class LootSystemTests : IDisposable
         _f.Intents.CorpseLoot.Add(new CorpseLootIntent
         {
             Corpse = corpse,
-            Killer = killer,
-            Group = group
+            LootOwner = killer,
+            LootOwnerGroup = group
         });
 
         _sut.Tick(_f.State);

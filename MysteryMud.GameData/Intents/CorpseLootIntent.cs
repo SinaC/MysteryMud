@@ -5,6 +5,6 @@ namespace MysteryMud.GameData.Intents;
 public struct CorpseLootIntent
 {
     public Entity Corpse;
-    public Entity Killer;         // priority looter
-    public Entity Group;          // Entity.Null if no group
+    public Entity LootOwner;        // priority looter
+    public Entity LootOwnerGroup;   // Entity.Null if no group
 }
