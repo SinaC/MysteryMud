@@ -350,5 +350,24 @@
         "ValueFormula": "-20"
       }
     ]
+  },
+  {
+    "Name": "Weaken",
+    "Tag": "Weaken",
+    "TagKind": "Character",
+    "Stacking": "Refresh",
+    "MaxStacks": 1,
+    "DurationFormula": "caster.Level / 2",
+    "ApplyMessage": "You feel your strength slip away.",
+    "WearOffMessage": "You feel stronger.",
+    "Actions": [
+      {
+        "Type": "StatModifier",
+        "Stat": "Strength",
+        "Mode": "Flat",
+        "ValueFormula": "-caster.Level / 5",
+        "IsDebuff": true
+      }
+    ]
   }
 ]
