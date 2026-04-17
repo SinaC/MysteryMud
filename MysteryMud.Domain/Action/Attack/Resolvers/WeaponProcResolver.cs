@@ -87,6 +87,7 @@ public class WeaponProcResolver : IWeaponProcResolver
                 effectIntent.Effect.EffectId = effectRuntime.Id;
                 effectIntent.Effect.Source = attack.Source; // TODO: weaponEntity ?
                 effectIntent.Effect.Target = target;
+                effectIntent.Effect.IsHarmful = true;
                 effectIntent.Effect.EffectiveDamageAmount = damageResult.EffectiveAmount;
                 effectIntent.Cancelled = false;
             }

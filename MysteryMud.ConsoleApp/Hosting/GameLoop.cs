@@ -52,6 +52,7 @@ internal class GameLoop
     private readonly AbilityValidationSystem _abilityValidationSystem;
     private readonly AbilityCastingSystem _abilityCastingSystem;
     private readonly AbilityExecutionSystem _abilityExecutionSystem;
+    private readonly AggressionSystem _aggressionSystem;
     private readonly AutoAttackSystem _autoAttackSystem;
     private readonly TimedEffectSystem _timedEffectSystem;
     private readonly ResourceRegenSystem<Health, HealthRegen> _healthRegenSystem;
@@ -59,12 +60,12 @@ internal class GameLoop
     private readonly ResourceRegenSystem<Energy, EnergyRegen> _energyRegenSystem;
     private readonly ResourceRegenSystem<Rage, RageDecay> _rageDecaySystem;
     private readonly ThreatDecaySystem _threatDecaySystem;
-    private readonly ScheduleSystem _scheduleSystem;
     private readonly DeathSystem _deathSystem;
     private readonly RespawnSystem _respawnSystem;
     private readonly LootSystem _lootSystem;
     private readonly AutoSacrificeSystem _autoSacrificeSystem;
     private readonly LookSystem _lookSystem;
+    private readonly ScheduleSystem _scheduleSystem;
     private readonly CleanupSystem _cleanupSystem;
 
     public GameLoop(
@@ -96,6 +97,7 @@ internal class GameLoop
         AbilityValidationSystem abilityValidationSystem,
         AbilityCastingSystem abilityCastingSystem,
         AbilityExecutionSystem abilityExecutionSystem,
+        AggressionSystem aggressionSystem,
         AutoAttackSystem autoAttackSystem,
         TimedEffectSystem timedEffectSystem,
         ResourceRegenSystem<Health, HealthRegen> healthRegenSystem,
@@ -139,6 +141,7 @@ internal class GameLoop
         _abilityValidationSystem = abilityValidationSystem;
         _abilityCastingSystem = abilityCastingSystem;
         _abilityExecutionSystem = abilityExecutionSystem;
+        _aggressionSystem = aggressionSystem;
         _autoAttackSystem = autoAttackSystem;
         _timedEffectSystem = timedEffectSystem;
         _manaRegenSystem = manaRegenSystem;
@@ -146,12 +149,12 @@ internal class GameLoop
         _rageDecaySystem = rageDecaySystem;
         _healthRegenSystem = healthRegenSystem;
         _threatDecaySystem = threatDecaySystem;
-        _scheduleSystem = scheduleSystem;
         _deathSystem = deathSystem;
         _respawnSystem = respawnSystem;
         _lootSystem = lootSystem;
         _autoSacrificeSystem = autoSacrificeSystem;
         _lookSystem = lookSystem;
+        _scheduleSystem = scheduleSystem;
         _cleanupSystem = cleanupSystem;
     }
 
@@ -240,10 +243,14 @@ internal class GameLoop
             _abilityCastingSystem.Tick(state);
             // Process ExecuteAbilityIntents -> generate ActionIntent(kind:effect) for each effects in ability + abilityExecutedEvent
             _abilityExecutionSystem.Tick(state);
+            // TODO: NPCTargetSystem
+            // TODO: GroupTacticsSystem
             // Generate AttackIntents for entities in combat
             _autoAttackSystem.Tick(state);
             // Process ActionIntents. kind:attack -> resolve hit, perform damage, check weapon proc (effect), check reaction (counter attack)  kind: effect -> resolve effect
             _actionOrchestrator.Tick(state);
+            // AggressionEvents -> CombatState + NewCombatantTag
+            _aggressionSystem.Tick(state);
             // catches mid-round combat triggers (checking NewCombatant tag)
             _autoAssistSystem.TickCombatInitiated(state);
             // Process dead entities: remove from combat, remove casting, create corpse -> generate loot intent

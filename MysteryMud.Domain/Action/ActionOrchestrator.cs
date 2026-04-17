@@ -22,6 +22,7 @@ public class ActionOrchestrator
     private readonly IIntentContainer _intents;
     private readonly IEventBuffer<AttackResolvedEvent> _attackResolved;
     private readonly IEventBuffer<EffectResolvedEvent> _effectResolved;
+    private readonly IEventBuffer<AggressedEvent> _aggressed;
     private readonly IEventBuffer<KillRewardEvent> _killRewards;
     private readonly IEffectRegistry _effectRegistry;
     private readonly IEffectApplicationManager _effectApplicationManager;
@@ -32,13 +33,14 @@ public class ActionOrchestrator
     private readonly IWeaponProcResolver _weaponProcResolver;
     private readonly IReactionResolver _reactionResolver;
 
-    public ActionOrchestrator(ILogger logger, IIntentContainer intents, IEventBuffer<AttackResolvedEvent> attackResolved, IEventBuffer<EffectResolvedEvent> effectResolved, IEventBuffer<KillRewardEvent> killRewards, IEffectRegistry effectRegistry, IEffectApplicationManager effectApplicationManager, IExperienceService experienceService, IHitResolver hitResolver, IHitDamageFactory hitDamageFactory, IDamageResolver damageResolver, IWeaponProcResolver weaponProcResolver, IReactionResolver reactionResolver)
+    public ActionOrchestrator(ILogger logger, IIntentContainer intents, IEventBuffer<AttackResolvedEvent> attackResolved, IEventBuffer<EffectResolvedEvent> effectResolved, IEventBuffer<AggressedEvent> aggressed, IEventBuffer<KillRewardEvent> killRewards, IEffectRegistry effectRegistry, IEffectApplicationManager effectApplicationManager, IExperienceService experienceService, IHitResolver hitResolver, IHitDamageFactory hitDamageFactory, IDamageResolver damageResolver, IWeaponProcResolver weaponProcResolver, IReactionResolver reactionResolver)
     {
         _logger = logger;
         _intents = intents;
-        _killRewards = killRewards;
         _attackResolved = attackResolved;
         _effectResolved = effectResolved;
+        _aggressed = aggressed;
+        _killRewards = killRewards;
         _effectRegistry = effectRegistry;
         _experienceService = experienceService;
         _effectApplicationManager = effectApplicationManager;
@@ -92,6 +94,11 @@ public class ActionOrchestrator
         // resolve hit
         var resolvedHit = _hitResolver.Resolve(attackData);
 
+        // the intent was hostile regardless of hit/miss/dodge outcome
+        ref var aggrEvt = ref _aggressed.Add();
+        aggrEvt.Source = attackData.Source;
+        aggrEvt.Target = attackData.Target;
+
         // attack resolved event
         ref var attackResolvedEvt = ref _attackResolved.Add();
         attackResolvedEvt.Source = resolvedHit.Source;
@@ -140,6 +147,14 @@ public class ActionOrchestrator
             return;
         }
         _effectApplicationManager.CreateEffect(state, effectRuntime, ref effectData);
+
+        // AGGRESSION: emit after CreateEffect, effect was attempted on a live target
+        if (effectData.IsHarmful)
+        {
+            ref var aggrEvt = ref _aggressed.Add();
+            aggrEvt.Source = effectData.Source;
+            aggrEvt.Target = effectData.Target;
+        }
 
         // attack resolved event
         ref var effectResolvedEvt = ref _effectResolved.Add();

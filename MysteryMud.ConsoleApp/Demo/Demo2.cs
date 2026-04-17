@@ -73,6 +73,7 @@ static class Demo2
         var lookedEventBuffer = new EventBuffer<LookedEvent>();
         var attackResolvedEventBuffer = new EventBuffer<AttackResolvedEvent>();
         var effectResolvedEventBuffer = new EventBuffer<EffectResolvedEvent>();
+        var aggressedEventBuffer = new EventBuffer<AggressedEvent>();
         var experienceGrantedEventBuffer = new EventBuffer<ExperienceGrantedEvent>();
         var levelIncreasedEventBuffer = new EventBuffer<LevelIncreasedEvent>();
         var killRewardEventBuffer = new EventBuffer<KillRewardEvent>();
@@ -94,7 +95,7 @@ static class Demo2
         var experienceService = new ExperienceService(gameMessageService, experienceGrantedEventBuffer, levelIncreasedEventBuffer);
         var sacrificeService = new SacrificeService(gameMessageService);
 
-        var actionOrchestrator = new ActionOrchestrator(logger, intentBusContainer, attackResolvedEventBuffer, effectResolvedEventBuffer, killRewardEventBuffer, effectRegistry, effectApplicationManager, experienceService, hitResolver, hitDamageFactory, damageResolver, weaponProcResolver, reactionResolver);
+        var actionOrchestrator = new ActionOrchestrator(logger, intentBusContainer, attackResolvedEventBuffer, effectResolvedEventBuffer, aggressedEventBuffer, killRewardEventBuffer, effectRegistry, effectApplicationManager, experienceService, hitResolver, hitDamageFactory, damageResolver, weaponProcResolver, reactionResolver);
 
         var commandExecutionSystem = new CommandExecutionSystem(logger);
         var fleeSystem = new FleeSystem(gameMessageService, intentBusContainer, experienceService, fleeBlockedEventBuffer);

@@ -34,14 +34,16 @@ Tick pipeline
 23. GroupTacticsSystem              // Protect, Assist targeting, Group target coordination
 24. AutoAttackSystem                // Generate ActionIntent(kind:attack) for every entity in combat (CombatState component set)
 25. ActionOrchestrator              // Process ActionIntents. kind:attack -> resolve hit, perform damage, check weapon proc (effect), check reaction (counter attack)  kind: effect -> resolve effect
-26. AutoAssistSystem (pass 3)       // Catches mid-round combat triggers (checking NewCombatant tag)
-27. DeathSystem                     // Flag dead entities
-28. RespawnSystem                   // Auto-resurrect players
-29. LootSystem                      // Process loot & auto-loot
-30. LookSystem(PostUpdate)          // Process LookIntents with Mode=PostUpdate -> reflects final world state after all updates
-31. ScheduleSystem                  // Process scheduleIntents (which can be generated from IA, abilities, TimedEffectSytem, AttackOrchestrator)
-32. CleanupSystem                   // Remove destroyed items / dead NPCs / disconnected players
-33. Output -> MessageBus            // Send all messages to players
+26. AggressionSystem                // Process AggressedEvent -> set CombatState+NewCombatantTag
+27. AutoAssistSystem (pass 3)       // Catches mid-round combat triggers (checking NewCombatant tag)
+28. DeathSystem                     // Flag dead entities
+29. RespawnSystem                   // Auto-resurrect players
+30. LootSystem                      // Process CorpseLootIntents
+31. AutoSacrificeSystem             // Process AutoSacrificeIntents
+32. LookSystem(PostUpdate)          // Process LookIntents with Mode=PostUpdate -> reflects final world state after all updates
+33. ScheduleSystem                  // Process scheduleIntents (which can be generated from IA, abilities, TimedEffectSytem, AttackOrchestrator)
+34. CleanupSystem                   // Remove destroyed items / dead NPCs / disconnected players
+35. Output -> MessageBus            // Send all messages to players
 
 ActionOrchestrator (step 21) details
    loop on attack/effect intents

@@ -85,6 +85,8 @@ public class AbilityExecutionSystem
                         effectIntent.Effect.EffectId = effectId;
                         effectIntent.Effect.Source = source;
                         effectIntent.Effect.Target = target;
+                        effectIntent.Effect.IsHarmful = effectRuntime.IsHarmful;
+                        effectIntent.Effect.EffectiveDamageAmount = 0;
                         effectIntent.Cancelled = false;
                     }
                 }

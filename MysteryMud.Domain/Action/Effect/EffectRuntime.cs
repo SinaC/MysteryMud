@@ -9,6 +9,8 @@ public class EffectRuntime
     public string Name = default!;
 
     public EffectTargetKind SupportedTargets;
+    public bool IsHarmful;
+
     // state-effect
     public Func<EffectContext, decimal>? DurationFunc; // if null -> stateless effect
     public EffectTagRef Tag;

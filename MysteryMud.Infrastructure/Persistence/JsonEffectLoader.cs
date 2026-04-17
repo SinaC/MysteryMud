@@ -43,6 +43,7 @@ public class JsonEffectLoader
         // map actions
         var actions = data.Actions?.Select(MapAction).ToList() ?? [];
 
+        var isHarmful = MapHarmful(data, actions);
         var tag = MapTag(data, actions);
 
         return new EffectDefinition
@@ -50,6 +51,7 @@ public class JsonEffectLoader
             Id = data.Name.ComputeUniqueId(),
             Name = data.Name,
 
+            IsHarmful = isHarmful,
             DurationCompiledFormula = data.DurationFormula == null
                 ? null
                 : _formulaCompiler.Compile(data.DurationFormula),
@@ -64,6 +66,13 @@ public class JsonEffectLoader
 
             Actions = actions
         };
+    }
+
+    private bool MapHarmful(EffectDefinitionData data, IEnumerable<EffectActionDefinition> actions)
+    {
+        if (data.IsHarmful is not null)
+            return data.IsHarmful.Value;
+        return actions.Any(x => x is InstantDamageActionDefinition or PeriodicDamageActionDefinition);
     }
 
     private EffectTagRef MapTag(EffectDefinitionData data, IEnumerable<EffectActionDefinition> actions)
