@@ -8,6 +8,8 @@ public class EffectDefinition
     public required int Id { get; init; }
     public required string Name { get; init; }
 
+    public required bool IsHarmful { get; init; }
+
     // state-effect
     public EffectCompiledFormula? DurationCompiledFormula { get; init; } // if null -> stateless effect
     public EffectTagRef Tag { get; init; }

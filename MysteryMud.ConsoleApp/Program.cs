@@ -256,6 +256,7 @@ services.AddSingleton<IEventBuffer<AbilityExecutedEvent>>(sp => sp.GetRequiredSe
 services.AddSingleton<IEventBuffer<ExperienceGrantedEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().ExperienceGranted);
 services.AddSingleton<IEventBuffer<LevelIncreasedEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().LevelIncreased);
 services.AddSingleton<IEventBuffer<KillRewardEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().KillReward);
+services.AddSingleton<IEventBuffer<AggressedEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().Aggressed);
 
 // Core services
 services.AddSingleton<ICommandBus, CommandBus>();
@@ -314,6 +315,7 @@ services.AddSingleton(sp => new EffectiveResourceRegenSystem<RageDecay, DirtyRag
 services.AddSingleton<AbilityValidationSystem>();
 services.AddSingleton<AbilityCastingSystem>();
 services.AddSingleton<AbilityExecutionSystem>();
+services.AddSingleton<AggressionSystem>();
 services.AddSingleton<AutoAttackSystem>();
 services.AddSingleton<TimedEffectSystem>();
 services.AddSingleton(sp => new ResourceRegenSystem<Health, HealthRegen>(x => x.Current, x => x.Max, x => x.CurrentAmountPerSecond, (ref x, v) => x.Current = v));

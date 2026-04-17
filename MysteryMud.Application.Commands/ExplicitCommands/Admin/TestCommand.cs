@@ -79,6 +79,8 @@ public class TestCommand : IExplicitCommand
             effectIntent.Effect.EffectId = effectId;
             effectIntent.Effect.Source = actor;
             effectIntent.Effect.Target = target.Value;
+            effectIntent.Effect.IsHarmful = effectRuntime.IsHarmful;
+            effectIntent.Effect.EffectiveDamageAmount = 0;
             effectIntent.Cancelled = false;
             return;
         }

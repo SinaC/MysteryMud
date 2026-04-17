@@ -30,6 +30,7 @@ public class EventBufferRegistry
     public EventBuffer<ExperienceGrantedEvent> ExperienceGranted { get; } = new();
     public EventBuffer<LevelIncreasedEvent> LevelIncreased { get; } = new();
     public EventBuffer<KillRewardEvent> KillReward { get; } = new();
+    public EventBuffer<AggressedEvent> Aggressed { get; } = new();
 
     public void ClearAll()
     {
@@ -58,5 +59,6 @@ public class EventBufferRegistry
         ExperienceGranted.Clear();
         LevelIncreased.Clear();
         KillReward.Clear();
+        Aggressed.Clear();
     }
 }

@@ -80,13 +80,15 @@ public class EffectRuntimeFactory : IEffectRuntimeFactory
         {
             Id = def.Id,
             Name = def.Name,
+
             SupportedTargets = supportedTargets,
+
+            DurationFunc = def.DurationCompiledFormula?.Compiled,
+            IsHarmful = def.IsHarmful,
 
             Tag = def.Tag,
             Stacking = def.Stacking,
             MaxStacks = def.MaxStacks,
-
-            DurationFunc = def.DurationCompiledFormula?.Compiled,
 
             TickOnApply = def.TickOnApply,
             TickRate = def.TickRate,
