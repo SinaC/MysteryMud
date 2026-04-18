@@ -39,6 +39,7 @@ internal class GameLoop
     private readonly AutoAssistSystem _autoAssistSystem;
     private readonly FleeSystem _fleeSystem;
     private readonly MovementSystem _movementSystem;
+    private readonly FollowSystem _followSystem;
     private readonly ItemInteractionSystem _itemInteractionSystem;
     private readonly EffectiveCharacterStatsSystem _effectiveCharacterStatsSystem;
     private readonly EffectiveMaxResourceSystem<BaseHealth, Health, DirtyHealth, HealthModifier> _effectiveMaxHeathSystem;
@@ -84,6 +85,7 @@ internal class GameLoop
         AutoAssistSystem autoAssistSystem,
         FleeSystem fleeSystem,
         MovementSystem movementSystem,
+        FollowSystem followSystem,
         ItemInteractionSystem itemInteractionSystem,
         EffectiveCharacterStatsSystem effectiveCharacterStatsSystem,
         EffectiveMaxResourceSystem<BaseHealth, Health, DirtyHealth, HealthModifier> effectiveMaxHeathSystem,
@@ -128,6 +130,7 @@ internal class GameLoop
         _autoAssistSystem = autoAssistSystem;
         _fleeSystem = fleeSystem;
         _movementSystem = movementSystem;
+        _followSystem = followSystem;
         _itemInteractionSystem = itemInteractionSystem;
         _effectiveCharacterStatsSystem = effectiveCharacterStatsSystem;
         _effectiveMaxHeathSystem = effectiveMaxHeathSystem;
@@ -203,6 +206,8 @@ internal class GameLoop
             // Convert flee → MoveIntents
             _fleeSystem.Tick(state);
             // TODO: ChaseSystem                      // NPC chase movement
+            // Handle characters following another character, scan MoveIntents from leaders and generate MoveIntents for followers
+            _followSystem.Tick(state);
             // Process MoveIntents → emits auto-look PostUpdate (Mode=PostUpdate)
             _movementSystem.Tick(state);
             // catches room-entry assists, consumes RoomEnteredEvent

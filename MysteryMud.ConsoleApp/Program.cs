@@ -303,6 +303,7 @@ services.AddSingleton<CommandThrottleSystem>();
 services.AddSingleton<AutoAssistSystem>();
 services.AddSingleton<FleeSystem>();
 services.AddSingleton<MovementSystem>();
+services.AddSingleton<FollowSystem>();
 services.AddSingleton<ItemInteractionSystem>();
 services.AddSingleton<EffectiveCharacterStatsSystem>();
 services.AddSingleton(sp => new EffectiveMaxResourceSystem<BaseHealth, Health, DirtyHealth, HealthModifier>(x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value));

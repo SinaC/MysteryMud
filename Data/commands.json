@@ -51,6 +51,17 @@
         "Categories": ["combat", "movement"],
         "ThrottlingCategories": ["movement", "combat"]
     },
+	{
+        "Name": "follow",
+        "RequiredLevel": "Player",
+        "MinimumPosition": "Standing",
+        "Priority": 0,
+        "HelpText": "FOLLOW starts you following another character.  To stop following anyone else,\njust FOLLOW <yourself>.",
+        "Syntaxes": ["[cmd]",
+                     "[cmd] <character>"],
+        "Categories": ["movement", "group"],
+        "ThrottlingCategories": ["movement"]
+    },
     {
         "Name": "get",
         "Aliases": ["take"],
