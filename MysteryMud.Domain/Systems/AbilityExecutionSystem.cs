@@ -1,15 +1,11 @@
 ﻿using Arch.Core;
-using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Contracts;
 using MysteryMud.Domain.Ability;
 using MysteryMud.Domain.Action.Effect;
-using MysteryMud.Domain.Components.Characters;
-using MysteryMud.Domain.Components.Characters.Mobiles;
-using MysteryMud.Domain.Components.Characters.Players;
-using MysteryMud.Domain.Components.Items;
+using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
@@ -57,7 +53,7 @@ public class AbilityExecutionSystem
                 if (_abilityOutcomeResolverRegistry.TryGetResolver(abilityRuntime.OutcomeResolver.ResolverId, out var registedResolver) && registedResolver is not null)
                 {
                     var result = registedResolver.Resolver.Resolve(source, abilityRuntime);
-                    SendAbilityMessage(source, abilityRuntime, result.Outcome);
+                    SendAbilityOutcomeMessage(source, abilityRuntime, result.Outcome);
                     if (!result.Success)
                         continue;
                 }
@@ -65,30 +61,38 @@ public class AbilityExecutionSystem
 
             // TODO: set cooldown
 
-            foreach (var conditionalEffectGroup in abilityRuntime.ConditionalEffectGroups)
+            // if an ability has conditional effects:
+            //  IsWeapon: effect a
+            //  IsItem: effect b
+            // when using on a weapon, effect a+b will be applied
+            // we only want a to be applied
+            foreach (var target in targets)
             {
-                var resolvedTargets = ResolveConditionalTargets(targets, conditionalEffectGroup.Condition);
-                if (resolvedTargets.Count == 0)
+                // Find the first (most specific) condition group that matches this target
+                var matchedGroup = abilityRuntime.ConditionalEffectGroups
+                    .OrderByDescending(g => g.Condition.Specificity())
+                    .FirstOrDefault(g => g.Condition.Matches(target));
+
+                if (matchedGroup is null)
                     continue;
-                foreach (var effectId in conditionalEffectGroup.EffectIds)
+
+                foreach (var effectId in matchedGroup.EffectIds)
                 {
                     if (!_effectRegistry.TryGetRuntime(effectId, out var effectRuntime) || effectRuntime == null)
                     {
-                        _logger.LogError("Ability {abilityName}: effect {effectId} not found", abilityRuntime.Name, effectId);
+                        _logger.LogError("Ability {abilityName}: effect {effectId} not found",
+                            abilityRuntime.Name, effectId);
                         continue;
                     }
-                    // add effect action for each target
-                    foreach (var target in resolvedTargets)
-                    {
-                        ref var effectIntent = ref _intents.Action.Add();
-                        effectIntent.Kind = ActionKind.Effect;
-                        effectIntent.Effect.EffectId = effectId;
-                        effectIntent.Effect.Source = source;
-                        effectIntent.Effect.Target = target;
-                        effectIntent.Effect.IsHarmful = effectRuntime.IsHarmful;
-                        effectIntent.Effect.EffectiveDamageAmount = 0;
-                        effectIntent.Cancelled = false;
-                    }
+
+                    ref var effectIntent = ref _intents.Action.Add();
+                    effectIntent.Kind = ActionKind.Effect;
+                    effectIntent.Effect.EffectId = effectId;
+                    effectIntent.Effect.Source = source;
+                    effectIntent.Effect.Target = target;
+                    effectIntent.Effect.IsHarmful = effectRuntime.IsHarmful;
+                    effectIntent.Effect.EffectiveDamageAmount = 0;
+                    effectIntent.Cancelled = false;
                 }
             }
 
@@ -100,26 +104,12 @@ public class AbilityExecutionSystem
         }
     }
 
-    private List<Entity> ResolveConditionalTargets(List<Entity> targets, AbilityEffectCondition condition)
-    {
-        // TODO: change condition to a string and use a condition registry (with interface similar to OutcomeResolver)
-        switch (condition)
-        {
-            case AbilityEffectCondition.IsCharacter: return targets.Where(x => x.Has<CharacterTag>()).ToList();
-            case AbilityEffectCondition.IsItem: return targets.Where(x => x.Has<ItemTag>()).ToList();
-            case AbilityEffectCondition.IsNPC: return targets.Where(x => x.Has<NpcTag>()).ToList();
-            case AbilityEffectCondition.IsPlayer: return targets.Where(x => x.Has<PlayerTag>()).ToList();
-            case AbilityEffectCondition.IsWeapon: return targets.Where(x => x.Has<Weapon>()).ToList();
-        }
-        return targets;
-    }
-
-    private void SendAbilityMessage(Entity actor, AbilityRuntime ability, string key) // TODO: same code found in AbilityExecutionSystem/AbilityCastingSystem
+    private void SendAbilityOutcomeMessage(Entity actor, AbilityRuntime ability, string key)
     {
         if (key is null)
             return;
-        if (ability.Messages.TryGetValue(key, out var msg))
-            _msg.To(actor).Send(msg);
+        if (ability.Messages.TryGetValue(key, out var msg) && msg.ToActor is not null) // outcome messages are only for actor
+            _msg.To(actor).Send(msg.ToActor);
         else
             _logger.LogError("Ability {abilityName} validation rules refers to {key} but it's not found in messages", ability.Name, key);
     }

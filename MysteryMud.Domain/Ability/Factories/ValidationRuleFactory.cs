@@ -14,6 +14,7 @@ public static class ValidationRuleFactory
             ItemNotAffectedByRuleDefinition rule => new ItemNotAffectedByRule(rule.Condition, rule.FailBehaviour, rule.FailMessageKey, rule.EffectTagId),
             HasWeaponTypeRuleDefinition rule => new HasWeaponTypeRule(rule.Condition, rule.FailBehaviour, rule.FailMessageKey, rule.Required),
             NotFightingRuleDefinition rule => new NotFightingRule(rule.Condition, rule.FailBehaviour, rule.FailMessageKey),
+            SavesSpellRuleDefinition rule => new SavesSpellRule(rule.Condition, rule.FailBehaviour, rule.FailMessageKey, rule.DamageKind),
             _ => throw new Exception($"Unknown validation rule type: {def.GetType()}")
         };
 }

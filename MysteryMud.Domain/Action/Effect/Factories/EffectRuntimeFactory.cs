@@ -1,8 +1,9 @@
-﻿using Arch.Core.Extensions;
-using CommunityToolkit.HighPerformance;
+﻿using Arch.Core;
+using Arch.Core.Extensions;
 using MysteryMud.Domain.Action.Effect.Definitions;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
+using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Action.Effect.Factories;
@@ -99,20 +100,39 @@ public class EffectRuntimeFactory : IEffectRuntimeFactory
         };
     }
 
-    private Action<EffectExecutionContext> CreateDisplayMessageAction(string msg)
+    private Action<EffectExecutionContext> CreateDisplayMessageAction(ContextualizedMessage msg) // TODO: almost same code found in AbilityValidationSystem/AbilityCastingSystem
     {
         return ctx =>
         {
-            var target = ctx.Context.Target;
-            if (target.Has<CharacterTag>())
-                ctx.Msg.To(target).Send(msg);
-            else
+            var source = ctx.Context.Source;
+            var affectedEntity = ctx.Context.Target;
+            if (msg.ToActor is not null)
+                ctx.Msg.To(source).Act(msg.ToActor).With(affectedEntity);
+            if (msg.ToTarget is not null)
             {
-                if (target.TryGet<Equipped>(out var equipped))
-                    ctx.Msg.To(equipped.Wearer).Act(msg).With(target);
-                else if (target.TryGet<ContainedIn>(out var containedIn) && containedIn.Character.Has<CharacterTag>())
-                    ctx.Msg.To(containedIn.Character).Act(msg).With(target);
+                var messageTarget = GetMessageTarget(affectedEntity);
+                if (messageTarget is not null)
+                    ctx.Msg.To(messageTarget.Value).Send(msg.ToTarget);
+            }
+            if (msg.ToRoom is not null)
+            {
+                var messageTarget = GetMessageTarget(affectedEntity);
+                if (messageTarget is not null)
+                    ctx.Msg.ToRoomExcept(source, messageTarget.Value).Act(msg.ToRoom).With(affectedEntity);
+                else
+                    ctx.Msg.ToRoom(source).Act(msg.ToRoom).With(affectedEntity);
             }
         };
+    }
+
+    private Entity? GetMessageTarget(Entity affectedEntity) // TODO: same code found in AbilityValidationSystem/AbilityCastingSystem
+    {
+        if (affectedEntity.Has<CharacterTag>())
+            return affectedEntity;
+        if (affectedEntity.TryGet<Equipped>(out var equipped))
+            return equipped.Wearer;
+        if (affectedEntity.TryGet<ContainedIn>(out var containedIn) && containedIn.Character.Has<CharacterTag>())
+            return containedIn.Character;
+        return null;
     }
 }

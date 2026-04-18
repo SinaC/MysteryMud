@@ -1,6 +1,6 @@
 ﻿namespace MysteryMud.GameData.Enums;
 
-public enum AbilityValidationRuleCondition
+public enum TargetCondition
 {
     None,
     IsCharacter,
@@ -8,4 +8,5 @@ public enum AbilityValidationRuleCondition
     IsNPC,
     IsPlayer,
     IsWeapon,
+    IsArmor,
 }

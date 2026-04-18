@@ -249,8 +249,16 @@
     "MaxStacks": 3,
     "DurationFormula": "caster.Level",
     "TickRate": 2,
-    "ApplyMessage": "You feel very sick.",
-    "WearOffMessage": "You feel less sick.",
+    "ApplyMessage": {
+      "ToTarget": "You feel very sick.",
+      "ToActor": "{0} looks very ill.",
+      "ToRoom": "{0} looks very ill."
+    },
+    "WearOffMessage": {
+      "ToTarget": "You feel less sick.",
+      "ToActor": "{0} feels less sick.",
+      "ToRoom": "{0} feels less sick."
+    },
     "Actions": [
       {
         "Type": "StatModifier",
@@ -273,18 +281,36 @@
     ]
   },
   {
+    "Name": "PoisonWeapon",
+    "Tag": "Poison",
+    "TagKind": "Item",
+    "Stacking": "None",
+    "DurationFormula": "caster.Level / 8",
+    "ApplyMessage": "{0} is coated with deadly venom.",
+    "WearOffMessage": "The poison on {0} dries up.",
+    "Actions": [
+      {
+        "Type": "StatModifier",
+        "Stat": "Strength",
+        "Mode": "Flat",
+        "ValueFormula": "3"
+      }
+    ]
+  },
+  {
     "Name": "PoisonItem",
     "Tag": "Poison",
     "TagKind": "Item",
     "Stacking": "None",
     "DurationFormula": "caster.Level",
+    "ApplyMessage": "{0} is infused with poisonous vapors.",
     "WearOffMessage": "The poison on {0} dries up.",
     "Actions": [
       {
-      "Type": "StatModifier",
-      "Stat": "Strength",
-      "Mode": "Flat",
-      "ValueFormula": "-3"
+        "Type": "StatModifier",
+        "Stat": "Strength",
+        "Mode": "Flat",
+        "ValueFormula": "-3"
       }
     ]
   },

@@ -9,7 +9,6 @@ using MysteryMud.Domain.Action.Attack.Resolvers;
 using MysteryMud.Domain.Action.Damage;
 using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Components.Characters.Players;
-using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Enums;

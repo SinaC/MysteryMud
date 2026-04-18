@@ -4,6 +4,7 @@ using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.Domain.Components.Rooms;
 
 namespace MysteryMud.Application.Commands.Commands.Admin;
@@ -16,11 +17,14 @@ public class PeaceCommand : ICommand
         {
             character.Remove<CombatState>();
             character.Remove<NewCombatantTag>();
-
-            if (!character.Has<CombatInitiator>()) continue;
-            ref var initiator = ref character.Get<CombatInitiator>();
-            for (int i = 0; i < initiator.Claims.Count; i++)
-                initiator.Claims[i] = initiator.Claims[i] with { Forfeited = true };
+            character.Remove<CombatInitiator>();
+            character.Remove<ActiveThreatTag>();
+            ref var threatTable = ref character.TryGetRef<ThreatTable>(out var hasThreatTable);
+            if (hasThreatTable)
+            {
+                threatTable.Threat.Clear();
+                threatTable.LastUpdateTick = state.CurrentTick;
+            }
         }
     }
 }

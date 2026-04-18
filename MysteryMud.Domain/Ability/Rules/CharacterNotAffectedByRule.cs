@@ -9,13 +9,13 @@ public class CharacterNotAffectedByRule : AbilityValidationRule // opposite of A
 {
     private readonly ulong _effectTagIndex;
 
-    public CharacterNotAffectedByRule(AbilityValidationRuleCondition condition, AbilityValidationFailBehaviour failBehaviour, string failMessageKey, CharacterEffectTagId effectTagId)
+    public CharacterNotAffectedByRule(TargetCondition condition, AbilityValidationFailBehaviour failBehaviour, string failMessageKey, CharacterEffectTagId effectTagId)
         : base(condition, failBehaviour, failMessageKey)
     {
         _effectTagIndex = 1UL << (int)effectTagId;
     }
 
-    public override AbilityValidationResult Validate(Entity target)
+    public override AbilityValidationResult Validate(Entity _, Entity target)
     {
         ref var characterEffects = ref target.Get<CharacterEffects>();
         if ((characterEffects.Data.ActiveTags & _effectTagIndex) != 0)

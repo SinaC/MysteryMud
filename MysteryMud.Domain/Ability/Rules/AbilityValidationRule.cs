@@ -1,20 +1,16 @@
 ﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Domain.Components.Characters;
-using MysteryMud.Domain.Components.Characters.Mobiles;
-using MysteryMud.Domain.Components.Characters.Players;
-using MysteryMud.Domain.Components.Items;
+using MysteryMud.Domain.Extensions;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Ability.Rules;
 
 public abstract class AbilityValidationRule : IAbilityValidationRule
 {
-    private readonly AbilityValidationRuleCondition _condition;
+    private readonly TargetCondition _condition;
     private readonly AbilityValidationFailBehaviour _failBehaviour;
     private readonly string _failMessageKey;
 
-    protected AbilityValidationRule(AbilityValidationRuleCondition condition, AbilityValidationFailBehaviour failBehaviour, string failMessageKey)
+    protected AbilityValidationRule(TargetCondition condition, AbilityValidationFailBehaviour failBehaviour, string failMessageKey)
     {
         _condition = condition;
         _failBehaviour = failBehaviour;
@@ -22,19 +18,9 @@ public abstract class AbilityValidationRule : IAbilityValidationRule
     }
 
     public bool IsCandidateForValidation(Entity target)
-    {
-        switch (_condition)
-        {
-            case AbilityValidationRuleCondition.IsCharacter: return target.Has<CharacterTag>();
-            case AbilityValidationRuleCondition.IsItem: return target.Has<ItemTag>();
-            case AbilityValidationRuleCondition.IsNPC: return target.Has<NpcTag>();
-            case AbilityValidationRuleCondition.IsPlayer: return target.Has<PlayerTag>();
-            case AbilityValidationRuleCondition.IsWeapon: return target.Has<Weapon>();
-        }
-        return true;
-    }
+        => _condition.Matches(target);
 
-    public abstract AbilityValidationResult Validate(Entity target);
+    public abstract AbilityValidationResult Validate(Entity source, Entity target);
 
     protected AbilityValidationResult Success()
         => new() { Success = true };

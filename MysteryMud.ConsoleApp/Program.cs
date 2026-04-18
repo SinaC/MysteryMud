@@ -93,6 +93,7 @@ RoomFactory.LinkRoom(world, common, market, DirectionKind.North);
 var admin = PlayerFactory.CreateAdmin(world, "admin", market);
 var goblin = MobileFactory.CreateMob(world, "goblin", "a goblin", market);
 var troll = MobileFactory.CreateMob(world, "troll", "a troll", market);
+troll.Get<Level>().Value = 25;
 troll.Get<Health>().Current = 1000;
 troll.Get<Health>().Max = 1000;
 troll.Get<BaseHealth>().Max = 1000;

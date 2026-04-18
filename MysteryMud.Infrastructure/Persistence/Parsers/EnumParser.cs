@@ -1,6 +1,6 @@
-﻿namespace MysteryMud.Infrastructure.Persistence;
+﻿namespace MysteryMud.Infrastructure.Persistence.Parsers;
 
-public static class EnumParser
+internal static class EnumParser
 {
     public static T Parse<T>(string value, T defaultValue)
         where T : struct, Enum

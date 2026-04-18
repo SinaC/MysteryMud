@@ -1,5 +1,6 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Items;
@@ -12,6 +13,7 @@ public static class CharacterExtensions
     extension(Entity entity)
     {
         public PositionKind Position => entity.TryGet<Position>(out var position) ? position.Value : PositionKind.Dead;
+        public int Level => entity.TryGet<Level>(out var level) ? level.Value : 1;
     }
 
     public static bool HasAutoAssist(this Entity entity)

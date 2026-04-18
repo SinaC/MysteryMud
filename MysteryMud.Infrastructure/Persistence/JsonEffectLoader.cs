@@ -4,18 +4,19 @@ using MysteryMud.Domain.Action.Effect.Definitions;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
+using MysteryMud.Infrastructure.Persistence.Converters;
 using MysteryMud.Infrastructure.Persistence.Dto;
 using MysteryMud.Infrastructure.Persistence.Dto.Actions;
+using MysteryMud.Infrastructure.Persistence.Parsers;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace MysteryMud.Infrastructure.Persistence;
 
-public class JsonEffectLoader
+public partial class JsonEffectLoader
 {
     private static readonly JsonSerializerOptions _serializerOptions = new()
     {
-        Converters = { new EffectActionDataConverter() },
+        Converters = { new EffectActionDataConverter(), new ContextualizedMessageConverter() },
         PropertyNameCaseInsensitive = true
     };
     private static readonly EffectFormulaCompiler _formulaCompiler = new();
@@ -61,12 +62,22 @@ public class JsonEffectLoader
             TickOnApply = data.TickOnApply,
             TickRate = data.TickRate,
 
-            WearOffMessage = data.WearOffMessage,
-            ApplyMessage = data.ApplyMessage,
+            WearOffMessage = MapContextualizedMessage(data.WearOffMessage),
+            ApplyMessage = MapContextualizedMessage(data.ApplyMessage),
 
             Actions = actions
         };
     }
+
+    private ContextualizedMessage? MapContextualizedMessage(ContextualizedMessageData data)
+        => data == null
+        ? null
+        : new()
+        {
+            ToActor = data.ToActor,
+            ToRoom = data.ToRoom,
+            ToTarget = data.ToTarget,
+        };
 
     private bool MapIsHarmful(EffectDefinitionData data)
     {
@@ -264,36 +275,6 @@ public class JsonEffectLoader
                 }
             default:
                 throw new NotSupportedException($"Unknown action type: {action.GetType()}");
-        }
-    }
-
-    private class EffectActionDataConverter : JsonConverter<EffectActionData>
-    {
-        public override EffectActionData? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-        {
-            using var jsonDoc = JsonDocument.ParseValue(ref reader);
-            var root = jsonDoc.RootElement;
-
-            var type = root.GetProperty("Type").GetString();
-
-            return type switch
-            {
-                "StatModifier" => JsonSerializer.Deserialize<CharacterStatModifierData>(root.GetRawText(), options), // TODO: depends on character or item
-                "ResourceModifier" => JsonSerializer.Deserialize<ResourceModifierData>(root.GetRawText(), options),
-                "RegenModifier" => JsonSerializer.Deserialize<RegenModifierData>(root.GetRawText(), options),
-                "PeriodicHeal" => JsonSerializer.Deserialize<PeriodicHealData>(root.GetRawText(), options),
-                "PeriodicDamage" => JsonSerializer.Deserialize<PeriodicDamageData>(root.GetRawText(), options),
-                "InstantDamage" => JsonSerializer.Deserialize<InstantDamageData>(root.GetRawText(), options),
-                "InstantHeal" => JsonSerializer.Deserialize<InstantHealData>(root.GetRawText(), options),
-                "ApplyTag" => JsonSerializer.Deserialize<ApplyCharacterTagActionData>(root.GetRawText(), options),
-                "ApplyItemTag" => JsonSerializer.Deserialize<ApplyItemTagActionData>(root.GetRawText(), options),
-                _ => throw new NotSupportedException($"Unknown action type: {type}")
-            };
-        }
-
-        public override void Write(Utf8JsonWriter writer, EffectActionData value, JsonSerializerOptions options)
-        {
-            JsonSerializer.Serialize(writer, value, value.GetType(), options);
         }
     }
 }

@@ -10,7 +10,6 @@ using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Services;
-using MysteryMud.Infrastructure.Services;
 
 namespace MysteryMud.ConsoleApp.Demo;
 
