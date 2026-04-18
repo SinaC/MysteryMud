@@ -132,7 +132,8 @@ public class FollowSystem
     private void TryEmitFollowMove(GameState state, Entity follower, MoveIntent leaderIntent)
     {
         // Already queued their own move this tick
-        if (HasMoveIntent(follower)) return;
+        foreach (ref var existing in _intents.MoveSpan)
+            if (existing.Actor == follower) return;
 
         if (follower.Has<CombatState>()) return;
         // TODO
@@ -180,12 +181,5 @@ public class FollowSystem
         intent.ToRoom = leaderIntent.ToRoom;
         intent.Direction = leaderIntent.Direction;
         intent.AutoLook = true;
-    }
-
-    private bool HasMoveIntent(Entity actor)
-    {
-        foreach (ref var intent in _intents.MoveSpan)
-            if (intent.Actor == actor) return true;
-        return false;
     }
 }
