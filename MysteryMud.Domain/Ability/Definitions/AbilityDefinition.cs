@@ -16,7 +16,7 @@ public class AbilityDefinition
     public required AbilityOutcomeResolverDefinition? OutcomeResolver { get; init; }
     public required List<AbilityConditionalEffectGroupDefinition> ConditionalEffectGroups { get; init; }
     public required List<string> FailureEffects { get; init; } = [];
-    public required Dictionary<string, string> Messages { get; init; } = []; // TODO: actor/room messages ?
+    public required Dictionary<string, ContextualizedMessage> Messages { get; init; } = [];
     public required List<AbilityRuleDefinition> SourceValidationRules { get; init; } = [];
     public required List<AbilityRuleDefinition> TargetValidationRules { get; init; } = [];
 }

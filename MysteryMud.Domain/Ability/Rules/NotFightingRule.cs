@@ -7,12 +7,12 @@ namespace MysteryMud.Domain.Ability.Rules;
 
 public class NotFightingRule : AbilityValidationRule
 {
-    public NotFightingRule(AbilityValidationRuleCondition condition, AbilityValidationFailBehaviour failBehaviour, string failMessageKey)
+    public NotFightingRule(TargetCondition condition, AbilityValidationFailBehaviour failBehaviour, string failMessageKey)
         : base(condition, failBehaviour, failMessageKey)
     {
     }
 
-    public override AbilityValidationResult Validate(Entity target)
+    public override AbilityValidationResult Validate(Entity _, Entity target)
     {
         if (target.Has<CombatState>())
             return Fail();

@@ -13,7 +13,7 @@ internal record EffectDefinitionData
     string DurationFormula,
     int TickRate, // in ticks (0: pure duration effect)
     bool TickOnApply, // true: tick immediately
-    string ApplyMessage,
-    string WearOffMessage,
+    ContextualizedMessageData ApplyMessage,
+    ContextualizedMessageData WearOffMessage,
     List<EffectActionData> Actions
 );

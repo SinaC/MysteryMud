@@ -1,6 +1,6 @@
-﻿namespace MysteryMud.Infrastructure.Persistence;
+﻿namespace MysteryMud.Infrastructure.Persistence.Parsers;
 
-public static class FlagsEnumParser
+internal static class FlagsEnumParser
 {
     public static TEnum Parse<TEnum>(
      string? value,

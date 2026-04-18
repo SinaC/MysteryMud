@@ -12,7 +12,7 @@ internal record AbilityDefinitionData
     CommandDefinitionData Command,
     AbilityTargetingData Targeting,
     AbilityOutcomeResolverData OutcomeResolver,
-    Dictionary<string, string> Messages,
+    Dictionary<string, ContextualizedMessageData> Messages,
     AbilityValidationRulesData ValidationRules,
     List<AbilityConditionalEffectGroupData> ConditionalEffects,
     List<string> Effects, // will be converted to ConditionalEffectGroups with Condition=None

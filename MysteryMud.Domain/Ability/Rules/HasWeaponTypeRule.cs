@@ -8,13 +8,13 @@ public class HasWeaponTypeRule : AbilityValidationRule
 {
     private readonly WeaponKind _required;
 
-    public HasWeaponTypeRule(AbilityValidationRuleCondition condition, AbilityValidationFailBehaviour failBehaviour, string failMessageKey, WeaponKind required)
+    public HasWeaponTypeRule(TargetCondition condition, AbilityValidationFailBehaviour failBehaviour, string failMessageKey, WeaponKind required)
         : base(condition, failBehaviour, failMessageKey)
     {
         _required = required;
     }
 
-    public override AbilityValidationResult Validate(Entity target)
+    public override AbilityValidationResult Validate(Entity _, Entity target)
     {
         if (!target.TryGetMainHandWeapon(out var _, out var weapon))
             return Fail();

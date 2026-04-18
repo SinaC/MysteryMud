@@ -1,7 +1,7 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.Domain.Components.Characters;
-using MysteryMud.Domain.Components.Characters.Players;
+using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Systems;
@@ -212,7 +212,7 @@ public class CombatInitiatorTests : IDisposable
     // -------------------------------------------------------------------------
 
     [Fact]
-    public void PeaceCommand_ForfeitsAllClaims()
+    public void PeaceCommand_RemovesCombatInitiatorFromAllInRoom()
     {
         var room = _f.Room().Build();
         var npc = _f.Npc("Orc").WithLocation(room).Build();
@@ -222,11 +222,9 @@ public class CombatInitiatorTests : IDisposable
         SetInitiator(npc, alice, tick: 1);
         AddClaim(npc, bob, tick: 5);
 
-        // peace command — forfeit all
         PeaceRoom(room);
 
-        ref var initiator = ref npc.Get<CombatInitiator>();
-        Assert.True(initiator.Claims.All(c => c.Forfeited));
+        Assert.False(npc.Has<CombatInitiator>());
     }
 
     [Fact]
@@ -238,15 +236,11 @@ public class CombatInitiatorTests : IDisposable
         var alice = _f.Player("Alice").WithLocation(room).WithAutoLoot().Build();
         var charlie = _f.Player("Charlie").WithLocation(room).WithAutoLoot().Build();
 
-        // alice initiated, peace was called, charlie attacks after peace
-        corpse.Add(new CombatInitiator
-        {
-            Claims =
-            [
-                new CombatClaim { Claimant = alice,   JoinedAtTick = 1,  Forfeited = true }, // peace
-                new CombatClaim { Claimant = charlie, JoinedAtTick = 10, Forfeited = false }, // after peace
-            ]
-        });
+        SetInitiator(corpse, alice, tick: 1);
+        PeaceRoom(room); // wipes CombatInitiator entirely
+
+        // charlie attacks after peace — becomes new initiator
+        SetInitiator(corpse, charlie, tick: 10);
 
         _f.Intents.CorpseLoot.Add() = new CorpseLootIntent
         {
@@ -351,10 +345,16 @@ public class CombatInitiatorTests : IDisposable
         ref var contents = ref room.Get<RoomContents>();
         foreach (var character in contents.Characters)
         {
-            if (!character.Has<CombatInitiator>()) continue;
-            ref var initiator = ref character.Get<CombatInitiator>();
-            for (int i = 0; i < initiator.Claims.Count; i++)
-                initiator.Claims[i] = initiator.Claims[i] with { Forfeited = true };
+            character.Remove<CombatState>();
+            character.Remove<NewCombatantTag>();
+            character.Remove<CombatInitiator>();
+            character.Remove<ActiveThreatTag>();
+            ref var threatTable = ref character.TryGetRef<ThreatTable>(out var hasThreatTable);
+            if (hasThreatTable)
+            {
+                threatTable.Threat.Clear();
+                threatTable.LastUpdateTick = 0;
+            }
         }
     }
 }

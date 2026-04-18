@@ -6,8 +6,10 @@ using MysteryMud.Core.Contracts;
 using MysteryMud.Domain.Ability;
 using MysteryMud.Domain.Ability.Services;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
+using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Systems;
@@ -100,7 +102,7 @@ public class AbilityCastingSystem
 
             foreach (var rule in ability.TargetValidationRules.Where(x => x.IsCandidateForValidation(target)))
             {
-                var result = rule.Validate(target);
+                var result = rule.Validate(source, target);
                 if (result.Success)
                     continue;
 
@@ -119,13 +121,46 @@ public class AbilityCastingSystem
         return passed;
     }
 
-    private void ActAbilityMessage(Entity actor, AbilityRuntime ability, string key, Entity target) // TODO: same code found in AbilityExecutionSystem
+    private void ActAbilityMessage(Entity actor, AbilityRuntime ability, string key, Entity target) // TODO: same code found in AbilityValidationSystem
     {
         if (key is null)
             return;
         if (ability.Messages.TryGetValue(key, out var msg))
-            _msg.To(actor).Act(msg).With(target);
+            ActAbilityMessage(msg, actor, target);
         else
             _logger.LogError("Ability {abilityName} validation rules refers to {key} but it's not found in messages", ability.Name, key);
+    }
+
+    private void ActAbilityMessage(ContextualizedMessage msg, Entity actor, Entity target) // TODO: same code found in EffectRuntimeFactory/AbilityValidationSystem
+    {
+        var source = actor;
+        var affectedEntity = target;
+        if (msg.ToActor is not null)
+            _msg.To(source).Act(msg.ToActor).With(affectedEntity);
+        if (msg.ToTarget is not null)
+        {
+            var messageTarget = GetMessageTarget(affectedEntity);
+            if (messageTarget is not null)
+                _msg.To(messageTarget.Value).Send(msg.ToTarget);
+        }
+        if (msg.ToRoom is not null)
+        {
+            var messageTarget = GetMessageTarget(affectedEntity);
+            if (messageTarget is not null)
+                _msg.ToRoomExcept(source, messageTarget.Value).Act(msg.ToRoom).With(affectedEntity);
+            else
+                _msg.ToRoom(source).Act(msg.ToRoom).With(affectedEntity);
+        }
+    }
+
+    private Entity? GetMessageTarget(Entity affectedEntity) // TODO: same code found in EffectRuntimeFactory/AbilityValidationSystem
+    {
+        if (affectedEntity.Has<CharacterTag>())
+            return affectedEntity;
+        if (affectedEntity.TryGet<Equipped>(out var equipped))
+            return equipped.Wearer;
+        if (affectedEntity.TryGet<ContainedIn>(out var containedIn) && containedIn.Character.Has<CharacterTag>())
+            return containedIn.Character;
+        return null;
     }
 }

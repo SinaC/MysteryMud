@@ -17,7 +17,7 @@ public class AbilityRuntime
     public AbilityOutcomeResolverRuntime? OutcomeResolver;
     public List<AbilityConditionalEffectGroupRuntime> ConditionalEffectGroups = [];
     public List<int> FailureEffectIds = [];
-    public Dictionary<string, string> Messages = []; // TODO: actor/room messages ?
+    public Dictionary<string, ContextualizedMessage> Messages = [];
     public List<IAbilityValidationRule> SourceValidationRules = [];
     public List<IAbilityValidationRule> TargetValidationRules = [];
 }

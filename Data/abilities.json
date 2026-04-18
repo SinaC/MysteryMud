@@ -52,18 +52,23 @@
     },
     "ConditionalEffects": [
       { "Condition": "IsCharacter", "Effects": ["Poison"]     },
+      { "Condition": "IsWeapon",    "Effects": ["PoisonWeapon"] },
       { "Condition": "IsItem",      "Effects": ["PoisonItem"] }
     ],
     "ValidationRules": {
         "Target": [
+          { "Type": "SavesSpell", "DamageKind": "Poison", "MessageKey": "SavesSpell" },
           { "Type": "NotAffectedBy", "Tag": "Poison", "TagKind": "Item", "MessageKey": "WeaponAlreadyEnvenomed", "Condition": "IsWeapon" },
           { "Type": "NotAffectedBy", "Tag": "Bless", "TagKind": "Item", "MessageKey": "BlockedByBless" },
           { "Type": "NotAffectedBy", "Tag": "Poison", "TagKind": "Item", "MessageKey": "ItemAlreadyPoisoned" }
         ]
     },
     "Messages": {
-      "OnSuccess": "TBD",
-      "OnFailure": "TBD FAILURE",
+      "SavesSpell": {
+        "ToTarget": "You feel momentarily ill, but it passes.",
+        "ToActor": "{0} turns slightly green, but it passes.",
+        "ToRoom": "{0} turns slightly green, but it passes."
+      },
       "BlockedByBless": "Your spell fails to corrupt {0}.",
       "ItemAlreadyPoisoned": "{0} is already poisoned.",
       "WeaponAlreadyEnvenomed": "{0} is already envenomed."
