@@ -5,8 +5,11 @@
     <File Path="Documentation/TODO.txt" />
     <File Path="MENTAL MODEL.TXT" />
   </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/MysteryMud.Tests/MysteryMud.Tests.csproj" Id="5c2190a8-5d50-465b-8491-00cfce5338bc" />
+  </Folder>
   <Folder Name="/Tools/">
-    <Project Path="MysteryMud.Benchmarks/MysteryMud.Benchmarks.csproj" Id="1bbe10e7-af45-4813-bbf5-9a0d7d88a05f" />
+    <Project Path="Tools/MysteryMud.Benchmarks/MysteryMud.Benchmarks.csproj" Id="1bbe10e7-af45-4813-bbf5-9a0d7d88a05f" />
   </Folder>
   <Project Path="MysteryMud.Application.Commands/MysteryMud.Application.Commands.csproj" Id="09b54d71-57c0-4add-a667-94b68a511773" />
   <Project Path="MysteryMud.Application/MysteryMud.Application.csproj" Id="91c37f5f-53da-4340-a025-d3de4784f75e" />
@@ -15,5 +18,4 @@
   <Project Path="MysteryMud.Domain/MysteryMud.Domain.csproj" Id="9310135b-5176-4452-842b-6ef716f63899" />
   <Project Path="MysteryMud.GameData/MysteryMud.GameData.csproj" Id="067a5c51-4372-458a-9c12-50e2ddb327ad" />
   <Project Path="MysteryMud.Infrastructure/MysteryMud.Infrastructure.csproj" Id="97c83200-37f1-4445-8597-9168922d3750" />
-  <Project Path="MysteryMud.Tests/MysteryMud.Tests.csproj" Id="5c2190a8-5d50-465b-8491-00cfce5338bc" />
 </Solution>
