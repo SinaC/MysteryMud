@@ -90,6 +90,7 @@ RoomFactory.LinkRoom(world, market, temple, DirectionKind.North);
 RoomFactory.LinkRoom(world, market, common, DirectionKind.South);
 RoomFactory.LinkRoom(world, common, market, DirectionKind.North);
 
+var player = PlayerFactory.CreatePlayer(world, "player", market);
 var admin = PlayerFactory.CreateAdmin(world, "admin", market);
 var goblin = MobileFactory.CreateMob(world, "goblin", "a goblin", market);
 var troll = MobileFactory.CreateMob(world, "troll", "a troll", market);
@@ -271,7 +272,6 @@ services.AddSingleton<IIntentContainer>(sp => sp.GetRequiredService<IntentBusCon
 services.AddSingleton<IIntentWriterContainer>(sp => sp.GetRequiredService<IntentBusContainer>());
 services.AddSingleton<IConnectionService, ConnectionService>();
 
-
 // Resolvers & factories & services (domain)
 services.AddSingleton<IAbilityTargetResolver, AbilityTargetResolver>();
 services.AddSingleton<IAggroResolver, AggroResolver>();
@@ -290,6 +290,7 @@ services.AddSingleton<IGameMessageService, GameMessageService>();
 services.AddSingleton<ILookService, LookService>();
 services.AddSingleton<ISacrificeService, SacrificeService>();
 services.AddSingleton<IEffectDisplayService, EffectDisplayService>();
+services.AddSingleton<IFollowService, FollowService>();
 
 // Command dispatcher
 services.AddSingleton<ICommandDispatcher, CommandDispatcher>();

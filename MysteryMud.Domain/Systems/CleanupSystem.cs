@@ -12,17 +12,21 @@ using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Extensions;
+using MysteryMud.Domain.Helpers;
+using MysteryMud.Domain.Services;
 
 namespace MysteryMud.Domain.Systems;
 
 public class CleanupSystem
 {
     private readonly ILogger _logger;
+    private readonly IFollowService _followService;
     private readonly IEffectLifecycleManager _effectLifecycleManager;
 
-    public CleanupSystem(ILogger logger, IEffectLifecycleManager effectLifecycleManager)
+    public CleanupSystem(ILogger logger, IFollowService followService, IEffectLifecycleManager effectLifecycleManager)
     {
         _logger = logger;
+        _followService = followService;
         _effectLifecycleManager = effectLifecycleManager;
     }
 
@@ -49,11 +53,12 @@ public class CleanupSystem
                 .WithAll<DisconnectedTag>();
         state.World.Query(disconnectedPlayersQuery, (Entity player, ref DisconnectedTag disconnectedTag) =>
         {
-            _logger.LogInformation(LogEvents.Cleanup,"Cleaning up disconnected player {characterName}", player.DebugName);
+            _logger.LogInformation(LogEvents.Cleanup, "Cleaning up disconnected player {characterName}", player.DebugName);
 
-            RemoveFromCombat(state.World, player);
+            _followService.StopFollowing(player);
+            CombatHelpers.RemoveFromAllCombat(state, player);
+            CombatHelpers.RemoveFromAllThreatTable(state.World, player);
             RemoveFromRoomContents(player);
-            RemoveFromThreatTable(state.World, player);
             RemoveEffects(state.World, player);
 
             // TODO: destroy any items the character is carrying or equipped with
@@ -68,11 +73,12 @@ public class CleanupSystem
                 .WithAll<Dead, Location, NpcTag>();
         state.World.Query(destroyNpcsQuery, (Entity npc, ref Dead deadTag, ref Location location, ref NpcTag npcTag) =>
         {
-            _logger.LogInformation(LogEvents.Cleanup,"Cleaning up npc {characterName} from room {roomName}", npc.DebugName, location.Room.DebugName);
+            _logger.LogInformation(LogEvents.Cleanup, "Cleaning up npc {characterName} from room {roomName}", npc.DebugName, location.Room.DebugName);
 
-            RemoveFromCombat(state.World, npc);
+            _followService.StopFollowing(npc);
+            CombatHelpers.RemoveFromAllCombat(state, npc);
+            CombatHelpers.RemoveFromAllThreatTable(state.World, npc);
             RemoveFromRoomContents(npc);
-            RemoveFromThreatTable(state.World, npc);
             RemoveEffects(state.World, npc);
 
             // TODO: destroy any items the character is carrying or equipped with
@@ -93,7 +99,7 @@ public class CleanupSystem
             ref var location = ref item.TryGetRef<Location>(out var hasLocation);
             if (hasLocation)
             {
-                _logger.LogInformation(LogEvents.Cleanup,"Cleaning up item {itemName} from location {locationName}", item.DebugName, location.Room.DebugName);
+                _logger.LogInformation(LogEvents.Cleanup, "Cleaning up item {itemName} from location {locationName}", item.DebugName, location.Room.DebugName);
 
                 ref var roomContents = ref location.Room.Get<RoomContents>();
                 roomContents.Items.Remove(item);
@@ -104,14 +110,14 @@ public class CleanupSystem
             {
                 if (containedIn.Character != Entity.Null)
                 {
-                    _logger.LogInformation(LogEvents.Cleanup,"Cleaning up item {itemName} from inventory of {inventoryOwnerName}", item.DebugName, containedIn.Character.DebugName);
+                    _logger.LogInformation(LogEvents.Cleanup, "Cleaning up item {itemName} from inventory of {inventoryOwnerName}", item.DebugName, containedIn.Character.DebugName);
 
                     ref var inventory = ref containedIn.Character.Get<Inventory>();
                     inventory.Items.Remove(item);
                 }
                 else if (containedIn.Container != Entity.Null)
                 {
-                    _logger.LogInformation(LogEvents.Cleanup,"Cleaning up item {itemName} from container {containerName}", item.DebugName, containedIn.Container.DebugName);
+                    _logger.LogInformation(LogEvents.Cleanup, "Cleaning up item {itemName} from container {containerName}", item.DebugName, containedIn.Container.DebugName);
 
                     ref var containerContents = ref containedIn.Container.Get<ContainerContents>();
                     containerContents.Items.Remove(item);
@@ -126,7 +132,7 @@ public class CleanupSystem
                 {
                     if (equipment.Slots[slot] == item)
                     {
-                        _logger.LogInformation(LogEvents.Cleanup,"Cleaning up item {itemName} from equipment of {wearerName} in slot {slot}", item.DebugName, equipped.Wearer.DebugName, slot);
+                        _logger.LogInformation(LogEvents.Cleanup, "Cleaning up item {itemName} from equipment of {wearerName} in slot {slot}", item.DebugName, equipped.Wearer.DebugName, slot);
 
                         equipment.Slots[slot] = Entity.Null;
                     }
@@ -144,30 +150,6 @@ public class CleanupSystem
             return; // can't remove from room contents if we don't know where the victim is
         ref var roomContents = ref location.Room.Get<RoomContents>();
         roomContents.Characters.Remove(victim);
-    }
-
-    private static void RemoveFromCombat(World world, Entity victim)
-    {
-        // remove from combat
-        victim.Remove<CombatState>();
-        // remove combat state for anyone targeting this entity
-        var query = new QueryDescription()
-          .WithAll<CombatState>();
-        world.Query(query, (Entity actor, ref CombatState combat) =>
-        {
-            if (combat.Target == victim)
-                actor.Remove<CombatState>();
-        });
-    }
-
-    private void RemoveFromThreatTable(World world, Entity character) // TODO: optimize, this will loop on every NPC
-    {
-        var query = new QueryDescription()
-            .WithAll<ThreatTable, ActiveThreatTag>();
-        world.Query(query, (Entity actor, ref ThreatTable threatTable) =>
-        {
-            threatTable.Threat.Remove(character);
-        });
     }
 
     private static void RemoveEffects(World world, Entity victim)

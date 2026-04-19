@@ -68,7 +68,7 @@ public sealed class FleeSystem
             _experienceService.GrantExperience(entity, -50);
 
             // remove from combat
-            RemoveFromCombat(state.World, entity);
+            RemoveFromCombat(state, entity);
 
             _msg.To(entity).Send("You flee from combat!");
             _msg.ToRoom(entity).Act("{0} has fled!").With(entity);
@@ -82,22 +82,13 @@ public sealed class FleeSystem
         }
     }
 
-    private static void RemoveFromCombat(World world, Entity fleeingEntity)
+    private static void RemoveFromCombat(GameState state, Entity fleeingEntity)
     {
         var previousTarget = fleeingEntity.Get<CombatState>().Target;
 
-        // remove from combat
-        fleeingEntity.Remove<CombatState>();
-        // remove combat state for anyone targeting this entity
-        var query = new QueryDescription()
-          .WithAll<CombatState>();
-        world.Query(query, (Entity actor, ref CombatState combat) =>
-        {
-            if (combat.Target == fleeingEntity)
-                actor.Remove<CombatState>();
-        });
+        CombatHelpers.RemoveFromAllCombat(state, fleeingEntity);
 
         if (fleeingEntity.Has<PlayerTag>())
-            CharacterHelpers.ForfeitClaim(previousTarget, fleeingEntity);
+            CombatHelpers.ForfeitClaim(previousTarget, fleeingEntity);
     }
 }

@@ -7,7 +7,6 @@ using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
-using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Intents;
 
 namespace MysteryMud.Domain.Systems;
@@ -167,10 +166,8 @@ public class FollowSystem
 
     private void EmitCannotFollowMessage(Entity follower, Entity leader, string blockReason)
     {
-        var followerName = follower.Get<Name>().Value;
-        var leaderName = leader.Get<Name>().Value;
-        _msg.To(follower).Act($"You cannot follow {leaderName}: {blockReason}.");
-        _msg.To(leader).Act($"{followerName} cannot follow you: {blockReason}.");
+        _msg.To(follower).Act("You cannot follow {0}: {1}.").With(leader, blockReason);
+        _msg.To(leader).Act("{0} cannot follow you: {1}.").With(follower, blockReason);
     }
 
     private void HandleCharmieLeash(Entity charmie, MoveIntent leaderIntent)

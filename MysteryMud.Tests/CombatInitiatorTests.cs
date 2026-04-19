@@ -4,6 +4,7 @@ using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Helpers;
+using MysteryMud.Domain.Services;
 using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Intents;
@@ -14,15 +15,17 @@ namespace MysteryMud.Tests;
 public class CombatInitiatorTests : IDisposable
 {
     private readonly MudTestFixture _f = new();
+    private readonly FollowService _followService;
     private readonly AutoAssistSystem _autoAssist;
     private readonly DeathSystem _deathSystem;
     private readonly LootSystem _lootSystem;
 
     public CombatInitiatorTests()
     {
+        _followService = new FollowService(_f.GameMessage);
         // wire up systems with test doubles
         _autoAssist = new AutoAssistSystem(_f.RoomEnteredEvents);
-        _deathSystem = new DeathSystem(_f.GameMessage, _f.Intents, _f.DeathEvents);
+        _deathSystem = new DeathSystem(_followService, _f.Intents, _f.DeathEvents);
         _lootSystem = new LootSystem(_f.GameMessage, _f.Intents, _f.ItemLootedEvents);
     }
 
@@ -329,7 +332,7 @@ public class CombatInitiatorTests : IDisposable
 
     private static void SetInitiator(Entity npc, Entity claimant, int tick = 0)
     {
-        CharacterHelpers.AddCombatClaim(npc, claimant, tick);
+        CombatHelpers.AddCombatClaim(npc, claimant, tick);
     }
 
     private static void AddClaim(Entity npc, Entity claimant, int tick)
@@ -337,7 +340,7 @@ public class CombatInitiatorTests : IDisposable
 
     private static void ForfeitClaim(Entity npc, Entity claimant)
     {
-        CharacterHelpers.ForfeitClaim(npc, claimant);
+        CombatHelpers.ForfeitClaim(npc, claimant);
     }
 
     private static void PeaceRoom(Entity room)

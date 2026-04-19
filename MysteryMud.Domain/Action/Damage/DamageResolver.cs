@@ -79,7 +79,7 @@ public class DamageResolver : IDamageResolver
 
             health.Current = 0;
 
-            var rewardOwner = CharacterHelpers.DetermineLootOwner(target, source);
+            var rewardOwner = CombatHelpers.DetermineLootOwner(target, source);
             var rewardOwnerGroup = rewardOwner.Has<GroupMember>()
                 ? rewardOwner.Get<GroupMember>().Group
                 : Entity.Null;

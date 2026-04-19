@@ -19,7 +19,7 @@ public class AggressionSystem
     {
         foreach (ref var evt in _aggressed.GetAll())
         {
-            CharacterHelpers.EnterCombat(state, evt.Source, evt.Target);
+            CombatHelpers.EnterCombat(state, evt.Source, evt.Target);
         }
     }
 }

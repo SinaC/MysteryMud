@@ -67,6 +67,6 @@ public class KillCommand : ICommand
             target.Value.Add<NewCombatantTag>();
         }
 
-        CharacterHelpers.EnterCombat(state, actor, target.Value);
+        CombatHelpers.EnterCombat(state, actor, target.Value);
     }
 }

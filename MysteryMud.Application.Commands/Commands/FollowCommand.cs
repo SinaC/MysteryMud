@@ -16,10 +16,12 @@ public class FollowCommand : ICommand
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.Target;
 
     private readonly IGameMessageService _msg;
+    private readonly IFollowService _followService;
 
-    public FollowCommand(IGameMessageService msg)
+    public FollowCommand(IGameMessageService msg, IFollowService followService)
     {
         _msg = msg;
+        _followService = followService;
     }
 
     public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
@@ -56,12 +58,7 @@ public class FollowCommand : ICommand
                 _msg.To(actor).Send("You already follow yourself.");
                 return;
             }
-            // inform leader
-            _msg.To(following.Leader).Act("{0:N} stops following you.").With(actor);
-            _msg.To(actor).Act("You stop following {0:N}.").With(following.Leader);
-
-            // remove following
-            actor.Remove<Following>();
+            _followService.StopFollowing(actor);
             return;
         }
 
@@ -78,23 +75,10 @@ public class FollowCommand : ICommand
         }
 
         // no cycle -> follow target
-        if (isFollowing)
-        {
-            // inform previous leader
-            _msg.To(following.Leader).Act("{0:N} stops following you.").With(actor);
-            _msg.To(actor).Act("You stop following {0:N}.").With(following.Leader);
-
-            // change leader
-            following.Leader = target.Value;
-        }
-        else
-            actor.Add(new Following { Leader = target.Value });
-        // inform new leader
-        _msg.To(actor).Act("You start following {0:N}.").With(target.Value);
-        _msg.To(target.Value).Act("{0:N} starts following you.").With(actor);
+        _followService.StartFollowing(actor, target.Value);
     }
 
-    private Entity? GetLeader(Entity entity)
+    private static Entity? GetLeader(Entity entity)
     {
         ref var following = ref entity.TryGetRef<Following>(out var isFollowing);
         if (!isFollowing)
