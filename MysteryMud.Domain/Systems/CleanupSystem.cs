@@ -21,12 +21,14 @@ public class CleanupSystem
 {
     private readonly ILogger _logger;
     private readonly IFollowService _followService;
+    private readonly IGroupService _groupService;
     private readonly IEffectLifecycleManager _effectLifecycleManager;
 
-    public CleanupSystem(ILogger logger, IFollowService followService, IEffectLifecycleManager effectLifecycleManager)
+    public CleanupSystem(ILogger logger, IFollowService followService, IGroupService groupService, IEffectLifecycleManager effectLifecycleManager)
     {
         _logger = logger;
         _followService = followService;
+        _groupService = groupService;
         _effectLifecycleManager = effectLifecycleManager;
     }
 
@@ -56,6 +58,9 @@ public class CleanupSystem
             _logger.LogInformation(LogEvents.Cleanup, "Cleaning up disconnected player {characterName}", player.DebugName);
 
             _followService.StopFollowing(player);
+            ref var groupMember = ref player.TryGetRef<GroupMember>(out var inGroup);
+            if (inGroup)
+                _groupService.RemoveMember(state, groupMember.Group, player);
             CombatHelpers.RemoveFromAllCombat(state, player);
             CombatHelpers.RemoveFromAllThreatTable(state.World, player);
             RemoveFromRoomContents(player);

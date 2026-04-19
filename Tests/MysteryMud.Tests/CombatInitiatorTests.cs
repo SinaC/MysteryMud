@@ -1,10 +1,9 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
+using MysteryMud.Core;
 using MysteryMud.Domain.Components.Characters;
-using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Helpers;
-using MysteryMud.Domain.Services;
 using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Intents;
@@ -15,17 +14,11 @@ namespace MysteryMud.Tests;
 public class CombatInitiatorTests : IDisposable
 {
     private readonly MudTestFixture _f = new();
-    private readonly FollowService _followService;
-    private readonly AutoAssistSystem _autoAssist;
-    private readonly DeathSystem _deathSystem;
     private readonly LootSystem _lootSystem;
 
     public CombatInitiatorTests()
     {
-        _followService = new FollowService(_f.GameMessage);
         // wire up systems with test doubles
-        _autoAssist = new AutoAssistSystem(_f.RoomEnteredEvents);
-        _deathSystem = new DeathSystem(_followService, _f.Intents, _f.DeathEvents);
         _lootSystem = new LootSystem(_f.GameMessage, _f.Intents, _f.ItemLootedEvents);
     }
 
@@ -225,7 +218,7 @@ public class CombatInitiatorTests : IDisposable
         SetInitiator(npc, alice, tick: 1);
         AddClaim(npc, bob, tick: 5);
 
-        PeaceRoom(room);
+        PeaceRoom(_f.State, room);
 
         Assert.False(npc.Has<CombatInitiator>());
     }
@@ -240,7 +233,7 @@ public class CombatInitiatorTests : IDisposable
         var charlie = _f.Player("Charlie").WithLocation(room).WithAutoLoot().Build();
 
         SetInitiator(corpse, alice, tick: 1);
-        PeaceRoom(room); // wipes CombatInitiator entirely
+        PeaceRoom(_f.State, room); // wipes CombatInitiator entirely
 
         // charlie attacks after peace — becomes new initiator
         SetInitiator(corpse, charlie, tick: 10);
@@ -343,21 +336,12 @@ public class CombatInitiatorTests : IDisposable
         CombatHelpers.ForfeitClaim(npc, claimant);
     }
 
-    private static void PeaceRoom(Entity room)
+    private static void PeaceRoom(GameState state, Entity room)
     {
         ref var contents = ref room.Get<RoomContents>();
         foreach (var character in contents.Characters)
         {
-            character.Remove<CombatState>();
-            character.Remove<NewCombatantTag>();
-            character.Remove<CombatInitiator>();
-            character.Remove<ActiveThreatTag>();
-            ref var threatTable = ref character.TryGetRef<ThreatTable>(out var hasThreatTable);
-            if (hasThreatTable)
-            {
-                threatTable.Threat.Clear();
-                threatTable.LastUpdateTick = 0;
-            }
+            CombatHelpers.RemoveFromCombat(state, character);
         }
     }
 }

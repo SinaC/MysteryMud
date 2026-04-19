@@ -28,12 +28,16 @@ public class RespawnSystem
             // Optional: respawn timer check
             //if (Time.time - dead.TimeOfDeath >= RespawnDelay)
             {
+                // remove player from location
+                ref var deathRoomContents = ref location.Room.Get<RoomContents>();
+                deathRoomContents.Characters.Remove(player);
+
                 // Move player to respawn room
                 location.Room = respawnState.RespawnRoom;
 
                 // Add player back to RoomContents
-                ref var roomContents = ref respawnState.RespawnRoom.Get<RoomContents>();
-                roomContents.Characters.Add(player);
+                ref var respawnRoomContents = ref respawnState.RespawnRoom.Get<RoomContents>();
+                respawnRoomContents.Characters.Add(player);
 
                 // Reset health
                 health.Current = health.Max;

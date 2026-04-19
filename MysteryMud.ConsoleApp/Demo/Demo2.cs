@@ -95,6 +95,7 @@ static class Demo2
         var experienceService = new ExperienceService(gameMessageService, experienceGrantedEventBuffer, levelIncreasedEventBuffer);
         var sacrificeService = new SacrificeService(gameMessageService);
         var followService = new FollowService(gameMessageService);
+        var groupService = new GroupService(gameMessageService);
 
         var actionOrchestrator = new ActionOrchestrator(logger, intentBusContainer, attackResolvedEventBuffer, effectResolvedEventBuffer, aggressedEventBuffer, killRewardEventBuffer, effectRegistry, effectApplicationManager, experienceService, hitResolver, hitDamageFactory, damageResolver, weaponProcResolver, reactionResolver);
 
@@ -107,7 +108,7 @@ static class Demo2
         var deathSystem = new DeathSystem(followService, intentBusContainer, deathEventBuffer);
         var lootSystem = new LootSystem(gameMessageService, intentBusContainer, itemLootedEventBuffer);
         var lookSystem = new LookSystem(lookService, intentBusContainer, lookedEventBuffer);
-        var cleanupSystem = new CleanupSystem(logger, followService, effectLifecycleManager);
+        var cleanupSystem = new CleanupSystem(logger, followService, groupService, effectLifecycleManager);
 
         //// subscribe to events for demo purposes
         //var fleeBlockedEventDispatcher = new EventDispatcher<FleeBlockedEvent>();

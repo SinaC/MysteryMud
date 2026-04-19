@@ -1,6 +1,7 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.Domain.Components;
+using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Services;
 
@@ -22,6 +23,18 @@ internal class TestGameMessageService : IGameMessageService
         var msgTargetBuilder = new TestMessageTargetBuilder();
         foreach(var entity in entities)
             Messages.Add(new Message { Recipient = entity, MsgTargetBuilder = msgTargetBuilder });
+        return msgTargetBuilder;
+    }
+
+    public IMessageTargetBuilder ToGroup(Entity group)
+    {
+        var msgTargetBuilder = new TestMessageTargetBuilder();
+        ref var groupData = ref group.TryGetRef<Group>(out var isGroup);
+        if (isGroup)
+        {
+            foreach (var member in groupData.Members)
+                Messages.Add(new Message { Recipient = member, MsgTargetBuilder = msgTargetBuilder });
+        }
         return msgTargetBuilder;
     }
 

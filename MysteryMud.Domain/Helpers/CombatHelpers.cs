@@ -10,6 +10,25 @@ namespace MysteryMud.Domain.Helpers;
 
 public static class CombatHelpers
 {
+    public static void EnterCombat(GameState state, Entity source, Entity target)
+    {
+        if (!CharacterHelpers.IsAlive(source, target)) return;
+
+        if (!source.Has<CombatState>())
+        {
+            source.Add(new CombatState { Target = target, RoundDelay = 0 });
+            source.Add<NewCombatantTag>();
+        }
+
+        if (!target.Has<CombatState>())
+        {
+            target.Add(new CombatState { Target = source, RoundDelay = 1 });
+            target.Add<NewCombatantTag>();
+        }
+
+        AddCombatClaim(target, source, state.CurrentTick);
+    }
+
     public static void RemoveFromCombat(GameState state, Entity character)
     {
         character.Remove<CombatState>();
@@ -50,7 +69,6 @@ public static class CombatHelpers
         });
     }
 
-
     public static Entity DetermineLootOwner(Entity victim, Entity killer)
     {
         if (victim.Has<CombatInitiator>())
@@ -65,25 +83,6 @@ public static class CombatHelpers
                 return activeClaim.Claimant;
         }
         return killer; // no valid claims, killer gets it
-    }
-
-    public static void EnterCombat(GameState state, Entity source, Entity target)
-    {
-        if (!CharacterHelpers.IsAlive(source, target)) return;
-
-        if (!source.Has<CombatState>())
-        {
-            source.Add(new CombatState { Target = target, RoundDelay = 0 });
-            source.Add<NewCombatantTag>();
-        }
-
-        if (!target.Has<CombatState>())
-        {
-            target.Add(new CombatState { Target = source, RoundDelay = 1 });
-            target.Add<NewCombatantTag>();
-        }
-
-        AddCombatClaim(target, source, state.CurrentTick);
     }
 
     public static void ForfeitClaim(Entity npc, Entity claimant)

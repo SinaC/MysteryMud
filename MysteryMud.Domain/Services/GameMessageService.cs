@@ -21,9 +21,9 @@ public class GameMessageService : IGameMessageService
     public IMessageTargetBuilder To(IEnumerable<Entity> entities)
         => new MessageTargetBuilder(_messageBus, _actService, entities);
 
-    public IMessageTargetBuilder ToGroup(Entity entity)
+    public IMessageTargetBuilder ToGroup(Entity group)
     {
-        var targets = ActTargetResolver.GetGroupTargets(entity);
+        var targets = ActTargetResolver.GetGroupTargets(group);
         return new MessageTargetBuilder(_messageBus, _actService, targets);
     }
 

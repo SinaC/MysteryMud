@@ -45,7 +45,7 @@ public class CommandRegistry : ICommandRegistry
         foreach (var def in definitions)
         {
             var typeName = $"{def.Name.FirstCharToUpper()}Command";
-            var type = commandTypes.FirstOrDefault(t => t.Name == typeName && typeof(ICommand).IsAssignableFrom(t));
+            var type = commandTypes.FirstOrDefault(t => t.Name.Equals(typeName, StringComparison.InvariantCultureIgnoreCase) && typeof(ICommand).IsAssignableFrom(t));
 
             if (type == null)
             {

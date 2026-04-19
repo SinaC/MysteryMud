@@ -1,4 +1,5 @@
 ﻿using Arch.Core;
+using MysteryMud.Application.Commands.DataDrivenCommands;
 using MysteryMud.Application.Registry;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
@@ -7,7 +8,7 @@ using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
-namespace MysteryMud.Application.Commands.ExplicitCommands;
+namespace MysteryMud.Application.Commands.RegistryDependentCommands;
 
 public class SocialsCommand : IExplicitCommand
 {

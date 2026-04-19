@@ -8,7 +8,7 @@ using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
-namespace MysteryMud.Application.Commands.ExplicitCommands;
+namespace MysteryMud.Application.Commands.RegistryDependentCommands;
 
 public class HelpCommand : IExplicitCommand
 {
@@ -70,7 +70,7 @@ public class HelpCommand : IExplicitCommand
                 _msg.To(actor).Send($"Category: {group.Key}");
                 foreach (var item in group)
                 {
-                    _msg.To(actor).Send($"  {item.Definition.Name} -  %#FA8640>#0486FA{item.Definition.HelpText}");
+                    _msg.To(actor).Send($"  {item.Definition.Name} -  %#FA8640>#0486FA{item.Definition.HelpText}%x");
                 }
             }
         }
