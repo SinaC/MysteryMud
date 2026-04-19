@@ -5,49 +5,27 @@ using MysteryMud.Application.Queries;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Core.Contracts;
-using MysteryMud.Core.Extensions;
 using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Services;
-using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
-namespace MysteryMud.Application.Commands.ExplicitCommands.Admin;
+namespace MysteryMud.Application.Commands.Commands.Admin;
 
-public class TestCommand : IExplicitCommand
+public class TestCommand : ICommand
 {
-    private const string Name = "test";
-
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetAndText;
 
     private readonly IEffectRegistry _effectRegistry;
     private readonly IGameMessageService _msg;
     private readonly IIntentWriterContainer _intents;
 
-    public CommandDefinition Definition { get; }
-
     public TestCommand(IEffectRegistry effectRegistry, IGameMessageService msg, IIntentWriterContainer intents)
     {
         _effectRegistry = effectRegistry;
         _msg = msg;
         _intents = intents;
-
-        Definition = new CommandDefinition
-        {
-            Id = Name.ComputeUniqueId(),
-            Name = Name,
-            Aliases = [],
-            CannotBeForced = true,
-            RequiredLevel = CommandLevelKind.Admin,
-            MinimumPosition = PositionKind.Dead,
-            Priority = 0,
-            DisallowAbbreviation = true,
-            HelpText = "",
-            Syntaxes = ["[cmd]"],
-            Categories = ["test"],
-            ThrottlingCategories = CommandThrottlingCategories.Admin
-        };
     }
 
     public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)

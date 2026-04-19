@@ -4,8 +4,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Commands.Commands.Admin;
-using MysteryMud.Application.Commands.ExplicitCommands;
-using MysteryMud.Application.Commands.ExplicitCommands.Admin;
+using MysteryMud.Application.Commands.DataDrivenCommands;
+using MysteryMud.Application.Commands.RegistryDependentCommands;
+using MysteryMud.Application.Commands.RegistryDependentCommands.Admin;
 using MysteryMud.Application.Dispatching;
 using MysteryMud.Application.Registry;
 using MysteryMud.Application.Services;
@@ -194,11 +195,9 @@ foreach (var type in commandAssembly.GetTypes()
     services.AddSingleton(type);
 }
 
-// Explicit commands that doesn't depend on ICommandRegistry 
-services.AddSingleton<IExplicitCommand, TestCommand>();
-services.AddSingleton<IExplicitCommand, CastCommand>();
+// registry dependents and data-driven commands
 
-// Social commands - data-driver
+// Social commands - data-driven
 foreach (var socialDefinition in socialDefinitions)
     services.AddSingleton<IExplicitCommand>(sp => new SocialCommand(logger, sp.GetRequiredService<IGameMessageService>(), socialDefinition));
 
@@ -219,6 +218,7 @@ services.AddSingleton<ICommandRegistry>(sp =>
     explicitCommands.Add(new HelpCommand(registry, sp.GetRequiredService<IGameMessageService>()));
     explicitCommands.Add(new SocialsCommand(registry, sp.GetRequiredService<IGameMessageService>()));
     explicitCommands.Add(new ForceCommand(logger, registry, sp.GetRequiredService<IGameMessageService>()));
+    explicitCommands.Add(new OrderCommand(logger, registry, sp.GetRequiredService<IGameMessageService>()));
 
     registry.RegisterCommands(commandDefinitions, [typeof(MstatCommand).Assembly], explicitCommands);
     return registry;
@@ -291,6 +291,7 @@ services.AddSingleton<ILookService, LookService>();
 services.AddSingleton<ISacrificeService, SacrificeService>();
 services.AddSingleton<IEffectDisplayService, EffectDisplayService>();
 services.AddSingleton<IFollowService, FollowService>();
+services.AddSingleton<IGroupService, GroupService>();
 
 // Command dispatcher
 services.AddSingleton<ICommandDispatcher, CommandDispatcher>();

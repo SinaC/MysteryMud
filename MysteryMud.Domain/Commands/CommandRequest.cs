@@ -17,6 +17,7 @@ public struct CommandRequest
 
     public bool Cancelled;
     public bool Force; // skip spam/cooldown/wait
+    public bool Order;
 
     public readonly ReadOnlySpan<char> CommandSpan
         => Input.AsSpan(CmdStart, CmdLength);

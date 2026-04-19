@@ -62,6 +62,13 @@ public class FollowCommand : ICommand
             return;
         }
 
+        var leader = GetLeader(actor);
+        if (leader == target.Value)
+        {
+            _msg.To(actor).Act("You are already following {0:N}.").With(target.Value);
+            return;
+        }
+
         // check cycle
         var next = GetLeader(target.Value);
         while (next != null)

@@ -12,7 +12,7 @@ using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
-namespace MysteryMud.Application.Commands.ExplicitCommands;
+namespace MysteryMud.Application.Commands.DataDrivenCommands;
 
 public class SocialCommand : IExplicitCommand
 {

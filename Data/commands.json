@@ -1,5 +1,16 @@
 [
     {
+      "Name" : "cast",
+      "Aliases": [],
+      "RequiredLevel": "Player",
+      "MinimumPosition": "Standing",
+      "Priority": 500,
+      "HelpText": "Before you can cast a spell, you have to practice it.  The more you practice,\nthe higher chance you have of success when casting.  Casting spells costs mana.\nThe mana cost decreases as your level increases.\n\nThe <target> is optional.  Many spells which need targets will use an\nappropriate default target, especially during combat.\n\nThe <casting level> is optional. Many spells have casting level higher than 1,\nand you don't have to cast spells at maximum casting level.\n\nIf the spell name is more than one word, then you must quote the spell name.\nExample: cast 'cure critic' frag.  Quoting is optional for single-word spells.\nYou can abbreviate the spell name.\n\nWhen you cast an offensive spell, the victim usually gets a saving throw.\nThe effect of the spell is reduced or eliminated if the victim makes the\nsaving throw successfully.\n\nSome examples:\ncast 'chill touch' victim   will cast 'chill touch' on victim\ncast armor newbie           will cast armor on newbie\ncast fireball               will cast fireball on current target if already\n  in combat\ncast 'floating disc'        will cast 'floating disc' on caster\nSee also the help sections for individual spells.\nUse the 'spells' command to see the spells you already have (help spells).",
+      "Syntaxes": ["[cmd] <ability> <target>"],
+      "Categories": ["ability", "combat"],
+      "ThrottlingCategories": "combat"
+    },
+    {
         "Name": "destroy",
         "RequiredLevel": "Player",
         "MinimumPosition": "Standing",
@@ -86,6 +97,28 @@
         "ThrottlingCategories": ["utility"]
     },
     {
+        "Name": "group",
+        "RequiredLevel": "Player",
+        "MinimumPosition": "Standing",
+        "Priority": 0,
+        "HelpText": "[cmd] will display information about members of your group.\n[cmd] <character> makes someone who is following you a member of your group.\nGroup members share experience points from kills and may use the GTELL and\nSPLIT commands.  If anyone in your group is attacked, you will automatically\njoin the fight.\n[cmd] <character> can also be used to remove a member of your group.",
+        "Syntaxes": ["[cmd]",
+                     "[cmd] <character>"],
+        "Categories": ["group", "information"],
+        "ThrottlingCategories": ["utility"]
+    },
+    {
+        "Name": "gtell",
+        "Aliases": ["gsay", "groupsay", ";"],
+        "RequiredLevel": "Player",
+        "MinimumPosition": "Dead",
+        "Priority": 0,
+        "HelpText": "[cmd] sends a message to everyone in the group (In Character channel).",
+        "Syntaxes": ["[cmd] <message>"],
+        "Categories": ["group", "communication"],
+        "ThrottlingCategories": ["social"]
+    },
+    {
         "Name": "inventory",
         "RequiredLevel": "Player",
         "MinimumPosition": "Standing",
@@ -104,6 +137,16 @@
         "Syntaxes": ["[cmd] <character>"],
         "Categories": ["combat"],
         "ThrottlingCategories": ["combat"]
+    },
+    {
+        "Name": "leave",
+        "RequiredLevel": "Player",
+        "MinimumPosition": "Standing",
+        "Priority": 0,
+        "HelpText": "[cmd] makes you leave a group.",
+        "Syntaxes": ["[cmd]"],
+        "Categories": ["group", "information"],
+        "ThrottlingCategories": ["utility"]
     },
     {
         "Name": "look",
@@ -232,7 +275,7 @@
         "RequiredLevel": "Player",
         "MinimumPosition": "Standing",
         "Priority": 0,
-        "HelpText": "[cmd] sends a message to one player anywhere in the world.",
+        "HelpText": "[cmd] sends a message to one player anywhere in the world (Out of Character channel).",
         "Syntaxes": ["[cmd] <player name> <message>"],
         "Categories": ["communication"],
         "ThrottlingCategories": ["social"]
@@ -257,5 +300,17 @@
         "Syntaxes": ["[cmd]"],
         "Categories": ["movement"],
         "ThrottlingCategories": ["movement"]
+    },
+    {
+        "Name": "test",
+        "CannotBeForced": true,
+        "RequiredLevel": "Admin",
+        "MinimumPosition": "Dead",
+        "Priority": 0,
+        "DisallowAbbreviation": true,
+        "HelpText": "",
+        "Syntaxes": ["[cmd]"],
+        "Categories": ["test"],
+        "ThrottlingCategories": "admin"
     }
 ]

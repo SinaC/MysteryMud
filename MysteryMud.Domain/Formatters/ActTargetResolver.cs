@@ -1,15 +1,19 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.Domain.Components;
+using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Rooms;
 
 namespace MysteryMud.Domain.Formatters;
 
 public static class ActTargetResolver
 {
-    public static IEnumerable<Entity> GetGroupTargets(Entity entity)
+    public static IEnumerable<Entity> GetGroupTargets(Entity group)
     {
-        return [entity]; // TODO: implement groups and return Group?.Members ?? this.Yield();
+        ref var groupData = ref group.TryGetRef<Group>(out var isGroup);
+        if (!isGroup)
+            return [];
+        return groupData.Members;
     }
 
     public static IEnumerable<Entity> GetRoomTargets(Entity actor)
