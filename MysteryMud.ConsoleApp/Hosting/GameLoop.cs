@@ -191,15 +191,14 @@ internal class GameLoop
                 CurrentTimeMs = currentTick * TimeRate.TicksInMilliseconds
             };
 
-            // Player commands 
+            // Read player inputs from command bus, extract command, check existence/permission/position and add CommandRequests in player CommandBuffer + set tag HasCommand
             _commandBus.Process(state);
-            // check spam, wait state, can cancel command
+            // Check spam, wait state, can cancel command for each entity with HasCommandTag
             _commandThrottleSystem.Execute(state);
-            // execute command (if not cancelled) -> may generate manual LookIntent(Mode= Snapshot)
+            // Execute command (if not cancelled) -> execute directly or set combat state or generate look intent or generate effect intent or item interaction intents or other intents
             _commandExecutionSystem.Execute(state);
-            // catches player-initiated combat (checking NewCombatant tag)
+            // Catches player-initiated combat (checking NewCombatant tag)
             _autoAssistSystem.TickCombatInitiated(state);
-            // TODO: stop invalid combat: dead entities, entities in different rooms, ...
             // Process all LookIntents with Mode=Snapshot → reads current world state before any effects → produces messages
             _lookSystem.Tick(state, LookMode.Snapshot);
             // TODO: AISystem                         // NPC behavior → generates intents
@@ -268,7 +267,7 @@ internal class GameLoop
             _autoSacrificeSystem.Tick(state);
             // Process LookIntents with Mode=PostUpdate → reflects final world state after all updates
             _lookSystem.Tick(state, LookMode.PostUpdate);
-            // Handle scheduleIntents (which can be generated from IA, abilities, TimedEffectSytem, AttackOrchestrator)
+            // Handle scheduleIntents (which can be generated from IA, TimedEffectSytem and ActionOrchestrator)
             _scheduleSystem.Tick(state);
 
             // Remove destroyed items / dead NPCs / disconnected players

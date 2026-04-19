@@ -1,6 +1,3 @@
-add Condition on ValidationRules to replace CanBeValidated on IAbilityValidationRule
-    IsItem, IsCharacter, IsWeapon, ...
-
 
 keep only one event buffer except for death/damage events which will have their own buffer to ensure they are processed separetely and can trigger things like death saves, death effects, etc without being mixed with other events
 
@@ -30,10 +27,6 @@ scripting
 
 ARCH-ECS
     https://arch-ecs.gitbook.io/arch/extensions/page-3/arch.system
-
-ICommand and all commands should be private
-same goes for CommandContext, CommandParseMode, ...
-CommandRegistry should discover commands via reflection and register them automatically (could be done in a static constructor or an initialization method)
 
 logging optimization example:
     public void ProcessData(int[] data)
