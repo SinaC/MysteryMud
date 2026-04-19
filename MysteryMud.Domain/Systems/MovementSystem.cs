@@ -31,34 +31,46 @@ public class MovementSystem
     {
         foreach(ref var intent in _intentContainer.MoveSpan)
         {
-            Move(intent);
+            Move(state, intent);
         }
     }
 
-    private void Move(MoveIntent intent)
+    private void Move(GameState state, MoveIntent intent)
     {
         // TODO: we should probably validate the intent here, but for now we'll just assume it's valid and let it throw if it's not
         var movingEntity = intent.Actor;
+        var fromRoom = intent.FromRoom;
+        var toRoom = intent.ToRoom;
+        var direction = intent.Direction;
+
+        if (!MovementValidator.CanEnter(
+                state.World, movingEntity,
+                fromRoom, toRoom,
+                direction, out var blockReason))
+        {
+            _msg.To(movingEntity).Act("You cannot go {0}: {1}").With(direction, blockReason);
+            return;
+        }
 
         ref var location = ref movingEntity.TryGetRef<Location>(out var hasLocation);
         if (hasLocation)
         {
-            ref var oldRoomContents = ref intent.FromRoom.Get<RoomContents>();
-            ref var newRoomContents = ref intent.ToRoom.Get<RoomContents>();
+            ref var oldRoomContents = ref fromRoom.Get<RoomContents>();
+            ref var newRoomContents = ref toRoom.Get<RoomContents>();
 
             oldRoomContents.Characters.Remove(movingEntity);
-            _msg.To(oldRoomContents.Characters).Act("{0} leaves {1}").With(movingEntity, intent.Direction); // entity will not receive the msg, but the other characters in the room will
+            _msg.To(oldRoomContents.Characters).Act("{0} leaves {1}").With(movingEntity, direction); // entity will not receive the msg, but the other characters in the room will
             _msg.To(newRoomContents.Characters).Act("{0} has arrived").With(movingEntity); // entity will not receive the msg, but the other characters in the room will
             newRoomContents.Characters.Add(movingEntity);
 
-            location.Room = intent.ToRoom;
+            location.Room = toRoom;
 
             if (intent.AutoLook)
             {
                 ref var lookIntent = ref _intentContainer.Look.Add();
                 lookIntent.Viewer = movingEntity;
                 lookIntent.TargetKind = LookTargetKind.Room;
-                lookIntent.Target = intent.ToRoom;
+                lookIntent.Target = toRoom;
                 lookIntent.Mode = LookMode.PostUpdate;
             }
 
@@ -67,16 +79,16 @@ public class MovementSystem
             // event
             ref var roomEnteredMovedEvt = ref _roomEnteredEvent.Add();
             roomEnteredMovedEvt.Entity = movingEntity;
-            roomEnteredMovedEvt.FromRoom = intent.FromRoom;
-            roomEnteredMovedEvt.ToRoom = intent.ToRoom;
-            roomEnteredMovedEvt.Direction = intent.Direction;
+            roomEnteredMovedEvt.FromRoom = fromRoom;
+            roomEnteredMovedEvt.ToRoom = toRoom;
+            roomEnteredMovedEvt.Direction = direction;
             roomEnteredMovedEvt.AutoLook = intent.AutoLook;
         }
 
         if (movingEntity.Has<CombatState>() && movingEntity.Has<PlayerTag>())
         {
             var target = movingEntity.Get<CombatState>().Target;
-            CharacterHelpers.ForfeitClaim(target, movingEntity);
+            CombatHelpers.ForfeitClaim(target, movingEntity);
         }
     }
 }

@@ -17,13 +17,13 @@ namespace MysteryMud.Domain.Systems;
 
 public sealed class DeathSystem
 {
-    private readonly IGameMessageService _msg;
+    private readonly IFollowService _followService; 
     private readonly IIntentContainer _intents;
     private readonly IEventBuffer<DeathEvent> _deathEvents;
 
-    public DeathSystem(IGameMessageService msg, IIntentContainer intents, IEventBuffer<DeathEvent> deathEvents)
+    public DeathSystem(IFollowService followService, IIntentContainer intents, IEventBuffer<DeathEvent> deathEvents)
     {
-        _msg = msg;
+        _followService = followService;
         _intents = intents;
         _deathEvents = deathEvents;
     }
@@ -32,42 +32,29 @@ public sealed class DeathSystem
     {
         foreach (ref var death in _deathEvents.GetAll())
         {
-            HandleDeath(state.World, ref death);
+            HandleDeath(state, ref death);
         }
     }
 
-    private void HandleDeath(World world, ref DeathEvent deathEvent)
+    private void HandleDeath(GameState state, ref DeathEvent deathEvent)
     {
-        deathEvent.Victim.Remove<Casting>();
+        var victim = deathEvent.Victim;
 
-        if (deathEvent.Victim.Has<PlayerTag>())
+        victim.Remove<Casting>();
+
+        if (victim.Has<PlayerTag>())
         {
             // forfeit claim on whoever they were fighting
-            if (deathEvent.Victim.Has<CombatState>())
+            if (victim.Has<CombatState>())
             {
-                var target = deathEvent.Victim.Get<CombatState>().Target;
-                CharacterHelpers.ForfeitClaim(target, deathEvent.Victim);
+                var target = victim.Get<CombatState>().Target;
+                CombatHelpers.ForfeitClaim(target, victim);
             }
         }
 
-        RemoveFromCombat(world, deathEvent.Victim);
-        CreateCorpse(world, deathEvent.Victim, deathEvent.Killer);
-    }
-
-    // TODO: this could be optimized by having a "Targeting" component that lists all entities targeting a given entity, so we don't have to scan everyone in the world for combat state every time someone dies. We would need to maintain this list as combat states are added/removed, but it would make removing combat state on death much more efficient.
-    // mutually remove combat state from victim and anyone targeting the victim in one query if possible
-    private static void RemoveFromCombat(World world, Entity victim)
-    {
-        // remove from combat
-        victim.Remove<CombatState>();
-        // remove combat state for anyone targeting this entity
-        var query = new QueryDescription()
-          .WithAll<CombatState>();
-        world.Query(query, (Entity actor, ref CombatState combat) =>
-        {
-            if (combat.Target == victim)
-                actor.Remove<CombatState>();
-        });
+        _followService.StopFollowing(victim);
+        CombatHelpers.RemoveFromAllCombat(state, victim);
+        CreateCorpse(state.World, victim, deathEvent.Killer);
     }
 
     private void CreateCorpse(World world, Entity victim, Entity killer)
@@ -97,7 +84,7 @@ public sealed class DeathSystem
         }
         corpse.Add(containerContents);
 
-        var lootOwner = CharacterHelpers.DetermineLootOwner(victim, killer);
+        var lootOwner = CombatHelpers.DetermineLootOwner(victim, killer);
         var lootOwnerGroup = lootOwner.Has<GroupMember>()
             ? lootOwner.Get<GroupMember>().Group
             : Entity.Null;
