@@ -226,7 +226,7 @@ public static class PlayerFactory
             new Location { Room = RoomFactory.StartingRoomEntity },
             new Position { Value = PositionKind.Standing },
             new DirtyStats(), // ensure stats are recomputed
-            new AutoBehaviour { Flags = AutoFlags.Loot | AutoFlags.Sacrifice });
+            new AutoBehaviour { Flags = AutoFlags.Loot | AutoFlags.Sacrifice | AutoFlags.Assist });
 
         player.Add(
             new Health { Current = 10000, Max = 10000 },

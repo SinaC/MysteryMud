@@ -14,16 +14,19 @@ public static class CombatHelpers
     {
         if (!CharacterHelpers.IsAlive(source, target)) return;
 
+        // flag both as in combat with each other, with the target striking back after a delay
         if (!source.Has<CombatState>())
         {
             source.Add(new CombatState { Target = target, RoundDelay = 0 });
-            source.Add<NewCombatantTag>();
+            if (!source.Has<NewCombatantTag>())
+                source.Add<NewCombatantTag>();
         }
 
         if (!target.Has<CombatState>())
         {
             target.Add(new CombatState { Target = source, RoundDelay = 1 });
-            target.Add<NewCombatantTag>();
+            if (!target.Has<NewCombatantTag>())
+                target.Add<NewCombatantTag>();
         }
 
         AddCombatClaim(target, source, state.CurrentTick);
@@ -31,10 +34,14 @@ public static class CombatHelpers
 
     public static void RemoveFromCombat(GameState state, Entity character)
     {
-        character.Remove<CombatState>();
-        character.Remove<NewCombatantTag>();
-        character.Remove<CombatInitiator>();
-        character.Remove<ActiveThreatTag>();
+        if (character.Has<CombatState>())
+            character.Remove<CombatState>();
+        if (character.Has<NewCombatantTag>())
+            character.Remove<NewCombatantTag>();
+        if (character.Has<CombatInitiator>())
+            character.Remove<CombatInitiator>();
+        if (character.Has<ActiveThreatTag>())
+            character.Remove<ActiveThreatTag>();
         ref var threatTable = ref character.TryGetRef<ThreatTable>(out var hasThreatTable);
         if (hasThreatTable)
         {
@@ -47,15 +54,26 @@ public static class CombatHelpers
     // mutually remove combat state from victim and anyone targeting the victim in one query if possible
     public static void RemoveFromAllCombat(GameState state, Entity character)
     {
-        // remove from combat
-        character.Remove<CombatState>();
-        // remove combat state for anyone targeting this entity
-        var query = new QueryDescription()
-          .WithAll<CombatState>();
-        state.World.Query(query, (Entity actor, ref CombatState combat) =>
+        // clean up character's own state fully
+        RemoveFromCombat(state, character);
+
+        // for anyone targeting this character:
+        // only remove their CombatState, do NOT call RemoveFromCombat
+        // which would wrongly wipe their entire threat table
+        var query = new QueryDescription().WithAll<CombatState>();
+        state.World.Query(query, (Entity entity, ref CombatState combat) =>
         {
             if (combat.Target == character)
-                actor.Remove<CombatState>();
+            {
+                if (entity.Has<CombatState>())
+                    entity.Remove<CombatState>();
+                if (entity.Has<NewCombatantTag>())
+                    entity.Remove<NewCombatantTag>();
+                if (entity.Has<CombatInitiator>()) // they were initiator on someone else, irrelevant now
+                    entity.Remove<CombatInitiator>();
+                if (entity.Has<ActiveThreatTag>()) // no more active threat if not in combat
+                    entity.Remove<ActiveThreatTag>();
+            }
         });
     }
 
@@ -69,7 +87,7 @@ public static class CombatHelpers
         });
     }
 
-    public static Entity DetermineLootOwner(Entity victim, Entity killer)
+    public static bool TryDetermineLootOwner(Entity victim, Entity killer, out Entity looter)
     {
         if (victim.Has<CombatInitiator>())
         {
@@ -77,12 +95,38 @@ public static class CombatHelpers
             var activeClaim = initiator.Claims
                 .Where(c => !c.Forfeited && CharacterHelpers.IsAlive(c.Claimant))
                 .OrderBy(c => c.JoinedAtTick)
+                .Cast<CombatClaim?>()  // nullable so FirstOrDefault returns null, not zeroed struct
                 .FirstOrDefault();
 
-            if (activeClaim.Claimant != Entity.Null)
-                return activeClaim.Claimant;
+            if (activeClaim.HasValue)
+            {
+                looter = activeClaim.Value.Claimant;
+                return true;
+            }
         }
-        return killer; // no valid claims, killer gets it
+
+        // killer could be an NPC (e.g. orc kills a player), Entity.Null, or a player
+        if (killer != Entity.Null && killer.Has<PlayerTag>())
+        {
+            looter = killer;
+            return true;
+        }
+
+        looter = Entity.Null; // NPC killer or no killer — no loot intent
+        return false;
+    }
+
+    public static void ForfeitAllClaims(World world, Entity claimant)
+    {
+        var query = new QueryDescription().WithAll<CombatInitiator>();
+        world.Query(query, (ref CombatInitiator initiator) =>
+        {
+            for (int i = 0; i < initiator.Claims.Count; i++)
+            {
+                if (initiator.Claims[i].Claimant == claimant)
+                    initiator.Claims[i] = initiator.Claims[i] with { Forfeited = true };
+            }
+        });
     }
 
     public static void ForfeitClaim(Entity npc, Entity claimant)

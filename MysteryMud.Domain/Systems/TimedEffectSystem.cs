@@ -78,7 +78,8 @@ public class TimedEffectSystem
                 }
 
                 // flag as expired
-                effect.Add<ExpiredTag>();
+                if (!effect.Has<ExpiredTag>())
+                    effect.Add<ExpiredTag>();
 
                 ref var instance = ref effect.Get<EffectInstance>();
                 ExpireEffect(state, effect, ref instance);

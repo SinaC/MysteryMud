@@ -3,6 +3,7 @@ using Arch.Core.Extensions;
 using MysteryMud.Core;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
+using MysteryMud.Domain.Helpers;
 
 namespace MysteryMud.Domain.Services;
 
@@ -18,8 +19,14 @@ public class GroupService : IGroupService
     public void AddMember(GameState state, Entity group, Entity member)
     {
         ref var groupData = ref group.Get<Group>();
+
         groupData.Members.Add(member);
-        member.Add(new GroupMember { Group = group, JoinedAtTick = state.CurrentTick });
+        member.Add(new GroupMember
+        {
+            Group = group,
+            JoinedAtTick = state.CurrentTick
+        });
+
         _msg.ToGroup(group).Act("{0} joins the group.").With(member);
     }
 
@@ -29,10 +36,11 @@ public class GroupService : IGroupService
 
         ref var groupData = ref group.Get<Group>();
         groupData.Members.Remove(member);
-        member.Remove<GroupMember>();
+        if (member.Has<GroupMember>())
+            member.Remove<GroupMember>();
 
         // forfeit combat claims for this member
-        ForfeitAllClaims(member);
+        ClearGroupFromClaims(state, member, group);
 
         _msg.ToGroup(group).Act("{0} leaves the group.").With(member);
 
@@ -44,14 +52,19 @@ public class GroupService : IGroupService
 
         // promote oldest remaining member if leader left
         if (groupData.Leader == member)
-        {
-            var newLeader = groupData.Members
-                .OrderBy(m => m.Get<GroupMember>().JoinedAtTick)
-                .First();
+            PromoteNewLeader(group);
+    }
 
-            groupData.Leader = newLeader;
-            _msg.ToGroup(group).Act("{0} {0:b} now the group leader.").With(newLeader);
-        }
+    private void PromoteNewLeader(Entity group)
+    {
+        ref var groupData = ref group.Get<Group>();
+
+        var newLeader = groupData.Members
+            .OrderBy(m => m.Get<GroupMember>().JoinedAtTick)
+            .First();
+
+        groupData.Leader = newLeader;
+        _msg.ToGroup(group).Act("{0} {0:b} now the group leader.").With(newLeader);
     }
 
     public void Disband(GameState state, Entity group)
@@ -68,13 +81,15 @@ public class GroupService : IGroupService
 
         foreach (var member in groupData.Members.ToArray())
         {
-            member.Remove<GroupMember>();
+            if (member.Has<GroupMember>())
+                member.Remove<GroupMember>();
             _msg.To(member).Send("Your group has been disbanded.");
         }
 
         groupData.Members.Clear();
         state.World.Destroy(group); // group entity is gone
     }
+
 
     private void ClearGroupFromClaims(GameState state, Entity member, Entity group)
     {

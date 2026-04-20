@@ -4,6 +4,7 @@ namespace MysteryMud.Domain.Services;
 
 public interface IFollowService
 {
-    void StartFollowing(Entity follower, Entity leader);
+    void Follow(Entity follower, Entity leader);
     void StopFollowing(Entity follower);
+    void StopAllFollowers(Entity leader);
 }

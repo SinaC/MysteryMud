@@ -37,7 +37,8 @@ public class AISystem
             }
 
             // Mark entity for processing
-            entity.Add<HasCommandTag>();
+            if (!entity.Has<HasCommandTag>())
+                entity.Add<HasCommandTag>();
 
             // Update last AI tick
             autoCommand.LastCommandTick = now;

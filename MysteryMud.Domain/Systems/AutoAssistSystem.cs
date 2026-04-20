@@ -157,8 +157,9 @@ public class AutoAssistSystem
         if (assistant == target) return;
 
         assistant.Add(new CombatState { Target = target, RoundDelay = 1 });
-        assistant.Add<NewCombatantTag>(); // chain: this assist may trigger further assists
-                                          // will be picked up by the NEXT AutoAssistSystem pass
+        if (!assistant.Has<NewCombatantTag>())
+            assistant.Add<NewCombatantTag>(); // chain: this assist may trigger further assists
+                                              // will be picked up by the NEXT AutoAssistSystem pass
     }
 
     private bool ShouldNpcAssist(NpcAssistBehavior behavior, Entity npc,

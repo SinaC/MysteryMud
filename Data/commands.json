@@ -8,7 +8,7 @@
       "HelpText": "Before you can cast a spell, you have to practice it.  The more you practice,\nthe higher chance you have of success when casting.  Casting spells costs mana.\nThe mana cost decreases as your level increases.\n\nThe <target> is optional.  Many spells which need targets will use an\nappropriate default target, especially during combat.\n\nThe <casting level> is optional. Many spells have casting level higher than 1,\nand you don't have to cast spells at maximum casting level.\n\nIf the spell name is more than one word, then you must quote the spell name.\nExample: cast 'cure critic' frag.  Quoting is optional for single-word spells.\nYou can abbreviate the spell name.\n\nWhen you cast an offensive spell, the victim usually gets a saving throw.\nThe effect of the spell is reduced or eliminated if the victim makes the\nsaving throw successfully.\n\nSome examples:\ncast 'chill touch' victim   will cast 'chill touch' on victim\ncast armor newbie           will cast armor on newbie\ncast fireball               will cast fireball on current target if already\n  in combat\ncast 'floating disc'        will cast 'floating disc' on caster\nSee also the help sections for individual spells.\nUse the 'spells' command to see the spells you already have (help spells).",
       "Syntaxes": ["[cmd] <ability> <target>"],
       "Categories": ["ability", "combat"],
-      "ThrottlingCategories": "combat"
+      "ThrottlingCategories": ["combat"]
     },
     {
         "Name": "destroy",
@@ -311,6 +311,6 @@
         "HelpText": "",
         "Syntaxes": ["[cmd]"],
         "Categories": ["test"],
-        "ThrottlingCategories": "admin"
+        "ThrottlingCategories": ["admin"]
     }
 ]

@@ -40,7 +40,8 @@ public sealed class DeathSystem
     {
         var victim = deathEvent.Victim;
 
-        victim.Remove<Casting>();
+        if (victim.Has<Casting>())
+            victim.Remove<Casting>();
 
         if (victim.Has<PlayerTag>())
         {
@@ -53,8 +54,14 @@ public sealed class DeathSystem
         }
 
         _followService.StopFollowing(victim);
-        CombatHelpers.RemoveFromAllCombat(state, victim);
+        _followService.StopAllFollowers(victim);
+
+        // corpse first — reads CombatInitiator to determine loot owner
         CreateCorpse(state.World, victim, deathEvent.Killer);
+
+        CombatHelpers.RemoveFromAllCombat(state, victim);
+        CombatHelpers.ForfeitAllClaims(state.World, victim);
+        CombatHelpers.RemoveFromAllThreatTable(state.World, victim);
     }
 
     private void CreateCorpse(World world, Entity victim, Entity killer)
@@ -84,19 +91,21 @@ public sealed class DeathSystem
         }
         corpse.Add(containerContents);
 
-        var lootOwner = CombatHelpers.DetermineLootOwner(victim, killer);
-        var lootOwnerGroup = lootOwner.Has<GroupMember>()
-            ? lootOwner.Get<GroupMember>().Group
-            : Entity.Null;
+        if (CombatHelpers.TryDetermineLootOwner(victim, killer, out var lootOwner))
+        {
+            var lootOwnerGroup = lootOwner.Has<GroupMember>()
+                ? lootOwner.Get<GroupMember>().Group
+                : Entity.Null;
 
-        // autoloot for killer and group members
-        ref var corpseLootIntent = ref _intents.CorpseLoot.Add();
-        corpseLootIntent.Corpse = corpse;
-        corpseLootIntent.LootOwner = lootOwner;
-        corpseLootIntent.LootOwnerGroup = lootOwnerGroup;
+            // autoloot for killer and group members
+            ref var corpseLootIntent = ref _intents.CorpseLoot.Add();
+            corpseLootIntent.Corpse = corpse;
+            corpseLootIntent.LootOwner = lootOwner;
+            corpseLootIntent.LootOwnerGroup = lootOwnerGroup;
 
-        // TODO: display to killer why he/she didn't get the loot ?
-        //if (lootOwner != killer && killer.Has<PlayerTag>())
-        //    _msg.To(killer).Send($"{victim.DisplayName} was already engaged by {lootOwner.DisplayName}.");
+            // TODO: display to killer why he/she didn't get the loot ?
+            //if (lootOwner != killer && killer.Has<PlayerTag>())
+            //    _msg.To(killer).Send($"{victim.DisplayName} was already engaged by {lootOwner.DisplayName}.");
+        }
     }
 }
