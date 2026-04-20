@@ -82,7 +82,7 @@ public class FollowCommand : ICommand
         }
 
         // no cycle -> follow target
-        _followService.StartFollowing(actor, target.Value);
+        _followService.Follow(actor, target.Value);
     }
 
     private static Entity? GetLeader(Entity entity)

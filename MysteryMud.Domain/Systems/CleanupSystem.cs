@@ -58,17 +58,18 @@ public class CleanupSystem
             _logger.LogInformation(LogEvents.Cleanup, "Cleaning up disconnected player {characterName}", player.DebugName);
 
             _followService.StopFollowing(player);
+            _followService.StopAllFollowers(player);
             ref var groupMember = ref player.TryGetRef<GroupMember>(out var inGroup);
             if (inGroup)
                 _groupService.RemoveMember(state, groupMember.Group, player);
             CombatHelpers.RemoveFromAllCombat(state, player);
             CombatHelpers.RemoveFromAllThreatTable(state.World, player);
+            CombatHelpers.ForfeitAllClaims(state.World, player);
             RemoveFromRoomContents(player);
             RemoveEffects(state.World, player);
 
             // TODO: destroy any items the character is carrying or equipped with
             // TODO: if the character is a pet, remove it from its owner's pet list
-            // TODO: if the character is a follower, remove it from its leader's follower list
 
             state.World.Destroy(player);
         });
@@ -88,7 +89,6 @@ public class CleanupSystem
 
             // TODO: destroy any items the character is carrying or equipped with
             // TODO: if the character is a pet, remove it from its owner's pet list
-            // TODO: if the character is a follower, remove it from its leader's follower list
 
             state.World.Destroy(npc);
         });

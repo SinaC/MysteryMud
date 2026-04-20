@@ -224,7 +224,8 @@ public class ItemInteractionSystem
 
     private static void DestroyItem(Entity item)
     {
-        item.Add<DestroyedTag>();
+        if (!item.Has<DestroyedTag>())
+            item.Add<DestroyedTag>();
 
         if (item.Has<Container>())
         {

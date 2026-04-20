@@ -58,15 +58,6 @@ public class KillCommand : ICommand
         // TODO: check if target is already fighting
 
         // flag both as in combat with each other, with the target striking back after a delay
-        actor.Add(new CombatState { Target = target.Value, RoundDelay = 0 });
-        actor.Add<NewCombatantTag>();
-
-        if (!target.Value.Has<CombatState>())
-        {
-            target.Value.Add(new CombatState { Target = actor, RoundDelay = 1 }); // strikes back
-            target.Value.Add<NewCombatantTag>();
-        }
-
         CombatHelpers.EnterCombat(state, actor, target.Value);
     }
 }

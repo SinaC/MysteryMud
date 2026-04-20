@@ -5,6 +5,7 @@ using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.GameData.Enums;
+using System.Numerics;
 
 namespace MysteryMud.Domain.Helpers;
 
@@ -15,10 +16,20 @@ public static class ItemHelpers
         return entities.All(x => x.IsAlive() && !x.Has<DestroyedTag>());
     }
 
-    // TODO: These methods is currently very basic and does not handle edge cases such as weight limits, item ownership, or other game mechanics. It should be expanded to include these features as needed.
+    // TODO: These methods are currently very basic and does not handle edge cases such as weight limits, item ownership, or other game mechanics. It should be expanded to include these features as needed.
     public static bool TryGetItemFromRoom(Entity getter, Entity room, Entity item, out string? reason)
     {
-        reason = null;
+        if (!IsAlive(item))
+        {
+            reason = "destroyed";
+            return false;
+        }
+        if (!item.Has<Location>() || item.Has<ContainedIn>())
+        {
+            reason = "invalid state";
+            return false;
+        }
+
 
         ref var roomContents = ref room.Get<RoomContents>();
         ref var inventory = ref getter.Get<Inventory>();
@@ -28,16 +39,25 @@ public static class ItemHelpers
         item.Remove<Location>();
         item.Add(new ContainedIn { Character = getter });
 
+        reason = null;
         return true;
     }
 
     public static bool TryGetItemFromContainer(Entity getter, Entity container, Entity item, out string? reason)
     {
-        reason = null;
+        if (!IsAlive(item))
+        {
+            reason = "destroyed";
+            return false;
+        }
+
 
         ref var itemOwner = ref item.TryGetRef<ItemOwner>(out var hasOwner);
         if (hasOwner && getter != itemOwner.Owner)
+        {
+            reason = "not the owner";
             return false;
+        }
 
         ref var containerContents = ref container.Get<ContainerContents>();
         ref var inventory = ref getter.Get<Inventory>();
@@ -48,11 +68,24 @@ public static class ItemHelpers
         containedIn.Container = Entity.Null;
         containedIn.Character = getter;
 
+        reason = null;
         return true;
     }
 
     public static bool TryDropItem(Entity dropped, Entity room, Entity item, out string? reason)
     {
+        if (!IsAlive(item))
+        {
+            reason = "destroyed";
+            return false;
+        }
+
+        if (item.Has<Location>() || !item.Has<ContainedIn>())
+        {
+            reason = "invalid state";
+            return false;
+        }
+
         reason = null;
 
         ref var roomContents = ref room.Get<RoomContents>();
@@ -60,6 +93,7 @@ public static class ItemHelpers
 
         roomContents.Items.Add(item);
         inventory.Items.Remove(item);
+
         item.Add(new Location { Room = room });
         item.Remove<ContainedIn>();
 
@@ -68,6 +102,12 @@ public static class ItemHelpers
 
     public static bool TryGiveItem(Entity giver, Entity receiver, Entity item, out string? reason)
     {
+        if (!IsAlive(item))
+        {
+            reason = "destroyed";
+            return false;
+        }
+
         reason = null;
 
         ref var giverInventory = ref giver.Get<Inventory>();
@@ -83,6 +123,12 @@ public static class ItemHelpers
 
     public static bool TryPutItem(Entity actor, Entity container, Entity item, out string? reason)
     {
+        if (!IsAlive(item))
+        {
+            reason = "destroyed";
+            return false;
+        }
+
         reason = null;
 
         ref var containerContents = ref container.Get<ContainerContents>();
@@ -99,7 +145,16 @@ public static class ItemHelpers
 
     public static bool TryEquipItem(Entity actor, Entity item, out string? reason)
     {
-        reason = null;
+        if (!IsAlive(item))
+        {
+            reason = "destroyed";
+            return false;
+        }
+        if (item.Has<Equipped>())
+        {
+            reason = "invalid state";
+            return false;
+        }
 
         ref var equipable = ref item.Get<Equipable>();
         ref var equipment = ref actor.Get<Equipment>();
@@ -107,7 +162,10 @@ public static class ItemHelpers
         var slot = equipable.Slot;
 
         if (equipment.Slots.ContainsKey(slot))
+        {
+            reason = "inexising slot";
             return false;
+        }
 
         equipment.Slots[slot] = item;
 
@@ -117,25 +175,39 @@ public static class ItemHelpers
             Slot = slot
         });
 
-        actor.Add<DirtyStats>();
+        if (!actor.Has<DirtyStats>())
+            actor.Add<DirtyStats>();
 
+        reason = null;
         return true;
     }
 
-    public static void TryUnequipItem(Entity actor, EquipmentSlotKind slot, out string? reason)
+    public static bool TryUnequipItem(Entity actor, EquipmentSlotKind slot, out string? reason)
     {
-        reason = null;
-
         ref var equipment = ref actor.Get<Equipment>();
 
         if (!equipment.Slots.TryGetValue(slot, out var item))
-            return;
+        {
+            reason = "nothing equipped on that slot";
+            return false;
+        }
 
         equipment.Slots.Remove(slot);
 
-        item.Remove<Equipped>();
+        if (!IsAlive(item))
+        {
+            reason = "destroyed";
+            return false;
+        }
 
-        actor.Add<DirtyStats>();
+        if (item.Has<Equipped>())
+            item.Remove<Equipped>();
+
+        if (!actor.Has<DirtyStats>())
+            actor.Add<DirtyStats>();
+
+        reason = null;
+        return true;
     }
 
     public static void DestroyItem(Entity item)
@@ -143,7 +215,8 @@ public static class ItemHelpers
         if (!IsAlive(item))
             return;
 
-        item.Add<DestroyedTag>();
+        if (!item.Has<DestroyedTag>())
+            item.Add<DestroyedTag>();
 
         if (item.Has<Container>())
         {

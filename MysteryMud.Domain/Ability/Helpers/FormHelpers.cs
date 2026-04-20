@@ -19,10 +19,14 @@ public static class FormHelpers
 
         form.Value = newForm;
 
+        // TODO: optimize to avoid removing and readding the same
         // Remove all usage tags
-        e.Remove<UsesMana>();
-        e.Remove<UsesRage>();
-        e.Remove<UsesEnergy>();
+        if (e.Has<UsesMana>())
+            e.Remove<UsesMana>();
+        if (e.Has<UsesRage>())
+            e.Remove<UsesRage>();
+        if (e.Has<UsesEnergy>())
+            e.Remove<UsesEnergy>();
 
         // Add what the form allows
         switch (newForm)

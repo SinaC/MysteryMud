@@ -75,26 +75,30 @@ public class DamageResolver : IDamageResolver
             _msg.To(target).Send("%RYou have been KILLED%x");
             _msg.ToRoom(target).Act("{0} is dead").With(target);
 
+            // add dead/respawn tags
             AddDeadTags(target);
 
+            // set hp to 0
             health.Current = 0;
-
-            var rewardOwner = CombatHelpers.DetermineLootOwner(target, source);
-            var rewardOwnerGroup = rewardOwner.Has<GroupMember>()
-                ? rewardOwner.Get<GroupMember>().Group
-                : Entity.Null;
 
             // add death event
             ref var deathEvt = ref _deaths.Add();
             deathEvt.Victim = target;
             deathEvt.Killer = source;
 
-            // add kill reward event
-            ref var killRewardEvt = ref _killRewardEvent.Add();
-            killRewardEvt.RewardOwner = rewardOwner;
-            killRewardEvt.RewardOwnerGroup = rewardOwnerGroup;
-            killRewardEvt.Victim = target;
-            killRewardEvt.GrantXp = true;
+            if (CombatHelpers.TryDetermineLootOwner(target, source, out var rewardOwner))
+            {
+                var rewardOwnerGroup = rewardOwner.Has<GroupMember>()
+                    ? rewardOwner.Get<GroupMember>().Group
+                    : Entity.Null;
+
+                // add kill reward event
+                ref var killRewardEvt = ref _killRewardEvent.Add();
+                killRewardEvt.RewardOwner = rewardOwner;
+                killRewardEvt.RewardOwnerGroup = rewardOwnerGroup;
+                killRewardEvt.Victim = target;
+                killRewardEvt.GrantXp = true;
+            }
         }
 
         // damaged event
@@ -116,9 +120,10 @@ public class DamageResolver : IDamageResolver
 
     private static void AddDeadTags(Entity victim)
     {
-        victim.Add<Dead>();
+        if (!victim.Has<Dead>())
+            victim.Add<Dead>();
         // player will respawn, NPCs will be cleaned up by CleanupSystem
-        if (victim.Has<PlayerTag>())
+        if (victim.Has<PlayerTag>() && !victim.Has<RespawnState>())
             victim.Add(new RespawnState
             {
                 RespawnRoom = RoomFactory.RespawnRoomEntity
