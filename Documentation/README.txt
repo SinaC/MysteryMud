@@ -44,6 +44,7 @@ Tick pipeline
 33. LookSystem(PostUpdate)          // Process LookIntents with Mode=PostUpdate -> reflects final world state after all updates
 34. ScheduleSystem                  // Process scheduleIntents (which can be generated from IA, TimedEffectSytem and ActionOrchestrator)
 35. CleanupSystem                   // Remove destroyed items / dead NPCs / disconnected players
+36. PersistenceSystem               // Persist entities flags as to persist using DirtyTracker
 36. Output -> MessageBus            // Send all messages to players
 
 ActionOrchestrator (step 21) details

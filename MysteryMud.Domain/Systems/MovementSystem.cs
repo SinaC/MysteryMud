@@ -1,7 +1,10 @@
 ﻿using Arch.Core.Extensions;
+using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Contracts;
+using MysteryMud.Core.Persistence;
+using MysteryMud.Domain.Ability;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
@@ -16,14 +19,20 @@ namespace MysteryMud.Domain.Systems;
 
 public class MovementSystem
 {
+    private readonly ILogger _logger;
     private readonly IGameMessageService _msg;
+    private readonly IDirtyTracker _dirtyTracker;
     private readonly IIntentContainer _intentContainer;
+    private readonly IAbilityRegistry _abilityRegistry;
     private readonly IEventBuffer<RoomEnteredEvent> _roomEnteredEvent;
 
-    public MovementSystem(IGameMessageService msg, IIntentContainer intentContainer, IEventBuffer<RoomEnteredEvent> roomEnteredEvent)
+    public MovementSystem(ILogger logger, IGameMessageService msg, IDirtyTracker dirtyTracker, IIntentContainer intentContainer, IAbilityRegistry abilityRegistry, IEventBuffer<RoomEnteredEvent> roomEnteredEvent)
     {
+        _logger = logger;
         _msg = msg;
+        _dirtyTracker = dirtyTracker;
         _intentContainer = intentContainer;
+        _abilityRegistry = abilityRegistry;
         _roomEnteredEvent = roomEnteredEvent;
     }
 
@@ -65,6 +74,25 @@ public class MovementSystem
 
             location.Room = toRoom;
 
+            // remove casting and display phrase
+            ref var casting = ref movingEntity.TryGetRef<Casting>(out var isCasting);
+            if (isCasting)
+            {
+                movingEntity.Remove<Casting>();
+
+                var abilityId = casting.AbilityId;
+                if (!_abilityRegistry.TryGetRuntime(casting.AbilityId, out var abilityRuntime) || abilityRuntime == null)
+                {
+                    _logger.LogError("Ability {abilityId} not found", abilityId);
+                    return;
+                }
+
+                _msg.To(movingEntity).Act(CastMessageHelpers.CasterInterruptMessage).With(abilityRuntime.Name);
+                _msg.ToRoom(movingEntity).Act(CastMessageHelpers.RoomInterruptMessage).With(movingEntity);
+            }
+
+            _dirtyTracker.MarkDirty(movingEntity, DirtyReason.CoreData);
+
             if (intent.AutoLook)
             {
                 ref var lookIntent = ref _intentContainer.Look.Add();
@@ -73,8 +101,6 @@ public class MovementSystem
                 lookIntent.Target = toRoom;
                 lookIntent.Mode = LookMode.PostUpdate;
             }
-
-            // TODO: remove casting and display phrase
 
             // event
             ref var roomEnteredMovedEvt = ref _roomEnteredEvent.Add();

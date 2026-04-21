@@ -7,10 +7,6 @@ using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.GameData.Enums;
-using MysteryMud.GameData.Time;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Text.Json;
 
 namespace MysteryMud.Domain.Persistence;
@@ -27,7 +23,6 @@ public sealed class PlayerSnapshotBuilder : ISnapshotBuilder
         ref var progression = ref entity.Get<Progression>();
         ref var autoBehavior = ref entity.Get<AutoBehaviour>();
         ref var baseStats = ref entity.Get<BaseStats>();
-        ref var abilities = ref entity.Get<LearnedAbilities>();
         ref var inventory = ref entity.Get<Inventory>();
         ref var equipment = ref entity.Get<Equipment>();
 

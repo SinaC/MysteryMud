@@ -57,7 +57,7 @@ public class WearCommand : ICommand
 
             // intent to wear item
             ref var wearItemIntent = ref _intents.WearItem.Add();
-            wearItemIntent.Actor = actor;
+            wearItemIntent.Entity = actor;
             wearItemIntent.Item = item;
             wearItemIntent.Slot = slot;
         }

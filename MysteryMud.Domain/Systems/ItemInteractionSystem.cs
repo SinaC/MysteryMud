@@ -19,6 +19,7 @@ public class ItemInteractionSystem
 {
     private readonly IGameMessageService _msg;
     private readonly ISacrificeService _sacrificeService;
+    private readonly IDirtyTracker _dirtyTracker;
     private readonly IIntentContainer _intentContainer;
     private readonly IEventBuffer<ItemGotEvent> _itemGotEvents;
     private readonly IEventBuffer<ItemDroppedEvent> _itemDroppedEvents;
@@ -28,12 +29,12 @@ public class ItemInteractionSystem
     private readonly IEventBuffer<ItemRemovedEvent> _itemRemovedEvents;
     private readonly IEventBuffer<ItemDestroyedEvent> _itemDestroyedEvents;
     private readonly IEventBuffer<ItemSacrificiedEvent> _itemSacrificedEvents;
-    private readonly IDirtyTracker _dirtyTracker;
 
-    public ItemInteractionSystem(IGameMessageService gameMessageService, ISacrificeService sacrificeService, IIntentContainer intentContainer, IEventBuffer<ItemGotEvent> itemGotEvents, IEventBuffer<ItemDroppedEvent> itemDroppedEvents, IEventBuffer<ItemGivenEvent> itemGivenEvents, IEventBuffer<ItemPutEvent> itemPutEvents, IEventBuffer<ItemWornEvent> itemWornEvents, IEventBuffer<ItemRemovedEvent> itemRemovedEvents, IEventBuffer<ItemDestroyedEvent> itemDestroyedEvents, IEventBuffer<ItemSacrificiedEvent> itemSacrificedEvents, IDirtyTracker dirtyTracker)
+    public ItemInteractionSystem(IGameMessageService gameMessageService, ISacrificeService sacrificeService, IDirtyTracker dirtyTracker, IIntentContainer intentContainer, IEventBuffer<ItemGotEvent> itemGotEvents, IEventBuffer<ItemDroppedEvent> itemDroppedEvents, IEventBuffer<ItemGivenEvent> itemGivenEvents, IEventBuffer<ItemPutEvent> itemPutEvents, IEventBuffer<ItemWornEvent> itemWornEvents, IEventBuffer<ItemRemovedEvent> itemRemovedEvents, IEventBuffer<ItemDestroyedEvent> itemDestroyedEvents, IEventBuffer<ItemSacrificiedEvent> itemSacrificedEvents)
     {
         _msg = gameMessageService;
         _sacrificeService = sacrificeService;
+        _dirtyTracker = dirtyTracker;
         _intentContainer = intentContainer;
         _itemGotEvents = itemGotEvents;
         _itemDroppedEvents = itemDroppedEvents;
@@ -43,7 +44,6 @@ public class ItemInteractionSystem
         _itemRemovedEvents = itemRemovedEvents;
         _itemDestroyedEvents = itemDestroyedEvents;
         _itemSacrificedEvents = itemSacrificedEvents;
-        _dirtyTracker = dirtyTracker;
     }
 
     public void Tick(GameState state)
@@ -104,121 +104,156 @@ public class ItemInteractionSystem
     private void HandleDrop(GameState state, DropItemIntent dropItemIntent)
     {
         // TODO: validation
+        var entity = dropItemIntent.Entity;
+        var item = dropItemIntent.Item;
+        var room = dropItemIntent.Room;
 
         // Unequip if necessary
-        ref var equipped = ref dropItemIntent.Item.TryGetRef<Equipped>(out var isEquipped);
+        ref var equipped = ref item.TryGetRef<Equipped>(out var isEquipped);
         if (isEquipped)
         {
-            ItemHelpers.TryUnequipItem(dropItemIntent.Entity, equipped.Slot, out _);
+            ItemHelpers.TryUnequipItem(entity, equipped.Slot, out _);
         }
 
         // drop item from entity's inventory and put it in room
-        ItemHelpers.TryDropItem(dropItemIntent.Entity, dropItemIntent.Room, dropItemIntent.Item, out _);
+        ItemHelpers.TryDropItem(entity, room, item, out _);
 
-        _msg.To(dropItemIntent.Entity).Send($"You drop {dropItemIntent.Item.DisplayName}.");
+        _msg.To(entity).Send($"You drop {item.DisplayName}.");
+
+        _dirtyTracker.MarkDirty(entity, DirtyReason.ItemLost);
 
         // event
         ref var itemDroppedEvt = ref _itemDroppedEvents.Add();
-        itemDroppedEvt.Entity = dropItemIntent.Entity;
-        itemDroppedEvt.Item = dropItemIntent.Item;
-        itemDroppedEvt.Room = dropItemIntent.Room;
+        itemDroppedEvt.Entity = entity;
+        itemDroppedEvt.Item = item;
+        itemDroppedEvt.Room = room;
     }
 
     private void HandleGive(GameState state, GiveItemIntent giveItemIntent)
     {
         // TODO: validation
+        var entity = giveItemIntent.Entity;
+        var item = giveItemIntent.Item;
+        var target = giveItemIntent.Target;
 
         // Unequip if necessary
-        ref var equipped = ref giveItemIntent.Item.TryGetRef<Equipped>(out var isEquipped);
+        ref var equipped = ref item.TryGetRef<Equipped>(out var isEquipped);
         if (isEquipped)
         {
-            ItemHelpers.TryUnequipItem(giveItemIntent.Entity, equipped.Slot, out _);
+            ItemHelpers.TryUnequipItem(entity, equipped.Slot, out _);
+
+            _dirtyTracker.MarkDirty(entity, DirtyReason.ItemRemoved);
         }
 
         // give item from entity to target
-        ItemHelpers.TryGiveItem(giveItemIntent.Entity, giveItemIntent.Target, giveItemIntent.Item, out _);
+        ItemHelpers.TryGiveItem(entity, target, item, out _);
 
-        _msg.To(giveItemIntent.Entity).Send($"You give {giveItemIntent.Item.DisplayName} to {giveItemIntent.Target.DisplayName}.");
+        _msg.To(entity).Send($"You give {item.DisplayName} to {target.DisplayName}.");
+
+        _dirtyTracker.MarkDirty(entity, DirtyReason.ItemLost);
+        _dirtyTracker.MarkDirty(target, DirtyReason.ItemGained);
 
         // event
         ref var itemGivenEvt = ref _itemGivenEvents.Add();
-        itemGivenEvt.Entity = giveItemIntent.Entity;
-        itemGivenEvt.Item = giveItemIntent.Item;
-        itemGivenEvt.Target = giveItemIntent.Target;
+        itemGivenEvt.Entity = entity;
+        itemGivenEvt.Item = item;
+        itemGivenEvt.Target = target;
     }
 
     private void HandlePut(GameState state, PutItemIntent putItemIntent)
     {
         // TODO: validation
+        var entity = putItemIntent.Entity;
+        var item = putItemIntent.Item;
+        var container = putItemIntent.Container;
 
         // Unequip if necessary
-        ref var equipped = ref putItemIntent.Item.TryGetRef<Equipped>(out var isEquipped);
+        ref var equipped = ref item.TryGetRef<Equipped>(out var isEquipped);
         if (isEquipped)
         {
-            ItemHelpers.TryUnequipItem(putItemIntent.Entity, equipped.Slot, out _);
+            ItemHelpers.TryUnequipItem(entity, equipped.Slot, out _);
+
+            _dirtyTracker.MarkDirty(entity, DirtyReason.ItemRemoved);
         }
 
         // put item from entity to container
-        ItemHelpers.TryPutItem(putItemIntent.Entity, putItemIntent.Container, putItemIntent.Item, out _);
+        ItemHelpers.TryPutItem(entity, container, item, out _);
 
-        _msg.To(putItemIntent.Entity).Send($"You put {putItemIntent.Item.DisplayName} in {putItemIntent.Container.DisplayName}.");
+        _msg.To(entity).Send($"You put {item.DisplayName} in {container.DisplayName}.");
+
+        _dirtyTracker.MarkDirty(entity, DirtyReason.ItemLost);
 
         // event
         ref var itemPutEvt = ref _itemPutEvents.Add();
-        itemPutEvt.Entity = putItemIntent.Entity;
-        itemPutEvt.Item = putItemIntent.Item;
-        itemPutEvt.Container = putItemIntent.Container;
+        itemPutEvt.Entity = entity;
+        itemPutEvt.Item = item;
+        itemPutEvt.Container = container;
     }
 
     private void HandleWear(GameState state, WearItemIntent wearItemIntent)
     {
         // TODO: validation
+        var entity = wearItemIntent.Entity;
+        var item = wearItemIntent.Item;
+        var slot = wearItemIntent.Slot;
 
-        ItemHelpers.TryEquipItem(wearItemIntent.Actor, wearItemIntent.Item, out _);
+        ItemHelpers.TryEquipItem(entity, item, out _);
 
-        _msg.To(wearItemIntent.Actor).Send($"You wear {wearItemIntent.Item.DisplayName}.");
+        _msg.To(entity).Send($"You wear {item.DisplayName}.");
+
+        _dirtyTracker.MarkDirty(entity, DirtyReason.ItemEquipped);
 
         // event
         ref var itemWornEvt = ref _itemWornEvents.Add();
-        itemWornEvt.Actor = wearItemIntent.Actor;
-        itemWornEvt.Item = wearItemIntent.Item;
-        itemWornEvt.Slot = wearItemIntent.Slot;
+        itemWornEvt.Entity = entity;
+        itemWornEvt.Item = item;
+        itemWornEvt.Slot = slot;
     }
 
     private void HandleRemove(GameState state, RemoveItemIntent removeItemIntent)
     {
         // TODO: validation
+        var entity = removeItemIntent.Entity;
+        var item = removeItemIntent.Item;
+        var slot = removeItemIntent.Slot;
 
-        ItemHelpers.TryUnequipItem(removeItemIntent.Actor, removeItemIntent.Slot, out _);
+        ItemHelpers.TryUnequipItem(entity, slot, out _);
 
-        _msg.To(removeItemIntent.Actor).Send($"You remove {removeItemIntent.Item.DisplayName}.");
+        _msg.To(entity).Send($"You remove {item.DisplayName}.");
+
+        _dirtyTracker.MarkDirty(entity, DirtyReason.ItemRemoved);
 
         // event
         ref var itemRemovedEvt = ref _itemRemovedEvents.Add();
-        itemRemovedEvt.Actor = removeItemIntent.Actor;
-        itemRemovedEvt.Item = removeItemIntent.Item;
-        itemRemovedEvt.Slot = removeItemIntent.Slot;
+        itemRemovedEvt.Entity = entity;
+        itemRemovedEvt.Item = item;
+        itemRemovedEvt.Slot = slot;
     }
 
     private void HandleDestroy(GameState state, DestroyItemIntent destroyItemIntent)
     {
         // TODO: validation
+        var entity = destroyItemIntent.Entity;
+        var item = destroyItemIntent.Item;
+
 
         // Unequip if necessary
-        ref var equipped = ref destroyItemIntent.Item.TryGetRef<Equipped>(out var isEquipped);
+        ref var equipped = ref item.TryGetRef<Equipped>(out var isEquipped);
         if (isEquipped)
         {
-            ItemHelpers.TryUnequipItem(destroyItemIntent.Entity, equipped.Slot, out _);
+            ItemHelpers.TryUnequipItem(entity, equipped.Slot, out _);
+
+            _dirtyTracker.MarkDirty(entity, DirtyReason.ItemRemoved);
         }
 
-        DestroyItem(destroyItemIntent.Item);
+        DestroyItem(item);
 
-        _msg.To(destroyItemIntent.Entity).Send($"You destroy {destroyItemIntent.Item.DisplayName}.");
+        _msg.To(entity).Send($"You destroy {item.DisplayName}.");
 
         // event
         ref var itemDestroyedEvt = ref _itemDestroyedEvents.Add();
-        itemDestroyedEvt.Entity = destroyItemIntent.Entity;
-        itemDestroyedEvt.Item = destroyItemIntent.Item;
+        itemDestroyedEvt.Entity = entity;
+        itemDestroyedEvt.Item = item;
     }
 
     private void HandleSacrifice(GameState state, SacrificeItemIntent sacrificeItemIntent)

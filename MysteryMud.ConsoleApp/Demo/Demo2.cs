@@ -5,6 +5,7 @@ using MysteryMud.Application.Dispatching;
 using MysteryMud.Application.Services;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
+using MysteryMud.Domain.Ability;
 using MysteryMud.Domain.Action;
 using MysteryMud.Domain.Action.Attack;
 using MysteryMud.Domain.Action.Attack.Factories;
@@ -29,7 +30,7 @@ namespace MysteryMud.ConsoleApp.Demo;
 
 static class Demo2
 {
-    public static void Run(ILogger logger, World world, ICommandDispatcher commandDispatcher, IEffectRegistry effectRegistry, IWeaponProcRegistry weaponProcRegistry)
+    public static void Run(ILogger logger, World world, ICommandDispatcher commandDispatcher, IAbilityRegistry abilityRegistry, IEffectRegistry effectRegistry, IWeaponProcRegistry weaponProcRegistry)
     {
         // get entities for testing
         Span<Entity> characters = stackalloc Entity[10];
@@ -91,10 +92,10 @@ static class Demo2
         var weaponProcResolver = new WeaponProcResolver(logger, gameMessageService, intentBusContainer, weaponProcRegistry, effectRegistry);
         var reactionResolver = new ReactionResolver(gameMessageService);
         var effectExecutor = new EffectExecutor(damageResolver, healResolver);
-        var effectLifecycleManager = new EffectLifecycleManager();
-        var effectApplicationManager = new EffectApplicationManager(logger, gameMessageService, intentBusContainer, effectExecutor, effectLifecycleManager);
+        var effectLifecycleManager = new EffectLifecycleManager(dirtyTracker);
+        var effectApplicationManager = new EffectApplicationManager(logger, gameMessageService, dirtyTracker, intentBusContainer, effectExecutor, effectLifecycleManager);
 
-        var experienceService = new ExperienceService(gameMessageService, experienceGrantedEventBuffer, levelIncreasedEventBuffer);
+        var experienceService = new ExperienceService(gameMessageService, dirtyTracker, experienceGrantedEventBuffer, levelIncreasedEventBuffer);
         var sacrificeService = new SacrificeService(gameMessageService);
         var followService = new FollowService(gameMessageService);
         var groupService = new GroupService(gameMessageService);
@@ -103,8 +104,8 @@ static class Demo2
 
         var commandExecutionSystem = new CommandExecutionSystem(logger);
         var fleeSystem = new FleeSystem(gameMessageService, intentBusContainer, experienceService, fleeBlockedEventBuffer);
-        var movementSystem = new MovementSystem(gameMessageService, intentBusContainer, roomEnteredEventBuffer);
-        var itemInteractionSystem = new ItemInteractionSystem(gameMessageService, sacrificeService, intentBusContainer, itemGotEventBuffer, itemDroppedEventBuffer, itemGivenEventBuffer, itemPutEventBuffer, itemWornEventBuffer, itemRemovedEventBuffer, itemDestroyedEventBuffer, itemSacrifierEventBuffer, dirtyTracker);
+        var movementSystem = new MovementSystem(logger, gameMessageService, dirtyTracker, intentBusContainer, abilityRegistry, roomEnteredEventBuffer);
+        var itemInteractionSystem = new ItemInteractionSystem(gameMessageService, sacrificeService, dirtyTracker, intentBusContainer, itemGotEventBuffer, itemDroppedEventBuffer, itemGivenEventBuffer, itemPutEventBuffer, itemWornEventBuffer, itemRemovedEventBuffer, itemDestroyedEventBuffer, itemSacrifierEventBuffer);
         var effectCharacterStatsSystem = new EffectiveCharacterStatsSystem();
         var autoAttackSystem = new AutoAttackSystem(intentBusContainer);
         var deathSystem = new DeathSystem(followService, intentBusContainer, deathEventBuffer);

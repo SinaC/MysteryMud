@@ -5,7 +5,7 @@ namespace MysteryMud.GameData.Events;
 
 public struct ItemWornEvent
 {
-    public Entity Actor;
+    public Entity Entity;
     public Entity Item;
     public EquipmentSlotKind Slot;
 }

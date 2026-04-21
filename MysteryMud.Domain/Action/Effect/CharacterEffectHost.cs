@@ -1,6 +1,7 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.Core;
+using MysteryMud.Core.Persistence;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Resources;
@@ -12,10 +13,12 @@ namespace MysteryMud.Domain.Action.Effect;
 
 public class CharacterEffectHost : IEffectHost
 {
+    private readonly IDirtyTracker _dirtyTracker;
     private readonly Entity _target;
 
-    public CharacterEffectHost(Entity target)
+    public CharacterEffectHost(IDirtyTracker dirtyTracker, Entity target)
     {
+        _dirtyTracker = dirtyTracker;
         _target = target;
     }
 
@@ -72,6 +75,9 @@ public class CharacterEffectHost : IEffectHost
 
             //_logger.LogInformation(LogEvents.Factory, " - add tag {tag}", effectRuntime.Tag);
         }
+
+        //
+        _dirtyTracker.MarkDirty(_target, DirtyReason.Effects);
     }
 
     public void UnregisterEffect(GameState state, Entity effect, EffectRuntime effectRuntime)
@@ -133,6 +139,9 @@ public class CharacterEffectHost : IEffectHost
             _target.Add<DirtyEnergyRegen>();
         if (effect.Has<CharacterResourceRegenModifiers<RageDecayModifier>>() && !_target.Has<DirtyRageDecay>())
             _target.Add<DirtyRageDecay>();
+
+        //
+        _dirtyTracker.MarkDirty(_target, DirtyReason.Effects);
     }
 
     public EffectValuesSnapshot CreateSnapshot()

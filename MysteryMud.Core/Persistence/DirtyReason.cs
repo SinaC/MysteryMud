@@ -30,9 +30,10 @@ public enum DirtyReason : uint
     ItemGained = 1 << 9,
     ItemLost = 1 << 10,
     ItemEquipped = 1 << 11,
+    ItemRemoved = 1 << 12,
 
     // Convenience composites
     AnyAbility = AbilityGained | AbilityProgress | AbilityMastery | AbilityCooldown,
-    AnyItem = ItemGained | ItemLost | ItemEquipped,
+    AnyItem = ItemGained | ItemLost | ItemEquipped | ItemRemoved,
     All = uint.MaxValue
 }
