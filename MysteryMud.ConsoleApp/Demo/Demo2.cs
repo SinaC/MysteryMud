@@ -23,6 +23,7 @@ using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
 using MysteryMud.Infrastructure.Buffers;
 using MysteryMud.Infrastructure.Intent;
+using MysteryMud.Infrastructure.Persistence;
 
 namespace MysteryMud.ConsoleApp.Demo;
 
@@ -53,6 +54,7 @@ static class Demo2
         var actService = new ActService();
         var gameMessageService = new GameMessageService(messageBus, actService);
         var lookService = new LookService(gameMessageService);
+        var dirtyTracker = new DirtyTracker();
 
         // initialize systems and buffers
         var intentBusContainer = new IntentBusContainer();
@@ -102,7 +104,7 @@ static class Demo2
         var commandExecutionSystem = new CommandExecutionSystem(logger);
         var fleeSystem = new FleeSystem(gameMessageService, intentBusContainer, experienceService, fleeBlockedEventBuffer);
         var movementSystem = new MovementSystem(gameMessageService, intentBusContainer, roomEnteredEventBuffer);
-        var itemInteractionSystem = new ItemInteractionSystem(gameMessageService, sacrificeService, intentBusContainer, itemGotEventBuffer, itemDroppedEventBuffer, itemGivenEventBuffer, itemPutEventBuffer, itemWornEventBuffer, itemRemovedEventBuffer, itemDestroyedEventBuffer, itemSacrifierEventBuffer);
+        var itemInteractionSystem = new ItemInteractionSystem(gameMessageService, sacrificeService, intentBusContainer, itemGotEventBuffer, itemDroppedEventBuffer, itemGivenEventBuffer, itemPutEventBuffer, itemWornEventBuffer, itemRemovedEventBuffer, itemDestroyedEventBuffer, itemSacrifierEventBuffer, dirtyTracker);
         var effectCharacterStatsSystem = new EffectiveCharacterStatsSystem();
         var autoAttackSystem = new AutoAttackSystem(intentBusContainer);
         var deathSystem = new DeathSystem(followService, intentBusContainer, deathEventBuffer);

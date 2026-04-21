@@ -7,6 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Persistence\Schema\V0__Initial.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.6" />
+    <PackageReference Include="Dapper" Version="2.*" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\MysteryMud.Application\MysteryMud.Application.csproj" />
     <ProjectReference Include="..\MysteryMud.Core\MysteryMud.Core.csproj" />
     <ProjectReference Include="..\MysteryMud.Domain\MysteryMud.Domain.csproj" />

@@ -1,0 +1,226 @@
+# Schema Evolution Guide
+
+## How migrations work
+
+Every migration is an embedded SQL file named:
+
+```
+VN__description.sql
+```
+
+`MigrationRunner` discovers them automatically at startup, compares against the
+`schema_migrations` table, and applies only the pending ones — in order, each
+in its own transaction.  A failed migration aborts startup; it never partially
+applies.
+
+The `schema_migrations` table itself is created on first boot and never
+touched by your migration files.
+
+---
+
+## The four cases you'll encounter
+
+### Case 1 — Add a typed column to an existing table
+
+**Scenario:** You want to track item durability as a first-class integer,
+not buried in `params_json`.
+
+**Step 1 — Write the migration**
+
+Create `V2__item_durability_player_title.sql`:
+
+```sql
+ALTER TABLE items ADD COLUMN durability     INTEGER;
+ALTER TABLE items ADD COLUMN max_durability INTEGER;
+```
+
+SQLite `ALTER TABLE ADD COLUMN` is safe on live data.  Existing rows get
+`NULL` in the new columns, which your game code must handle gracefully
+(see Step 3).
+
+**Step 2 — Update the snapshot record (Core)**
+
+```csharp
+// Core/Persistence/Snapshots/Snapshots.cs
+public record ItemSnapshot(
+    long             Id,
+    int              TemplateVnum,
+    string?          EquippedSlot,
+    long?            ContainerItemId,
+    string?          ParamsJson,
+    EffectSnapshot[] Effects,
+    int?             Durability,      // ← new, nullable (old saves have NULL)
+    int?             MaxDurability);  // ← new, nullable
+```
+
+**Step 3 — Update the persistence service (Infrastructure)**
+
+In `SaveItemsAsync`, add the new columns to the INSERT:
+
+```csharp
+var newId = await conn.ExecuteScalarAsync<long>("""
+    INSERT INTO items
+        (template_vnum, owner_player_id, equipped_slot,
+         container_item_id, params_json,
+         durability, max_durability)          -- ← add
+    VALUES
+        (@TemplateVnum, @OwnerPlayerId, @EquippedSlot,
+         NULL, @ParamsJson,
+         @Durability, @MaxDurability)          -- ← add
+    RETURNING id;
+    """,
+    new
+    {
+        item.TemplateVnum,
+        OwnerPlayerId = playerId,
+        item.EquippedSlot,
+        item.ParamsJson,
+        item.Durability,       // ← add
+        item.MaxDurability     // ← add
+    });
+```
+
+In `LoadItemsAsync`, read the new columns:
+
+```csharp
+result.Add(new ItemSnapshot(
+    Id:              itemId,
+    TemplateVnum:    (int)row.template_vnum,
+    EquippedSlot:    (string?)row.equipped_slot,
+    ContainerItemId: (long?)row.container_item_id,
+    ParamsJson:      (string?)row.params_json,
+    Effects:         effects,
+    Durability:      (int?)row.durability,         // ← add
+    MaxDurability:   (int?)row.max_durability));    // ← add
+```
+
+**Step 4 — Update Builder / Restorer (Domain)**
+
+```csharp
+// In PlayerSnapshotBuilder.BuildItemSnapshot:
+return new ItemSnapshot(dbId, vnum, slot, containerId, parms, effects,
+    world.Has<DurabilityComponent>(item)
+        ? world.Get<DurabilityComponent>(item).Current
+        : null,
+    world.Has<DurabilityComponent>(item)
+        ? world.Get<DurabilityComponent>(item).Max
+        : null);
+
+// In PlayerSnapshotRestorer.Restore (item spawning):
+if (itemSnap.Durability.HasValue)
+    world.Add(itemEntity, new DurabilityComponent(
+        itemSnap.Durability.Value,
+        itemSnap.MaxDurability ?? itemSnap.Durability.Value));
+// No component added for old items — game code treats missing component
+// as indestructible and adds it next time the item is saved.
+```
+
+---
+
+### Case 2 — Promote a field out of optional_json
+
+**Scenario:** You stored `title` in the `optional_json` blob but now want it
+queryable / indexable as a real column.
+
+**The migration does the column add AND the data migration in one step:**
+
+```sql
+-- V2__item_durability_player_title.sql  (already written for you)
+ALTER TABLE players ADD COLUMN title TEXT;
+
+UPDATE players
+SET
+    title         = json_extract(optional_json, '$.title'),
+    optional_json = CASE
+        WHEN json_extract(optional_json, '$.title') IS NOT NULL
+        THEN json_remove(optional_json, '$.title')
+        ELSE optional_json
+    END
+WHERE optional_json IS NOT NULL
+  AND json_extract(optional_json, '$.title') IS NOT NULL;
+```
+
+Then follow the same steps as Case 1 for the snapshot record and
+persistence service.  In the Builder, stop writing `title` to
+`optional_json` and write it to the dedicated field.  In the Restorer,
+stop reading it from the blob.
+
+---
+
+### Case 3 — Add a new optional component stored in optional_json
+
+**Scenario:** You add `HungerLevel` to players.  It's optional (not all
+game modes use it) and you don't need to query it from SQL.
+
+**No migration needed.**  Just:
+
+1. In `PlayerSnapshotBuilder.BuildOptionalJson`, add the new key:
+
+```csharp
+if (world.Has<HungerComponent>(entity))
+    parts["hunger"] = world.Get<HungerComponent>(entity).Level;
+```
+
+2. In `PlayerSnapshotRestorer.RestoreOptional`, read it back:
+
+```csharp
+if (root.TryGetProperty("hunger", out var hunger))
+    world.Add(entity, new HungerComponent(hunger.GetInt32()));
+```
+
+Old save files simply won't have the `hunger` key — the `TryGetProperty`
+returns false, no component is added, and the game initialises it fresh.
+
+---
+
+### Case 4 — Remove a field entirely
+
+**Scenario:** You decide to drop `AutoBehavior` from players.
+
+1. Write a migration that drops the column (SQLite 3.35+):
+
+```sql
+-- V3__remove_auto_behavior.sql
+ALTER TABLE players DROP COLUMN auto_behavior;
+```
+
+2. Remove `AutoBehavior` from `PlayerSnapshot` and all references in
+   the persistence service, builder, and restorer.
+
+For SQLite < 3.35, you cannot drop columns directly.  The workaround is
+to recreate the table without the column and copy data:
+
+```sql
+CREATE TABLE players_new AS SELECT id, name, level, ... FROM players;
+DROP TABLE players;
+ALTER TABLE players_new RENAME TO players;
+-- Re-create indexes
+```
+
+---
+
+## Checklist for any schema change
+
+```
+[ ] Write VN__description.sql embedded resource
+[ ] Update affected snapshot record(s) in Core  (nullable for new fields)
+[ ] Update Save* method(s) in SqlitePersistenceService
+[ ] Update Load* method(s) in SqlitePersistenceService
+[ ] Update Builder  in Domain (ECS → snapshot)
+[ ] Update Restorer in Domain (snapshot → ECS), handle null gracefully
+[ ] Bump nothing — MigrationRunner handles versioning automatically
+```
+
+---
+
+## Never do these things
+
+- **Never edit an existing VN__ file** once it has been applied to any
+  database.  Write a new migration instead.
+- **Never use `DROP TABLE` inside a migration** unless you are absolutely
+  sure no foreign keys point to it and you handle cascades.
+- **Never store absolute tick values** in the DB — always store offsets
+  via `TickHelper`.
+- **Never add a `NOT NULL` column without a `DEFAULT`** in SQLite —
+  existing rows will fail the constraint.  Either use `NULL` + handle in
+  code, or provide a `DEFAULT` value.

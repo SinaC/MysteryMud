@@ -3,6 +3,7 @@ using Arch.Core.Extensions;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Contracts;
+using MysteryMud.Core.Persistence;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Extensions;
@@ -27,8 +28,9 @@ public class ItemInteractionSystem
     private readonly IEventBuffer<ItemRemovedEvent> _itemRemovedEvents;
     private readonly IEventBuffer<ItemDestroyedEvent> _itemDestroyedEvents;
     private readonly IEventBuffer<ItemSacrificiedEvent> _itemSacrificedEvents;
+    private readonly IDirtyTracker _dirtyTracker;
 
-    public ItemInteractionSystem(IGameMessageService gameMessageService, ISacrificeService sacrificeService, IIntentContainer intentContainer, IEventBuffer<ItemGotEvent> itemGotEvents, IEventBuffer<ItemDroppedEvent> itemDroppedEvents, IEventBuffer<ItemGivenEvent> itemGivenEvents, IEventBuffer<ItemPutEvent> itemPutEvents, IEventBuffer<ItemWornEvent> itemWornEvents, IEventBuffer<ItemRemovedEvent> itemRemovedEvents, IEventBuffer<ItemDestroyedEvent> itemDestroyedEvents, IEventBuffer<ItemSacrificiedEvent> itemSacrificedEvents)
+    public ItemInteractionSystem(IGameMessageService gameMessageService, ISacrificeService sacrificeService, IIntentContainer intentContainer, IEventBuffer<ItemGotEvent> itemGotEvents, IEventBuffer<ItemDroppedEvent> itemDroppedEvents, IEventBuffer<ItemGivenEvent> itemGivenEvents, IEventBuffer<ItemPutEvent> itemPutEvents, IEventBuffer<ItemWornEvent> itemWornEvents, IEventBuffer<ItemRemovedEvent> itemRemovedEvents, IEventBuffer<ItemDestroyedEvent> itemDestroyedEvents, IEventBuffer<ItemSacrificiedEvent> itemSacrificedEvents, IDirtyTracker dirtyTracker)
     {
         _msg = gameMessageService;
         _sacrificeService = sacrificeService;
@@ -41,6 +43,7 @@ public class ItemInteractionSystem
         _itemRemovedEvents = itemRemovedEvents;
         _itemDestroyedEvents = itemDestroyedEvents;
         _itemSacrificedEvents = itemSacrificedEvents;
+        _dirtyTracker = dirtyTracker;
     }
 
     public void Tick(GameState state)
@@ -67,29 +70,35 @@ public class ItemInteractionSystem
     private void HandleGet(GameState state, GetItemIntent getItemIntent)
     {
         // TODO: validation
+        var entity = getItemIntent.Entity;
+        var item = getItemIntent.Item;
+        var sourceKind = getItemIntent.SourceKind;
+        var source = getItemIntent.Source;
 
         // get item from room/container and put it in entity's inventory
-        if (getItemIntent.SourceKind == GetSourceKind.Room && getItemIntent.Source.Has<RoomContents>())
+        if (sourceKind == GetSourceKind.Room && source.Has<RoomContents>())
         {
-            ItemHelpers.TryGetItemFromRoom(getItemIntent.Entity, getItemIntent.Source, getItemIntent.Item, out _);
+            ItemHelpers.TryGetItemFromRoom(entity, source, item, out _);
 
-            _msg.To(getItemIntent.Entity).Send($"You get {getItemIntent.Item.DisplayName}.");
+            _msg.To(entity).Send($"You get {item.DisplayName}.");
         }
-        else if (getItemIntent.SourceKind == GetSourceKind.Container && getItemIntent.Source.Has<ContainerContents>())
+        else if (sourceKind == GetSourceKind.Container && source.Has<ContainerContents>())
         {
-            ItemHelpers.TryGetItemFromContainer(getItemIntent.Entity, getItemIntent.Source, getItemIntent.Item, out _);
+            ItemHelpers.TryGetItemFromContainer(entity, source, item, out _);
 
-            _msg.To(getItemIntent.Entity).Send($"You get {getItemIntent.Item.DisplayName} from {getItemIntent.Source.DisplayName}.");
+            _msg.To(entity).Send($"You get {item.DisplayName} from {source.DisplayName}.");
         }
         else
             return; // invalid source, should not happen if validation is done correctly
 
+        _dirtyTracker.MarkDirty(entity, DirtyReason.ItemGained);
+
         // event
         ref var itemGotEvt = ref _itemGotEvents.Add();
-        itemGotEvt.Entity = getItemIntent.Entity;
-        itemGotEvt.Item = getItemIntent.Item;
-        itemGotEvt.SourceKind = getItemIntent.SourceKind;
-        itemGotEvt.Source = getItemIntent.Source;
+        itemGotEvt.Entity = entity;
+        itemGotEvt.Item = item;
+        itemGotEvt.SourceKind = sourceKind;
+        itemGotEvt.Source = source;
     }
 
     private void HandleDrop(GameState state, DropItemIntent dropItemIntent)

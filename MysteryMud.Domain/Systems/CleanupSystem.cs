@@ -71,6 +71,8 @@ public class CleanupSystem
             // TODO: destroy any items the character is carrying or equipped with
             // TODO: if the character is a pet, remove it from its owner's pet list
 
+            // TODO: call PersistenceSystem.SaveOnDisconnectAsync
+
             state.World.Destroy(player);
         });
 

@@ -68,6 +68,7 @@ internal class GameLoop
     private readonly LookSystem _lookSystem;
     private readonly ScheduleSystem _scheduleSystem;
     private readonly CleanupSystem _cleanupSystem;
+    private readonly PersistenceSystem _persistenceSystem;
 
     public GameLoop(
         ILogger logger,
@@ -113,7 +114,8 @@ internal class GameLoop
         LootSystem lootSystem,
         AutoSacrificeSystem autoSacrificeSystem,
         LookSystem lookSystem,
-        CleanupSystem cleanupSystem)
+        CleanupSystem cleanupSystem,
+        PersistenceSystem persistenceSystem)
     {
         _logger = logger;
         _outputService = outputService ?? throw new ArgumentNullException(nameof(outputService));
@@ -159,6 +161,7 @@ internal class GameLoop
         _lookSystem = lookSystem;
         _scheduleSystem = scheduleSystem;
         _cleanupSystem = cleanupSystem;
+        _persistenceSystem = persistenceSystem;
     }
 
     public void Run()
@@ -272,6 +275,9 @@ internal class GameLoop
 
             // Remove destroyed items / dead NPCs / disconnected players
             _cleanupSystem.Tick(state);
+
+            // Persist players
+            _persistenceSystem.Update(state);
 
             // Process messages to be sent to players
             _messageBus.Process(state);

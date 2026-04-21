@@ -41,6 +41,7 @@ public class GetCommand : ICommand
             // default: room
             ref var room = ref actor.Get<Location>().Room;
             ref var roomContents = ref room.Get<RoomContents>();
+            var found = false;
             foreach (var item in CommandEntityFinder.SelectTargets(actor, ctx.Primary, roomContents.Items))
             {
                 // intent to get item from room
@@ -49,27 +50,29 @@ public class GetCommand : ICommand
                 getItemFromRoomIntent.Item = item;
                 getItemFromRoomIntent.SourceKind = GetSourceKind.Room;
                 getItemFromRoomIntent.Source = room;
+                found = true;
             }
-        }
-        else
-        {
-            var container = CommandEntityFinder.FindContainer(actor, ctx.Secondary);
-            if (container == null)
-            {
+            if (!found)
                 _msg.To(actor).Send("You don't see that here.");
-                return;
-            }
+            return;
+        }
 
-            ref var containerContents = ref container.Value.Get<ContainerContents>();
-            foreach (var item in CommandEntityFinder.SelectTargets(actor, ctx.Primary, containerContents.Items))
-            {
-                // intent to get item from container
-                ref var getItemFromContainerIntent = ref _intents.GetItem.Add();
-                getItemFromContainerIntent.Entity = actor;
-                getItemFromContainerIntent.Item = item;
-                getItemFromContainerIntent.SourceKind = GetSourceKind.Container;
-                getItemFromContainerIntent.Source = container.Value;
-            }
+        var container = CommandEntityFinder.FindContainer(actor, ctx.Secondary);
+        if (container == null)
+        {
+            _msg.To(actor).Send("You don't see that here.");
+            return;
+        }
+
+        ref var containerContents = ref container.Value.Get<ContainerContents>();
+        foreach (var item in CommandEntityFinder.SelectTargets(actor, ctx.Primary, containerContents.Items))
+        {
+            // intent to get item from container
+            ref var getItemFromContainerIntent = ref _intents.GetItem.Add();
+            getItemFromContainerIntent.Entity = actor;
+            getItemFromContainerIntent.Item = item;
+            getItemFromContainerIntent.SourceKind = GetSourceKind.Container;
+            getItemFromContainerIntent.Source = container.Value;
         }
     }
 }
