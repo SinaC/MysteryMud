@@ -3,6 +3,7 @@ using Arch.Core.Extensions;
 using MysteryMud.Core;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
+using MysteryMud.Domain.Components.Groups;
 using MysteryMud.Domain.Helpers;
 
 namespace MysteryMud.Domain.Services;
@@ -18,9 +19,9 @@ public class GroupService : IGroupService
 
     public void AddMember(GameState state, Entity group, Entity member)
     {
-        ref var groupData = ref group.Get<Group>();
+        ref var groupInstance = ref group.Get<GroupInstance>();
 
-        groupData.Members.Add(member);
+        groupInstance.Members.Add(member);
         member.Add(new GroupMember
         {
             Group = group,
@@ -34,8 +35,8 @@ public class GroupService : IGroupService
     {
         _msg.To(member).Send("You have left the group.");
 
-        ref var groupData = ref group.Get<Group>();
-        groupData.Members.Remove(member);
+        ref var groupInstance = ref group.Get<GroupInstance>();
+        groupInstance.Members.Remove(member);
         if (member.Has<GroupMember>())
             member.Remove<GroupMember>();
 
@@ -44,49 +45,49 @@ public class GroupService : IGroupService
 
         _msg.ToGroup(group).Act("{0} leaves the group.").With(member);
 
-        if (groupData.Members.Count == 1)
+        if (groupInstance.Members.Count == 1)
         {
             Disband(state, group);
             return;
         }
 
         // promote oldest remaining member if leader left
-        if (groupData.Leader == member)
+        if (groupInstance.Leader == member)
             PromoteNewLeader(group);
     }
 
     private void PromoteNewLeader(Entity group)
     {
-        ref var groupData = ref group.Get<Group>();
+        ref var groupInstance = ref group.Get<GroupInstance>();
 
-        var newLeader = groupData.Members
+        var newLeader = groupInstance.Members
             .OrderBy(m => m.Get<GroupMember>().JoinedAtTick)
             .First();
 
-        groupData.Leader = newLeader;
+        groupInstance.Leader = newLeader;
         _msg.ToGroup(group).Act("{0} {0:b} now the group leader.").With(newLeader);
     }
 
     public void Disband(GameState state, Entity group)
     {
-        ref var groupData = ref group.Get<Group>();
+        ref var groupInstance = ref group.Get<GroupInstance>();
 
         // clear group reference on all active combat claims before destroying group entity
-        foreach (var member in groupData.Members)
+        foreach (var member in groupInstance.Members)
         {
             // find all NPCs this member has claims on and clear the group reference
             // we need to scan — member doesn't track which entities they have claims on
             ClearGroupFromClaims(state, member, group);
         }
 
-        foreach (var member in groupData.Members.ToArray())
+        foreach (var member in groupInstance.Members.ToArray())
         {
             if (member.Has<GroupMember>())
                 member.Remove<GroupMember>();
             _msg.To(member).Send("Your group has been disbanded.");
         }
 
-        groupData.Members.Clear();
+        groupInstance.Members.Clear();
         state.World.Destroy(group); // group entity is gone
     }
 

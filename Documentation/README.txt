@@ -70,6 +70,7 @@ ActionOrchestrator (step 21) details
                 schedule expired effect event if duration is not null
                 schedule tick effect event if tick rate > 0
                 execute onApply actions
+        Loop on killRewards and reward xp for killer and group members
 
  ┌─────────────────────────┐
  │   Player inputs command │
@@ -178,11 +179,12 @@ Character
   ├CommandBuffer: list of pending commands
   ├Location: room
   ├Position: position
-  ├BaseStats: level, experience, dictionary stat/value
-  ├EffectiveStats: dictionary stat/value
+  ├BaseStats: fixed-array of stat/value
+  ├EffectiveStats: fixed-array of stat/value
   ├CharacterEffects: effect list, effects by tag, active tags
   ├Inventory: list of items
   ├Equipment: list of equipped items
+  ├Form: current form: humanoid, cat, bear
   ├BaseHealth: base max health
   ├Health: current and max health
   ├DirtyHealth: max health needs to be recalculated
@@ -192,11 +194,14 @@ Character
     DirtyStats: needs effective stats to be recalculated
     DirtyResources: needs effective resources to be recalculated
     CombatState: in combat
-    DeadTag: is dead will be removed by cleanup system
+    CombatInitiator: what are the combat claim for this entity
+    NewCombatantTag: just entered a fight
+    DeadTag: is dead? will be removed by cleanup system if no RespawnState found
     Gender: male|female|neutral
-    Form: current form (humanoid, bear, cat)
     BaseMana, Mana, ManaRegen, UsesMana, DirtyMana, DirtyManaRegen: base max mana, current and max mana, current and base mana regen rate, can use mana, max mana needs to be recalculated, mana regen needs to be recalculated
     same for energy, rage
+    Followers: list of characters following
+    Following: who character is following
 
 Npc(character+)
   ├NpcTag
@@ -204,31 +209,53 @@ Npc(character+)
   optional
     AutoCommand: last command from Npc
     ActiveThreatTag: set while there is an active entry in ThreatTable
+    Charmed: charmed by who
+    NpcAssistBehavior: how this NPC will assist players and/or other NPCs
 
 Player(character+)
   ├PlayerTag
   ├Progression: total experience, experience by level
+  ├AutoBehavior: auto loot, auto sac, auto assist
   ├CommandThrottle: command throttling information to detect spam
   └Connection
   optional
+    GroupMember: which group player belongs
     RespawnState: respawn timer and location when a player dies
     DisconnectedTag: is disconnected
+    Charmies: list of charmed characters
+
+Group
+  └GroupInstance: leader, group members, loot rule, loot master
 
 Item
-    todo
+  ├ItemTag
+  └ItemEffects: effec list, effects by tag, active tags
+  optional
+    Container: set when item is a container, store max capacity
+    ContainerContents: list of items contained if item is a container
+    ContainedIn: when in a container, store container entity
+    Equipable: is item equipable and which slot
+    Equipped: is item equipped and which wearer/slot
+    ItemOwner: item owner if any
+    DestroyedTag: is destroyed ? will be remove from world by CleanupSystem
+    Weapon: is a weapon ? kind, dice count, dice value, list of proc id
+
 Room
-    todo
+  ├RoomTag
+  ├RoomContents: list of characters and items in this room
+  └RoomGraph: list of exits
+
 Zone
-    todo
+    not yet implemented
 
 Effect (not stacking if difference source)
- ├ EffectInstance: Source, Target, Definition, StackCount
- ├ TimedEffect: TickRate (= 0 means pure duration effect), NextTick, StartTick, ExpirationTick, LastRefreshTick
- ├ EffectTag: EffectTagId (bit fields)
- ├ StatModifiers: StatModifier list
- ├ ResourceModifiers: ResourceModifier list
- ├ ResourceRegenModifiers: ResourceRegenModifier list
- ├ DamageEffect: Damage, DamageKind
- └ HealEffect: Heal
+ ├EffectInstance: Source, Target, Definition, StackCount
+ ├TimedEffect: TickRate (= 0 means pure duration effect), NextTick, StartTick, ExpirationTick, LastRefreshTick
+ ├CharacterEffectTag: character EffectTagId (bit fields)
+ ├ItemEffectTag: character EffectTagId (bit fields)
+ ├StatModifiers: StatModifier list
+ ├ResourceModifiers: ResourceModifier list
+ ├ResourceRegenModifiers: ResourceRegenModifier list
+ └EffectValuesSnapshot: snapshotted values
  optional
     ExpiredTag: expired will be removed by cleanup system

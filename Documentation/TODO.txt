@@ -4,24 +4,24 @@ keep only one event buffer except for death/damage events which will have their 
 ======================================
 effect system
     character effects -> done
-    item effects
-        affecting item
-        affecting wearer
+    item effects -> done
+        affecting item -> done
+        affecting wearer -> done
     room effects
         affecting room
         affecting characters/items in room
-spells/skills
-damage
-combat
-act
-experience and leveling
-logging
+spells/skills -> done
+damage -> done
+combat -> done
+act -> done
+experience and leveling -> done
+logging -> done
 persistence
 admin
 areas
 nanny
 websocket
-commands
+commands -> done
 ai
 scripting
 

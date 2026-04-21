@@ -9,6 +9,7 @@ using MysteryMud.Domain.Action.Attack.Resolvers;
 using MysteryMud.Domain.Action.Damage;
 using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Components.Characters.Players;
+using MysteryMud.Domain.Components.Groups;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Enums;
@@ -167,10 +168,10 @@ public class ActionOrchestrator
 
         if (killRewardEvt.RewardOwnerGroup != Entity.Null)
         {
-            ref var group = ref killRewardEvt.RewardOwnerGroup.TryGetRef<Group>(out var isInGroup);
+            ref var groupInstance = ref killRewardEvt.RewardOwnerGroup.TryGetRef<GroupInstance>(out var isInGroup);
             if (isInGroup)
             {
-                foreach (var member in group.Members)
+                foreach (var member in groupInstance.Members)
                 {
                     if (member == killRewardEvt.RewardOwner) continue;
                     if (!CharacterHelpers.IsAlive(member)) continue; // <- member died too

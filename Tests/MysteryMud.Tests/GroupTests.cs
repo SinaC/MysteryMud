@@ -2,6 +2,7 @@
 using Arch.Core.Extensions;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
+using MysteryMud.Domain.Components.Groups;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 using MysteryMud.Tests.Infrastructure;
@@ -47,11 +48,11 @@ public class GroupTests : IDisposable
         alice.Get<GroupMember>().JoinedAtTick = 1;
         bob.Get<GroupMember>().JoinedAtTick = 5;
         carol.Get<GroupMember>().JoinedAtTick = 10;
-        group.Get<Group>().Leader = alice;
+        group.Get<GroupInstance>().Leader = alice;
 
         _groupService.RemoveMember(_f.State, group, alice);
 
-        Assert.Equal(bob, group.Get<Group>().Leader); // bob oldest remaining
+        Assert.Equal(bob, group.Get<GroupInstance>().Leader); // bob oldest remaining
     }
 
     [Fact]
@@ -62,11 +63,11 @@ public class GroupTests : IDisposable
         var bob = _f.Player("Bob").InGroup(group).Build();
         var carol = _f.Player("Carol").InGroup(group).Build();
         _f.AddGroupMembers(group, alice, bob, carol);
-        group.Get<Group>().Leader = alice;
+        group.Get<GroupInstance>().Leader = alice;
 
         _groupService.RemoveMember(_f.State, group, alice);
 
-        Assert.Equal(bob, group.Get<Group>().Leader); // first remaining member promoted
+        Assert.Equal(bob, group.Get<GroupInstance>().Leader); // first remaining member promoted
         Assert.True(group.IsAlive());                 // group survives with 2 members
     }
 

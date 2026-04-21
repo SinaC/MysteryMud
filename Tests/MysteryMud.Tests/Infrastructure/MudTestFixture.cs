@@ -5,6 +5,7 @@ using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.Domain.Components.Characters.Players;
+using MysteryMud.Domain.Components.Groups;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.GameData.Enums;
@@ -122,11 +123,11 @@ internal class MudTestFixture : IDisposable
 
     public EntityBuilder Group()
         => new EntityBuilder(World)
-            .With(new Group { Members = [] });
+            .With(new GroupInstance { Members = [] });
 
     public void AddGroupMembers(Entity group, params Entity[] members)
     {
-        group.Get<Group>().Members.AddRange(members);
+        group.Get<GroupInstance>().Members.AddRange(members);
     }
 
     public void Dispose()
