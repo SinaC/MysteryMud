@@ -1,3 +1,6 @@
+add DirtyTracker wherever needed (see PERSISTENCE.TXT)
+
+
 
 keep only one event buffer except for death/damage events which will have their own buffer to ensure they are processed separetely and can trigger things like death saves, death effects, etc without being mixed with other events
 

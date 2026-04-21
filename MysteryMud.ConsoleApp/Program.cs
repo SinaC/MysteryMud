@@ -17,6 +17,7 @@ using MysteryMud.Core.Commands;
 using MysteryMud.Core.Contracts;
 using MysteryMud.Core.Effects;
 using MysteryMud.Core.Extensions;
+using MysteryMud.Core.Persistence;
 using MysteryMud.Core.Scheduler;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Ability;
@@ -36,6 +37,7 @@ using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Factories;
+using MysteryMud.Domain.Persistence;
 using MysteryMud.Domain.Services;
 using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Definitions;
@@ -45,6 +47,7 @@ using MysteryMud.Infrastructure.Eventing;
 using MysteryMud.Infrastructure.Intent;
 using MysteryMud.Infrastructure.Network;
 using MysteryMud.Infrastructure.Persistence;
+using MysteryMud.Infrastructure.Persistence.Schema;
 using MysteryMud.Infrastructure.Scheduler;
 using MysteryMud.Infrastructure.Services;
 using Serilog;
@@ -177,8 +180,31 @@ var commandDefinitions = commandLoader.Load(Path.Combine(basePath, gamePaths.Com
 //Demo.Run(logger, world, commandDispatcher);
 //Demo2.Run(logger, world, commandDispatcher, effectRegistry);
 
+var dbPath = Path.Combine(basePath, gamePaths.Db);
+var connectionString = $"Data Source={dbPath};Pooling=True;";
+
 // === DI container ===
 var services = new ServiceCollection();
+
+// DB
+// 1. Bootstrap schema (idempotent — safe to run every boot)
+//var bootstrap = new DatabaseBootstrap(connStr);
+//await bootstrap.InitialiseAsync();
+var migrationRunner = new MigrationRunner(connectionString, logger);
+await migrationRunner.RunAsync();
+
+// 2. Wire persistence service
+services.AddSingleton<IPersistenceService>(new SqlitePersistenceService(connectionString));
+
+// 3. Dirty tracker (singleton)
+services.AddSingleton<IDirtyTracker, DirtyTracker>();
+
+// 4. Snapshot builder
+services.AddSingleton<ISnapshotBuilder, PlayerSnapshotBuilder>();
+services.AddSingleton<ISnapshotRestorer, PlayerSnapshotRestorer>();
+
+// 5. Persistence system (use options for change AutosaveInternal and ImmediateFlushThreshold
+services.AddSingleton<PersistenceSystem>();
 
 // Infrastructure / primitives
 services.AddSingleton(world);

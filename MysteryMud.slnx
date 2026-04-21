@@ -4,6 +4,8 @@
     <File Path="Documentation/README.txt" />
     <File Path="Documentation/TODO.txt" />
     <File Path="MENTAL MODEL.TXT" />
+    <File Path="PERSISTENCE.TXT" />
+    <File Path="SCHEMA EVOLUTION GUIDE.TXT" />
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="Tests/MysteryMud.Tests/MysteryMud.Tests.csproj" Id="5c2190a8-5d50-465b-8491-00cfce5338bc" />

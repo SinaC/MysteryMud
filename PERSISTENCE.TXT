@@ -1,0 +1,165 @@
+GameData.*                     (unchanged)
+Core.Persistence
+  ├ IPersistenceService
+  ├ ISnapshotBuilder
+  ├ ISnapshotRestorer
+  ├ TickHelper
+  └ Snapshots/
+      └ Snapshots.cs
+
+Domain.Persistence
+  └ PlayerSnapshotBuilder.cs   (your real impl, reads ECS components)
+  └ PlayerSnapshotRestorer.cs
+
+Infrastructure.Persistence
+  ├ Schema/
+  │   ├ Schema.sql
+  │   └ DatabaseBootstrap.cs
+  ├ SqlitePersistenceService.cs
+  ├ DirtyTracker.cs
+  └ PersistenceSystem.cs
+
+# Persistence Layer — Wiring Guide
+
+## Package References
+
+```xml
+<PackageReference Include="Microsoft.Data.Sqlite" Version="8.*" />
+<PackageReference Include="Dapper"                Version="2.*" />
+```
+
+Mark `Schema.sql` as an embedded resource:
+
+```xml
+<EmbeddedResource Include="Schema\Schema.sql" />
+```
+
+---
+
+## Startup (DI / manual)
+
+```csharp
+const string connStr = "Data Source=mud.db;Pooling=True;";
+
+// 1. Bootstrap schema (idempotent — safe to run every boot)
+var bootstrap = new DatabaseBootstrap(connStr);
+await bootstrap.InitialiseAsync();
+
+// 2. Wire persistence service
+IPersistenceService persistence = new SqlitePersistenceService(connStr);
+
+// 3. Dirty tracker (singleton)
+var dirtyTracker = new DirtyTracker();
+
+// 4. Snapshot builder (implement in your game project)
+ISnapshotBuilder    builder   = new PlayerSnapshotBuilder();
+ISnapshotRestorer   restorer  = new PlayerSnapshotRestorer();
+
+// 5. Persistence system
+var persistenceSystem = new PersistenceSystem(
+    world, dirtyTracker, persistence, builder,
+    loggerFactory.CreateLogger<PersistenceSystem>())
+{
+    AutosaveInterval       = TimeSpan.FromMinutes(5),
+    ImmediateFlushThreshold = 20
+};
+```
+
+---
+
+## Game Loop
+
+```csharp
+// In your tick loop:
+long currentTick = tickCounter.Current;
+persistenceSystem.Update(currentTick);
+```
+
+---
+
+## Marking Entities Dirty
+
+Call `DirtyTracker.MarkDirty` from any system that mutates relevant state:
+
+```csharp
+// In CombatSystem, on level up:
+dirtyTracker.MarkDirty(entity, DirtyReason.Experience | DirtyReason.Stats);
+
+// In AbilitySystem, on practice:
+dirtyTracker.MarkDirty(entity, DirtyReason.AbilityProgress);
+
+// In ItemSystem, on item pickup:
+dirtyTracker.MarkDirty(entity, DirtyReason.ItemGained);
+
+// In EffectSystem, on effect applied:
+dirtyTracker.MarkDirty(entity, DirtyReason.Effects);
+```
+
+---
+
+## Disconnect Save
+
+In your connection/session handler:
+
+```csharp
+async Task OnPlayerDisconnectAsync(Entity playerEntity)
+{
+    await persistenceSystem.SaveOnDisconnectAsync(playerEntity, tickCounter.Current);
+    // … remove entity from world, clean up session
+}
+```
+
+---
+
+## Shutdown
+
+```csharp
+// In your shutdown handler — flush all remaining dirty entities:
+await persistenceSystem.FlushAllAsync(tickCounter.Current);
+```
+
+---
+
+## Login — Loading a Player
+
+```csharp
+async Task<Entity> LoginPlayerAsync(string playerName)
+{
+    var snapshot = await persistence.LoadPlayerAsync(playerName);
+    if (snapshot is null)
+        return CreateNewPlayer(playerName); // your new-player flow
+
+    var entity = world.Create();
+    restorer.Restore(world, entity, snapshot, tickCounter.Current);
+
+    // Spawn and attach items
+    foreach (var itemSnap in snapshot.Items)
+        itemSpawnService.SpawnFromSnapshot(world, entity, itemSnap, tickCounter.Current);
+
+    // Place in room
+    roomSystem.PlaceCharacter(entity, snapshot.LocationKey);
+
+    return entity;
+}
+```
+
+---
+
+## Tick Offset Convention
+
+| Value                           | Meaning                                       |
+|---------------------------------|-----------------------------------------------|
+| `ExpirationRemaining = -1`      | Permanent effect (no expiry)                  |
+| `ExpirationRemaining = 0`       | Expired — effect system should remove on load |
+| `NextTickOffset = 0`            | Fire on the very next tick after load         |
+| `CooldownTicksRemaining = null` | Not on cooldown                               |
+
+---
+
+## Adding Pets Later
+
+1. Implement `PetSnapshotBuilder` / `PetSnapshotRestorer` (same pattern).
+2. Add `SavePetAsync` / `LoadPetsForPlayerAsync` to `IPersistenceService`.
+3. The `player_pets` table is already in the schema.
+4. Mark pet entities dirty via `dirtyTracker.MarkDirty(petEntity, DirtyReason.All)`
+   when the player who owns them is marked dirty (or track them independently).
