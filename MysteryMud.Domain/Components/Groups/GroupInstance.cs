@@ -1,9 +1,9 @@
 ﻿using Arch.Core;
 using MysteryMud.GameData.Enums;
 
-namespace MysteryMud.Domain.Components.Characters.Players;
+namespace MysteryMud.Domain.Components.Groups;
 
-public struct Group
+public struct GroupInstance
 {
     public Entity Leader;
     public List<Entity> Members;   // includes leader

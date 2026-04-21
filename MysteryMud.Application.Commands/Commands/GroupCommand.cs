@@ -7,6 +7,7 @@ using MysteryMud.Core.Extensions;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
+using MysteryMud.Domain.Components.Groups;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Queries;
@@ -71,7 +72,7 @@ public class GroupCommand : ICommand
         // we are not in a group, create a group and add target
         if (!isActorGrouped)
         {
-            var group = state.World.Create(new Group
+            var group = state.World.Create(new GroupInstance
             {
                 Leader = actor, // already set as leader
                 LootRule = LootRule.FreeForAll,
@@ -84,9 +85,9 @@ public class GroupCommand : ICommand
             return;
         }
         // we are in a group
-        ref var groupData = ref actorGroupMember.Group.Get<Group>();
+        ref var groupInstance = ref actorGroupMember.Group.Get<GroupInstance>();
         // target is in the gorup, remove target
-        if (groupData.Members.Contains(target.Value))
+        if (groupInstance.Members.Contains(target.Value))
         {
             _groupService.RemoveMember(state, actorGroupMember.Group, target.Value);
             return;
@@ -112,9 +113,9 @@ public class GroupCommand : ICommand
             return;
         }
         // in a group, display members and their charmies
-        ref var groupData = ref groupMember.Group.Get<Group>();
-        _msg.To(actor).Send($"{groupData.Leader.DisplayName}'s group:");
-        foreach (var member in groupData.Members)
+        ref var groupInstance = ref groupMember.Group.Get<GroupInstance>();
+        _msg.To(actor).Send($"{groupInstance.Leader.DisplayName}'s group:");
+        foreach (var member in groupInstance.Members)
         {
             DisplayMember(actor, member);
             DisplayCharmies(actor, member);

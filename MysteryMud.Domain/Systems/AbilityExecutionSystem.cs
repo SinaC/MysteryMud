@@ -6,6 +6,7 @@ using MysteryMud.Core.Contracts;
 using MysteryMud.Domain.Ability;
 using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Extensions;
+using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
@@ -68,6 +69,10 @@ public class AbilityExecutionSystem
             // we only want a to be applied
             foreach (var target in targets)
             {
+                // TODO: check if still in same room ? except for some effect such as summon
+                if (!CharacterHelpers.IsAlive(target))
+                    continue;
+
                 // Find the first (most specific) condition group that matches this target
                 var matchedGroup = abilityRuntime.ConditionalEffectGroups
                     .OrderByDescending(g => g.Condition.Specificity())

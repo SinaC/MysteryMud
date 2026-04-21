@@ -6,6 +6,7 @@ using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Effects;
+using MysteryMud.Domain.Components.Groups;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
@@ -88,7 +89,7 @@ public class DisconnectedPlayerCleanupTests : IDisposable
         var alice = _f.Player("Alice").WithLocation(room).InGroup(group).Build();
         var bob = _f.Player("Bob").WithLocation(room).InGroup(group).Build();
         _f.AddGroupMembers(group, alice, bob);
-        group.Get<Group>().Leader = alice;
+        group.Get<GroupInstance>().Leader = alice;
 
         bob.Add<DisconnectedTag>();
         _sut.Tick(_f.State);
@@ -110,12 +111,12 @@ public class DisconnectedPlayerCleanupTests : IDisposable
         alice.Get<GroupMember>().JoinedAtTick = 1;
         bob.Get<GroupMember>().JoinedAtTick = 5;
         carol.Get<GroupMember>().JoinedAtTick = 10;
-        group.Get<Group>().Leader = alice;
+        group.Get<GroupInstance>().Leader = alice;
 
         alice.Add<DisconnectedTag>();
         _sut.Tick(_f.State);
 
-        Assert.Equal(bob, group.Get<Group>().Leader); // oldest remaining
+        Assert.Equal(bob, group.Get<GroupInstance>().Leader); // oldest remaining
     }
 
     [Fact]

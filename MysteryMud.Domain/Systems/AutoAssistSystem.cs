@@ -6,6 +6,7 @@ using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.Domain.Components.Characters.Players;
+using MysteryMud.Domain.Components.Groups;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Helpers;
@@ -112,7 +113,7 @@ public class AutoAssistSystem
         if (combatant.Has<GroupMember>())
         {
             var group = combatant.Get<GroupMember>().Group;
-            ref var groupData = ref group.Get<Group>();
+            ref var groupData = ref group.Get<GroupInstance>();
             foreach (var member in groupData.Members)
             {
                 if (member == combatant) continue;

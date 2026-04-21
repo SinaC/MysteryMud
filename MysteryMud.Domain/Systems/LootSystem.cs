@@ -3,7 +3,7 @@ using Arch.Core.Extensions;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Contracts;
-using MysteryMud.Domain.Components.Characters.Players;
+using MysteryMud.Domain.Components.Groups;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Helpers;
@@ -35,30 +35,26 @@ public sealed class LootSystem
     {
         foreach (ref var intent in _intents.CorpseLootSpan)
         {
-            var killer = intent.LootOwner;
-            var killerGroup = intent.LootOwnerGroup;
+            var lootOwner = intent.LootOwner;
+            var lootOwnerGroup = intent.LootOwnerGroup;
             var corpse = intent.Corpse;
-
-            // killer died during ActionOrchestrator (e.g. killed by a proc or reaction)
-            if (!CharacterHelpers.IsAlive(killer))
-                continue;
 
             // Phase 1: generate and distribute quest items
             DistributeQuestItems(state, ref intent);
 
-            // Phase 2: autoloot for killer (priority)
-            if (killer.HasAutoLoot())
-                LootAll(killer, corpse);
+            // Phase 2: autoloot for killer (priority) (if not killed in ActionOrchestrator by a proc/reaction)
+            if (CharacterHelpers.IsAlive(lootOwner) && lootOwner.HasAutoLoot())
+                LootAll(lootOwner, corpse);
 
             // Phase 3: autoloot for rest of group
-            if (killerGroup != Entity.Null)
+            if (lootOwnerGroup != Entity.Null)
             {
-                ref var group = ref killerGroup.TryGetRef<Group>(out var isInGroup);
+                ref var group = ref lootOwnerGroup.TryGetRef<GroupInstance>(out var isInGroup);
                 if (isInGroup)
                 {
                     foreach (var member in group.Members)
                     {
-                        if (member == killer) continue;
+                        if (member == lootOwner) continue;
                         if (!CharacterHelpers.IsAlive(member)) continue; // <- member died too
                         if (!CharacterHelpers.SameRoom(intent.LootOwner, member)) continue; // <- member not anymore in same room
                         if (member.HasAutoLoot())

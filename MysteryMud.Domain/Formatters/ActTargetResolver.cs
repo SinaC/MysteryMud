@@ -1,7 +1,7 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.Domain.Components;
-using MysteryMud.Domain.Components.Characters.Players;
+using MysteryMud.Domain.Components.Groups;
 using MysteryMud.Domain.Components.Rooms;
 
 namespace MysteryMud.Domain.Formatters;
@@ -10,7 +10,7 @@ public static class ActTargetResolver
 {
     public static IEnumerable<Entity> GetGroupTargets(Entity group)
     {
-        ref var groupData = ref group.TryGetRef<Group>(out var isGroup);
+        ref var groupData = ref group.TryGetRef<GroupInstance>(out var isGroup);
         if (!isGroup)
             return [];
         return groupData.Members;
