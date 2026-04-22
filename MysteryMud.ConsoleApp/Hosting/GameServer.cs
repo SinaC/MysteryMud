@@ -3,10 +3,10 @@ using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Logging;
+using MysteryMud.Core.Services;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Factories;
 using MysteryMud.Infrastructure.Network;
-using MysteryMud.Infrastructure.Services;
 
 namespace MysteryMud.ConsoleApp.Hosting;
 

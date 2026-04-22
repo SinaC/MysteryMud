@@ -6,7 +6,7 @@ namespace MysteryMud.Domain.Ability.Rules;
 
 public class SavesSpellRule : AbilityValidationRule // opposite of NotAffectedByRule
 {
-    private DamageKind _damageKind;
+    private readonly DamageKind _damageKind;
 
     public SavesSpellRule(TargetCondition condition, AbilityValidationFailBehaviour failBehaviour, string failMessageKey, DamageKind damageKind)
         : base(condition, failBehaviour, failMessageKey)

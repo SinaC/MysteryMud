@@ -4,6 +4,7 @@ using MysteryMud.Core;
 using MysteryMud.Core.Persistence;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Components.Items;
@@ -82,7 +83,7 @@ public class ItemEffectHost : IEffectHost
         if (isEquipped)
         {
             var wearer = equipped.Wearer;
-            if (wearer.IsAlive())
+            if (wearer.IsAlive() && wearer.Has<PlayerTag>())
             {
                 _dirtyTracker.MarkDirty(wearer, DirtyReason.Effects);
             }
@@ -162,7 +163,8 @@ public class ItemEffectHost : IEffectHost
                     wearer.Add<DirtyRageDecay>();
             }
 
-            _dirtyTracker.MarkDirty(wearer, DirtyReason.Effects);
+            if (wearer.Has<PlayerTag>())
+                _dirtyTracker.MarkDirty(wearer, DirtyReason.Effects);
         }
     }
 

@@ -91,7 +91,8 @@ public class MovementSystem
                 _msg.ToRoom(movingEntity).Act(CastMessageHelpers.RoomInterruptMessage).With(movingEntity);
             }
 
-            _dirtyTracker.MarkDirty(movingEntity, DirtyReason.CoreData);
+            if (movingEntity.Has<PlayerTag>())
+                _dirtyTracker.MarkDirty(movingEntity, DirtyReason.CoreData);
 
             if (intent.AutoLook)
             {

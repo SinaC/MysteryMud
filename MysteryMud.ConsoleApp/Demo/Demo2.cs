@@ -108,7 +108,7 @@ static class Demo2
         var itemInteractionSystem = new ItemInteractionSystem(gameMessageService, sacrificeService, dirtyTracker, intentBusContainer, itemGotEventBuffer, itemDroppedEventBuffer, itemGivenEventBuffer, itemPutEventBuffer, itemWornEventBuffer, itemRemovedEventBuffer, itemDestroyedEventBuffer, itemSacrifierEventBuffer);
         var effectCharacterStatsSystem = new EffectiveCharacterStatsSystem();
         var autoAttackSystem = new AutoAttackSystem(intentBusContainer);
-        var deathSystem = new DeathSystem(followService, intentBusContainer, deathEventBuffer);
+        var deathSystem = new DeathSystem(followService, dirtyTracker, intentBusContainer, deathEventBuffer);
         var lootSystem = new LootSystem(gameMessageService, intentBusContainer, itemLootedEventBuffer);
         var lookSystem = new LookSystem(lookService, intentBusContainer, lookedEventBuffer);
         var cleanupSystem = new CleanupSystem(logger, followService, groupService, effectLifecycleManager);

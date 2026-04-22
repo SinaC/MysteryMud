@@ -45,6 +45,7 @@ public sealed class PlayerSnapshotBuilder : ISnapshotBuilder
         //var equippedSlots = equipment.Slots.ToDictionary(s => s.Item.Id, s => s.Slot);
         var equippedSlots = new Dictionary<int, string>();
         var itemSnapshots = inventory.Items
+            .Where(x => !x.Has<DestroyedTag>())
             .Select(itemEntity => BuildItemSnapshot(world, itemEntity, equippedSlots, currentTick))
             .ToArray();
 
@@ -133,6 +134,7 @@ public sealed class PlayerSnapshotBuilder : ISnapshotBuilder
         return list.ToArray();
     }
 
+    // TODO: save items in container
     private static ItemSnapshot BuildItemSnapshot(
         World world,
         Entity item,

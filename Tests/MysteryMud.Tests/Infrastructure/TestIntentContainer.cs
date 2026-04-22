@@ -22,6 +22,7 @@ internal class TestIntentContainer : IIntentContainer
     public readonly TestIntentBuffer<AutoSacrificeIntent> AutoSacrifice = new();
     public readonly TestIntentBuffer<LookIntent> Look = new();
     public readonly TestIntentBuffer<ScheduleIntent> Schedule = new();
+    public readonly TestIntentBuffer<DisconnectIntent> Disconnect = new();
 
     // IIntentWriterContainer
     IIntentWriter<ActionIntent> IIntentWriterContainer.Action => Action;
@@ -41,6 +42,7 @@ internal class TestIntentContainer : IIntentContainer
     IIntentWriter<AutoSacrificeIntent> IIntentWriterContainer.AutoSacrifice => AutoSacrifice;
     IIntentWriter<LookIntent> IIntentWriterContainer.Look => Look;
     IIntentWriter<ScheduleIntent> IIntentWriterContainer.Schedule => Schedule;
+    IIntentWriter<DisconnectIntent> IIntentWriterContainer.Disconnect => Disconnect;
 
     // IIntentContainer
     public ActionIntent ActionByIndex(int index) => Action.ByIndex(index);
@@ -61,6 +63,7 @@ internal class TestIntentContainer : IIntentContainer
     public Span<AutoSacrificeIntent> AutoSacrificeSpan => AutoSacrifice.Span;
     public Span<LookIntent> LookSpan => Look.Span;
     public Span<ScheduleIntent> ScheduleSpan => Schedule.Span;
+    public Span<DisconnectIntent> DisconnectSpan => Disconnect.Span;
 
     public void ClearAll()
     {
@@ -70,5 +73,6 @@ internal class TestIntentContainer : IIntentContainer
         DestroyItem.Clear(); SacrificeItem.Clear();
         UseAbility.Clear(); ExecuteAbility.Clear();
         CorpseLoot.Clear(); Look.Clear(); Schedule.Clear();
+        Disconnect.Clear();
     }
 }

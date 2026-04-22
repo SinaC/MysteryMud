@@ -75,7 +75,8 @@ public class ExperienceService : IExperienceService
         else
             _msg.To(player).Act("%gYou lose {0} XP.%x").With(-xpGained);
 
-        _dirtyTracker.MarkDirty(player, DirtyReason.Experience);
+        if (player.Has<PlayerTag>()) // to be sure
+            _dirtyTracker.MarkDirty(player, DirtyReason.Experience);
 
         var levelIncreased = false;
         if (progression.ExperienceToNextLevel > 0) // ExperienceToNextLevel = 0 means max level reached
@@ -109,7 +110,8 @@ public class ExperienceService : IExperienceService
 
             // TODO: set dirty health, dirty mana, ... ?
 
-            _dirtyTracker.MarkDirty(player, DirtyReason.CoreData);
+            if (player.Has<PlayerTag>())
+                _dirtyTracker.MarkDirty(player, DirtyReason.CoreData);
         }
 
         // add experience awarded event

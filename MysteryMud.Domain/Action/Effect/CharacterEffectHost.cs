@@ -4,6 +4,7 @@ using MysteryMud.Core;
 using MysteryMud.Core.Persistence;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.GameData.Definitions;
@@ -77,7 +78,8 @@ public class CharacterEffectHost : IEffectHost
         }
 
         //
-        _dirtyTracker.MarkDirty(_target, DirtyReason.Effects);
+        if (_target.Has<PlayerTag>())
+            _dirtyTracker.MarkDirty(_target, DirtyReason.Effects);
     }
 
     public void UnregisterEffect(GameState state, Entity effect, EffectRuntime effectRuntime)
@@ -141,7 +143,8 @@ public class CharacterEffectHost : IEffectHost
             _target.Add<DirtyRageDecay>();
 
         //
-        _dirtyTracker.MarkDirty(_target, DirtyReason.Effects);
+        if (_target.Has<PlayerTag>())
+            _dirtyTracker.MarkDirty(_target, DirtyReason.Effects);
     }
 
     public EffectValuesSnapshot CreateSnapshot()

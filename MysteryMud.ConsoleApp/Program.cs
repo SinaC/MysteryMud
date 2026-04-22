@@ -113,6 +113,14 @@ var chest = world.Create(
             new ItemTag(),
             new Name { Value = "chest" },
             new Description { Value = "a chest" },
+            new ItemEffects
+            {
+                Data = new EffectsCollection
+                {
+                    Effects = [],
+                    EffectsByTag = new List<Entity>?[32]
+                },
+            },
             new Location { Room = market },
             new Container { Capacity = 10 },
             new ContainerContents { Items = [] }
@@ -187,24 +195,19 @@ var connectionString = $"Data Source={dbPath};Pooling=True;";
 var services = new ServiceCollection();
 
 // DB
-// 1. Bootstrap schema (idempotent — safe to run every boot)
-//var bootstrap = new DatabaseBootstrap(connStr);
-//await bootstrap.InitialiseAsync();
+// Run migration scripts
 var migrationRunner = new MigrationRunner(connectionString, logger);
 await migrationRunner.RunAsync();
 
-// 2. Wire persistence service
+// Wire persistence service
 services.AddSingleton<IPersistenceService>(new SqlitePersistenceService(connectionString));
 
-// 3. Dirty tracker (singleton)
+// Dirty tracker (singleton)
 services.AddSingleton<IDirtyTracker, DirtyTracker>();
 
-// 4. Snapshot builder
+// Snapshot builder
 services.AddSingleton<ISnapshotBuilder, PlayerSnapshotBuilder>();
 services.AddSingleton<ISnapshotRestorer, PlayerSnapshotRestorer>();
-
-// 5. Persistence system (use options for change AutosaveInternal and ImmediateFlushThreshold
-services.AddSingleton<PersistenceSystem>();
 
 // Infrastructure / primitives
 services.AddSingleton(world);
@@ -359,6 +362,8 @@ services.AddSingleton<RespawnSystem>();
 services.AddSingleton<LootSystem>();
 services.AddSingleton<AutoSacrificeSystem>();
 services.AddSingleton<LookSystem>();
+services.AddSingleton<DisconnectSystem>();
+services.AddSingleton<PersistenceSystem>(); // TODO: use options for change AutosaveInternal and ImmediateFlushThreshold
 services.AddSingleton<CleanupSystem>();
 
 // Top-level

@@ -33,6 +33,8 @@ public sealed class IntentBusContainer : IIntentContainer
     private readonly StructBuffer<LookIntent> _look = new(128);
     // ScheduleSystem
     private readonly StructBuffer<ScheduleIntent> _schedule = new(512);
+    // DisconnectSystem
+    private readonly StructBuffer<DisconnectIntent> _disconnect = new(16);
 
     public IntentBusContainer()
     {
@@ -63,6 +65,8 @@ public sealed class IntentBusContainer : IIntentContainer
         Look = new IntentWriter<LookIntent>(_look);
         // ScheduleSystem
         Schedule = new IntentWriter<ScheduleIntent>(_schedule);
+        // DisconnectSystem
+        Disconnect = new IntentWriter<DisconnectIntent>(_disconnect);
     }
 
     // Action intents are a special case, we want to able to have direct access, because ActionOrchestrator add action intents while iterating them
@@ -110,6 +114,9 @@ public sealed class IntentBusContainer : IIntentContainer
     // ScheduleSystem
     public IIntentWriter<ScheduleIntent> Schedule { get; }
     public Span<ScheduleIntent> ScheduleSpan => _schedule.AsSpan();
+    // DisconnectSystem
+    public IIntentWriter<DisconnectIntent> Disconnect { get; }
+    public Span<DisconnectIntent> DisconnectSpan => _disconnect.AsSpan();
 
     public void ClearAll()
     {
@@ -140,5 +147,7 @@ public sealed class IntentBusContainer : IIntentContainer
         _look.Clear();
         // ScheduleSystem
         _schedule.Clear();
+        // DisconnectSystem
+        _disconnect.Clear();
     }
 }

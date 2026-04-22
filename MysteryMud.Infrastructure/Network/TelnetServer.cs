@@ -57,21 +57,10 @@ public class TelnetServer
         }
     }
 
-    private void HandleDisconnected(int connectionId)
+    public void Disconnect(int connectionId)
     {
-        // 1. remove from sessions
-        // Try to remove the session in a thread-safe way
-        if (_sessions.TryRemove(connectionId, out var session))
-        {
-            try
-            {
-                session.Dispose();  // safely release all resources
-            }
-            catch { }
-        }
-
-        // 2. notify GameServer
-        OnDisconnected?.Invoke(connectionId);
+        if (_sessions.TryGetValue(connectionId, out var session))
+            session.Dispose();  // closes socket → triggers HandleDisconnected naturally
     }
 
     public void EchoOn(int connectionId)
@@ -120,5 +109,22 @@ public class TelnetServer
             }
             catch { }
         }
+    }
+
+    private void HandleDisconnected(int connectionId)
+    {
+        // 1. remove from sessions
+        // Try to remove the session in a thread-safe way
+        if (_sessions.TryRemove(connectionId, out var session))
+        {
+            try
+            {
+                session.Dispose();  // safely release all resources
+            }
+            catch { }
+        }
+
+        // 2. notify GameServer
+        OnDisconnected?.Invoke(connectionId);
     }
 }

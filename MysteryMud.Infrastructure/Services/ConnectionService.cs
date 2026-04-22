@@ -1,18 +1,22 @@
 ﻿using Arch.Core;
+using MysteryMud.Core.Services;
 using MysteryMud.Domain.Factories;
+using MysteryMud.Infrastructure.Network;
 
 namespace MysteryMud.Infrastructure.Services;
 
 public class ConnectionService : IConnectionService
 {
     private readonly World _world;
+    private readonly TelnetServer _telnet;   // ← inject this
 
     private readonly Dictionary<int, Entity> _connToEntity = new();
     private readonly Dictionary<Entity, int> _entityToConn = new();
 
-    public ConnectionService(World world)
+    public ConnectionService(World world, TelnetServer telnetServer)
     {
         _world = world;
+        _telnet = telnetServer;
     }
 
     public Entity CreatePlayer(int connectionId)
@@ -38,5 +42,18 @@ public class ConnectionService : IConnectionService
         _connToEntity.Remove(connectionId);
         _entityToConn.Remove(entity);
         return true;
+    }
+
+    public void Disconnect(Entity entity)
+    {
+        if (!_entityToConn.TryGetValue(entity, out var connectionId))
+            return;
+
+        // Closing the socket triggers TelnetSession.finally
+        // → HandleDisconnected in TelnetServer
+        // → OnDisconnected in GameServer
+        // → GameServer.HandleDisconnected sets DisconnectedTag
+        // But DisconnectedTag is already set by QuitCommand, so it's a no-op.
+        _telnet.Disconnect(connectionId);
     }
 }

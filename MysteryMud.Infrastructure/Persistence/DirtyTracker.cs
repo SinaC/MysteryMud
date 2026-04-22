@@ -66,5 +66,8 @@ public sealed class DirtyTracker : IDirtyTracker
 
     public bool IsDirty(Entity entity) => _dirty.ContainsKey(entity.Id);
 
+    public bool HasCritical
+        => _dirty.Values.Any(e => e.Has(DirtyReason.Critical));
+
     public int Count => _dirty.Count;
 }

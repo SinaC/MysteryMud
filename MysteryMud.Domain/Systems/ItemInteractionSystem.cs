@@ -4,6 +4,7 @@ using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Contracts;
 using MysteryMud.Core.Persistence;
+using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Extensions;
@@ -91,7 +92,8 @@ public class ItemInteractionSystem
         else
             return; // invalid source, should not happen if validation is done correctly
 
-        _dirtyTracker.MarkDirty(entity, DirtyReason.ItemGained);
+        if (entity.Has<PlayerTag>())
+            _dirtyTracker.MarkDirty(entity, DirtyReason.ItemGained);
 
         // event
         ref var itemGotEvt = ref _itemGotEvents.Add();
@@ -120,7 +122,8 @@ public class ItemInteractionSystem
 
         _msg.To(entity).Send($"You drop {item.DisplayName}.");
 
-        _dirtyTracker.MarkDirty(entity, DirtyReason.ItemLost);
+        if (entity.Has<PlayerTag>())
+            _dirtyTracker.MarkDirty(entity, DirtyReason.ItemLost);
 
         // event
         ref var itemDroppedEvt = ref _itemDroppedEvents.Add();
@@ -142,7 +145,8 @@ public class ItemInteractionSystem
         {
             ItemHelpers.TryUnequipItem(entity, equipped.Slot, out _);
 
-            _dirtyTracker.MarkDirty(entity, DirtyReason.ItemRemoved);
+            if (entity.Has<PlayerTag>())
+                _dirtyTracker.MarkDirty(entity, DirtyReason.ItemRemoved);
         }
 
         // give item from entity to target
@@ -150,8 +154,11 @@ public class ItemInteractionSystem
 
         _msg.To(entity).Send($"You give {item.DisplayName} to {target.DisplayName}.");
 
-        _dirtyTracker.MarkDirty(entity, DirtyReason.ItemLost);
-        _dirtyTracker.MarkDirty(target, DirtyReason.ItemGained);
+        if (entity.Has<PlayerTag>())
+        {
+            _dirtyTracker.MarkDirty(entity, DirtyReason.ItemLost);
+            _dirtyTracker.MarkDirty(target, DirtyReason.ItemGained);
+        }
 
         // event
         ref var itemGivenEvt = ref _itemGivenEvents.Add();
@@ -173,7 +180,8 @@ public class ItemInteractionSystem
         {
             ItemHelpers.TryUnequipItem(entity, equipped.Slot, out _);
 
-            _dirtyTracker.MarkDirty(entity, DirtyReason.ItemRemoved);
+            if (entity.Has<PlayerTag>())
+                _dirtyTracker.MarkDirty(entity, DirtyReason.ItemRemoved);
         }
 
         // put item from entity to container
@@ -181,7 +189,8 @@ public class ItemInteractionSystem
 
         _msg.To(entity).Send($"You put {item.DisplayName} in {container.DisplayName}.");
 
-        _dirtyTracker.MarkDirty(entity, DirtyReason.ItemLost);
+        if (entity.Has<PlayerTag>())
+            _dirtyTracker.MarkDirty(entity, DirtyReason.ItemLost);
 
         // event
         ref var itemPutEvt = ref _itemPutEvents.Add();
@@ -201,7 +210,8 @@ public class ItemInteractionSystem
 
         _msg.To(entity).Send($"You wear {item.DisplayName}.");
 
-        _dirtyTracker.MarkDirty(entity, DirtyReason.ItemEquipped);
+        if (entity.Has<PlayerTag>())
+            _dirtyTracker.MarkDirty(entity, DirtyReason.ItemEquipped);
 
         // event
         ref var itemWornEvt = ref _itemWornEvents.Add();
@@ -221,7 +231,8 @@ public class ItemInteractionSystem
 
         _msg.To(entity).Send($"You remove {item.DisplayName}.");
 
-        _dirtyTracker.MarkDirty(entity, DirtyReason.ItemRemoved);
+        if (entity.Has<PlayerTag>())
+            _dirtyTracker.MarkDirty(entity, DirtyReason.ItemRemoved);
 
         // event
         ref var itemRemovedEvt = ref _itemRemovedEvents.Add();
@@ -243,7 +254,8 @@ public class ItemInteractionSystem
         {
             ItemHelpers.TryUnequipItem(entity, equipped.Slot, out _);
 
-            _dirtyTracker.MarkDirty(entity, DirtyReason.ItemRemoved);
+            if (entity.Has<PlayerTag>())
+                _dirtyTracker.MarkDirty(entity, DirtyReason.ItemRemoved);
         }
 
         DestroyItem(item);
@@ -268,9 +280,7 @@ public class ItemInteractionSystem
 
     private static void DestroyItem(Entity item)
     {
-        if (!item.Has<DestroyedTag>())
-            item.Add<DestroyedTag>();
-
+        // TOOD: check if can be destroyed
         if (item.Has<Container>())
         {
             var container = item.Get<ContainerContents>();
@@ -279,5 +289,9 @@ public class ItemInteractionSystem
                 DestroyItem(containedItem); // recursive call to destroy contained items
             }
         }
+
+        // TODO: if container, check if everything within is flagged as destroyed
+        if (!item.Has<DestroyedTag>())
+            item.Add<DestroyedTag>();
     }
 }

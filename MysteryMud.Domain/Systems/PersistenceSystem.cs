@@ -64,33 +64,32 @@ public sealed class PersistenceSystem
     public void Update(GameState state)
     {
         var now = DateTime.UtcNow;
-        var autosaveDue = (now - _lastAutosave) >= AutosaveInterval;
+
+        // Tier 1 — critical: flush immediately regardless of player count
+        if (_tracker.HasCritical)
+        {
+            var critical = _tracker.Drain(e => e.Has(DirtyReason.Critical));
+            if (critical.Count > 0)
+            {
+                _ = FlushBatchAsync(critical, state.CurrentTick);
+                return; // let non-critical wait for next tier
+            }
+        }
+
+        // Tier 2 — pressure: enough dirty players to justify a batch write
         var pressureFlush = _tracker.Count >= ImmediateFlushThreshold;
 
-        if (!autosaveDue && !pressureFlush) return;
+        // Tier 3 — autosave: time-based fallback for low player count servers
+        var autosaveDue = (now - _lastAutosave) >= AutosaveInterval;
 
-        // Drain entries that have "real" reasons beyond cooldown-only.
-        // Cooldown-only entries stay in the queue until the next autosave.
-        var nonCooldownOnly = (DirtyReason)(~(uint)DirtyReason.AbilityCooldown);
+        if (!pressureFlush && !autosaveDue) return;
 
-        IReadOnlyList<DirtyEntry> batch;
-
-        if (autosaveDue)
-        {
-            // Full drain on autosave (includes cooldown-only entries)
-            batch = _tracker.Drain();
-            _lastAutosave = now;
-        }
-        else
-        {
-            // Pressure flush: skip entries that are cooldown-only
-            batch = _tracker.Drain(e => e.Has(nonCooldownOnly));
-        }
+        var batch = _tracker.Drain();
 
         if (batch.Count == 0) return;
 
-        // Fire-and-forget async save; errors are logged, not thrown.
-        // We capture currentTick in the closure so it stays correct.
+        if (autosaveDue) _lastAutosave = now;
+
         _ = FlushBatchAsync(batch, state.CurrentTick);
     }
 

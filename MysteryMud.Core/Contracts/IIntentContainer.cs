@@ -32,6 +32,8 @@ public interface IIntentContainer : IIntentWriterContainer
     Span<LookIntent> LookSpan { get; }
     // ScheduleSystem
     Span<ScheduleIntent> ScheduleSpan { get; }
+    // DisconnectSystem
+    Span<DisconnectIntent> DisconnectSpan { get; }
 
     void ClearAll();
 }
