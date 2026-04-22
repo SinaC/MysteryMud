@@ -48,6 +48,9 @@ public static class MobileFactory
             new Health { Current = 5, Max = 100 },
             new BaseHealth { Max = 100 },
             new HealthRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
+            new Move { Current = 100, Max = 100 },
+            new BaseMove { Max = 100 },
+            new MoveRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
             new Inventory { Items = [] },
             new Equipment { Slots = [] },
             new CharacterEffects

@@ -122,10 +122,14 @@ public sealed class PlayerSnapshotBuilder : ISnapshotBuilder
         ref var health = ref entity.Get<Health>();
         ref var baseHealth = ref entity.Get<BaseHealth>();
         ref var healthRegen = ref entity.Get<HealthRegen>();
+        ref var move = ref entity.Get<Move>();
+        ref var baseMove = ref entity.Get<BaseMove>();
+        ref var moveRegen = ref entity.Get<MoveRegen>();
 
         var list = new List<ResourceSnapshot>
         {
-            new("Health", health.Current, baseHealth.Max, healthRegen.CurrentAmountPerSecond, healthRegen.BaseAmountPerSecond)
+            new("Health", health.Current, baseHealth.Max, healthRegen.CurrentAmountPerSecond, healthRegen.BaseAmountPerSecond),
+            new("Move", move.Current, baseMove.Max, moveRegen.CurrentAmountPerSecond, moveRegen.BaseAmountPerSecond)
         };
 
         // Conditionally add Mana, Energy, Rage if components are present
@@ -146,7 +150,7 @@ public sealed class PlayerSnapshotBuilder : ISnapshotBuilder
         var slot = equippedSlots.GetValueOrDefault(item.Id);
         var dbId = item.Has<ItemDbId>() ? item.Get<ItemDbId>().Value : 0L;
         //var paramsJson = item.Has<ItemParams>() ? item.Get<ItemParams>().Json : null;
-        var paramsJson = (string)null; // TODO
+        var paramsJson = (string)null!; // TODO
 
         long? containerId = null;
         if (world.Has<ContainedIn>(item))

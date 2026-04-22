@@ -44,11 +44,13 @@ internal class GameLoop
     private readonly FollowSystem _followSystem;
     private readonly ItemInteractionSystem _itemInteractionSystem;
     private readonly EffectiveCharacterStatsSystem _effectiveCharacterStatsSystem;
-    private readonly EffectiveMaxResourceSystem<BaseHealth, Health, DirtyHealth, HealthModifier> _effectiveMaxHeathSystem;
+    private readonly EffectiveMaxResourceSystem<BaseHealth, Health, DirtyHealth, HealthModifier> _effectiveMaxHealthSystem;
+    private readonly EffectiveMaxResourceSystem<BaseMove, Move, DirtyMove, MoveModifier> _effectiveMaxMoveSystem;
     private readonly EffectiveMaxResourceSystem<BaseMana, Mana, DirtyMana, ManaModifier> _effectiveMaxManaSystem;
     private readonly EffectiveMaxResourceSystem<BaseEnergy, Energy, DirtyEnergy, EnergyModifier> _effectiveMaxEnergySystem;
     private readonly EffectiveMaxResourceSystem<BaseRage, Rage, DirtyRage, RageModifier> _effectiveMaxRageSystem;
-    private readonly EffectiveResourceRegenSystem<HealthRegen, DirtyHealthRegen, HealthRegenModifier> _effectiveHeathRegenSystem;
+    private readonly EffectiveResourceRegenSystem<HealthRegen, DirtyHealthRegen, HealthRegenModifier> _effectiveHealthRegenSystem;
+    private readonly EffectiveResourceRegenSystem<MoveRegen, DirtyMoveRegen, MoveRegenModifier> _effectiveMoveRegenSystem;
     private readonly EffectiveResourceRegenSystem<ManaRegen, DirtyManaRegen, ManaRegenModifier> _effectiveManaRegenSystem;
     private readonly EffectiveResourceRegenSystem<EnergyRegen, DirtyEnergyRegen, EnergyRegenModifier> _effectiveEnergyRegenSystem;
     private readonly EffectiveResourceRegenSystem<RageDecay, DirtyRageDecay, RageDecayModifier> _effectiveRageRegenSystem;
@@ -59,6 +61,7 @@ internal class GameLoop
     private readonly AutoAttackSystem _autoAttackSystem;
     private readonly TimedEffectSystem _timedEffectSystem;
     private readonly ResourceRegenSystem<Health, HealthRegen> _healthRegenSystem;
+    private readonly ResourceRegenSystem<Move, MoveRegen> _moveRegenSystem;
     private readonly ResourceRegenSystem<Mana, ManaRegen> _manaRegenSystem;
     private readonly ResourceRegenSystem<Energy, EnergyRegen> _energyRegenSystem;
     private readonly ResourceRegenSystem<Rage, RageDecay> _rageDecaySystem;
@@ -92,11 +95,13 @@ internal class GameLoop
         FollowSystem followSystem,
         ItemInteractionSystem itemInteractionSystem,
         EffectiveCharacterStatsSystem effectiveCharacterStatsSystem,
-        EffectiveMaxResourceSystem<BaseHealth, Health, DirtyHealth, HealthModifier> effectiveMaxHeathSystem,
+        EffectiveMaxResourceSystem<BaseHealth, Health, DirtyHealth, HealthModifier> effectiveMaxHealthSystem,
+        EffectiveMaxResourceSystem<BaseMove, Move, DirtyMove, MoveModifier> effectiveMaxMoveSystem,
         EffectiveMaxResourceSystem<BaseMana, Mana, DirtyMana, ManaModifier> effectiveMaxManaSystem,
         EffectiveMaxResourceSystem<BaseEnergy, Energy, DirtyEnergy, EnergyModifier> effectiveMaxEnergySystem,
         EffectiveMaxResourceSystem<BaseRage, Rage, DirtyRage, RageModifier> effectiveMaxRageSystem,
-        EffectiveResourceRegenSystem<HealthRegen, DirtyHealthRegen, HealthRegenModifier> effectiveHeathRegenSystem,
+        EffectiveResourceRegenSystem<HealthRegen, DirtyHealthRegen, HealthRegenModifier> effectiveHealthRegenSystem,
+        EffectiveResourceRegenSystem<MoveRegen, DirtyMoveRegen, MoveRegenModifier> effectiveMoveRegenSystem,
         EffectiveResourceRegenSystem<ManaRegen, DirtyManaRegen, ManaRegenModifier> effectiveManaRegenSystem,
         EffectiveResourceRegenSystem<EnergyRegen, DirtyEnergyRegen, EnergyRegenModifier> effectiveEnergyRegenSystem,
         EffectiveResourceRegenSystem<RageDecay, DirtyRageDecay, RageDecayModifier> effectiveRageRegenSystem,
@@ -107,6 +112,7 @@ internal class GameLoop
         AutoAttackSystem autoAttackSystem,
         TimedEffectSystem timedEffectSystem,
         ResourceRegenSystem<Health, HealthRegen> healthRegenSystem,
+        ResourceRegenSystem<Move, MoveRegen> moveRegenSystem,
         ResourceRegenSystem<Mana, ManaRegen> manaRegenSystem,
         ResourceRegenSystem<Energy, EnergyRegen> energyRegenSystem,
         ResourceRegenSystem<Rage, RageDecay> rageDecaySystem,
@@ -139,11 +145,13 @@ internal class GameLoop
         _followSystem = followSystem;
         _itemInteractionSystem = itemInteractionSystem;
         _effectiveCharacterStatsSystem = effectiveCharacterStatsSystem;
-        _effectiveMaxHeathSystem = effectiveMaxHeathSystem;
+        _effectiveMaxHealthSystem = effectiveMaxHealthSystem;
+        _effectiveMaxMoveSystem = effectiveMaxMoveSystem;
         _effectiveMaxManaSystem = effectiveMaxManaSystem;
         _effectiveMaxEnergySystem = effectiveMaxEnergySystem;
         _effectiveMaxRageSystem = effectiveMaxRageSystem;
-        _effectiveHeathRegenSystem = effectiveHeathRegenSystem;
+        _effectiveHealthRegenSystem = effectiveHealthRegenSystem;
+        _effectiveMoveRegenSystem = effectiveMoveRegenSystem;
         _effectiveManaRegenSystem = effectiveManaRegenSystem;
         _effectiveEnergyRegenSystem = effectiveEnergyRegenSystem;
         _effectiveRageRegenSystem = effectiveRageRegenSystem;
@@ -153,10 +161,11 @@ internal class GameLoop
         _aggressionSystem = aggressionSystem;
         _autoAttackSystem = autoAttackSystem;
         _timedEffectSystem = timedEffectSystem;
+        _healthRegenSystem = healthRegenSystem;
+        _moveRegenSystem = moveRegenSystem;
         _manaRegenSystem = manaRegenSystem;
         _energyRegenSystem = energyRegenSystem;
         _rageDecaySystem = rageDecaySystem;
-        _healthRegenSystem = healthRegenSystem;
         _threatDecaySystem = threatDecaySystem;
         _deathSystem = deathSystem;
         _respawnSystem = respawnSystem;
@@ -223,13 +232,15 @@ internal class GameLoop
             _itemInteractionSystem.Tick(state);
             // Recalculate stats with DirtyStats
             _effectiveCharacterStatsSystem.Tick(state);
-            // Recalculate resource with DirtyResource where resource can be Health, Mana, Energy, Rage
-            _effectiveMaxHeathSystem.Tick(state);
+            // Recalculate resource with DirtyResource where resource can be Health, Move, Mana, Energy, Rage
+            _effectiveMaxHealthSystem.Tick(state);
+            _effectiveMaxMoveSystem.Tick(state);
             _effectiveMaxManaSystem.Tick(state);
             _effectiveMaxEnergySystem.Tick(state);
             _effectiveMaxRageSystem.Tick(state);
-            // Recalculate resource regen with DirtyResourceRegen where resource can be Health, Mana, Energy, Rage
-            _effectiveHeathRegenSystem.Tick(state);
+            // Recalculate resource regen with DirtyResourceRegen where resource can be Health, Move, Mana, Energy, Rage
+            _effectiveHealthRegenSystem.Tick(state);
+            _effectiveMoveRegenSystem.Tick(state);
             _effectiveManaRegenSystem.Tick(state);
             _effectiveEnergyRegenSystem.Tick(state);
             _effectiveRageRegenSystem.Tick(state);
@@ -240,10 +251,11 @@ internal class GameLoop
             // Regen resource
             if (state.CurrentTick % TimeRate.TicksPerSecond == 0) // once by second
             {
+                _healthRegenSystem.Tick(state);
+                _moveRegenSystem.Tick(state);
                 _manaRegenSystem.Tick(state);
                 _energyRegenSystem.Tick(state);
                 _rageDecaySystem.Tick(state);
-                _healthRegenSystem.Tick(state);
             }
             // Decay threat by 2%
             _threatDecaySystem.Tick(state);

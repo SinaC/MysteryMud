@@ -10,6 +10,7 @@ internal class TestMessageTargetBuilder : IMessageTargetBuilder
     public IActMessageBuilder Act(string format)
     {
         Format = format;
+        Text = format;
         return new TestActMessageBuilder();
     }
 

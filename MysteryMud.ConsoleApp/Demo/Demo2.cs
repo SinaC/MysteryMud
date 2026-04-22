@@ -105,7 +105,7 @@ static class Demo2
         var actionOrchestrator = new ActionOrchestrator(logger, intentBusContainer, attackResolvedEventBuffer, effectResolvedEventBuffer, aggressedEventBuffer, killRewardEventBuffer, effectRegistry, effectApplicationManager, experienceService, hitResolver, hitDamageFactory, damageResolver, weaponProcResolver, reactionResolver);
 
         var commandExecutionSystem = new CommandExecutionSystem(logger);
-        var fleeSystem = new FleeSystem(gameMessageService, intentBusContainer, experienceService, fleeBlockedEventBuffer);
+        var fleeSystem = new FleeSystem(random, gameMessageService, intentBusContainer, experienceService, fleeBlockedEventBuffer);
         var movementSystem = new MovementSystem(logger, gameMessageService, castMessageService, dirtyTracker, intentBusContainer, abilityRegistry, roomEnteredEventBuffer);
         var itemInteractionSystem = new ItemInteractionSystem(gameMessageService, sacrificeService, dirtyTracker, intentBusContainer, itemGotEventBuffer, itemDroppedEventBuffer, itemGivenEventBuffer, itemPutEventBuffer, itemWornEventBuffer, itemRemovedEventBuffer, itemDestroyedEventBuffer, itemSacrifierEventBuffer);
         var effectCharacterStatsSystem = new EffectiveCharacterStatsSystem();

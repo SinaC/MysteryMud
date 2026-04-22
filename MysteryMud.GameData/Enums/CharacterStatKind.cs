@@ -1,4 +1,6 @@
-﻿namespace MysteryMud.GameData.Enums;
+﻿using MysteryMud.GameData.Attributes;
+
+namespace MysteryMud.GameData.Enums;
 
 public enum CharacterStatKind
 {
@@ -11,5 +13,5 @@ public enum CharacterStatKind
     DamRoll = 6,
     ArmorClass = 7,
     SavingThrow = 8,
-    Count, // always last, used for array sizing
+    [EnumSentinel] Count, // always last, used for array sizing
 }

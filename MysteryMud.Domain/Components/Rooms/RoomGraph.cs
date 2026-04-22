@@ -2,5 +2,5 @@
 
 public struct RoomGraph
 {
-    public List<Exit> Exits;
+    public RoomExitValues Exits;
 }

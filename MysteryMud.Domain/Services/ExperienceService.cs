@@ -100,6 +100,7 @@ public class ExperienceService : IExperienceService
         {
             // Full restore
             SetResourceToMax<Health>(player, x => x.Max, (ref x, value) => x.Current = value);
+            SetResourceToMax<Move>(player, x => x.Max, (ref x, value) => x.Current = value);
             SetResourceToMax<Mana>(player, x => x.Max, (ref x, value) => x.Current = value);
             SetResourceToMax<Energy>(player, x => x.Max, (ref x, value) => x.Current = value);
             SetResourceToMax<Rage>(player, x => x.Max, (ref x, value) => x.Current = value);
@@ -128,9 +129,9 @@ public class ExperienceService : IExperienceService
         }
     }
 
-    private delegate void SetResourceValueAction<TResource>(ref TResource resource, int value);
+    private delegate void ResourceValueSetter<TResource>(ref TResource resource, int value);
 
-    private void SetResourceToMax<TResource>(Entity player, Func<TResource, int> getMaxValueFunc, SetResourceValueAction<TResource> setResourceValueAction)
+    private void SetResourceToMax<TResource>(Entity player, Func<TResource, int> getMaxValueFunc, ResourceValueSetter<TResource> setResourceValueAction)
         where TResource : struct
     {
         ref var resource = ref player.TryGetRef<TResource>(out var hasResource);

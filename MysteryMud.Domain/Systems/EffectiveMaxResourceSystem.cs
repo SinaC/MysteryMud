@@ -8,7 +8,7 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Systems;
 
-public delegate void SetResourceValueAction<TResource>(ref TResource resource, int value);
+public delegate void ResourceValueSetter<TResource>(ref TResource resource, int value);
 
 public class EffectiveMaxResourceSystem<TBase, TResource, TDirty, TModifier>
     where TBase : struct
@@ -18,12 +18,12 @@ public class EffectiveMaxResourceSystem<TBase, TResource, TDirty, TModifier>
 {
     private readonly Func<TBase, int> _getBaseMaxFunc;
     private readonly Func<TResource, int> _getCurrentFunc;
-    private readonly SetResourceValueAction<TResource> _setCurrentAction;
-    private readonly SetResourceValueAction<TResource> _setMaxAction;
+    private readonly ResourceValueSetter<TResource> _setCurrentAction;
+    private readonly ResourceValueSetter<TResource> _setMaxAction;
     private readonly Func<TModifier, decimal> _getModifierValueFunc;
     private readonly Func<TModifier, ModifierKind> _getModifierKindFunc;
 
-    public EffectiveMaxResourceSystem(Func<TBase, int> getBaseMaxValueFunc, Func<TResource, int> getCurrentFunc, SetResourceValueAction<TResource> setCurrentAction, SetResourceValueAction<TResource> setMaxAction, Func<TModifier, ModifierKind> getModifierKindFunc, Func<TModifier, decimal> getModifierValueFunc)
+    public EffectiveMaxResourceSystem(Func<TBase, int> getBaseMaxValueFunc, Func<TResource, int> getCurrentFunc, ResourceValueSetter<TResource> setCurrentAction, ResourceValueSetter<TResource> setMaxAction, Func<TModifier, ModifierKind> getModifierKindFunc, Func<TModifier, decimal> getModifierValueFunc)
     {
         _getBaseMaxFunc = getBaseMaxValueFunc;
         _getCurrentFunc = getCurrentFunc;

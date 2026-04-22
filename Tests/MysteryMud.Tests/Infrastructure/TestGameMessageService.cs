@@ -77,6 +77,9 @@ internal class TestGameMessageService : IGameMessageService
     public bool HasMessageFor(Entity entity) =>
         Messages.Any(m => m.Recipient == entity);
 
+    public List<string> GetMessagesFor(Entity entity)
+        => [.. Messages.Where(x => x.Recipient == entity).Select(x => x.MsgTargetBuilder.Text)];
+
     private class Message
     {
         public Entity Recipient;

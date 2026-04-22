@@ -48,76 +48,97 @@ public class MovementSystem
 
     private void Move(GameState state, MoveIntent intent)
     {
-        // TODO: we should probably validate the intent here, but for now we'll just assume it's valid and let it throw if it's not
         var movingEntity = intent.Actor;
         var fromRoom = intent.FromRoom;
         var toRoom = intent.ToRoom;
         var direction = intent.Direction;
 
+        ref var location = ref movingEntity.TryGetRef<Location>(out var hasLocation);
+        if (!hasLocation)
+            return;
+
+        // validate move
         if (!MovementValidator.CanEnter(
-                state.World, movingEntity,
-                fromRoom, toRoom,
-                direction, out var blockReason))
+            movingEntity,
+            fromRoom, toRoom,
+            direction, out var blockReason))
         {
             _msg.To(movingEntity).Act("You cannot go {0}: {1}").With(direction, blockReason);
             return;
         }
 
-        ref var location = ref movingEntity.TryGetRef<Location>(out var hasLocation);
-        if (hasLocation)
+        // check move cost
+        if (!MovementValidator.CanPayMoveCost(
+            movingEntity,
+            fromRoom, toRoom,
+            direction, out var moveCost))
         {
-            ref var oldRoomContents = ref fromRoom.Get<RoomContents>();
-            ref var newRoomContents = ref toRoom.Get<RoomContents>();
-
-            oldRoomContents.Characters.Remove(movingEntity);
-            _msg.To(oldRoomContents.Characters).Act("{0} leaves {1}").With(movingEntity, direction); // entity will not receive the msg, but the other characters in the room will
-            _msg.To(newRoomContents.Characters).Act("{0} has arrived").With(movingEntity); // entity will not receive the msg, but the other characters in the room will
-            newRoomContents.Characters.Add(movingEntity);
-
-            location.Room = toRoom;
-
-            // remove casting and display phrase
-            ref var casting = ref movingEntity.TryGetRef<Casting>(out var isCasting);
-            if (isCasting)
-            {
-                movingEntity.Remove<Casting>();
-
-                var abilityId = casting.AbilityId;
-                if (!_abilityRegistry.TryGetRuntime(casting.AbilityId, out var abilityRuntime) || abilityRuntime == null)
-                {
-                    _logger.LogError("Ability {abilityId} not found", abilityId);
-                    return;
-                }
-
-                _msg.To(movingEntity).Act(_castMessageService.CasterInterruptMessage).With(abilityRuntime.Name);
-                _msg.ToRoom(movingEntity).Act(_castMessageService.RoomInterruptMessage).With(movingEntity);
-            }
-
-            if (movingEntity.Has<PlayerTag>())
-                _dirtyTracker.MarkDirty(movingEntity, DirtyReason.CoreData);
-
-            if (intent.AutoLook)
-            {
-                ref var lookIntent = ref _intentContainer.Look.Add();
-                lookIntent.Viewer = movingEntity;
-                lookIntent.TargetKind = LookTargetKind.Room;
-                lookIntent.Target = toRoom;
-                lookIntent.Mode = LookMode.PostUpdate;
-            }
-
-            // event
-            ref var roomEnteredMovedEvt = ref _roomEnteredEvent.Add();
-            roomEnteredMovedEvt.Entity = movingEntity;
-            roomEnteredMovedEvt.FromRoom = fromRoom;
-            roomEnteredMovedEvt.ToRoom = toRoom;
-            roomEnteredMovedEvt.Direction = direction;
-            roomEnteredMovedEvt.AutoLook = intent.AutoLook;
+            _msg.To(movingEntity).Send("You are too exhausted.");
+            return;
         }
 
-        if (movingEntity.Has<CombatState>() && movingEntity.Has<PlayerTag>())
+        // pay move cost
+        MovementValidator.PayMoveCost(movingEntity, moveCost);
+
+        // move
+        ref var oldRoomContents = ref fromRoom.Get<RoomContents>();
+        ref var newRoomContents = ref toRoom.Get<RoomContents>();
+
+        oldRoomContents.Characters.Remove(movingEntity);
+        _msg.To(oldRoomContents.Characters).Act("{0} leaves {1}").With(movingEntity, direction); // entity will not receive the msg, but the other characters in the room will
+        _msg.To(newRoomContents.Characters).Act("{0} has arrived").With(movingEntity); // entity will not receive the msg, but the other characters in the room will
+        newRoomContents.Characters.Add(movingEntity);
+
+        // change location
+        location.Room = toRoom;
+
+        // 'consume' move
+        ref var move = ref movingEntity.Get<Move>();
+        move.Current = move.Current - 10; // TODO: calculate move cost
+
+        // remove casting and display phrase
+        ref var casting = ref movingEntity.TryGetRef<Casting>(out var isCasting);
+        if (isCasting)
+        {
+            movingEntity.Remove<Casting>();
+
+            var abilityId = casting.AbilityId;
+            if (!_abilityRegistry.TryGetRuntime(casting.AbilityId, out var abilityRuntime) || abilityRuntime == null)
+            {
+                _logger.LogError("Ability {abilityId} not found", abilityId);
+                return;
+            }
+
+            _msg.To(movingEntity).Act(_castMessageService.CasterInterruptMessage).With(abilityRuntime.Name);
+            _msg.ToRoom(movingEntity).Act(_castMessageService.RoomInterruptMessage).With(movingEntity);
+        }
+
+        if (movingEntity.Has<PlayerTag>())
+            _dirtyTracker.MarkDirty(movingEntity, DirtyReason.CoreData);
+
+        if (intent.AutoLook)
+        {
+            ref var lookIntent = ref _intentContainer.Look.Add();
+            lookIntent.Viewer = movingEntity;
+            lookIntent.TargetKind = LookTargetKind.Room;
+            lookIntent.Target = toRoom;
+            lookIntent.Mode = LookMode.PostUpdate;
+        }
+
+        // event
+        ref var roomEnteredMovedEvt = ref _roomEnteredEvent.Add();
+        roomEnteredMovedEvt.Entity = movingEntity;
+        roomEnteredMovedEvt.FromRoom = fromRoom;
+        roomEnteredMovedEvt.ToRoom = toRoom;
+        roomEnteredMovedEvt.Direction = direction;
+        roomEnteredMovedEvt.AutoLook = intent.AutoLook;
+
+        // remove from combat and forfeit claim for player
+        if (movingEntity.Has<CombatState>())
         {
             var target = movingEntity.Get<CombatState>().Target;
-            CombatHelpers.ForfeitClaim(target, movingEntity);
+            if (movingEntity.Has<PlayerTag>())
+                CombatHelpers.ForfeitClaim(target, movingEntity);
         }
     }
 }

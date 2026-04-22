@@ -1,4 +1,7 @@
-﻿namespace MysteryMud.Core.Random;
+﻿using MysteryMud.GameData.Attributes;
+using System.Reflection;
+
+namespace MysteryMud.Core.Random;
 
 public static class IRandomExtensions
 {
@@ -33,4 +36,19 @@ public static class IRandomExtensions
 
     public static int Dice(this IRandom rng, int count, int sides, int modifier)
         => rng.Dice(count, sides) + modifier;
+
+    public static bool OneIn(this IRandom rng, int number)
+       => rng.Next(0, number) == 0;
+
+    public static T Pick<T>(this IRandom rng) where T : struct, Enum
+        => EnumCache<T>.Values[rng.Next(0, EnumCache<T>.Values.Length)];
+
+    // Helpers
+    private static class EnumCache<T> where T : struct, Enum
+    {
+        public static readonly T[] Values = Enum.GetValues<T>()
+            .Where(v => typeof(T).GetField(v.ToString())
+            ?.GetCustomAttribute<EnumSentinelAttribute>() is null)
+            .ToArray();
+    }
 }

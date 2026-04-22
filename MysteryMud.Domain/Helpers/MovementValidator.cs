@@ -1,8 +1,6 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
-using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
-using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.GameData.Enums;
 
@@ -10,8 +8,34 @@ namespace MysteryMud.Domain.Helpers;
 
 public static class MovementValidator
 {
+    public static bool CanPayMoveCost(
+        Entity mover,
+        Entity fromRoom,
+        Entity toRoom,
+        DirectionKind direction,
+        out int cost)
+    {
+        cost = ResolveMoveCost(mover, fromRoom, toRoom, direction);
+        ref var move = ref mover.Get<Move>();
+        return cost <= move.Current;
+    }
+
+    public static void PayMoveCost(Entity mover, int cost)
+    {
+        ref var move = ref mover.Get<Move>();
+        move.Current -= cost;
+    }
+
+    public static int ResolveMoveCost(
+        Entity mover,
+        Entity fromRoom,
+        Entity toRoom,
+        DirectionKind direction)
+    {
+        return 10; // TODO: use sector to calculate move cost
+    }
+
     public static bool CanEnter(
-        World world,
         Entity mover,
         Entity fromRoom,
         Entity toRoom,
@@ -21,7 +45,7 @@ public static class MovementValidator
         blockReason = default!;
 
         // 1. Destination room must exist
-        if (toRoom == Entity.Null || !world.IsAlive(toRoom))
+        if (toRoom == Entity.Null || !toRoom.IsAlive())
         {
             blockReason = "There is no exit in that direction";
             return false;
@@ -31,7 +55,7 @@ public static class MovementValidator
         if (fromRoom.Has<RoomGraph>())
         {
             ref readonly var graph = ref fromRoom.Get<RoomGraph>();
-            if (graph.Exits.FirstOrDefault(x => x.Direction == direction).Closed == true)
+            if (graph.Exits[direction]?.Closed == true)
             {
                 blockReason = "The door is closed";
                 return false;
@@ -86,7 +110,7 @@ public static class MovementValidator
         //    {
         //        // Private rooms: block if already 2+ players inside
         //        // (classic ROM rule — adjust threshold as needed)
-        //        int playerCount = CountPlayersInRoom(world, toRoom);
+        //        int playerCount = CountPlayersInRoom(toRoom);
         //        if (playerCount >= 2 && !mover.Has<NpcMarker>())
         //        {
         //            blockReason = "That room is private";
@@ -99,7 +123,7 @@ public static class MovementValidator
         //// 6. Water/fly sector checks
         //if (toRoom.Has<SectorKind>())
         //{
-        //    ref readonly var sector = ref world.Get<SectorKind>(toRoom);
+        //    ref readonly var sector = ref toRoom.Get<SectorKind>();
 
         //    bool canSwim = mover.Has<CanSwim>()
         //                || mover.Has<WaterBreathing>();
@@ -118,19 +142,25 @@ public static class MovementValidator
         //    }
         //}
 
+        // TODO: move cost
+
+        return true;
+    }
+
+    public static bool CanFlee(
+        Entity fleer,
+        Entity fromRoom,
+        Entity toRoom,
+        DirectionKind direction)
+    {
+        // TODO: same as CanEnter without checking combat
         return true;
     }
 
     // ------------------------------------------------------------------
-    private static int CountPlayersInRoom(World world, Entity room)
+    private static int CountPlayersInRoom(Entity room)
     {
-        int count = 0;
-        world.Query(
-            new QueryDescription().WithAll<Location, PlayerTag>(),
-            (ref Location location) =>
-            {
-                if (location.Room == room) count++;
-            });
-        return count;
+        ref var roomContents = ref room.Get<RoomContents>();
+        return roomContents.Characters.Count;
     }
 }

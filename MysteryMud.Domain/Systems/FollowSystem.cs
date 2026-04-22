@@ -120,7 +120,7 @@ public class FollowSystem
         if (loc.Room != leaderIntent.FromRoom) return false;
 
         if (!MovementValidator.CanEnter(
-                state.World, follower,
+                follower,
                 leaderIntent.FromRoom, leaderIntent.ToRoom,
                 leaderIntent.Direction, out _)) return false;
 
@@ -144,7 +144,7 @@ public class FollowSystem
         if (loc.Room != leaderIntent.FromRoom) return;
 
         if (!MovementValidator.CanEnter(
-                state.World, follower,
+                follower,
                 leaderIntent.FromRoom, leaderIntent.ToRoom,
                 leaderIntent.Direction, out var blockReason))
         {

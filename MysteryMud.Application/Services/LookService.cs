@@ -32,7 +32,7 @@ public class LookService : ILookService
 
         _msg.To(viewer).Send($"{roomName.Value}");
         _msg.To(viewer).Send($"{roomDescription.Value}");
-        if (roomGraph.Exits.Count == 0)
+        if (!roomGraph.Exits.HasAnyExit())
         {
             _msg.To(viewer).Send("No exits.");
         }
@@ -41,7 +41,9 @@ public class LookService : ILookService
             _msg.To(viewer).Send("Exits:");
             foreach (var exit in roomGraph.Exits)
             {
-                _msg.To(viewer).Send($"- {exit.Direction} - {exit.TargetRoom.DisplayName}");
+                if (exit is null)
+                    continue;
+                _msg.To(viewer).Send($"- {exit!.Value.Direction} - {exit!.Value.TargetRoom.DisplayName}");
             }
         }
         _msg.To(viewer).Send("Characters here:");

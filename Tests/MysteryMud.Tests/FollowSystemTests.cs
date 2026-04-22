@@ -255,7 +255,7 @@ public class FollowSystemTests : IDisposable
         var roomA = MakeRoom();
         var roomB = MakeRoom();
         ref var graph = ref roomA.Get<RoomGraph>();
-        graph.Exits.Add(new Exit { Direction = DirectionKind.North, TargetRoom = roomB, Closed = true });
+        graph.Exits[DirectionKind.North] = new Exit { Direction = DirectionKind.North, TargetRoom = roomB, Closed = true };
 
         var leader = MakePlayer(roomA, "Leader");
         var follower = MakePlayer(roomA, "Follower");

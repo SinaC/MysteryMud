@@ -25,8 +25,8 @@ public class RespawnSystem
     public void Tick(GameState state)
     {
         var query = new QueryDescription()
-            .WithAll<PlayerTag, RespawnState, Location, Health>();
-        state.World.Query(query, (Entity player, ref RespawnState respawnState, ref Location location, ref Health health) =>
+            .WithAll<PlayerTag, RespawnState, Location, Health, Move>();
+        state.World.Query(query, (Entity player, ref RespawnState respawnState, ref Location location, ref Health health, ref Move move) =>
         {
             // Optional: respawn timer check
             //if (Time.time - dead.TimeOfDeath >= RespawnDelay)
@@ -42,12 +42,16 @@ public class RespawnSystem
                 ref var respawnRoomContents = ref respawnState.RespawnRoom.Get<RoomContents>();
                 respawnRoomContents.Characters.Add(player);
 
-                // Reset health
-                health.Current = health.Max;
+                // Reset health and move to 1
+                health.Current = 1;
+                move.Current = 1;
+
                 // TODO: other reset logic like status effects, inventory, etc.
 
                 // Remove RespawnState and DeadTag so player can act again
-                player.Remove<RespawnState, Dead>();
+                player.Remove<RespawnState>();
+                if (player.Has<Dead>())
+                    player.Remove<Dead>();
 
                 // Add dirty stats to force stats update
                 if (!player.Has<DirtyStats>())

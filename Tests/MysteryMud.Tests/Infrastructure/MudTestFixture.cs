@@ -19,6 +19,7 @@ internal class MudTestFixture : IDisposable
     public GameState State { get; }
     public TestGameMessageService GameMessage { get; } = new();
     public TestIntentContainer Intents { get; } = new();
+    public TestExperienceService TestExperienceService { get; } = new();
     public TestEventBuffer<RoomEnteredEvent> RoomEnteredEvents { get; } = new();
     public TestEventBuffer<DeathEvent> DeathEvents { get; } = new();
     public TestEventBuffer<ItemLootedEvent> ItemLootedEvents { get; } = new();
@@ -82,7 +83,7 @@ internal class MudTestFixture : IDisposable
             .WithTag<Room>()
             .WithName(name)
             .WithDescription(description)
-            .With(new RoomGraph { Exits = [] })
+            .With(new RoomGraph { Exits = new RoomExitValues() })
             .With(new RoomContents
             {
                 Characters = [],

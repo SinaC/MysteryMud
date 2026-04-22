@@ -240,6 +240,18 @@
         "ThrottlingCategories": ["utility"]
     },
     {
+        "Name": "restore",
+        "RequiredLevel": "Admin",
+        "MinimumPosition": "Standing",
+        "Priority": 0,
+        "HelpText": "[cmd] restores full hit points, mana points, and movement points to the\ntarget character.  It also heals poison, plague, and blindness.\n\n[cmd] room (or restore with no argument) performs a restore on every player\nin the room, restore all does the same for all connected players. [cmd] all\nis only usable by creators and implementors.  [cmd] should be used sparingly\nor not at all.",
+        "Syntaxes": ["[cmd]",
+		             "[cmd] <character>",
+                     "[cmd] all"],
+        "Categories": ["admin"],
+        "ThrottlingCategories": ["utility"]
+    },
+    {
         "Name": "sacrifice",
         "Aliases": ["tap", "junk"],
         "RequiredLevel": "Player",

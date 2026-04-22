@@ -35,8 +35,8 @@ public sealed class SouthCommand : ICommand
 
         // Get south exit
         ref var roomGraph = ref room.Get<RoomGraph>();
-        var southExit = roomGraph.Exits.SingleOrDefault(e => e.Direction == DirectionKind.South);
-        if (southExit.Equals(default(Exit)) || southExit.TargetRoom == Entity.Null)
+        var southExit = roomGraph.Exits[DirectionKind.South];
+        if (southExit is null || southExit!.Value.TargetRoom == Entity.Null)
         {
             _msg.To(actor).Send("Alas, you cannot go that way.");
             return;
@@ -46,7 +46,7 @@ public sealed class SouthCommand : ICommand
         ref var moveIntent = ref _intents.Move.Add();
         moveIntent.Actor = actor;
         moveIntent.FromRoom = room;
-        moveIntent.ToRoom = southExit.TargetRoom;
+        moveIntent.ToRoom = southExit!.Value.TargetRoom;
         moveIntent.Direction = DirectionKind.South;
         moveIntent.AutoLook = true;
     }
