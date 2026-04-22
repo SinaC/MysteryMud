@@ -30,6 +30,7 @@ public class ScoreCommand : ICommand
         _msg.To(actor).Send($"Name: {name.Value}");
         DisplayLevelAndExperience(actor);
         DisplayHealth(actor);
+        DisplayMove(actor);
         DisplayResource<Mana, ManaRegen, UsesMana>(actor, ResourceKind.Mana, x => (x.Current, x.Max));
         DisplayResource<Energy, EnergyRegen, UsesEnergy>(actor, ResourceKind.Energy, x => (x.Current, x.Max));
         DisplayResource<Rage, RageDecay, UsesRage>(actor, ResourceKind.Rage, x => (x.Current, x.Max));
@@ -60,6 +61,12 @@ public class ScoreCommand : ICommand
     {
         var health = actor.Get<Health>();
         _msg.To(actor).Send($"Health: {health.Current}/{health.Max}");
+    }
+
+    private void DisplayMove(Entity actor)
+    {
+        var move = actor.Get<Move>();
+        _msg.To(actor).Send($"Move: {move.Current}/{move.Max}");
     }
 
     private void DisplayResource<TResource, TRegen, TUses>(Entity actor, ResourceKind kind, Func<TResource, (int current, int max)> getCurrentMaxFunc)

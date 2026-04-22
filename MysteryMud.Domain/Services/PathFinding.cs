@@ -9,7 +9,7 @@ public static class Pathfinding
     public static List<Entity> FindPath(Entity start, Entity goal)
     {
         Queue<Entity> open = new();
-        Dictionary<Entity, Entity> cameFrom = new();
+        Dictionary<Entity, Entity> cameFrom = [];
 
         open.Enqueue(start);
 
@@ -20,12 +20,15 @@ public static class Pathfinding
             if (room == goal)
                 break;
 
-            foreach (var exit in room.Get<RoomGraph>().Exits)
+            ref var roomGraph = ref room.Get<RoomGraph>();
+            foreach (var exit in roomGraph.Exits)
             {
-                if (!cameFrom.ContainsKey(exit.TargetRoom))
+                if (exit is null)
+                    continue;
+                if (!cameFrom.ContainsKey(exit!.Value .TargetRoom))
                 {
-                    open.Enqueue(exit.TargetRoom);
-                    cameFrom[exit.TargetRoom] = room;
+                    open.Enqueue(exit!.Value.TargetRoom);
+                    cameFrom[exit!.Value.TargetRoom] = room;
                 }
             }
         }
@@ -35,7 +38,7 @@ public static class Pathfinding
 
     private static List<Entity> Reconstruct(Dictionary<Entity, Entity> cameFrom, Entity current)
     {
-        List<Entity> path = new();
+        List<Entity> path = [];
         while (cameFrom.TryGetValue(current, out var prev))
         {
             path.Add(current);

@@ -81,6 +81,10 @@ public static class PlayerFactory
             new BaseHealth { Max = 100 },
             new HealthRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
         player.Add(
+            new Move { Current = 100, Max = 100 },
+            new BaseMove { Max = 100 },
+            new MoveRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
+        player.Add(
             new Mana { Current = 100, Max = 100 },
             new BaseMana { Max = 100 },
             new ManaRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
@@ -155,6 +159,10 @@ public static class PlayerFactory
             new Health { Current = 10000, Max = 10000 },
             new BaseHealth { Max = 10000 },
             new HealthRegen { BaseAmountPerSecond = 100, CurrentAmountPerSecond = 100 });
+        player.Add(
+            new Move { Current = 1000, Max = 1000 },
+            new BaseMove { Max = 1000 },
+            new MoveRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
         player.Add(
             new Mana { Current = 100, Max = 100 },
             new BaseMana { Max = 100 },
@@ -232,6 +240,10 @@ public static class PlayerFactory
             new Health { Current = 10000, Max = 10000 },
             new BaseHealth { Max = 10000 },
             new HealthRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
+        player.Add(
+            new Move { Current = 35, Max = 1000 },
+            new BaseMove { Max = 1000 },
+            new MoveRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
         player.Add(
             new Mana { Current = 100, Max = 100 },
             new BaseMana { Max = 100 },

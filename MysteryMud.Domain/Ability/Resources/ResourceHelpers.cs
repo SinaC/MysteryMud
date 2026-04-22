@@ -39,6 +39,8 @@ public static class ResourceHelpers
                 return false;
             }
 
+            // TODO: use ResolveCost ?
+
             if (current < cost.Amount)
             {
                 result = new CannotPayCostsResult
@@ -54,9 +56,9 @@ public static class ResourceHelpers
         return true;
     }
 
-    public static void PayCosts(Entity e, AbilityRuntime skill)
+    public static void PayCosts(Entity e, AbilityRuntime ability)
     {
-        foreach (var cost in skill.Costs)
+        foreach (var cost in ability.Costs)
         {
             var finalCost = ResolveCost(e, cost);
             ModifyResource(e, cost.Kind, -finalCost);

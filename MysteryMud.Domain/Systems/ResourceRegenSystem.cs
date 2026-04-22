@@ -10,9 +10,9 @@ public class ResourceRegenSystem<TResource, TResourceRegen>
     private readonly Func<TResource, int> _getCurrentFunc;
     private readonly Func<TResource, int> _getMaxFunc;
     private readonly Func<TResourceRegen, int> _getRegenValueFunc;
-    private readonly SetResourceValueAction<TResource> _setCurrentAction;
+    private readonly ResourceValueSetter<TResource> _setCurrentAction;
 
-    public ResourceRegenSystem(Func<TResource, int> getCurrentFunc, Func<TResource, int> getMaxFunc, Func<TResourceRegen, int> getRegenValueFunc, SetResourceValueAction<TResource> setCurrentAction)
+    public ResourceRegenSystem(Func<TResource, int> getCurrentFunc, Func<TResource, int> getMaxFunc, Func<TResourceRegen, int> getRegenValueFunc, ResourceValueSetter<TResource> setCurrentAction)
     {
         _getCurrentFunc = getCurrentFunc;
         _getMaxFunc = getMaxFunc;

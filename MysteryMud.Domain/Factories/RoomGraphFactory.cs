@@ -8,19 +8,22 @@ public static class RoomGraphFactory
 {
     public static void BuildNeighborhood(Entity room)
     {
-        var graph = room.Get<RoomGraph>();
+        ref var graph = ref room.Get<RoomGraph>();
 
         var neighbors1 = new List<Entity>();
         var neighbors2 = new List<Entity>();
 
         foreach (var exit in graph.Exits)
         {
-            neighbors1.Add(exit.TargetRoom);
+            if (exit is null)
+                continue;
 
-            var nextGraph = exit.TargetRoom.Get<RoomGraph>();
+            neighbors1.Add(exit!.Value.TargetRoom);
+
+            ref var nextGraph = ref exit!.Value.TargetRoom.Get<RoomGraph>();
 
             foreach (var nextExit in nextGraph.Exits)
-                neighbors2.Add(nextExit.TargetRoom);
+                neighbors2.Add(nextExit!.Value.TargetRoom);
         }
 
         room.Set(new RoomNeighborhood

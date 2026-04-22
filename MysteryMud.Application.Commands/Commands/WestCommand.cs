@@ -35,8 +35,8 @@ public sealed class WestCommand : ICommand
 
         // Get west exit
         ref var roomGraph = ref room.Get<RoomGraph>();
-        var westExit = roomGraph.Exits.SingleOrDefault(e => e.Direction == DirectionKind.West);
-        if (westExit.Equals(default(Exit)) || westExit.TargetRoom == Entity.Null)
+        var westExit = roomGraph.Exits[DirectionKind.West];
+        if (westExit is null || westExit!.Value.TargetRoom == Entity.Null)
         {
             _msg.To(actor).Send("Alas, you cannot go that way.");
             return;
@@ -46,7 +46,7 @@ public sealed class WestCommand : ICommand
         ref var moveIntent = ref _intents.Move.Add();
         moveIntent.Actor = actor;
         moveIntent.FromRoom = room;
-        moveIntent.ToRoom = westExit.TargetRoom;
+        moveIntent.ToRoom = westExit!.Value.TargetRoom;
         moveIntent.Direction = DirectionKind.West;
         moveIntent.AutoLook = true;
     }

@@ -54,6 +54,7 @@ public sealed class MstatCommand : ICommand
             _msg.To(actor).Send($"Description: {description.Value}");
         _msg.To(actor).Send($"Location: {location.Room.DisplayName}");
         DisplayHealth(actor, target.Value);
+        DisplayMove(actor, target.Value);
         DisplayResource<Mana, ManaRegen, UsesMana>(actor, target.Value, ResourceKind.Mana, x => (x.Current, x.Max), x => x.CurrentAmountPerSecond, x => x.CurrentAmountPerSecond);
         DisplayResource<Energy, EnergyRegen, UsesEnergy>(actor, target.Value, ResourceKind.Energy, x => (x.Current, x.Max), x => x.CurrentAmountPerSecond, x => x.CurrentAmountPerSecond);
         DisplayResource<Rage, RageDecay, UsesRage>(actor, target.Value, ResourceKind.Rage, x => (x.Current, x.Max), x => x.CurrentAmountPerSecond, x => x.CurrentAmountPerSecond);
@@ -90,6 +91,19 @@ public sealed class MstatCommand : ICommand
             ? healthRegen.BaseAmountPerSecond
             : 0;
         _msg.To(actor).Send($"Health: {health.Current}/{health.Max} Regen: {currentRegen}(base: {baseRegen})");
+    }
+
+    private void DisplayMove(Entity actor, Entity target)
+    {
+        var move = target.Get<Move>();
+        ref var moveRegen = ref target.TryGetRef<MoveRegen>(out var hasRegen);
+        var currentRegen = hasRegen
+            ? moveRegen.CurrentAmountPerSecond
+            : 0;
+        var baseRegen = hasRegen
+            ? moveRegen.BaseAmountPerSecond
+            : 0;
+        _msg.To(actor).Send($"Move: {move.Current}/{move.Max} Regen: {currentRegen}(base: {baseRegen})");
     }
 
     private void DisplayResource<TResource, TRegen, TUses>(Entity actor, Entity target, ResourceKind kind, Func<TResource, (int current, int max)> getCurrentMaxFunc, Func<TRegen, int> getCurrentRegenFunc, Func<TRegen, int> getBaseRegenFunc)

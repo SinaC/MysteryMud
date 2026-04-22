@@ -17,7 +17,7 @@ public static class RoomFactory
             new Room { Id = id },
             new Name { Value = name },
             new Description { Value = description },
-            new RoomGraph { Exits = [] },
+            new RoomGraph { Exits = new RoomExitValues() },
             new RoomContents
             {
                 Characters = [],
@@ -33,13 +33,13 @@ public static class RoomFactory
 
     public static bool LinkRoom(World world, Entity sourceRoom, Entity targetRoom, DirectionKind direction)
     {
-        var sourceRoomGraph = sourceRoom.Get<RoomGraph>();
-        if (sourceRoomGraph.Exits.Any(x => x.Direction == direction))
+        ref var sourceRoomGraph = ref sourceRoom.Get<RoomGraph>();
+        if (sourceRoomGraph.Exits[direction] is not null)
         {
             return false; // Exit already exists in this direction
         }
 
-        sourceRoomGraph.Exits.Add(new Exit { Direction = direction, TargetRoom = targetRoom }); // TODO: close + description
+        sourceRoomGraph.Exits[direction] = new Exit { Direction = direction, TargetRoom = targetRoom }; // TODO: close + description
         return true;
     }
 }

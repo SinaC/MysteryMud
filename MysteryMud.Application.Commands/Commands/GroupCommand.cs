@@ -7,12 +7,14 @@ using MysteryMud.Core.Extensions;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
+using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.Domain.Components.Groups;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Queries;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Enums;
+using System.Text;
 
 namespace MysteryMud.Application.Commands.Commands;
 
@@ -124,10 +126,10 @@ public sealed class GroupCommand : ICommand
 
     private void DisplayMember(Entity actor, Entity member)
     {
-        // TODO: resources/moves/experience to level
-        //sb.AppendFormat("[{0,3} {1,3}] {2,-20} {3,5}/{4,5} hp {5} {6,5}/{7,5} mv", member.Level, member.Classes.ShortName(), member.DisplayName.MaxLength(20), member[ResourceKinds.HitPoints], member.MaxResource(ResourceKinds.HitPoints), BuildResources(member), member[ResourceKinds.MovePoints], member.MaxResource(ResourceKinds.MovePoints));
         var health = member.Get<Health>();
-        _msg.To(actor).Send(string.Format("[{0,3} {1,3}] {2,-20} {3,5}/{4,5} hp", member.Level, /*TODO class*/"Plr", member.DisplayName.MaxLength(20), health.Current, health.Max));
+        var move = member.Get<Move>();
+        var resources = BuildResources(member);
+        _msg.To(actor).Send(string.Format("[{0,3} {1,3}] {2,-20} {3,5}/{4,5} hp {5} {6,5}/{7,5} mv", member.Level, /*TODO class*/"Plr", member.DisplayName.MaxLength(20), health.Current, health.Max, resources, move.Current, move.Max));
     }
 
     private void DisplayCharmies(Entity actor, Entity member)
@@ -137,10 +139,36 @@ public sealed class GroupCommand : ICommand
             return;
         foreach (var charmie in charmies.Entities)
         {
-            // TODO: resources/moves
-            //_msg.To(actor).Send(string.Format("[{0,3} Pet] {1,-20} {2,5}/{3,5} hp {4} {5,5}/{6,5} mv", member.Level, member.DisplayName.MaxLength(20), member[ResourceKinds.HitPoints], member.MaxResource(ResourceKinds.HitPoints), BuildResources(member), member[ResourceKinds.MovePoints], member.MaxResource(ResourceKinds.MovePoints));
             var health = charmie.Get<Health>();
-            _msg.To(actor).Send(string.Format("[{0,3} Pet] {1,-20} {2,5}/{3,5} hp", charmie.Level, charmie.DisplayName.MaxLength(20), health.Current, health.Max));
+            var move = charmie.Get<Move>();
+            var resources = BuildResources(charmie);
+            _msg.To(actor).Send(string.Format("[{0,3} Pet] {1,-20} {2,5}/{3,5} hp {4} {5,5}/{6,5} mv", charmie.Level, charmie.DisplayName.MaxLength(20), health.Current, health.Max, resources, move.Current, move.Max));
         }
+    }
+
+    private static string BuildResources(Entity target)
+    {
+        var sb = new StringBuilder();
+
+        AppendResource<Mana, UsesMana>(sb, target, ResourceKind.Mana, x => (x.Current, x.Max));
+        AppendResource<Energy, UsesEnergy>(sb, target, ResourceKind.Energy, x => (x.Current, x.Max));
+        AppendResource<Rage, UsesRage>(sb, target, ResourceKind.Rage, x => (x.Current, x.Max));
+
+        return sb.ToString();
+    }
+
+    private static StringBuilder AppendResource<TResource, TUses>(StringBuilder sb, Entity target, ResourceKind kind, Func<TResource, (int current, int max)> getCurrentMaxFunc)
+       where TResource : struct
+       where TUses : struct
+    {
+        var uses = target.Has<TUses>();
+        if (!uses)
+            return sb;
+        ref var resource = ref target.TryGetRef<TResource>(out var hasResource);
+        if (!hasResource)
+            return sb;
+        var (current, max) = getCurrentMaxFunc(resource);
+        sb.AppendFormat("{0:5}/{1:5} {2}", current, max, kind.ToString().ToLowerInvariant());
+        return sb;
     }
 }
