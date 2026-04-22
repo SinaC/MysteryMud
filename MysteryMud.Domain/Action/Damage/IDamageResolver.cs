@@ -5,5 +5,5 @@ namespace MysteryMud.Domain.Action.Damage;
 
 public interface IDamageResolver
 {
-    DamageResult Resolve(GameState state, DamageAction dmg);
+    DamageResult Resolve(GameState state, DamageAction action);
 }

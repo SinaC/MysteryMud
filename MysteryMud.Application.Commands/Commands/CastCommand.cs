@@ -1,4 +1,5 @@
 ﻿using Arch.Core;
+using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
@@ -13,12 +14,14 @@ public sealed class CastCommand : ICommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetPair;
 
+    private readonly ILogger _logger;
     private readonly IAbilityRegistry _abilityRegistry;
     private readonly IGameMessageService _msg;
     private readonly IIntentWriterContainer _intents;
 
-    public CastCommand(IAbilityRegistry abilityRegistry, IGameMessageService msg, IIntentWriterContainer intents)
+    public CastCommand(ILogger logger, IAbilityRegistry abilityRegistry, IGameMessageService msg, IIntentWriterContainer intents)
     {
+        _logger = logger;
         _abilityRegistry = abilityRegistry;
         _msg = msg;
         _intents = intents;
@@ -29,11 +32,25 @@ public sealed class CastCommand : ICommand
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
         // search ability
-        if (!_abilityRegistry.StartsWith(ctx.Primary.Name.ToString(), out var abilityRuntime) || abilityRuntime == null || abilityRuntime.Kind != AbilityKind.Spell)
+        var startsWithResult = _abilityRegistry.StartsWith(ctx.Primary.Name.ToString(), out var abilityRuntime);
+        if (startsWithResult == Core.Utilities.StartsWithResult.NotFound
+            || (abilityRuntime != null && abilityRuntime.Kind != AbilityKind.Spell))
         {
             _msg.To(actor).Send("You don't know any spells of that name.");
             return;
         }
+        if (startsWithResult == Core.Utilities.StartsWithResult.Ambiguous)
+        {
+            _msg.To(actor).Send("You know multiple spells with that name.");
+            return;
+        }
+        if (abilityRuntime == null)
+        {
+            _msg.To(actor).Send("Something goes wrong!");
+            _logger.LogError("Cast: '{spellName}' returns a null ability runtime", ctx.Primary.Name.ToString());
+            return;
+        }
+
         var abilityId = abilityRuntime.Id;
 
         // checks will be done in AbilityValidationSystem

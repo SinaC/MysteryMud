@@ -2,6 +2,7 @@
 using Arch.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core.Effects;
+using MysteryMud.Domain.Ability.Resources;
 using MysteryMud.Domain.Action.Effect.Definitions;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Resources;
@@ -26,18 +27,18 @@ public class EffectActionFactory : IEffectActionFactory
         CharacterStatModifierActionDefinition definition => CreateCharacterStatModifier(definition),
         ApplyCharacterTagActionDefinition definition => CreateApplyCharacterTag(definition),
         ApplyItemTagActionDefinition definition => CreateApplyItemTag(definition),
-        HealthModifierActionDefinition definition => CreateHealthModifier(definition),
-        HealthRegenModifierActionDefinition definition => CreateHealthRegenModifier(definition),
-        ManaModifierActionDefinition definition => CreateManaModifier(definition),
-        ManaRegenModifierActionDefinition definition => CreateManaRegenModifier(definition),
-        EnergyModifierActionDefinition definition => CreateEnergyModifier(definition),
-        EnergyRegenModifierActionDefinition definition => CreateEnergyRegenModifier(definition),
-        RageModifierActionDefinition definition => CreateRageModifier(definition),
-        RageRegenModifierActionDefinition definition => CreateRageRegenModifier(definition),
+        HealthModifierActionDefinition definition => CreateResourceModifier<HealthModifier, DirtyHealth>(definition.Modifier, definition.ValueCompiledFormula, (modifier, value) => new HealthModifier { Modifier = modifier, Value = value }),
+        HealthRegenModifierActionDefinition definition => CreateResourceRegenModifier<HealthRegenModifier, DirtyHealthRegen>(definition.Modifier, definition.ValueCompiledFormula, (modifier, value) => new HealthRegenModifier { Modifier = modifier, Value = value }),
+        MoveModifierActionDefinition definition => CreateResourceModifier<MoveModifier, DirtyMove>(definition.Modifier, definition.ValueCompiledFormula, (modifier, value) => new MoveModifier { Modifier = modifier, Value = value }),
+        MoveRegenModifierActionDefinition definition => CreateResourceRegenModifier<MoveRegenModifier, DirtyMoveRegen>(definition.Modifier, definition.ValueCompiledFormula, (modifier, value) => new MoveRegenModifier { Modifier = modifier, Value = value }),
+        ResourceModifierActionDefinition definition => CreateResourceModifier(definition),
+        ResourceRegenModifierActionDefinition definition => CreateResourceRegenModifier(definition),
         PeriodicHealActionDefinition definition => CreatePeriodHeal(definition),
-        InstantHealActionDefinition definition => CreateInstantHeal(definition),
         PeriodicDamageActionDefinition definition => CreatePeriodDamage(definition),
+        InstantHealActionDefinition definition => CreateInstantHeal(definition),
         InstantDamageActionDefinition definition => CreateInstantDamage(definition),
+        InstantRestoreMoveActionDefinition definition => CreateInstantRestoreMove(definition),
+        InstantRestoreResourceActionDefinition definition => CreateInstantResourceResource(definition),
         _ => throw new Exception($"Unknown EffectAction {actionDefinition.GetType()}"),
     };
 
@@ -155,7 +156,17 @@ public class EffectActionFactory : IEffectActionFactory
         };
     }
 
-    private Action<EffectExecutionContext> CreateManaModifier(ManaModifierActionDefinition definition)
+    private Action<EffectExecutionContext> CreateResourceModifier(ResourceModifierActionDefinition definition) => definition.Resource switch
+    {
+        ResourceKind.Mana => CreateResourceModifier<ManaModifier, DirtyMana>(definition.Modifier, definition.ValueCompiledFormula, (modifier, value) => new ManaModifier { Modifier = modifier, Value = value }),
+        ResourceKind.Energy => CreateResourceModifier<EnergyModifier, DirtyEnergy>(definition.Modifier, definition.ValueCompiledFormula, (modifier, value) => new EnergyModifier { Modifier = modifier, Value = value }),
+        ResourceKind.Rage => CreateResourceModifier<RageModifier, DirtyRage>(definition.Modifier, definition.ValueCompiledFormula, (modifier, value) => new RageModifier { Modifier = modifier, Value = value }),
+        _ => _ => _logger.LogError("Trying to create ResourceModifier on unknown resource {resource}", definition.Resource)
+    };
+
+    private Action<EffectExecutionContext> CreateResourceModifier<TModifier, TDirty>(ModifierKind modifierKind, EffectCompiledFormula formula, Func<ModifierKind, decimal, TModifier> createModifierFunc)
+        where TModifier: struct
+        where TDirty : struct
     {
         return ctx =>
         {
@@ -163,33 +174,39 @@ public class EffectActionFactory : IEffectActionFactory
             if (effectContext.Effect is not null)
             {
                 var effect = effectContext.Effect.Value;
-                var value = definition.ValueCompiledFormula.Compiled(ctx.Context); // TODO: multiply by stack count ?
-                var modifier = new ManaModifier
-                {
-                    Modifier = definition.Modifier,
-                    Value = value
-                };
+                var value = formula.Compiled(ctx.Context); // TODO: multiply by stack count ?
+                var modifier = createModifierFunc(modifierKind, value);
 
-                ref var resourceModifiers = ref effect.TryGetRef<CharacterResourceModifiers<ManaModifier>>(out var hasResourceModifiers);
+                ref var resourceModifiers = ref effect.TryGetRef<CharacterResourceModifiers<TModifier>>(out var hasResourceModifiers);
                 if (hasResourceModifiers)
                     resourceModifiers.Values.Add(modifier);
                 else
                 {
-                    effect.Add(new CharacterResourceModifiers<ManaModifier>
+                    effect.Add(new CharacterResourceModifiers<TModifier>
                     {
                         Values = [modifier]
                     });
                 }
 
                 // add dirty flag to character (or wearer) resources so we will recalculate them with the new modifiers
-                AddDirtyTag<DirtyMana>(effectContext);
+                AddDirtyTag<TDirty>(effectContext);
             }
             else
-                _logger.LogError("Trying to apply ManaModifier on a null-effect");
+                _logger.LogError("Trying to apply {modifier} on a null-effect", typeof(TModifier).Name);
         };
     }
 
-    private Action<EffectExecutionContext> CreateManaRegenModifier(ManaRegenModifierActionDefinition definition)
+    private Action<EffectExecutionContext> CreateResourceRegenModifier(ResourceRegenModifierActionDefinition definition) => definition.Resource switch
+    {
+        ResourceKind.Mana => CreateResourceRegenModifier<ManaRegenModifier, DirtyManaRegen>(definition.Modifier, definition.ValueCompiledFormula, (modifier, value) => new ManaRegenModifier { Modifier = modifier, Value = value }),
+        ResourceKind.Energy => CreateResourceRegenModifier<EnergyRegenModifier, DirtyEnergyRegen>(definition.Modifier, definition.ValueCompiledFormula, (modifier, value) => new EnergyRegenModifier { Modifier = modifier, Value = value }),
+        ResourceKind.Rage => CreateResourceRegenModifier<RageDecayModifier, DirtyRageDecay>(definition.Modifier, definition.ValueCompiledFormula, (modifier, value) => new RageDecayModifier { Modifier = modifier, Value = value }),
+        _ => _ => _logger.LogError("Trying to create ResourceModifier on unknown resource {resource}", definition.Resource)
+    };
+
+    private Action<EffectExecutionContext> CreateResourceRegenModifier<TRegenModifier, TDirtyRegen>(ModifierKind modifierKind, EffectCompiledFormula formula, Func<ModifierKind, decimal, TRegenModifier> createRegenModifierFunc)
+        where TRegenModifier : struct
+        where TDirtyRegen : struct
     {
         return ctx =>
         {
@@ -197,164 +214,25 @@ public class EffectActionFactory : IEffectActionFactory
             if (effectContext.Effect is not null)
             {
                 var effect = effectContext.Effect.Value;
-                var value = definition.ValueCompiledFormula.Compiled(ctx.Context); // TODO: multiply by stack count ?
-                var modifier = new ManaRegenModifier
-                {
-                    Modifier = definition.Modifier,
-                    Value = value
-                };
+                var value = formula.Compiled(ctx.Context); // TODO: multiply by stack count ?
+                var modifier = createRegenModifierFunc(modifierKind, value);
 
-                ref var resourceModifiers = ref effect.TryGetRef<CharacterResourceRegenModifiers<ManaRegenModifier>>(out var hasResourceModifiers);
+                ref var resourceModifiers = ref effect.TryGetRef<CharacterResourceRegenModifiers<TRegenModifier>>(out var hasResourceModifiers);
                 if (hasResourceModifiers)
                     resourceModifiers.Values.Add(modifier);
                 else
                 {
-                    effect.Add(new CharacterResourceRegenModifiers<ManaRegenModifier>
+                    effect.Add(new CharacterResourceRegenModifiers<TRegenModifier>
                     {
                         Values = [modifier]
                     });
                 }
 
                 // add dirty flag to character (or wearer) resources so we will recalculate them with the new modifiers
-                AddDirtyTag<DirtyManaRegen>(effectContext);
+                AddDirtyTag<TDirtyRegen>(effectContext);
             }
             else
-                _logger.LogError("Trying to apply ManaRegenModifier on a null-effect");
-        };
-    }
-
-    private Action<EffectExecutionContext> CreateEnergyModifier(EnergyModifierActionDefinition definition)
-    {
-        return ctx =>
-        {
-            var effectContext = ctx.Context;
-            if (effectContext.Effect is not null)
-            {
-                var effect = effectContext.Effect.Value;
-                var value = definition.ValueCompiledFormula.Compiled(effectContext); // TODO: multiply by stack count ?
-                var modifier = new EnergyModifier
-                {
-                    Modifier = definition.Modifier,
-                    Value = value
-                };
-
-                ref var resourceModifiers = ref effect.TryGetRef<CharacterResourceModifiers<EnergyModifier>>(out var hasResourceModifiers);
-                if (hasResourceModifiers)
-                    resourceModifiers.Values.Add(modifier);
-                else
-                {
-                    effect.Add(new CharacterResourceModifiers<EnergyModifier>
-                    {
-                        Values = [modifier]
-                    });
-                }
-
-                // add dirty flag to character (or wearer) resources so we will recalculate them with the new modifiers
-                AddDirtyTag<DirtyEnergy>(effectContext);
-            }
-            else
-                _logger.LogError("Trying to apply EnergyModifier on a null-effect");
-        };
-    }
-
-    private Action<EffectExecutionContext> CreateEnergyRegenModifier(EnergyRegenModifierActionDefinition definition)
-    {
-        return ctx =>
-        {
-            var effectContext = ctx.Context;
-            if (effectContext.Effect is not null)
-            {
-                var effect = effectContext.Effect.Value;
-                var value = definition.ValueCompiledFormula.Compiled(effectContext); // TODO: multiply by stack count ?
-                var modifier = new EnergyRegenModifier
-                {
-                    Modifier = definition.Modifier,
-                    Value = value
-                };
-
-                ref var resourceModifiers = ref effect.TryGetRef<CharacterResourceRegenModifiers<EnergyRegenModifier>>(out var hasResourceModifiers);
-                if (hasResourceModifiers)
-                    resourceModifiers.Values.Add(modifier);
-                else
-                {
-                    effect.Add(new CharacterResourceRegenModifiers<EnergyRegenModifier>
-                    {
-                        Values = [modifier]
-                    });
-                }
-
-                // add dirty flag to character (or wearer) resources so we will recalculate them with the new modifiers
-                AddDirtyTag<DirtyEnergyRegen>(effectContext);
-            }
-            else
-                _logger.LogError("Trying to apply EnergyRegenModifier on a null-effect");
-        };
-    }
-
-    private Action<EffectExecutionContext> CreateRageModifier(RageModifierActionDefinition definition)
-    {
-        return ctx =>
-        {
-            var effectContext = ctx.Context;
-            if (effectContext.Effect is not null)
-            {
-                var effect = effectContext.Effect.Value;
-                var value = definition.ValueCompiledFormula.Compiled(effectContext); // TODO: multiply by stack count ?
-                var modifier = new RageModifier
-                {
-                    Modifier = definition.Modifier,
-                    Value = value
-                };
-
-                ref var resourceModifiers = ref effect.TryGetRef<CharacterResourceModifiers<RageModifier>>(out var hasResourceModifiers);
-                if (hasResourceModifiers)
-                    resourceModifiers.Values.Add(modifier);
-                else
-                {
-                    effect.Add(new CharacterResourceModifiers<RageModifier>
-                    {
-                        Values = [modifier]
-                    });
-                }
-
-                // add dirty flag to character (or wearer) resources so we will recalculate them with the new modifiers
-                AddDirtyTag<DirtyRage>(effectContext);
-            }
-            else
-                _logger.LogError("Trying to apply RageModifier on a null-effect");
-        };
-    }
-    private Action<EffectExecutionContext> CreateRageRegenModifier(RageRegenModifierActionDefinition definition)
-    {
-        return ctx =>
-        {
-            var effectContext = ctx.Context;
-            if (effectContext.Effect is not null)
-            {
-                var effect = effectContext.Effect.Value;
-                var value = definition.ValueCompiledFormula.Compiled(effectContext); // TODO: multiply by stack count ?
-                var modifier = new RageDecayModifier
-                {
-                    Modifier = definition.Modifier,
-                    Value = value
-                };
-
-                ref var resourceModifiers = ref effect.TryGetRef<CharacterResourceRegenModifiers<RageDecayModifier>>(out var hasResourceModifiers);
-                if (hasResourceModifiers)
-                    resourceModifiers.Values.Add(modifier);
-                else
-                {
-                    effect.Add(new CharacterResourceModifiers<RageDecayModifier>
-                    {
-                        Values = [modifier]
-                    });
-                }
-
-                // add dirty flag to character (or wearer) resources so we will recalculate them with the new modifiers
-                AddDirtyTag<DirtyRageDecay>(effectContext);
-            }
-            else
-                _logger.LogError("Trying to apply RageDecayModifier on a null-effect");
+                _logger.LogError("Trying to apply {regenModifier} on a null-effect", typeof(TRegenModifier).Name);
         };
     }
 
@@ -431,6 +309,35 @@ public class EffectActionFactory : IEffectActionFactory
                 SourceKind = DamageSourceKind.Spell // TODO
             };
             ctx.Executor.ResolveDamage(effectContext.State, damageAction);
+        };
+    }
+
+    private static Action<EffectExecutionContext> CreateInstantRestoreMove(InstantRestoreMoveActionDefinition definition)
+    {
+        return ctx =>
+        {
+            var effectContext = ctx.Context;
+            var amount = definition.AmountCompiledFormula.Compiled(effectContext);
+            var totalRestore = amount;
+            var restoreMoveAction = new RestoreMoveAction
+            {
+                Source = effectContext.Source,
+                Target = effectContext.Target,
+                Amount = totalRestore
+            };
+
+            ctx.Executor.ResolveMove(effectContext.State, restoreMoveAction);
+        };
+    }
+
+    private static Action<EffectExecutionContext> CreateInstantResourceResource(InstantRestoreResourceActionDefinition definition)
+    {
+        return ctx =>
+        {
+            var effectContext = ctx.Context;
+            var amount = definition.AmountCompiledFormula.Compiled(effectContext);
+
+            ResourceHelpers.ModifyResource(effectContext.Target, definition.Resource, amount);
         };
     }
 

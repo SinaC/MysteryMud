@@ -4,7 +4,7 @@
     "Kind": "Spell",
     "Costs": [{ "Kind": "Mana", "Amount": 15 }],
     "Targeting": {
-      "Requirement": "Optional",
+      "Requirement": "OptionalOpponent",
       "Selection": "Single",
       "Scope": "Room",
       "Filter": "Character"
@@ -31,7 +31,7 @@
     "CastTime": 20,
     "Costs": [{ "Kind": "Mana", "Amount": 10 }],
     "Targeting": {
-      "Requirement": "Optional",
+      "Requirement": "OptionalOpponent",
       "Selection": "Single",
       "Scope": "Room",
       "Filter": "Character"
@@ -43,7 +43,7 @@
     "Kind": "Spell",
     "Costs": [{ "Kind": "Mana", "Amount": 20 }],
     "Targeting": {
-      "Requirement": "Mandatory",
+      "Requirement": "OptionalOpponent",
       "Selection": "Single",
       "Contexts": [
         { "Scope": "Room",      "Filter": "Character" },
@@ -79,7 +79,7 @@
     "Kind": "Spell",
     "Costs": [{ "Kind": "Mana", "Amount": 18 }],
     "Targeting": {
-      "Requirement": "Mandatory",
+      "Requirement": "OptionalSelf",
       "Selection": "Single",
       "Contexts": [
         { "Scope": "Room",      "Filter": "Character" },
@@ -97,7 +97,7 @@
     "CastTime": 100,
     "Costs": [{ "Kind": "Mana", "Amount": 10 }],
     "Targeting": {
-      "Requirement": "Mandatory",
+      "Requirement": "OptionalSelf",
       "Selection": "Single",
       "Scope": "Room",
       "Filter": "Character"
@@ -109,7 +109,7 @@
     "Kind": "Spell",
     "Costs": [{ "Kind": "Mana", "Amount": 25 }],
     "Targeting": {
-      "Requirement": "Mandatory",
+      "Requirement": "OptionalSelf",
       "Selection": "Single",
       "Contexts": [
         { "Scope": "Room", "Filter": "Character" }
@@ -130,7 +130,7 @@
       "ThrottlingCategories": ["combat"]
     },
     "Targeting": {
-      "Requirement": "Optional",
+      "Requirement": "OptionalOpponent",
       "Selection": "Single",
       "Scope": "Room",
       "Filter": "Character"
@@ -195,7 +195,7 @@
       "Hook": "Execution"
     },
     "Targeting": {
-      "Requirement": "Optional",
+      "Requirement": "OptionalOpponent",
       "Selection": "Single",
       "Scope": "Room",
       "Filter": "Character"
@@ -290,7 +290,7 @@
       "Hook": "Execution"
     },
     "Targeting": {
-      "Requirement": "Optional",
+      "Requirement": "OptionalOpponent",
       "Selection": "Single",
       "Scope": "Room",
       "Filter": "Character"
@@ -306,12 +306,38 @@
     "Kind": "Spell",
     "Costs": [{ "Kind": "Mana", "Amount": 25 }],
     "Targeting": {
-      "Requirement": "Optional",
+      "Requirement": "OptionalOpponent",
       "Selection": "Single",
       "Contexts": [
         { "Scope": "Room", "Filter": "Character" }
       ]
     },
     "Effects": ["Weaken"]
+  },
+  {
+    "Name": "Refresh",
+    "Kind": "Spell",
+    "Costs": [{ "Kind": "Mana", "Amount": 10 }],
+    "Targeting": {
+      "Requirement": "OptionalSelf",
+      "Selection": "Single",
+      "Contexts": [
+        { "Scope": "Room", "Filter": "Character" }
+      ]
+    },
+    "Effects": ["Refresh"]
+  },
+  {
+    "Name": "Black Lotus",
+    "Kind": "Spell",
+    "Costs": [{ "Kind": "Mana", "Amount": 10 }],
+    "Targeting": {
+      "Requirement": "OptionalSelf",
+      "Selection": "Single",
+      "Contexts": [
+        { "Scope": "Room", "Filter": "Character" }
+      ]
+    },
+    "Effects": ["BlackLotus"]
   }
 ]

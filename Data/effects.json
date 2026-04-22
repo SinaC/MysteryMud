@@ -395,5 +395,26 @@
         "IsDebuff": true
       }
     ]
+  },
+  {
+    "Name": "Refresh",
+    "ApplyMessage": "You feel less tired.",
+    "Actions": [
+      {
+        "Type": "InstantRestoreMove",
+        "MoveFormula": "caster.Level"
+      }
+    ]
+  },
+  {
+    "Name": "BlackLotus",
+    "ApplyMessage": "Wooooosh",
+    "Actions": [
+      {
+        "Type": "InstantRestoreResource",
+        "Resource": "Mana",
+        "ValueFormula": "100"
+      }
+    ]
   }
 ]

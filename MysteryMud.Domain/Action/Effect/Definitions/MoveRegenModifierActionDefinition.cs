@@ -3,7 +3,7 @@
 namespace MysteryMud.Domain.Action.Effect.Definitions;
 
 [EffectActionTarget(EffectTargetKind.Character | EffectTargetKind.Item)]
-public class EnergyRegenModifierActionDefinition : EffectActionDefinition
+public class MoveRegenModifierActionDefinition : EffectActionDefinition
 {
     public required ModifierKind Modifier { get; init; }
     public required EffectCompiledFormula ValueCompiledFormula { get; init; }

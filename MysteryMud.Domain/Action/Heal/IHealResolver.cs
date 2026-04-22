@@ -5,5 +5,5 @@ namespace MysteryMud.Domain.Action.Heal;
 
 public interface IHealResolver
 {
-    HealResult Resolve(GameState state, HealAction heal);
+    HealResult Resolve(GameState state, HealAction action);
 }

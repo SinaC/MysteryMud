@@ -37,6 +37,6 @@ public class AbilityRegistry : IAbilityRegistry
     public bool TryGetRuntime(int abilityId, out AbilityRuntime? abilityRuntime)
         => _abilitiesById.TryGetValue(abilityId, out abilityRuntime);
 
-    public bool StartsWith(string key, out AbilityRuntime? value)
+    public StartsWithResult StartsWith(string key, out AbilityRuntime? value)
         => _abilityWordTrie.StartsWith(key.ToLowerInvariant(), out value);
 }

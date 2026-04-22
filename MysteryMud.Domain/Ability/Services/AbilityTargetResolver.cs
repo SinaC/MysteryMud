@@ -74,17 +74,28 @@ public sealed class AbilityTargetResolver : IAbilityTargetResolver
             return TargetResolutionResult.Failure(TargetResolutionStatus.TargetNotFound, "You don't see that here.");
         }
 
-        // Optional fallback — try current opponent across character contexts only
+        // Optional Opponent fallback — try current opponent across character contexts only
         // No target argument supplied
-        if (targeting.Requirement == AbilityTargetRequirement.Optional)
+        if (targeting.Requirement == AbilityTargetRequirement.OptionalOpponent)
         {
             // Current opponent
             var opponent = GetCurrentOpponent(source);
 
-            // Self fallback if any context accepts characters
+            // Opponent fallback if any context accepts characters
             if (opponent.HasValue && targeting.Contexts.Any(c => c.Filter.HasFlag(AbilityTargetFilter.Character)))
                 return TargetResolutionResult.Success([opponent.Value]);
         }
+
+        // Optional Opponent fallback — try current opponent across character contexts only
+        // No target argument supplied
+        if (targeting.Requirement == AbilityTargetRequirement.OptionalSelf)
+        {
+            // Self
+            var self = source;
+
+            return TargetResolutionResult.Success([self]);
+        }
+
 
         return TargetResolutionResult.Failure(TargetResolutionStatus.NoTarget, "You must specify a target.");
     }

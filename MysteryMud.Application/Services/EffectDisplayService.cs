@@ -97,12 +97,14 @@ public class EffectDisplayService : IEffectDisplayService
 
             // resource modifiers
             DisplayResourceModifier<HealthModifier>(viewer, effect, "Health", x => x.Modifier, x => x.Value);
+            DisplayResourceModifier<MoveModifier>(viewer, effect, "Move", x => x.Modifier, x => x.Value);
             DisplayResourceModifier<ManaModifier>(viewer, effect, "Mana", x => x.Modifier, x => x.Value);
             DisplayResourceModifier<EnergyModifier>(viewer, effect, "Energy", x => x.Modifier, x => x.Value);
             DisplayResourceModifier<RageModifier>(viewer, effect, "Rage", x => x.Modifier, x => x.Value);
 
             // resource regen modifiers
             DisplayResourceRegenModifier<HealthRegenModifier>(viewer, effect, "Health", x => x.Modifier, x => x.Value);
+            DisplayResourceRegenModifier<MoveRegenModifier>(viewer, effect, "Move", x => x.Modifier, x => x.Value);
             DisplayResourceRegenModifier<ManaRegenModifier>(viewer, effect, "Mana ", x => x.Modifier, x => x.Value);
             DisplayResourceRegenModifier<EnergyRegenModifier>(viewer, effect, "Energy", x => x.Modifier, x => x.Value);
             DisplayResourceRegenModifier<RageDecayModifier>(viewer, effect, "Rage", x => x.Modifier, x => x.Value);

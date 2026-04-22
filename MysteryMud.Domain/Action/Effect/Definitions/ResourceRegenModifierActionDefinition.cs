@@ -3,8 +3,9 @@
 namespace MysteryMud.Domain.Action.Effect.Definitions;
 
 [EffectActionTarget(EffectTargetKind.Character | EffectTargetKind.Item)]
-public class ManaModifierActionDefinition : EffectActionDefinition
+public class ResourceRegenModifierActionDefinition : EffectActionDefinition
 {
+    public required ResourceKind Resource { get; init; }
     public required ModifierKind Modifier { get; init; }
     public required EffectCompiledFormula ValueCompiledFormula { get; init; }
 }
