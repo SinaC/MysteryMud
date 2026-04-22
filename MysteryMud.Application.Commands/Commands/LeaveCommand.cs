@@ -9,8 +9,8 @@ namespace MysteryMud.Application.Commands.Commands;
 
 public class LeaveCommand : ICommand
 {
-    private IGameMessageService _msg;
-    private IGroupService _groupService;
+    private readonly IGameMessageService _msg;
+    private readonly IGroupService _groupService;
 
     public LeaveCommand(IGameMessageService msg, IGroupService groupService)
     {

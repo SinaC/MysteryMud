@@ -42,7 +42,7 @@ public class RemoveCommand : ICommand
             {
                 // intent to remove item
                 ref var removeItemIntent = ref _intents.RemoveItem.Add();
-                removeItemIntent.Actor = actor;
+                removeItemIntent.Entity = actor;
                 removeItemIntent.Item = item;
                 removeItemIntent.Slot = slot;
             }

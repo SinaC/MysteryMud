@@ -5,6 +5,7 @@ using MysteryMud.Core;
 using MysteryMud.Core.Contracts;
 using MysteryMud.Core.Effects;
 using MysteryMud.Core.Logging;
+using MysteryMud.Core.Persistence;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
@@ -21,14 +22,16 @@ public partial class EffectApplicationManager : IEffectApplicationManager
 {
     private readonly ILogger _logger;
     private readonly IGameMessageService _msg;
+    private readonly IDirtyTracker _dirtyTracker;
     private readonly IIntentWriterContainer _intent;
     private readonly IEffectExecutor _effectExecutor;
     private readonly IEffectLifecycleManager _effectLifecycleManager;
 
-    public EffectApplicationManager(ILogger logger, IGameMessageService msg, IIntentWriterContainer intent, IEffectExecutor effectExecutor, IEffectLifecycleManager effectLifecycleManager)
+    public EffectApplicationManager(ILogger logger, IGameMessageService msg, IDirtyTracker dirtyTracker, IIntentWriterContainer intent, IEffectExecutor effectExecutor, IEffectLifecycleManager effectLifecycleManager)
     {
         _logger = logger;
         _msg = msg;
+        _dirtyTracker = dirtyTracker;
         _intent = intent;
         _effectExecutor = effectExecutor;
         _effectLifecycleManager = effectLifecycleManager;
@@ -64,10 +67,11 @@ public partial class EffectApplicationManager : IEffectApplicationManager
         var source = effectData.Source;
         var target = effectData.Target;
 
+        var isTargetCharacter = target.Has<CharacterEffects>();
         // Resolve which host to use — single branch point
-        IEffectHost host = target.Has<CharacterEffects>()
-            ? new CharacterEffectHost(target)
-            : new ItemEffectHost(target);
+        IEffectHost host = isTargetCharacter
+            ? new CharacterEffectHost(_dirtyTracker, target)
+            : new ItemEffectHost(_dirtyTracker, target);
 
         var existingEffect = host.FindEffect(effectRuntime);
 
@@ -154,7 +158,7 @@ public partial class EffectApplicationManager : IEffectApplicationManager
         }
 
         // trigger onApply actions
-        if (effectRuntime.OnApply.Length > 0)
+        if (isTargetCharacter && effectRuntime.OnApply.Length > 0)
         {
             var effectExecutionContext = new EffectExecutionContext
             {

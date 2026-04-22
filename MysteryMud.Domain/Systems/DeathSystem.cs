@@ -3,6 +3,7 @@ using Arch.Core.Extensions;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Contracts;
+using MysteryMud.Core.Persistence;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
@@ -17,13 +18,15 @@ namespace MysteryMud.Domain.Systems;
 
 public sealed class DeathSystem
 {
-    private readonly IFollowService _followService; 
+    private readonly IFollowService _followService;
+    private readonly IDirtyTracker _dirtyTracker;
     private readonly IIntentContainer _intents;
     private readonly IEventBuffer<DeathEvent> _deathEvents;
 
-    public DeathSystem(IFollowService followService, IIntentContainer intents, IEventBuffer<DeathEvent> deathEvents)
+    public DeathSystem(IFollowService followService, IDirtyTracker dirtyTracker, IIntentContainer intents, IEventBuffer<DeathEvent> deathEvents)
     {
         _followService = followService;
+        _dirtyTracker = dirtyTracker;
         _intents = intents;
         _deathEvents = deathEvents;
     }
@@ -51,6 +54,8 @@ public sealed class DeathSystem
                 var target = victim.Get<CombatState>().Target;
                 CombatHelpers.ForfeitClaim(target, victim);
             }
+
+            _dirtyTracker.MarkDirty(victim, DirtyReason.Death);
         }
 
         _followService.StopFollowing(victim);

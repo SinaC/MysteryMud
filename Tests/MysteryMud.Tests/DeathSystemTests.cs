@@ -7,6 +7,7 @@ using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Events;
+using MysteryMud.Infrastructure.Persistence;
 using MysteryMud.Tests.Infrastructure;
 
 namespace MysteryMud.Tests;
@@ -19,8 +20,10 @@ public class DeathSystemTests : IDisposable
 
     public DeathSystemTests()
     {
+        var dirtyTracker = new DirtyTracker();
         _sut = new DeathSystem(
             _followService,
+            dirtyTracker,
             _f.Intents,
             _f.DeathEvents);
     }

@@ -1,6 +1,6 @@
 ﻿using Arch.Core;
 
-namespace MysteryMud.Infrastructure.Services;
+namespace MysteryMud.Core.Services;
 
 public interface IConnectionService
 {
@@ -10,4 +10,6 @@ public interface IConnectionService
     bool TryGetConnection(Entity entity, out int connectionId);
 
     bool Remove(int connectionId);
+
+    void Disconnect(Entity entity);
 }

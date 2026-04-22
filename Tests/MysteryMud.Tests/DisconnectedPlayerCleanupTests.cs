@@ -11,6 +11,7 @@ using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 using MysteryMud.Domain.Systems;
+using MysteryMud.Infrastructure.Persistence;
 using MysteryMud.Tests.Infrastructure;
 
 namespace MysteryMud.Tests;
@@ -24,7 +25,8 @@ public class DisconnectedPlayerCleanupTests : IDisposable
     {
         FollowService followService = new(_f.GameMessage);
         GroupService groupService = new(_f.GameMessage);
-        EffectLifecycleManager effectLifecycleManager = new();
+        DirtyTracker dirtyTracker = new();
+        EffectLifecycleManager effectLifecycleManager = new(dirtyTracker);
 
         _sut = new CleanupSystem(
             NullLogger.Instance,

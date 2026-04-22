@@ -17,6 +17,8 @@ using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Time;
 using MysteryMud.Infrastructure.Eventing;
 using MysteryMud.Infrastructure.Services;
+using System.Net.Sockets;
+using static Dapper.SqlMapper;
 
 namespace MysteryMud.ConsoleApp.Hosting;
 
@@ -67,8 +69,9 @@ internal class GameLoop
     private readonly AutoSacrificeSystem _autoSacrificeSystem;
     private readonly LookSystem _lookSystem;
     private readonly ScheduleSystem _scheduleSystem;
-    private readonly CleanupSystem _cleanupSystem;
     private readonly PersistenceSystem _persistenceSystem;
+    private readonly DisconnectSystem _disconnectSystem;
+    private readonly CleanupSystem _cleanupSystem;
 
     public GameLoop(
         ILogger logger,
@@ -114,8 +117,9 @@ internal class GameLoop
         LootSystem lootSystem,
         AutoSacrificeSystem autoSacrificeSystem,
         LookSystem lookSystem,
-        CleanupSystem cleanupSystem,
-        PersistenceSystem persistenceSystem)
+        PersistenceSystem persistenceSystem,
+        DisconnectSystem disconnectSystem,
+        CleanupSystem cleanupSystem)
     {
         _logger = logger;
         _outputService = outputService ?? throw new ArgumentNullException(nameof(outputService));
@@ -160,8 +164,9 @@ internal class GameLoop
         _autoSacrificeSystem = autoSacrificeSystem;
         _lookSystem = lookSystem;
         _scheduleSystem = scheduleSystem;
-        _cleanupSystem = cleanupSystem;
         _persistenceSystem = persistenceSystem;
+        _disconnectSystem = disconnectSystem;
+        _cleanupSystem = cleanupSystem;
     }
 
     public void Run()
@@ -273,11 +278,13 @@ internal class GameLoop
             // Handle scheduleIntents (which can be generated from IA, TimedEffectSytem and ActionOrchestrator)
             _scheduleSystem.Tick(state);
 
-            // Remove destroyed items / dead NPCs / disconnected players
-            _cleanupSystem.Tick(state);
-
             // Persist players
             _persistenceSystem.Update(state);
+            // Process disconnect intents
+            _disconnectSystem.Tick(state);
+
+            // Remove destroyed items / dead NPCs / disconnected players
+            _cleanupSystem.Tick(state);
 
             // Process messages to be sent to players
             _messageBus.Process(state);

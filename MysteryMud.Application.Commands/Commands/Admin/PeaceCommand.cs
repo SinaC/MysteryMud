@@ -11,7 +11,7 @@ namespace MysteryMud.Application.Commands.Commands.Admin;
 
 public class PeaceCommand : ICommand
 {
-    private IGameMessageService _msg;
+    private readonly IGameMessageService _msg;
 
     public PeaceCommand(IGameMessageService msg)
     {

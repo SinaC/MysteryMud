@@ -31,4 +31,6 @@ public interface IIntentWriterContainer
     IIntentWriter<LookIntent> Look { get; }
     // ScheduleSystem
     IIntentWriter<ScheduleIntent> Schedule { get; }
+    // DisconnectSystem
+    IIntentWriter<DisconnectIntent> Disconnect { get; }
 }

@@ -10,7 +10,7 @@ namespace MysteryMud.Domain.Action.Effect.Factories;
 
 public class EffectRuntimeFactory : IEffectRuntimeFactory
 {
-    private IEffectActionFactory _effectActionFactory;
+    private readonly IEffectActionFactory _effectActionFactory;
 
     public EffectRuntimeFactory(IEffectActionFactory effectActionFactory)
     {

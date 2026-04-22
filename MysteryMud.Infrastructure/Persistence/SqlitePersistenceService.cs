@@ -31,8 +31,7 @@ public sealed class SqlitePersistenceService : IPersistenceService
 
     public async Task<long> SavePlayerAsync(PlayerSnapshot snap, CancellationToken ct = default)
     {
-        await using var conn = new SqliteConnection(_connectionString);
-        await conn.OpenAsync(ct);
+        var conn = await OpenConnectionAsync(ct);
         await using var tx = await conn.BeginTransactionAsync(ct);
 
         try
@@ -289,8 +288,7 @@ public sealed class SqlitePersistenceService : IPersistenceService
 
     public async Task<PlayerSnapshot?> LoadPlayerAsync(string name, CancellationToken ct = default)
     {
-        await using var conn = new SqliteConnection(_connectionString);
-        await conn.OpenAsync(ct);
+        var conn = await OpenConnectionAsync(ct);
 
         var row = await conn.QuerySingleOrDefaultAsync("""
         SELECT id, name, level, location_key, position, form,
@@ -400,8 +398,7 @@ public sealed class SqlitePersistenceService : IPersistenceService
 
     public async Task DeletePlayerAsync(long playerId, CancellationToken ct = default)
     {
-        await using var conn = new SqliteConnection(_connectionString);
-        await conn.OpenAsync(ct);
+        var conn = await OpenConnectionAsync(ct);
         // Cascades handle stats, resources, effects, abilities, items, item_effects
         await conn.ExecuteAsync(
             "DELETE FROM players WHERE id = @playerId",
@@ -410,10 +407,18 @@ public sealed class SqlitePersistenceService : IPersistenceService
 
     public async Task<bool> PlayerExistsAsync(string name, CancellationToken ct = default)
     {
-        await using var conn = new SqliteConnection(_connectionString);
-        await conn.OpenAsync(ct);
+        var conn = await OpenConnectionAsync(ct);
         return await conn.ExecuteScalarAsync<long>(
             "SELECT COUNT(1) FROM players WHERE name = @name COLLATE NOCASE",
             new { name }) > 0;
+    }
+
+    //
+    private async Task<SqliteConnection> OpenConnectionAsync(CancellationToken ct = default)
+    {
+        var conn = new SqliteConnection(_connectionString);
+        await conn.OpenAsync(ct);
+        await conn.ExecuteAsync("PRAGMA foreign_keys = ON;");
+        return conn;
     }
 }

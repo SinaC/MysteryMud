@@ -1,6 +1,7 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.Core;
+using MysteryMud.Core.Persistence;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
@@ -13,10 +14,12 @@ namespace MysteryMud.Domain.Systems;
 public class RespawnSystem
 {
     private readonly IGameMessageService _msg;
+    private readonly IDirtyTracker _dirtyTracker;
 
-    public RespawnSystem(IGameMessageService msg)
+    public RespawnSystem(IGameMessageService msg, IDirtyTracker dirtyTracker)
     {
         _msg = msg;
+        _dirtyTracker = dirtyTracker;
     }
 
     public void Tick(GameState state)
@@ -52,6 +55,8 @@ public class RespawnSystem
 
                 // TODO: send to room
                 _msg.To(player).Send($"You have respawned at {location.Room.DisplayName}!");
+
+                _dirtyTracker.MarkDirty(player, DirtyReason.Respawn);
             }
         });
     }

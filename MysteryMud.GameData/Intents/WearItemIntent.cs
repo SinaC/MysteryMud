@@ -5,7 +5,7 @@ namespace MysteryMud.GameData.Intents;
 
 public struct WearItemIntent
 {
-    public Entity Actor;
+    public Entity Entity;
     public Entity Item;
     public EquipmentSlotKind Slot;
 }

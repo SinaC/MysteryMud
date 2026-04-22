@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace MysteryMud.GameData.Definitions;
+﻿namespace MysteryMud.GameData.Definitions;
 
 public struct LearnedAbility
 {

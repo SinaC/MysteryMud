@@ -1,8 +1,10 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.Core;
+using MysteryMud.Core.Persistence;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Components.Items;
@@ -13,10 +15,12 @@ namespace MysteryMud.Domain.Action.Effect;
 
 public class ItemEffectHost : IEffectHost
 {
+    private readonly IDirtyTracker _dirtyTracker;
     private readonly Entity _target;
 
-    public ItemEffectHost(Entity target)
+    public ItemEffectHost(IDirtyTracker dirtyTracker, Entity target)
     {
+        _dirtyTracker = dirtyTracker;
         _target = target;
     }
 
@@ -73,6 +77,17 @@ public class ItemEffectHost : IEffectHost
 
             //_logger.LogInformation(LogEvents.Factory, " - add tag {tag}", effectRuntime.Tag);
         }
+
+        // if item is worn, check character stat/resource/resource regen modifiers
+        ref var equipped = ref _target.TryGetRef<Equipped>(out var isEquipped);
+        if (isEquipped)
+        {
+            var wearer = equipped.Wearer;
+            if (wearer.IsAlive() && wearer.Has<PlayerTag>())
+            {
+                _dirtyTracker.MarkDirty(wearer, DirtyReason.Effects);
+            }
+        }
     }
 
     public void UnregisterEffect(GameState state, Entity effect, EffectRuntime effectRuntime)
@@ -105,6 +120,7 @@ public class ItemEffectHost : IEffectHost
         // destroy effect
         state.World.Destroy(effect);
     }
+
     public void MarkAsDirtyIfNeeded(Entity effect)
     {
         // TODO:
@@ -146,6 +162,9 @@ public class ItemEffectHost : IEffectHost
                 if (effect.Has<CharacterResourceRegenModifiers<RageDecayModifier>>() && !wearer.Has<DirtyRageDecay>())
                     wearer.Add<DirtyRageDecay>();
             }
+
+            if (wearer.Has<PlayerTag>())
+                _dirtyTracker.MarkDirty(wearer, DirtyReason.Effects);
         }
     }
 

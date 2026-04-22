@@ -1,6 +1,7 @@
 ﻿using Arch.Core;
 using Arch.Core.Extensions;
 using MysteryMud.Core.Bus;
+using MysteryMud.Core.Persistence;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
@@ -12,12 +13,14 @@ namespace MysteryMud.Domain.Services;
 public class ExperienceService : IExperienceService
 {
     private readonly IGameMessageService _msg;
+    private readonly IDirtyTracker _dirtyTracker;
     private readonly IEventBuffer<ExperienceGrantedEvent> _experiences;
     private readonly IEventBuffer<LevelIncreasedEvent> _levels;
 
-    public ExperienceService(IGameMessageService msg, IEventBuffer<ExperienceGrantedEvent> experiences, IEventBuffer<LevelIncreasedEvent> levels)
+    public ExperienceService(IGameMessageService msg, IDirtyTracker dirtyTracker, IEventBuffer<ExperienceGrantedEvent> experiences, IEventBuffer<LevelIncreasedEvent> levels)
     {
         _msg = msg;
+        _dirtyTracker = dirtyTracker;
         _experiences = experiences;
         _levels = levels;
     }
@@ -72,6 +75,9 @@ public class ExperienceService : IExperienceService
         else
             _msg.To(player).Act("%gYou lose {0} XP.%x").With(-xpGained);
 
+        if (player.Has<PlayerTag>()) // to be sure
+            _dirtyTracker.MarkDirty(player, DirtyReason.Experience);
+
         var levelIncreased = false;
         if (progression.ExperienceToNextLevel > 0) // ExperienceToNextLevel = 0 means max level reached
         {
@@ -81,6 +87,8 @@ public class ExperienceService : IExperienceService
                 progression.ExperienceToNextLevel = progression.ExperienceByLevel * level.Value;
 
                 // TODO: calculate stats/resources increase
+                //_dirtyTracker.MarkDirty(player, DirtyReason.Stats);
+                //_dirtyTracker.MarkDirty(player, DirtyReason.Resources);
 
                 levelIncreased = true;
 
@@ -101,6 +109,9 @@ public class ExperienceService : IExperienceService
                 player.Add<DirtyStats>();
 
             // TODO: set dirty health, dirty mana, ... ?
+
+            if (player.Has<PlayerTag>())
+                _dirtyTracker.MarkDirty(player, DirtyReason.CoreData);
         }
 
         // add experience awarded event

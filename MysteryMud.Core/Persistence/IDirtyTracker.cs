@@ -11,5 +11,7 @@ public interface IDirtyTracker
     DirtyEntry? DrainEntity(Entity entity);
 
     bool IsDirty(Entity entity);
+
+    bool HasCritical { get; }
     int Count { get; }
 }
