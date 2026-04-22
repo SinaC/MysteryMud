@@ -1,4 +1,5 @@
 ﻿using Arch.Core.Extensions;
+using MysteryMud.Core.Random;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Definitions;
@@ -8,17 +9,19 @@ namespace MysteryMud.Domain.Action.Attack.Resolvers;
 
 public class HitResolver : IHitResolver
 {
+    private readonly IRandom _random;
     private readonly IGameMessageService _msg;
 
-    public HitResolver(IGameMessageService msg)
+    public HitResolver(IRandom random, IGameMessageService msg)
     {
+        _random = random;
         _msg = msg;
     }
 
     public AttackResult Resolve(AttackData attackData)
     {
         ref var stats = ref attackData.Target.Get<EffectiveStats>();
-        var roll = Random.Shared.NextDouble();
+        var roll = _random.NextPercent();
         AttackResultKind result;
 
         if (attackData.IgnoreDefense)

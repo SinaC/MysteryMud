@@ -12,14 +12,20 @@ using System.Text.Json;
 
 namespace MysteryMud.Infrastructure.Persistence;
 
-public partial class JsonEffectLoader
+public class JsonEffectLoader
 {
     private static readonly JsonSerializerOptions _serializerOptions = new()
     {
         Converters = { new EffectActionDataConverter(), new ContextualizedMessageConverter() },
         PropertyNameCaseInsensitive = true
     };
-    private static readonly EffectFormulaCompiler _formulaCompiler = new();
+
+    private readonly EffectFormulaCompiler _formulaCompiler;
+
+    public JsonEffectLoader(EffectFormulaCompiler formulaCompiler)
+    {
+        _formulaCompiler = formulaCompiler;
+    }
 
     public List<EffectDefinition> Load(string filePath)
     {

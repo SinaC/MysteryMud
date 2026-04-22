@@ -6,7 +6,7 @@ using MysteryMud.Domain.Services;
 
 namespace MysteryMud.Application.Commands.Commands;
 
-public class GtellCommand : ICommand
+public sealed class GtellCommand : ICommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.FullText;
 

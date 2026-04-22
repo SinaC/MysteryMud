@@ -1,14 +1,22 @@
 ﻿using Arch.Core;
+using MysteryMud.Core.Random;
 
 namespace MysteryMud.Domain.Ability.Resolvers;
 
 public class ChanceBasedOutcomeResolver : IAbilityOutcomeResolver
 {
+    private readonly IRandom _random;
+
+    public ChanceBasedOutcomeResolver(IRandom random)
+    {
+        _random = random;
+    }
+
     public AbilityOutcomeResult Resolve(Entity caster, AbilityRuntime ability)
     {
         int chance = GetSkill(caster, ability);
 
-        if (Random.Shared.Next(0, 100) < chance)
+        if (_random.Chance(chance))
         {
             return new AbilityOutcomeResult
             {

@@ -1,11 +1,19 @@
-﻿using MysteryMud.Domain.Ability.Definitions;
+﻿using MysteryMud.Core.Random;
+using MysteryMud.Domain.Ability.Definitions;
 using MysteryMud.Domain.Ability.Rules;
 
 namespace MysteryMud.Domain.Ability.Factories;
 
-public static class ValidationRuleFactory
+public class ValidationRuleFactory : IValidationRuleFactory
 {
-    public static IAbilityValidationRule Create(AbilityRuleDefinition def)
+    private readonly IRandom _random;
+
+    public ValidationRuleFactory(IRandom random)
+    {
+        _random = random;
+    }
+
+    public IAbilityValidationRule Create(AbilityRuleDefinition def)
         => def switch
         {
             CharacterAffectedByRuleDefinition rule => new CharacterAffectedByRule(rule.Condition, rule.FailBehaviour, rule.FailMessageKey, rule.EffectTagId),
@@ -14,7 +22,7 @@ public static class ValidationRuleFactory
             ItemNotAffectedByRuleDefinition rule => new ItemNotAffectedByRule(rule.Condition, rule.FailBehaviour, rule.FailMessageKey, rule.EffectTagId),
             HasWeaponTypeRuleDefinition rule => new HasWeaponTypeRule(rule.Condition, rule.FailBehaviour, rule.FailMessageKey, rule.Required),
             NotFightingRuleDefinition rule => new NotFightingRule(rule.Condition, rule.FailBehaviour, rule.FailMessageKey),
-            SavesSpellRuleDefinition rule => new SavesSpellRule(rule.Condition, rule.FailBehaviour, rule.FailMessageKey, rule.DamageKind),
+            SavesSpellRuleDefinition rule => new SavesSpellRule(_random, rule.Condition, rule.FailBehaviour, rule.FailMessageKey, rule.DamageKind),
             _ => throw new Exception($"Unknown validation rule type: {def.GetType()}")
         };
 }

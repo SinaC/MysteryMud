@@ -1,25 +1,35 @@
-﻿namespace MysteryMud.Domain.Helpers;
+﻿using MysteryMud.Core.Random;
 
-public static class CastMessageHelpers // TODO: move to json ?
+namespace MysteryMud.Domain.Services;
+
+public class CastMessageService: ICastMessageService
 {
-    // to be used for instant cast
-    public static string CasterInstantMessage => CasterInstantMessages[Random.Shared.Next(0, CasterInstantMessages.Length)];
-    public static string RoomInstantMessage => RoomInstantMessages[Random.Shared.Next(0, RoomInstantMessages.Length)];
-    // to be used when start casting (cast time > 0)
-    public static string CasterStartMessage => CasterStartMessages[Random.Shared.Next(0, CasterStartMessages.Length)];
-    public static string RoomStartMessage => RoomStartMessages[Random.Shared.Next(0, RoomStartMessages.Length)];
-    // to be used when casting is ongoing
-    public static string CasterTickMessage => CasterTickMessages[Random.Shared.Next(0, CasterTickMessages.Length)];
-    public static string RoomTickMessage => RoomTickMessages[Random.Shared.Next(0, RoomTickMessages.Length)];
-    // to be used when casting is complete
-    public static string CasterFinishMessage => CasterFinishMessages[Random.Shared.Next(0, CasterFinishMessages.Length)];
-    public static string RoomFinishMessage => RoomFinishMessages[Random.Shared.Next(0, RoomFinishMessages.Length)];
-    // to be used for interrupt
-    public static string CasterInterruptMessage => CasterInterruptMessages[Random.Shared.Next(0, CasterInterruptMessages.Length)];
-    public static string RoomInterruptMessage => RoomInterruptMessages[Random.Shared.Next(0, RoomInterruptMessages.Length)];
+    private readonly IRandom _random;
+
+    public CastMessageService(IRandom random)
+    {
+        _random = random;
+    }
 
     // to be used for instant cast
-    public static readonly string[] CasterInstantMessages =
+    public string CasterInstantMessage => CasterInstantMessages[_random.Next(0, CasterInstantMessages.Length)];
+    public string RoomInstantMessage => RoomInstantMessages[_random.Next(0, RoomInstantMessages.Length)];
+    // to be used when start casting (cast time > 0)
+    public string CasterStartMessage => CasterStartMessages[_random.Next(0, CasterStartMessages.Length)];
+    public string RoomStartMessage => RoomStartMessages[_random.Next(0, RoomStartMessages.Length)];
+    // to be used when casting is ongoing
+    public string CasterTickMessage => CasterTickMessages[_random.Next(0, CasterTickMessages.Length)];
+    public string RoomTickMessage => RoomTickMessages[_random.Next(0, RoomTickMessages.Length)];
+    // to be used when casting is complete
+    public string CasterFinishMessage => CasterFinishMessages[_random.Next(0, CasterFinishMessages.Length)];
+    public string RoomFinishMessage => RoomFinishMessages[_random.Next(0, RoomFinishMessages.Length)];
+    // to be used for interrupt
+    public string CasterInterruptMessage => CasterInterruptMessages[_random.Next(0, CasterInterruptMessages.Length)];
+    public string RoomInterruptMessage => RoomInterruptMessages[_random.Next(0, RoomInterruptMessages.Length)];
+
+    // TODO: move to json ?
+    // to be used for instant cast
+    private static readonly string[] CasterInstantMessages =
     [
         // clean/default
         "You cast '{0}'.",
@@ -34,7 +44,7 @@ public static class CastMessageHelpers // TODO: move to json ?
         "You snap your focus into '{0}'.",
         "You weave and release '{0}' in a heartbeat.",
     ];
-    public static readonly string[] RoomInstantMessages =
+    private static readonly string[] RoomInstantMessages =
     [
         // clean/default
         //"{0} casts '{1}'.",
@@ -51,7 +61,7 @@ public static class CastMessageHelpers // TODO: move to json ?
     ];
 
     // to be used when start casting (cast time > 0)
-    public static readonly string[] CasterStartMessages =
+    private static readonly string[] CasterStartMessages =
     [
         // clean/default
         "You begin concentrating to cast '{0}'.",
@@ -66,7 +76,7 @@ public static class CastMessageHelpers // TODO: move to json ?
         "You start weaving the energies of '{0}'.",
         "You reach out to the arcane forces to cast'{0}'.",
     ];
-    public static readonly string[] RoomStartMessages =
+    private static readonly string[] RoomStartMessages =
     [
         // neutral/classic
         "{0} begins concentrating on a spell.",
@@ -86,7 +96,7 @@ public static class CastMessageHelpers // TODO: move to json ?
     ];
 
     // to be used when casting is ongoing
-    public static readonly string[] CasterTickMessages =
+    private static readonly string[] CasterTickMessages =
     [
         // minimal
         "You continue concentrating.",
@@ -101,7 +111,7 @@ public static class CastMessageHelpers // TODO: move to json ?
         "You keep channeling magical power.",
         "Your mind remains fixed on the spell."
     ];
-    public static readonly string[] RoomTickMessages =
+    private static readonly string[] RoomTickMessages =
     [
         // neutral/classic
         "{0} continues concentrating.",
@@ -119,7 +129,7 @@ public static class CastMessageHelpers // TODO: move to json ?
     ];
 
     // to be used when casting is complete
-    public static readonly string[] CasterFinishMessages =
+    private static readonly string[] CasterFinishMessages =
     [
         // clean
         "You complete your concentration and cast '{0}'.",
@@ -133,7 +143,7 @@ public static class CastMessageHelpers // TODO: move to json ?
         "The spell forms—you cast '{0}'.",
     ];
 
-    public static readonly string[] RoomFinishMessages =
+    private static readonly string[] RoomFinishMessages =
     [
         // classic
         "{0} completes {0:s} spell.",
@@ -148,7 +158,7 @@ public static class CastMessageHelpers // TODO: move to json ?
     ];
 
     // to be used for interrupt
-    public static readonly string[] CasterInterruptMessages =
+    private static readonly string[] CasterInterruptMessages =
     [
         // clear
         "Your concentration is broken! You fail to cast '{0}'.",
@@ -159,7 +169,7 @@ public static class CastMessageHelpers // TODO: move to json ?
         "The spell collapses before completion!",
     ];
 
-    public static readonly string[] RoomInterruptMessages =
+    private static readonly string[] RoomInterruptMessages =
     [
         // basic
         "{0}’s concentration is broken!.",

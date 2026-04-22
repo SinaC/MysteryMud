@@ -9,7 +9,7 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.Commands.Commands;
 
-public class CastCommand : ICommand
+public sealed class CastCommand : ICommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetPair;
 

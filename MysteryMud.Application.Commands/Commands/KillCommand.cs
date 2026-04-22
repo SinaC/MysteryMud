@@ -12,7 +12,7 @@ using MysteryMud.Domain.Services;
 
 namespace MysteryMud.Application.Commands.Commands;
 
-public class KillCommand : ICommand
+public sealed class KillCommand : ICommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.Target;
 
@@ -48,14 +48,13 @@ public class KillCommand : ICommand
             return;
         }
 
-        // TODO: check if already in combat, if so, maybe switch targets? Or maybe not allow switching targets?
         if (actor.Has<CombatState>())
         {
             _msg.To(actor).Send("You do the best you can!");
             return;
         }
 
-        // TODO: check if target is already fighting
+        // TODO: check if target already in combat, if so, maybe switch targets? Or maybe not allow switching targets?
 
         // flag both as in combat with each other, with the target striking back after a delay
         CombatHelpers.EnterCombat(state, actor, target.Value);

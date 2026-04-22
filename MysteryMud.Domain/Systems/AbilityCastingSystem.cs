@@ -7,7 +7,6 @@ using MysteryMud.Domain.Ability;
 using MysteryMud.Domain.Ability.Services;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
-using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
@@ -18,14 +17,16 @@ public class AbilityCastingSystem
 {
     private readonly ILogger _logger;
     private readonly IGameMessageService _msg;
+    private readonly ICastMessageService _castMessageService;
     private readonly IIntentContainer _intents;
     private readonly IAbilityRegistry _abilityRegistry;
     private readonly IAbilityTargetResolver _abilityTargetResolver;
 
-    public AbilityCastingSystem(ILogger logger, IGameMessageService msg, IIntentContainer intents, IAbilityRegistry abilityRegistry, IAbilityTargetResolver abilityTargetResolver)
+    public AbilityCastingSystem(ILogger logger, IGameMessageService msg, ICastMessageService castMessageService, IIntentContainer intents, IAbilityRegistry abilityRegistry, IAbilityTargetResolver abilityTargetResolver)
     {
         _logger = logger;
         _msg = msg;
+        _castMessageService = castMessageService;
         _intents = intents;
         _abilityRegistry = abilityRegistry;
         _abilityTargetResolver = abilityTargetResolver;
@@ -48,8 +49,8 @@ public class AbilityCastingSystem
             {
                 if (state.CurrentTick - casting.LastUpdate >= 5 )
                 {
-                    _msg.To(source).Send(CastMessageHelpers.CasterTickMessage);
-                    _msg.ToRoom(source).Act(CastMessageHelpers.RoomTickMessage).With(source);
+                    _msg.To(source).Send(_castMessageService.CasterTickMessage);
+                    _msg.ToRoom(source).Act(_castMessageService.RoomTickMessage).With(source);
                     casting.LastUpdate = state.CurrentTick;
                 }
                 return;
@@ -61,8 +62,8 @@ public class AbilityCastingSystem
                 return;
             }
 
-            _msg.To(source).Act(CastMessageHelpers.CasterFinishMessage).With(abilityRuntime.Name);
-            _msg.ToRoom(source).Act(CastMessageHelpers.RoomFinishMessage).With(source);
+            _msg.To(source).Act(_castMessageService.CasterFinishMessage).With(abilityRuntime.Name);
+            _msg.ToRoom(source).Act(_castMessageService.RoomFinishMessage).With(source);
 
             List<Entity> targets;
             if (casting.ResolvedTargets is not null)

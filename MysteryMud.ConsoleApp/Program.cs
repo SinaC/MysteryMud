@@ -18,9 +18,11 @@ using MysteryMud.Core.Contracts;
 using MysteryMud.Core.Effects;
 using MysteryMud.Core.Extensions;
 using MysteryMud.Core.Persistence;
+using MysteryMud.Core.Random;
 using MysteryMud.Core.Scheduler;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Ability;
+using MysteryMud.Domain.Ability.Factories;
 using MysteryMud.Domain.Ability.Resolvers;
 using MysteryMud.Domain.Ability.Services;
 using MysteryMud.Domain.Action;
@@ -48,6 +50,7 @@ using MysteryMud.Infrastructure.Intent;
 using MysteryMud.Infrastructure.Network;
 using MysteryMud.Infrastructure.Persistence;
 using MysteryMud.Infrastructure.Persistence.Schema;
+using MysteryMud.Infrastructure.Random;
 using MysteryMud.Infrastructure.Scheduler;
 using MysteryMud.Infrastructure.Services;
 using Serilog;
@@ -108,7 +111,7 @@ trollEffectiveStats.Parry = 0; // for testing, make sure all hits land so we can
 trollEffectiveStats.CounterAttack = 100; // for testing, make sure all we counterattack every time so we can see the counterattack in action
 var sword = ItemFactory.CreateItemInRoom(world, "sword", "a %#FFFFFF>#FFFF00shiny sword%x", market);
 sword.Add(new Equipable { Slot = EquipmentSlotKind.MainHand });
-sword.Add(new Weapon { Kind = WeaponKind.Sword, DiceCount = 5, DiceValue = 10, ProcIds = ["Flaming".ComputeUniqueId()] }); // add flaming
+sword.Add(new Weapon { Kind = WeaponKind.Sword, DiceCount = 5, DiceSides = 10, ProcIds = ["Flaming".ComputeUniqueId()] }); // add flaming
 var chest = world.Create(
             new ItemTag(),
             new Name { Value = "chest" },
@@ -127,7 +130,7 @@ var chest = world.Create(
         );
 var dagger = ItemFactory.CreateItemInRoom(world, "dagger", "a vampiric dagger", market);
 dagger.Add(new Equipable { Slot = EquipmentSlotKind.MainHand });
-dagger.Add(new Weapon { Kind = WeaponKind.Dagger, DiceCount = 5, DiceValue = 8, ProcIds = ["Vampiric".ComputeUniqueId()] }); // add vampiric
+dagger.Add(new Weapon { Kind = WeaponKind.Dagger, DiceCount = 5, DiceSides = 8, ProcIds = ["Vampiric".ComputeUniqueId()] }); // add vampiric
 dagger.Get<Level>().Value = 20;
 market.Get<RoomContents>().Items.Add(chest);
 var gem = ItemFactory.CreateItemInContainer(world, "gem", "a %#FF0000>#FF00FFsparkling gem%x", chest);
@@ -148,8 +151,11 @@ RoomFactory.RespawnRoomEntity = temple;
 
 var basePath = AppContext.BaseDirectory;
 
+var random = new SeededRandom();
+var formulaCompiler = new EffectFormulaCompiler(random);
+
 // load effect definitions
-var effectLoader = new JsonEffectLoader();
+var effectLoader = new JsonEffectLoader(formulaCompiler);
 var effectDefinitions = effectLoader.Load(Path.Combine(basePath, gamePaths.EffectsJson));
 var effectActionFactory = new EffectActionFactory(logger);
 var effectRuntimeFactory = new EffectRuntimeFactory(effectActionFactory);
@@ -160,14 +166,16 @@ effectRegistry.Register(effectDefinitions);
 // TODO: autodiscover with reflection
 var abilityOutcomeResolverRegistry = new AbilityOutcomeResolverRegistry();
 abilityOutcomeResolverRegistry.Register("default", new DefaultOutcomeResolver());
-abilityOutcomeResolverRegistry.Register("chancebased", new ChanceBasedOutcomeResolver());
-abilityOutcomeResolverRegistry.Register("berserk", new BerserkOutcomeResolver());
+abilityOutcomeResolverRegistry.Register("chancebased", new ChanceBasedOutcomeResolver(random));
+abilityOutcomeResolverRegistry.Register("berserk", new BerserkOutcomeResolver(random));
 
 // load ability definitions
 var abilityLoader = new JsonAbilityLoader();
 var abilityDefinitions = abilityLoader.Load(Path.Combine(basePath, gamePaths.AbilitiesJson));
-var skillCommandDefinitions = abilityDefinitions.Where(x => x.Kind == AbilityKind.Skill && x.Command is not null).Select(x => x.Command!.Value).ToArray(); 
-var abilityRegistry = new AbilityRegistry(effectRegistry, abilityOutcomeResolverRegistry);
+var skillCommandDefinitions = abilityDefinitions.Where(x => x.Kind == AbilityKind.Skill && x.Command is not null).Select(x => x.Command!.Value).ToArray();
+var validationRuleFactory = new ValidationRuleFactory(random);
+var abilityRuntimeFactory = new AbilityRuntimeFactory(validationRuleFactory);
+var abilityRegistry = new AbilityRegistry(effectRegistry, abilityOutcomeResolverRegistry, abilityRuntimeFactory);
 abilityRegistry.Register(abilityDefinitions);
 
 // load weapon proc definitions
@@ -193,6 +201,9 @@ var connectionString = $"Data Source={dbPath};Pooling=True;";
 
 // === DI container ===
 var services = new ServiceCollection();
+
+// Random
+services.AddSingleton<IRandom, SeededRandom>();
 
 // DB
 // Run migration scripts
@@ -321,6 +332,7 @@ services.AddSingleton<ISacrificeService, SacrificeService>();
 services.AddSingleton<IEffectDisplayService, EffectDisplayService>();
 services.AddSingleton<IFollowService, FollowService>();
 services.AddSingleton<IGroupService, GroupService>();
+services.AddSingleton<ICastMessageService, CastMessageService>();
 
 // Command dispatcher
 services.AddSingleton<ICommandDispatcher, CommandDispatcher>();

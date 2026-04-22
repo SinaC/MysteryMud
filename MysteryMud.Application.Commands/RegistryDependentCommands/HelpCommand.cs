@@ -10,7 +10,7 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.Commands.RegistryDependentCommands;
 
-public class HelpCommand : IExplicitCommand
+public sealed class HelpCommand : IExplicitCommand
 {
     private const string Name = "help";
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.Target;
@@ -23,7 +23,7 @@ public class HelpCommand : IExplicitCommand
         Id = Name.ComputeUniqueId(),
         Name = Name,
         Aliases = ["?"],
-        CannotBeForced = true, // TODO: test
+        CannotBeForced = true,
         RequiredLevel = CommandLevelKind.Player,
         MinimumPosition = PositionKind.Dead,
         Priority = 0,

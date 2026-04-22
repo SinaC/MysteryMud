@@ -12,16 +12,18 @@ public class AbilityRegistry : IAbilityRegistry
 
     private readonly IEffectRegistry _effectRegistry;
     private readonly IAbilityOutcomeResolverRegistry _abilityExecutionResolverRegistry;
+    private readonly IAbilityRuntimeFactory _abilityRuntimeFactory;
 
-    public AbilityRegistry(IEffectRegistry effectRegistry, IAbilityOutcomeResolverRegistry abilityExecutionResolverRegistry)
+    public AbilityRegistry(IEffectRegistry effectRegistry, IAbilityOutcomeResolverRegistry abilityExecutionResolverRegistry, IAbilityRuntimeFactory abilityRuntimeFactory)
     {
         _effectRegistry = effectRegistry;
         _abilityExecutionResolverRegistry = abilityExecutionResolverRegistry;
+        _abilityRuntimeFactory = abilityRuntimeFactory;
     }
 
     public void Register(AbilityDefinition ability)
     {
-        var abilityRuntime = AbilityRuntimeFactory.Create(_effectRegistry, _abilityExecutionResolverRegistry, ability);
+        var abilityRuntime = _abilityRuntimeFactory.Create(_effectRegistry, _abilityExecutionResolverRegistry, ability);
         _abilitiesById.Add(ability.Id, abilityRuntime);
         _abilityWordTrie.Insert(ability.Name.ToLowerInvariant(), abilityRuntime);
     }

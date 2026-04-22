@@ -9,7 +9,7 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.Commands.Commands;
 
-public class EquipmentCommand : ICommand
+public sealed class EquipmentCommand : ICommand
 {
     private readonly IGameMessageService _msg;
 

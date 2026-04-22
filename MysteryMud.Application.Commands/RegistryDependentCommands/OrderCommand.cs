@@ -17,7 +17,7 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.Commands.RegistryDependentCommands;
 
-public class OrderCommand : IExplicitCommand
+public sealed class OrderCommand : IExplicitCommand
 {
     private const string Name = "order";
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetAndText;

@@ -13,7 +13,7 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.Commands.Commands.Admin;
 
-public class TestCommand : ICommand
+public sealed class TestCommand : ICommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetAndText;
 

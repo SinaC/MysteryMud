@@ -9,7 +9,7 @@ using MysteryMud.Domain.Services;
 
 namespace MysteryMud.Application.Commands.Commands.Admin;
 
-public class PeaceCommand : ICommand
+public sealed class PeaceCommand : ICommand
 {
     private readonly IGameMessageService _msg;
 

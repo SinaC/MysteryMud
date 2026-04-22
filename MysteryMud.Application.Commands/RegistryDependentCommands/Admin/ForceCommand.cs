@@ -18,7 +18,7 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.Commands.RegistryDependentCommands.Admin;
 
-public class ForceCommand : IExplicitCommand
+public sealed class ForceCommand : IExplicitCommand
 {
     private const string Name = "force";
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetAndText;

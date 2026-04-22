@@ -4,9 +4,16 @@ using MysteryMud.Domain.Action.Effect;
 
 namespace MysteryMud.Domain.Ability.Factories;
 
-public static class AbilityRuntimeFactory
+public class AbilityRuntimeFactory : IAbilityRuntimeFactory
 {
-    public static AbilityRuntime Create(IEffectRegistry effectRegistry, IAbilityOutcomeResolverRegistry abilityOutcomeResolverRegistry, AbilityDefinition def)
+    private readonly IValidationRuleFactory _validationRuleFactory;
+
+    public AbilityRuntimeFactory(IValidationRuleFactory validationRuleFactory)
+    {
+        _validationRuleFactory = validationRuleFactory;
+    }
+
+    public AbilityRuntime Create(IEffectRegistry effectRegistry, IAbilityOutcomeResolverRegistry abilityOutcomeResolverRegistry, AbilityDefinition def)
     {
         if (def.ConditionalEffectGroups == null || def.ConditionalEffectGroups.Count == 0)
             throw new Exception($"No effect found on ability {def.Name}");
@@ -47,12 +54,12 @@ public static class AbilityRuntimeFactory
         };
     }
 
-    private static List<IAbilityValidationRule> MapValidationRules(IEnumerable<AbilityRuleDefinition> ruleDefinitions)
+    private List<IAbilityValidationRule> MapValidationRules(IEnumerable<AbilityRuleDefinition> ruleDefinitions)
     {
         var rules = new List<IAbilityValidationRule>();
         foreach (var ruleDef in ruleDefinitions)
         {
-            var rule = ValidationRuleFactory.Create(ruleDef);
+            var rule = _validationRuleFactory.Create(ruleDef);
             rules.Add(rule);
         }
         return rules;

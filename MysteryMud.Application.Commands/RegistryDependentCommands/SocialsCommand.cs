@@ -10,7 +10,7 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.Commands.RegistryDependentCommands;
 
-public class SocialsCommand : IExplicitCommand
+public sealed class SocialsCommand : IExplicitCommand
 {
     private const string Name = "socials";
 

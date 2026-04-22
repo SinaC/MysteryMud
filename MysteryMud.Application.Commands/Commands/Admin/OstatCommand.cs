@@ -13,7 +13,7 @@ using MysteryMud.Domain.Services;
 
 namespace MysteryMud.Application.Commands.Commands.Admin;
 
-public class OstatCommand : ICommand
+public sealed class OstatCommand : ICommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.Target;
 
@@ -43,7 +43,6 @@ public class OstatCommand : ICommand
             return;
         }
 
-        // TODO: ref ?
         var (name, itemEffects) = target.Value.Get<Name, ItemEffects>();
         _msg.To(actor).Send($"Name: {name.Value}");
         ref var description = ref target.Value.TryGetRef<Description>(out var hasDescription);

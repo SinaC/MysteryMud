@@ -14,7 +14,7 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.Commands.DataDrivenCommands;
 
-public class SocialCommand : IExplicitCommand
+public sealed class SocialCommand : IExplicitCommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.Target;
 
