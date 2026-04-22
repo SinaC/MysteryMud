@@ -40,11 +40,25 @@ public sealed class SkillCommand : IExplicitCommand
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
         // search ability (should always be found because SkillCommands are generated from abilities)
-        if (!_abilityRegistry.StartsWith(Definition.Name, out var abilityRuntime) || abilityRuntime == null || abilityRuntime.Kind != AbilityKind.Skill)
+        var startsWithResult = _abilityRegistry.StartsWith(ctx.Primary.Name.ToString(), out var abilityRuntime);
+        if (startsWithResult == Core.Utilities.StartsWithResult.NotFound
+            || (abilityRuntime != null && abilityRuntime.Kind != AbilityKind.Skill))
         {
             _msg.To(actor).Send("You don't know any skills of that name.");
             return;
         }
+        if (startsWithResult == Core.Utilities.StartsWithResult.Ambiguous)
+        {
+            _msg.To(actor).Send("You know multiple skills with that name.");
+            return;
+        }
+        if (abilityRuntime == null)
+        {
+            _msg.To(actor).Send("Something goes wrong!");
+            _logger.LogError("Skill: '{skillName}' returns a null ability runtime", ctx.Primary.Name.ToString());
+            return;
+        }
+
         var abilityId = abilityRuntime.Id;
 
         // TODO: check arguments depending on skill

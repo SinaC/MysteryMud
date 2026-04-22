@@ -1,4 +1,5 @@
-﻿using MysteryMud.Domain.Ability.Definitions;
+﻿using MysteryMud.Core.Utilities;
+using MysteryMud.Domain.Ability.Definitions;
 
 namespace MysteryMud.Domain.Ability;
 
@@ -8,5 +9,5 @@ public interface IAbilityRegistry
     void Register(IEnumerable<AbilityDefinition> abilities);
 
     public bool TryGetRuntime(int abilityId, out AbilityRuntime? abilityRuntime);
-    public bool StartsWith(string key, out AbilityRuntime? value);
+    public StartsWithResult StartsWith(string key, out AbilityRuntime? value);
 }

@@ -156,20 +156,15 @@ public class JsonEffectLoader
                             Modifier = modifier,
                             ValueCompiledFormula = valueFunc
                         },
-                        "Mana" => new ManaModifierActionDefinition
+                        "Move" => new MoveModifierActionDefinition
                         {
                             Trigger = trigger,
                             Modifier = modifier,
                             ValueCompiledFormula = valueFunc
                         },
-                        "Energy" => new EnergyModifierActionDefinition
+                        "Mana" or "Energy" or "Rage" => new ResourceModifierActionDefinition
                         {
-                            Trigger = trigger,
-                            Modifier = modifier,
-                            ValueCompiledFormula = valueFunc
-                        },
-                        "Rage" => new RageModifierActionDefinition
-                        {
+                            Resource = Enum.Parse<ResourceKind>(data.Resource, ignoreCase: true),
                             Trigger = trigger,
                             Modifier = modifier,
                             ValueCompiledFormula = valueFunc
@@ -190,20 +185,15 @@ public class JsonEffectLoader
                             Modifier = modifier,
                             ValueCompiledFormula = valueFunc
                         },
-                        "Mana" => new ManaRegenModifierActionDefinition
+                        "Move" => new MoveRegenModifierActionDefinition
                         {
                             Trigger = trigger,
                             Modifier = modifier,
                             ValueCompiledFormula = valueFunc
                         },
-                        "Energy" => new EnergyRegenModifierActionDefinition
+                        "Mana" or "Energy" or "Rage" => new ResourceRegenModifierActionDefinition
                         {
-                            Trigger = trigger,
-                            Modifier = modifier,
-                            ValueCompiledFormula = valueFunc
-                        },
-                        "Rage" => new RageRegenModifierActionDefinition
-                        {
+                            Resource = Enum.Parse<ResourceKind>(data.Resource, ignoreCase: true),
                             Trigger = trigger,
                             Modifier = modifier,
                             ValueCompiledFormula = valueFunc
@@ -224,16 +214,6 @@ public class JsonEffectLoader
                     };
                 }
 
-            case InstantHealData data:
-                {
-                    var amountFunc = _formulaCompiler.Compile(data.HealFormula);
-                    return new InstantHealActionDefinition
-                    {
-                        Trigger = trigger,
-                        AmountCompiledFormula = amountFunc
-                    };
-                }
-
             case PeriodicDamageData data:
                 {
                     var mode = EnumParser.Parse(data.Mode, EffectFormulaEvaluationMode.Snapshotted);
@@ -248,6 +228,16 @@ public class JsonEffectLoader
                     };
                 }
 
+            case InstantHealData data:
+                {
+                    var amountFunc = _formulaCompiler.Compile(data.HealFormula);
+                    return new InstantHealActionDefinition
+                    {
+                        Trigger = trigger,
+                        AmountCompiledFormula = amountFunc
+                    };
+                }
+
             case InstantDamageData data:
                 {
                     var amountFunc = _formulaCompiler.Compile(data.DamageFormula);
@@ -257,6 +247,28 @@ public class JsonEffectLoader
                         Trigger = trigger,
                         AmountCompiledFormula = amountFunc,
                         Kind = dmgKind
+                    };
+                }
+
+            case InstantRestoreMoveData data:
+                {
+                    var amountFunc = _formulaCompiler.Compile(data.MoveFormula);
+                    return new InstantRestoreMoveActionDefinition
+                    {
+                        Trigger = trigger,
+                        AmountCompiledFormula = amountFunc
+                    };
+                }
+
+            case InstantRestoreResourceData data:
+                {
+                    var amountFunc = _formulaCompiler.Compile(data.ValueFormula);
+                    var resource = Enum.Parse<ResourceKind>(data.Resource);
+                    return new InstantRestoreResourceActionDefinition
+                    {
+                        Resource = resource,
+                        Trigger = trigger,
+                        AmountCompiledFormula = amountFunc
                     };
                 }
 

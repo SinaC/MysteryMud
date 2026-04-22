@@ -14,6 +14,7 @@ using MysteryMud.Domain.Action.Attack.Resolvers;
 using MysteryMud.Domain.Action.Damage;
 using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Action.Heal;
+using MysteryMud.Domain.Action.Move;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
@@ -88,11 +89,12 @@ static class Demo2
         var aggroResolver = new AggroResolver();
         var damageResolver = new DamageResolver(aggroResolver, gameMessageService, damagedEventBuffer, deathEventBuffer, killRewardEventBuffer);
         var healResolver = new HealResolver(aggroResolver, gameMessageService, healedEventBuffer);
+        var moveResolver = new MoveResolver(gameMessageService);
         var hitResolver = new HitResolver(random, gameMessageService);
         var hitDamageFactory = new HitDamageFactory();
         var weaponProcResolver = new WeaponProcResolver(logger, random, gameMessageService, intentBusContainer, weaponProcRegistry, effectRegistry);
         var reactionResolver = new ReactionResolver(random, gameMessageService);
-        var effectExecutor = new EffectExecutor(damageResolver, healResolver);
+        var effectExecutor = new EffectExecutor(damageResolver, healResolver, moveResolver);
         var effectLifecycleManager = new EffectLifecycleManager(dirtyTracker);
         var effectApplicationManager = new EffectApplicationManager(logger, gameMessageService, dirtyTracker, intentBusContainer, effectExecutor, effectLifecycleManager);
 

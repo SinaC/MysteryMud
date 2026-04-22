@@ -119,23 +119,23 @@ public static class ResourceHelpers
         return false;
     }
 
-    public static void ModifyResource(Entity e, ResourceKind type, int delta)
+    public static void ModifyResource(Entity e, ResourceKind type, decimal delta)
     {
         switch (type)
         {
             case ResourceKind.Mana:
                 ref var m = ref e.Get<Mana>();
-                m.Current += delta;
+                m.Current = (int)Math.Round(Math.Clamp(m.Current + delta, 0, m.Max), MidpointRounding.AwayFromZero);
                 break;
 
             case ResourceKind.Rage:
                 ref var r = ref e.Get<Rage>();
-                r.Current += delta;
+                r.Current = (int)Math.Round(Math.Clamp(r.Current + delta, 0, r.Max), MidpointRounding.AwayFromZero);
                 break;
 
             case ResourceKind.Energy:
                 ref var en = ref e.Get<Energy>();
-                en.Current += delta;
+                en.Current = (int)Math.Round(Math.Clamp(en.Current + delta, 0, en.Max), MidpointRounding.AwayFromZero);
                 break;
         }
     }

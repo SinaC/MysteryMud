@@ -51,7 +51,8 @@ public class WordTrie<T>
         node.Value = value;
     }
 
-    public bool StartsWith(ReadOnlySpan<char> input, out T? value)
+    // TODO: return a result: found, ambiguous, not found
+    public StartsWithResult StartsWith(ReadOnlySpan<char> input, out T? value)
     {
         var node = _root;
         int index = 0;
@@ -63,14 +64,16 @@ public class WordTrie<T>
             if (ambiguous || match == null)
             {
                 value = default;
-                return false;
+                return StartsWithResult.Ambiguous;
             }
 
             node = match;
         }
 
         value = node.FirstDescendantValue ?? node.Value;
-        return value != null;
+        return value != null
+            ? StartsWithResult.Found
+            : StartsWithResult.NotFound;
     }
 
     // match token against children using prefix

@@ -245,7 +245,7 @@ public static class PlayerFactory
             new BaseMove { Max = 1000 },
             new MoveRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
         player.Add(
-            new Mana { Current = 100, Max = 100 },
+            new Mana { Current = 100, Max = 1000 },
             new BaseMana { Max = 100 },
             new ManaRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
             new UsesMana());
