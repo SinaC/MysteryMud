@@ -6,7 +6,7 @@ public struct Weapon
 {
     public WeaponKind Kind;
     public int DiceCount;
-    public int DiceValue;
+    public int DiceSides;
 
     public List<int> ProcIds;
 }

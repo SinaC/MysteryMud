@@ -11,7 +11,7 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.Commands.Commands;
 
-public class WestCommand : ICommand
+public sealed class WestCommand : ICommand
 {
     private readonly IGameMessageService _msg;
     private readonly IIntentWriterContainer _intents;

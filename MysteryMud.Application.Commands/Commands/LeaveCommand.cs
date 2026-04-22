@@ -7,7 +7,7 @@ using MysteryMud.Domain.Services;
 
 namespace MysteryMud.Application.Commands.Commands;
 
-public class LeaveCommand : ICommand
+public sealed class LeaveCommand : ICommand
 {
     private readonly IGameMessageService _msg;
     private readonly IGroupService _groupService;

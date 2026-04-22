@@ -10,7 +10,7 @@ using MysteryMud.Domain.Services;
 namespace MysteryMud.Application.Commands.Commands;
 
 // important note: even when worn item stays in inventory
-public class InventoryCommand : ICommand
+public sealed class InventoryCommand : ICommand
 {
     private readonly IGameMessageService _msg;
 

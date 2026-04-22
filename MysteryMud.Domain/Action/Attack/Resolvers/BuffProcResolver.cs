@@ -6,7 +6,7 @@ public class BuffProcResolver
     //{
     //    public SkillEffect Effect;
     //    public Func<DamageEvent, bool> TriggerCondition; // e.g., triggers on being hit
-    //    public float Chance;
+    //    public int Chance;
     //}
 
     // Buff procs, reflections
@@ -16,7 +16,7 @@ public class BuffProcResolver
     //    {
     //        if (buff.Proc != null && buff.Proc.TriggerCondition(resolved.ToDamageEvent()))
     //        {
-    //            if (Random.Shared.NextDouble() <= buff.Proc.Chance)
+    //            if (_random.Chance(Chance))
     //            {
     //                // Add reactive effect (damage, heal, debuff, etc.)
     //                ctx.EffectIntents.Add(new EffectIntent

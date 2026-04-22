@@ -9,7 +9,7 @@ using MysteryMud.Domain.Services;
 
 namespace MysteryMud.Application.Commands.Commands;
 
-public class FleeCommand : ICommand
+public sealed class FleeCommand : ICommand
 {
     private readonly IGameMessageService _msg;
     private readonly IIntentWriterContainer _intents;

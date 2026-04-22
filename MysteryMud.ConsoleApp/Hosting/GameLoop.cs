@@ -247,16 +247,14 @@ internal class GameLoop
             }
             // Decay threat by 2%
             _threatDecaySystem.Tick(state);
-            // TODO: NPCTargetSystem.AssignTargets   // Select highest threat targets
-            // TODO: GroupTacticsSystem.Resolve       // Handle assist/protect/own target attack intents
             // Process ResolvedAbilityIntents -> set casting (if delayed casting) or generate ExecuteAbilityIntent (instant cast)
             _abilityValidationSystem.Tick(state);
             // Process delayed casting, once cast is effective generate ExecuteAbilityIntent + abilityUsedEvent
             _abilityCastingSystem.Tick(state);
             // Process ExecuteAbilityIntents -> generate ActionIntent(kind:effect) for each effects in ability + abilityExecutedEvent
             _abilityExecutionSystem.Tick(state);
-            // TODO: NPCTargetSystem
-            // TODO: GroupTacticsSystem
+            // TODO: NPCTargetSystem.AssignTargets   // Select highest threat targets
+            // TODO: GroupTacticsSystem.Resolve       // Handle assist/protect/own target attack intents
             // Generate AttackIntents for entities in combat
             _autoAttackSystem.Tick(state);
             // Process ActionIntents. kind:attack -> resolve hit, perform damage, check weapon proc (effect), check reaction (counter attack)  kind: effect -> resolve effect

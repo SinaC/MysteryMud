@@ -1,16 +1,19 @@
 ﻿using Arch.Core;
+using MysteryMud.Core.Random;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Ability.Rules;
 
-public class SavesSpellRule : AbilityValidationRule // opposite of NotAffectedByRule
+public class SavesSpellRule : AbilityValidationRule
 {
+    private readonly IRandom _random;
     private readonly DamageKind _damageKind;
 
-    public SavesSpellRule(TargetCondition condition, AbilityValidationFailBehaviour failBehaviour, string failMessageKey, DamageKind damageKind)
+    public SavesSpellRule(IRandom random, TargetCondition condition, AbilityValidationFailBehaviour failBehaviour, string failMessageKey, DamageKind damageKind)
         : base(condition, failBehaviour, failMessageKey)
     {
+        _random = random;
         _damageKind = damageKind;
     }
 
@@ -18,8 +21,8 @@ public class SavesSpellRule : AbilityValidationRule // opposite of NotAffectedBy
     {
         var save = 50 + (target.Level - source.Level);
         save = Math.Clamp(save, 5, 95);
-        if (Random.Shared.Next(1, 100) < save)
-            return Fail();
+        if (_random.Chance(save))
+            return Fail(); // fail because target successfully saves vs spell
         return Success();
         // TODO
         //var victim = this;

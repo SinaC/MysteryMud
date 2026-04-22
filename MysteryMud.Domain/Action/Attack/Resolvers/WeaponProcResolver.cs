@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Contracts;
 using MysteryMud.Core.Effects;
+using MysteryMud.Core.Random;
 using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
@@ -17,14 +18,16 @@ namespace MysteryMud.Domain.Action.Attack.Resolvers;
 public class WeaponProcResolver : IWeaponProcResolver
 {
     private readonly ILogger _logger;
+    private readonly IRandom _random;
     private readonly IGameMessageService _msg;
     private readonly IIntentWriterContainer _intents;
     private readonly IWeaponProcRegistry _weaponProcRegistry;
     private readonly IEffectRegistry _effectRegistry;
 
-    public WeaponProcResolver(ILogger logger, IGameMessageService msg, IIntentWriterContainer intents, IWeaponProcRegistry weaponProcRegistry, IEffectRegistry effectRegistry)
+    public WeaponProcResolver(ILogger logger, IRandom random, IGameMessageService msg, IIntentWriterContainer intents, IWeaponProcRegistry weaponProcRegistry, IEffectRegistry effectRegistry)
     {
         _logger = logger;
+        _random = random;
         _msg = msg;
         _intents = intents;
         _weaponProcRegistry = weaponProcRegistry;
@@ -58,8 +61,9 @@ public class WeaponProcResolver : IWeaponProcResolver
                 continue;
             }
 
-            // TODO: chance
-            // TODO: message ?
+            var trigger = _random.Chance(weaponProcRuntime.Chance);
+            if (!trigger)
+                continue;
 
             foreach (var weaponProcEffect in weaponProcRuntime.WeaponProcEffectRuntimes)
             {

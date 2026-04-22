@@ -21,15 +21,17 @@ public class MovementSystem
 {
     private readonly ILogger _logger;
     private readonly IGameMessageService _msg;
+    private readonly ICastMessageService _castMessageService;
     private readonly IDirtyTracker _dirtyTracker;
     private readonly IIntentContainer _intentContainer;
     private readonly IAbilityRegistry _abilityRegistry;
     private readonly IEventBuffer<RoomEnteredEvent> _roomEnteredEvent;
 
-    public MovementSystem(ILogger logger, IGameMessageService msg, IDirtyTracker dirtyTracker, IIntentContainer intentContainer, IAbilityRegistry abilityRegistry, IEventBuffer<RoomEnteredEvent> roomEnteredEvent)
+    public MovementSystem(ILogger logger, IGameMessageService msg, ICastMessageService castMessageService, IDirtyTracker dirtyTracker, IIntentContainer intentContainer, IAbilityRegistry abilityRegistry, IEventBuffer<RoomEnteredEvent> roomEnteredEvent)
     {
         _logger = logger;
         _msg = msg;
+        _castMessageService = castMessageService;
         _dirtyTracker = dirtyTracker;
         _intentContainer = intentContainer;
         _abilityRegistry = abilityRegistry;
@@ -87,8 +89,8 @@ public class MovementSystem
                     return;
                 }
 
-                _msg.To(movingEntity).Act(CastMessageHelpers.CasterInterruptMessage).With(abilityRuntime.Name);
-                _msg.ToRoom(movingEntity).Act(CastMessageHelpers.RoomInterruptMessage).With(movingEntity);
+                _msg.To(movingEntity).Act(_castMessageService.CasterInterruptMessage).With(abilityRuntime.Name);
+                _msg.ToRoom(movingEntity).Act(_castMessageService.RoomInterruptMessage).With(movingEntity);
             }
 
             if (movingEntity.Has<PlayerTag>())

@@ -1,4 +1,5 @@
 ﻿using Arch.Core.Extensions;
+using MysteryMud.Core.Random;
 using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
@@ -15,18 +16,22 @@ namespace MysteryMud.Domain.Services;
 // max(1, 2, range(1,5), caster.level, if(caster.level >= target.level && sum(1,2,3) < 10 || dice(2,6) == 12, -caster.strength, caster.level))
 public class EffectFormulaCompiler
 {
+    private readonly IRandom _random;
+
     // User-defined functions dictionary
     private readonly Dictionary<string, Func<decimal[], decimal>> _functions;
 
-    public EffectFormulaCompiler()
+    public EffectFormulaCompiler(IRandom random)
     {
+        _random = random;
+
         _functions = new Dictionary<string, Func<decimal[], decimal>>(StringComparer.OrdinalIgnoreCase)
         {
             { "range", args =>
                 {
                     if (args.Length != 2) throw new Exception("range() expects 2 arguments");
                     int min = (int)args[0], max = (int)args[1];
-                    return Random.Shared.Next(min, max + 1);
+                    return random.Range(min, max);
                 }
             },
             { "floor", args => Math.Floor(args[0]) },
@@ -40,9 +45,8 @@ public class EffectFormulaCompiler
                 {
                     if (args.Length != 2) throw new Exception("dice() expects 2 arguments");
                     int n = (int)args[0], sides = (int)args[1];
-                    int total = 0;
-                    for (int i = 0; i < n; i++) total += Random.Shared.Next(1, sides + 1);
-                    return total;
+                    int value = random.Dice(n, sides);
+                    return value;
                 }
             },
             { "clamp", args =>
@@ -196,9 +200,8 @@ public class EffectFormulaCompiler
                                 stack.Push(1); // TODO:
                             else
                             {
-                                int total = 0;
-                                for (int i = 0; i < weapon.DiceCount; i++) total += Random.Shared.Next(1, weapon.DiceValue + 1);
-                                stack.Push(total);
+                                int value = _random.Dice(weapon.DiceCount, weapon.DiceSides);
+                                stack.Push(value);
                             }
                         }
                         break;

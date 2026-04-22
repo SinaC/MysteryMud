@@ -10,7 +10,6 @@ using MysteryMud.Domain.Ability.Resources;
 using MysteryMud.Domain.Ability.Services;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
-using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
@@ -22,16 +21,18 @@ public class AbilityValidationSystem
 {
     private readonly ILogger _logger;
     private readonly IGameMessageService _msg;
+    private readonly ICastMessageService _castMessageService;
     private readonly IIntentContainer _intents;
     private readonly IEventBuffer<AbilityUsedEvent> _abilityUsed;
     private readonly IAbilityRegistry _abilityRegistry;
     private readonly IAbilityOutcomeResolverRegistry _abilityOutcomeResolverRegistry;
     private readonly IAbilityTargetResolver _abilityTargetResolver;
 
-    public AbilityValidationSystem(ILogger logger, IGameMessageService msg, IIntentContainer intents, IEventBuffer<AbilityUsedEvent> abilityUsed, IAbilityRegistry abilityRegistry, IAbilityOutcomeResolverRegistry abilityOutcomeResolverRegistry, IAbilityTargetResolver abilityTargetResolver)
+    public AbilityValidationSystem(ILogger logger, IGameMessageService msg, ICastMessageService castMessageService, IIntentContainer intents, IEventBuffer<AbilityUsedEvent> abilityUsed, IAbilityRegistry abilityRegistry, IAbilityOutcomeResolverRegistry abilityOutcomeResolverRegistry, IAbilityTargetResolver abilityTargetResolver)
     {
         _logger = logger;
         _msg = msg;
+        _castMessageService = castMessageService;
         _intents = intents;
         _abilityUsed = abilityUsed;
         _abilityRegistry = abilityRegistry;
@@ -137,8 +138,8 @@ public class AbilityValidationSystem
                 var executeAt = state.CurrentTick + abilityRuntime.CastTime;
                 // TODO: use scheduler
 
-                _msg.To(source).Act(CastMessageHelpers.CasterStartMessage).With(abilityRuntime.Name);
-                _msg.ToRoom(source).Act(CastMessageHelpers.RoomStartMessage).With(source);
+                _msg.To(source).Act(_castMessageService.CasterStartMessage).With(abilityRuntime.Name);
+                _msg.ToRoom(source).Act(_castMessageService.RoomStartMessage).With(source);
 
                 source.Add(new Casting
                 {
@@ -166,8 +167,8 @@ public class AbilityValidationSystem
             // message for spells
             if (abilityRuntime.Kind == AbilityKind.Spell) // send generic randomized message for spell
             {
-                _msg.To(source).Act(CastMessageHelpers.CasterInstantMessage).With(abilityRuntime.Name);
-                _msg.ToRoom(source).Act(CastMessageHelpers.RoomInstantMessage).With(source);
+                _msg.To(source).Act(_castMessageService.CasterInstantMessage).With(abilityRuntime.Name);
+                _msg.ToRoom(source).Act(_castMessageService.RoomInstantMessage).With(source);
             }
 
             // add execute ability intent

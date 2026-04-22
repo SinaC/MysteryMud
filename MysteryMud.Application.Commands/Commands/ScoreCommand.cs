@@ -26,7 +26,6 @@ public class ScoreCommand : ICommand
 
     public void Execute( GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
-        // TODO: ref ?
         var (name, baseStats, effectiveStats, characterEffects) = actor.Get<Name, BaseStats, EffectiveStats, CharacterEffects>();
         _msg.To(actor).Send($"Name: {name.Value}");
         DisplayLevelAndExperience(actor);

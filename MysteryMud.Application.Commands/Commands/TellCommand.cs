@@ -9,7 +9,7 @@ using MysteryMud.Domain.Services;
 
 namespace MysteryMud.Application.Commands.Commands;
 
-public class TellCommand : ICommand
+public sealed class TellCommand : ICommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetAndText;
 

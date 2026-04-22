@@ -1,5 +1,6 @@
 ﻿using Arch.Core.Extensions;
 using MysteryMud.Core.Contracts;
+using MysteryMud.Core.Random;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Enums;
@@ -8,10 +9,12 @@ namespace MysteryMud.Domain.Action.Attack.Resolvers;
 
 public class ReactionResolver : IReactionResolver
 {
+    private readonly IRandom _random;
     private readonly IGameMessageService _msg;
 
-    public ReactionResolver(IGameMessageService msg)
+    public ReactionResolver(IRandom random, IGameMessageService msg)
     {
+        _random = random;
         _msg = msg;
     }
 
@@ -38,7 +41,7 @@ public class ReactionResolver : IReactionResolver
         {
             ref var effectiveStats = ref result.Target.Get<EffectiveStats>();
 
-            trigger = Random.Shared.NextDouble() < effectiveStats.CounterAttack;
+            trigger = _random.Chance(effectiveStats.CounterAttack);
         }
 
         if (!trigger)

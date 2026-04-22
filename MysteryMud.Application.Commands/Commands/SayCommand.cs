@@ -6,7 +6,7 @@ using MysteryMud.Domain.Services;
 
 namespace MysteryMud.Application.Commands.Commands;
 
-public class SayCommand : ICommand
+public sealed class SayCommand : ICommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.FullText;
 

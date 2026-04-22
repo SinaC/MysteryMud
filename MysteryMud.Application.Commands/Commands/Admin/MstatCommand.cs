@@ -15,7 +15,7 @@ using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Application.Commands.Commands.Admin;
 
-public class MstatCommand : ICommand
+public sealed class MstatCommand : ICommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.Target;
 
@@ -47,7 +47,6 @@ public class MstatCommand : ICommand
             return;
         }
 
-        // TODO: ref ?
         var (name, location, baseStats, effectiveStats, inventory, equipment, characterEffects) = target.Value.Get<Name, Location, BaseStats, EffectiveStats, Inventory, Equipment, CharacterEffects>();
         _msg.To(actor).Send($"Name: {name.Value}");
         ref var description = ref target.Value.TryGetRef<Description>(out var hasDescription);

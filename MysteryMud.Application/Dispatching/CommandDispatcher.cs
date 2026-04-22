@@ -44,18 +44,21 @@ public class CommandDispatcher : ICommandDispatcher
         // get command level
         ref var commandLevel = ref actor.Get<CommandLevel>();
 
+        // get position
+        ref var position = ref actor.Get<Position>();
+
         // search command in registry
-        var findResult = _commandRegistry.Find(commandLevel.Value, PositionKind.Standing, cmdSpan, out var registeredCommand); // TODO: position should be determined based on actor's state, not hardcoded
+        var findResult = _commandRegistry.Find(commandLevel.Value, position.Value, cmdSpan, out var registeredCommand); 
         switch (findResult)
         {
             case CommandFindResult.NotFound:
                 _msg.To(actor).Send("Unknown command.");
                 return;
             case CommandFindResult.NoPermission:
-                _msg.To(actor).Send("Permission denied."); // TODO
+                _msg.To(actor).Send("Permission denied."); // TODO: message
                 return;
             case CommandFindResult.WrongPosition:
-                _msg.To(actor).Send("Invalid position."); // TODO
+                _msg.To(actor).Send("Invalid position."); // TODO: message
                 return;
         }
 
