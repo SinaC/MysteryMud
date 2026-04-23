@@ -72,8 +72,9 @@ public static class PlayerFactory
                     EffectsByTag = new List<Entity>?[32]
                 },
             },
-            new Position { Value = PositionKind.Standing },
             new Location { Room = room },
+            new Position { Value = PositionKind.Standing },
+            new AutoBehaviour { Flags = AutoFlags.Loot | AutoFlags.Sacrifice | AutoFlags.Assist },
             new DirtyStats() // dirty by default
         );
         player.Add(
@@ -151,8 +152,9 @@ public static class PlayerFactory
                     EffectsByTag = new List<Entity>?[32]
                 },
             },
-            new Position { Value = PositionKind.Standing },
             new Location { Room = room },
+            new Position { Value = PositionKind.Standing },
+            new AutoBehaviour { Flags = AutoFlags.Loot | AutoFlags.Sacrifice | AutoFlags.Assist },
             new DirtyStats() // dirty by default
         );
         player.Add(
@@ -233,8 +235,9 @@ public static class PlayerFactory
             },
             new Location { Room = RoomFactory.StartingRoomEntity },
             new Position { Value = PositionKind.Standing },
-            new DirtyStats(), // ensure stats are recomputed
-            new AutoBehaviour { Flags = AutoFlags.Loot | AutoFlags.Sacrifice | AutoFlags.Assist });
+            new AutoBehaviour { Flags = AutoFlags.Loot | AutoFlags.Sacrifice | AutoFlags.Assist },
+            new DirtyStats() // ensure stats are recomputed
+            );
 
         player.Add(
             new Health { Current = 10000, Max = 10000 },

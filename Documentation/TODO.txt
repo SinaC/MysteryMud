@@ -1,7 +1,3 @@
-add DirtyTracker wherever needed (see PERSISTENCE.TXT)
-
-
-
 keep only one event buffer except for death/damage events which will have their own buffer to ensure they are processed separetely and can trigger things like death saves, death effects, etc without being mixed with other events
 
 ======================================
@@ -13,14 +9,17 @@ effect system
     room effects
         affecting room
         affecting characters/items in room
-spells/skills -> done
+spells/skills -> ongoing
 damage -> done
-combat -> done
+combat -> ongoing
 act -> done
 experience and leveling -> done
 logging -> done
-persistence
+persistence -> ongoing
 admin
+character
+item
+room
 areas
 nanny
 websocket

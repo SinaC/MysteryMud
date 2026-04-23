@@ -27,7 +27,7 @@ public class GroupService : IGroupService
             JoinedAtTick = state.CurrentTick
         });
 
-        _msg.ToGroup(group).Act("{0} joins the group.").With(member);
+        _msg.ToGroup(group).Act("{0} join{0:v} the group.").With(member);
     }
 
     public void RemoveMember(GameState state, Entity group, Entity member)
