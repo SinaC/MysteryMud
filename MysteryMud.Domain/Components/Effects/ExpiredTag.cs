@@ -1,5 +1,3 @@
 ﻿namespace MysteryMud.Domain.Components.Effects;
 
-public struct ExpiredTag
-{
-}
+public struct ExpiredTag { }

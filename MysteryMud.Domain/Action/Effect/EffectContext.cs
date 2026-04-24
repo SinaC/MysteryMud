@@ -1,13 +1,13 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 using MysteryMud.Core;
 
 namespace MysteryMud.Domain.Action.Effect;
 
 public ref struct EffectContext
 {
-    public Entity? Effect; // for non-instant effect
-    public Entity Source;
-    public Entity Target;
+    public EntityId? Effect; // for non-instant effect
+    public EntityId Source;
+    public EntityId Target;
 
     public int IncomingDamage;
     public int EffectiveDamageAmount;
@@ -15,4 +15,5 @@ public ref struct EffectContext
     public int StackCount;
 
     public GameState State;
+    public World World;
 }

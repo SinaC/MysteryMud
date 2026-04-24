@@ -1,9 +1,9 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.GameData.Events;
 
 public struct LevelIncreasedEvent
 {
-    public Entity Target;
+    public EntityId Target;
     public int Level;
 }

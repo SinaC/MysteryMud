@@ -7,6 +7,11 @@
     <File Path="PERSISTENCE.TXT" />
     <File Path="SCHEMA EVOLUTION GUIDE.TXT" />
   </Folder>
+  <Folder Name="/Librairies/">
+    <Project Path="TinyECS.DemoApp/TinyECS.DemoApp.csproj" Id="f00ca3cd-1fbe-4144-98c2-cd72412a6adb" />
+    <Project Path="TinyECS.UnitTests/TinyECS.UnitTests.csproj" Id="1074dfc1-c81a-4465-a2fa-4172412844b1" />
+    <Project Path="TinyECS/TinyECS.csproj" Id="6bb7e0ba-f3a9-410e-acdb-d2598eda200d" />
+  </Folder>
   <Folder Name="/Tests/">
     <Project Path="Tests/MysteryMud.Tests/MysteryMud.Tests.csproj" Id="5c2190a8-5d50-465b-8491-00cfce5338bc" />
   </Folder>

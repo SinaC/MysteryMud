@@ -1,6 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Contracts;
@@ -8,16 +6,17 @@ using MysteryMud.Core.Effects;
 using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Action.Effect.Helpers;
 using MysteryMud.Domain.Components.Effects;
-using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
+using TinyECS;
 
 namespace MysteryMud.Domain.Systems;
 
 public class TimedEffectSystem
 {
+    private readonly World _world;
     private readonly ILogger _logger;
     private readonly IGameMessageService _msg;
     private readonly IIntentContainer _intentContainer;
@@ -26,8 +25,9 @@ public class TimedEffectSystem
     private readonly IEventBuffer<EffectExpiredEvent> _effectExpiredEvents;
     private readonly IEventBuffer<EffectTickedEvent> _effectTickedEvents;
 
-    public TimedEffectSystem(ILogger logger, IGameMessageService msg, IIntentContainer intentContainer, IEffectExecutor effectExecutor, IEventBuffer<TriggeredScheduledEvent> triggeredScheduledEvents, IEventBuffer<EffectExpiredEvent> effectExpiredEvents, IEventBuffer<EffectTickedEvent> effectTickedEvents)
+    public TimedEffectSystem(World world, ILogger logger, IGameMessageService msg, IIntentContainer intentContainer, IEffectExecutor effectExecutor, IEventBuffer<TriggeredScheduledEvent> triggeredScheduledEvents, IEventBuffer<EffectExpiredEvent> effectExpiredEvents, IEventBuffer<EffectTickedEvent> effectTickedEvents)
     {
+        _world = world;
         _logger = logger;
         _msg = msg;
         _intentContainer = intentContainer;
@@ -39,88 +39,91 @@ public class TimedEffectSystem
 
     public void Tick(GameState state)
     {
-        foreach (var evt in _triggeredScheduledEvents.GetAll())
+        foreach (ref var evt in _triggeredScheduledEvents.GetAll())
+            ProcessEvent(state, ref evt);
+    }
+
+    private void ProcessEvent(GameState state, ref TriggeredScheduledEvent evt)
+    {
+        _logger.LogDebug("[{system}]", nameof(TimedEffectSystem));
+
+        if (evt.Kind != ScheduledEventKind.Tick && evt.Kind != ScheduledEventKind.Expire)
         {
-            _logger.LogDebug("[{system}]", nameof(TimedEffectSystem));
+            _logger.LogDebug("[{system}]: invalid scheduled event kind {kind}", nameof(TimedEffectSystem), evt.Kind);
+            return;
+        }
 
-            if (evt.Kind != ScheduledEventKind.Tick && evt.Kind != ScheduledEventKind.Expire)
+        var effect = evt.Effect;
+        if (!EffectHelpers.IsAlive(_world, effect))
+        {
+            _logger.LogDebug("[{system}]: effect {effectName} is not alive", nameof(TimedEffectSystem), EntityHelpers.DebugName(_world, effect));
+            return;
+        }
+
+        ref var timed = ref _world.TryGetRef<TimedEffect>(effect, out var isTimedEffect);
+        if (!isTimedEffect)
+        {
+            _logger.LogDebug("[{system}]: effect {effectName} without TimedEffect", nameof(TimedEffectSystem), EntityHelpers.DebugName(_world, effect));
+            return;
+        }
+
+        // expire -> add expired tag if not rescheduled
+        if (evt.Kind == ScheduledEventKind.Expire && !_world.Has<ExpiredTag>(effect))
+        {
+            _logger.LogDebug("[{system}]: effect {effectName} EXPIRE {expirationTick}", nameof(TimedEffectSystem), EntityHelpers.DebugName(_world, effect), timed.ExpirationTick);
+
+            // TODO
+            // rescheduled (stacking Refresh or Stack)
+            if (timed.ExpirationTick != state.CurrentTick)
             {
-                _logger.LogDebug("[{system}]: invalid scheduled event kind {kind}", nameof(TimedEffectSystem), evt.Kind);
-                continue;
+                _logger.LogDebug("[{system}]: effect {effectName} RESCHEDULED {lastRefresh} EXPIRE {expirationTick}", nameof(TimedEffectSystem), EntityHelpers.DebugName(_world, effect), timed.LastRefreshTick, timed.ExpirationTick);
+
+                return;
             }
 
-            var effect = evt.Effect;
-            if (!EffectHelpers.IsAlive(effect))
+            // flag as expired
+            if (!_world.Has<ExpiredTag>(effect))
+                _world.Add<ExpiredTag>(effect);
+
+            ref var instance = ref _world.Get<EffectInstance>(effect);
+            ExpireEffect(state, effect, ref instance);
+
+            // effect expired event
+            ref var effectExpiredEvt = ref _effectExpiredEvents.Add();
+            effectExpiredEvt.Effect = effect;
+            return;
+        }
+
+        // tick -> heal/damage/...
+        if (evt.Kind == ScheduledEventKind.Tick)
+        {
+            // tick after expiration
+            if (state.CurrentTick >= timed.ExpirationTick)
             {
-                _logger.LogDebug("[{system}]: effect {effectName} is not alive", nameof(TimedEffectSystem), effect.DebugName);
-                continue;
+                _logger.LogDebug("[{system}]: effect {effectName} TICK after expiration tick {expirationTick}", nameof(TimedEffectSystem), EntityHelpers.DebugName(_world, effect), timed.ExpirationTick);
+                return;
             }
 
-            ref var timed = ref effect.TryGetRef<TimedEffect>(out var isTimedEffect);
-            if (!isTimedEffect)
-            {
-                _logger.LogDebug("[{system}]: effect {effectName} without TimedEffect", nameof(TimedEffectSystem), effect.DebugName);
-                continue;
-            }
+            ref var instance = ref _world.Get<EffectInstance>(effect);
+            TickEffect(state, effect, ref instance);
 
-            // expire -> add expired tag if not rescheduled
-            if (evt.Kind == ScheduledEventKind.Expire && !effect.Has<ExpiredTag>())
-            {
-                _logger.LogDebug("[{system}]: effect {effectName} EXPIRE {expirationTick}", nameof(TimedEffectSystem), effect.DebugName, timed.ExpirationTick);
+            // intent for next tick
+            timed.NextTick = state.CurrentTick + timed.TickRate;
 
-                // TODO
-                // rescheduled (stacking Refresh or Stack)
-                if (timed.ExpirationTick != state.CurrentTick)
-                {
-                    _logger.LogDebug("[{system}]: effect {effectName} RESCHEDULED {lastRefresh} EXPIRE {expirationTick}", nameof(TimedEffectSystem), effect.DebugName, timed.LastRefreshTick, timed.ExpirationTick);
+            _logger.LogDebug("[{system}]: effect {effectName} TICK {expirationTick} NEXT {nextTick}", nameof(TimedEffectSystem), EntityHelpers.DebugName(_world, effect), timed.ExpirationTick, timed.NextTick);
 
-                    continue;
-                }
+            ref var scheduleIntent = ref _intentContainer.Schedule.Add();
+            scheduleIntent.Effect = effect;
+            scheduleIntent.Kind = ScheduledEventKind.Tick;
+            scheduleIntent.ExecuteAt = timed.NextTick;
 
-                // flag as expired
-                if (!effect.Has<ExpiredTag>())
-                    effect.Add<ExpiredTag>();
-
-                ref var instance = ref effect.Get<EffectInstance>();
-                ExpireEffect(state, effect, ref instance);
-
-                // effect expired event
-                ref var effectExpiredEvt = ref _effectExpiredEvents.Add();
-                effectExpiredEvt.Effect = effect;
-                continue;
-            }
-
-            // tick -> heal/damage/...
-            if (evt.Kind == ScheduledEventKind.Tick)
-            {
-                // tick after expiration
-                if (state.CurrentTick >= timed.ExpirationTick)
-                {
-                    _logger.LogDebug("[{system}]: effect {effectName} TICK after expiration tick {expirationTick}", nameof(TimedEffectSystem), effect.DebugName, timed.ExpirationTick);
-                    continue;
-                }
-
-                ref var instance = ref effect.Get<EffectInstance>();
-                TickEffect(state, effect, ref instance);
-
-                // intent for next tick
-                timed.NextTick = state.CurrentTick + timed.TickRate;
-
-                _logger.LogDebug("[{system}]: effect {effectName} TICK {expirationTick} NEXT {nextTick}", nameof(TimedEffectSystem), effect.DebugName, timed.ExpirationTick, timed.NextTick);
-
-                ref var scheduleIntent = ref _intentContainer.Schedule.Add();
-                scheduleIntent.Effect = effect;
-                scheduleIntent.Kind = ScheduledEventKind.Tick;
-                scheduleIntent.ExecuteAt = timed.NextTick;
-
-                // effect tick event
-                ref var effectTickEvt = ref _effectTickedEvents.Add();
-                effectTickEvt.Effect = effect;
-            }
+            // effect tick event
+            ref var effectTickEvt = ref _effectTickedEvents.Add();
+            effectTickEvt.Effect = effect;
         }
     }
 
-    private void ExpireEffect(GameState state, Entity effect, ref EffectInstance instance)
+    private void ExpireEffect(GameState state, EntityId effect, ref EffectInstance instance)
     {
         ref var effectRuntime = ref instance.EffectRuntime;
         if (effectRuntime != null && effectRuntime.OnExpire != null && effectRuntime.OnExpire.Length > 0)
@@ -137,6 +140,7 @@ public class TimedEffectSystem
                 StackCount = instance.StackCount,
 
                 State = state,
+                World = _world,
             };
             var effectExecutionContext = new EffectExecutionContext
             {
@@ -146,13 +150,13 @@ public class TimedEffectSystem
             };
             foreach (var onExpire in effectRuntime.OnExpire)
             {
-                if (CharacterHelpers.IsAlive(instance.Source, instance.Target))
+                if (CharacterHelpers.IsAlive(_world, instance.Source, instance.Target))
                     onExpire(effectExecutionContext);
             }
         }
     }
 
-    private void TickEffect(GameState state, Entity effect, ref EffectInstance instance)
+    private void TickEffect(GameState state, EntityId effect, ref EffectInstance instance)
     {
         ref var effectRuntime = ref instance.EffectRuntime;
         if (effectRuntime != null && effectRuntime.OnTick.Length > 0)
@@ -169,6 +173,7 @@ public class TimedEffectSystem
                 StackCount = instance.StackCount,
 
                 State = state,
+                World = _world,
             };
             var effectExecutionContext = new EffectExecutionContext
             {
@@ -178,7 +183,7 @@ public class TimedEffectSystem
             };
             foreach (var onTick in effectRuntime.OnTick)
             {
-                if (CharacterHelpers.IsAlive(instance.Source, instance.Target))
+                if (CharacterHelpers.IsAlive(_world, instance.Source, instance.Target))
                     onTick(effectExecutionContext);
             }
         }

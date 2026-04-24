@@ -1,12 +1,12 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.GameData.Events;
 
 public struct DamagedEvent
 {
-    public Entity Target;
-    public Entity Source;
+    public EntityId Target;
+    public EntityId Source;
     public int Amount;
     public DamageKind DamageKind;
     public DamageSourceKind SourceKind;

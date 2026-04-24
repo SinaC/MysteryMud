@@ -1,4 +1,4 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.GameData.Definitions;
 
@@ -6,8 +6,8 @@ public struct EffectData
 {
     public int EffectId;
 
-    public Entity Source;
-    public Entity Target;
+    public EntityId Source;
+    public EntityId Target;
 
     public bool IsHarmful;
 

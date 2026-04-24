@@ -1,10 +1,7 @@
-﻿using Arch.Core;
-
-namespace MysteryMud.Core;
+﻿namespace MysteryMud.Core;
 
 public class GameState
 {
-    public required World World { get; init; }
     public required long CurrentTick { get; init; }
     public required long CurrentTimeMs { get; init; }
 }

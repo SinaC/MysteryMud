@@ -1,4 +1,4 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 using MysteryMud.Core.Persistence.Snapshots;
 
 namespace MysteryMud.Core.Persistence;
@@ -15,7 +15,7 @@ public interface ISnapshotBuilder
     /// Called from the PersistenceSystem on the game thread (inside the ECS tick),
     /// so it is safe to read components directly.
     /// </summary>
-    PlayerSnapshot Build(World world, Entity entity, long currentTick);
+    PlayerSnapshot Build(World world, EntityId entity, long currentTick);
 }
 
 /// <summary>
@@ -27,5 +27,5 @@ public interface ISnapshotRestorer
     /// Apply a loaded snapshot to an entity.
     /// Called during login, before the entity is added to any room.
     /// </summary>
-    void Restore(World world, Entity entity, PlayerSnapshot snapshot, long currentTick);
+    void Restore(World world, EntityId entity, PlayerSnapshot snapshot, long currentTick);
 }

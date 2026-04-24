@@ -1,4 +1,4 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.GameData.Events;
 
@@ -6,8 +6,8 @@ public struct AbilityExecutedEvent
 {
     public int AbilityId;
 
-    public Entity Source;
-    public List<Entity> Targets;
+    public EntityId Source;
+    public List<EntityId> Targets;
 
     // TODO: success ?
 }

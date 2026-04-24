@@ -1,6 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Core;
+﻿using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Core.Contracts;
 using MysteryMud.Domain.Components;
@@ -8,35 +6,38 @@ using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Enums;
+using TinyECS;
 
 namespace MysteryMud.Application.Commands.Commands;
 
 public sealed class NorthCommand : ICommand
 {
+    private readonly World _world;
     private readonly IGameMessageService _msg;
     private readonly IIntentWriterContainer _intents;
 
-    public NorthCommand(IGameMessageService msg, IIntentWriterContainer intents)
+    public NorthCommand(World world, IGameMessageService msg, IIntentWriterContainer intents)
     {
+        _world = world;
         _msg = msg;
         _intents = intents;
     }
 
-    public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(GameState state, EntityId actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
-        if (actor.Has<CombatState>())
+        if (_world.Has<CombatState>(actor))
         {
             _msg.To(actor).Send("No way! You are still fighting!");
             return;
         }
 
         // Get room
-        ref var room = ref actor.Get<Location>().Room;
+        ref var room = ref _world.Get<Location>(actor).Room;
 
-        // Get North exit
-        ref var roomGraph = ref room.Get<RoomGraph>();
+        // Get north exit
+        ref var roomGraph = ref _world.Get<RoomGraph>(room);
         var northExit = roomGraph.Exits[DirectionKind.North];
-        if (northExit is null || northExit!.Value.TargetRoom == Entity.Null)
+        if (northExit is null || northExit!.Value.TargetRoom == EntityId.Invalid)
         {
             _msg.To(actor).Send("Alas, you cannot go that way.");
             return;

@@ -1,6 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Application.Parsing;
+﻿using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
@@ -10,6 +8,7 @@ using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Enums;
+using TinyECS;
 
 namespace MysteryMud.Application.Commands.Commands;
 
@@ -17,11 +16,13 @@ public sealed class LookCommand : ICommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetPair;
 
+    private readonly World _world;
     private readonly IGameMessageService _msg;
     private readonly IIntentWriterContainer _intents;
 
-    public LookCommand(IGameMessageService msg, IIntentWriterContainer intents)
+    public LookCommand(World world, IGameMessageService msg, IIntentWriterContainer intents)
     {
+        _world = world;
         _msg = msg;
         _intents = intents;
     }
@@ -34,14 +35,14 @@ public sealed class LookCommand : ICommand
     //          - item in container: show container description and contents
     //   - one argument (only for character): prioritize character > item in room > item in inventory > item in equipped slots
     // TODO: handle self, all, indexed targets
-    public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(GameState state, EntityId actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
         // No argument: show room/container overview
         if (ctx.TargetCount == 0)
         {
-            ref var location = ref actor.TryGetRef<Location>(out var hasLocation);
+            ref var location = ref _world.TryGetRef<Location>(actor, out var hasLocation);
             if (!hasLocation)
             {
                 _msg.To(actor).Send("You are floating in the void. You see nothing.");
@@ -60,10 +61,10 @@ public sealed class LookCommand : ICommand
         // if inside a container or inventory, look around that first
 
         // Get room
-        ref var room = ref actor.Get<Location>().Room;
+        ref var room = ref _world.Get<Location>(actor).Room;
 
         // Get room contents and graph
-        ref var roomContents = ref room.Get<RoomContents>();
+        ref var roomContents = ref _world.Get<RoomContents>(room);
         var roomItems = roomContents.Items;
         var roomCharacters = roomContents.Characters;
 
@@ -71,7 +72,7 @@ public sealed class LookCommand : ICommand
         var targetName = ctx.Primary.Name;
 
         // 1️) Try characters in room
-        var target = CommandEntityFinder.SelectSingleTarget(actor, ctx.Primary, roomCharacters);
+        var target = CommandEntityFinder.SelectSingleTarget(_world, actor, ctx.Primary, roomCharacters);
         if (target != null)
         {
             // intent to look at character
@@ -83,7 +84,7 @@ public sealed class LookCommand : ICommand
         }
 
         // 2️) Try items in room
-        var item = CommandEntityFinder.SelectSingleTarget(actor, ctx.Primary, roomItems);
+        var item = CommandEntityFinder.SelectSingleTarget(_world, actor, ctx.Primary, roomItems);
         if (item != null)
         {
             // intent to look at item
@@ -95,10 +96,10 @@ public sealed class LookCommand : ICommand
         }
         
         // 3️) Try items in actor inventory
-        ref var inventory = ref actor.TryGetRef<Inventory>(out var hasInventory);
+        ref var inventory = ref _world.TryGetRef<Inventory>(actor, out var hasInventory);
         if (hasInventory)
         {
-            var inventoryItem = CommandEntityFinder.SelectSingleTarget(actor, ctx.Primary, inventory.Items);
+            var inventoryItem = CommandEntityFinder.SelectSingleTarget(_world, actor, ctx.Primary, inventory.Items);
             if (inventoryItem != null)
             {
                 // intent to look at item

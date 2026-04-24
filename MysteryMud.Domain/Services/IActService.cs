@@ -1,8 +1,8 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.Domain.Services;
 
 public interface IActService
 {
-    string FormatFor(Entity viewer, string format, params object[] args);
+    string FormatFor(EntityId viewer, string format, params object[] args);
 }

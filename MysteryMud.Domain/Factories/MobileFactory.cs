@@ -1,19 +1,19 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Domain.Components;
+﻿using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
+using TinyECS;
+using TinyECS.Extensions;
 
 namespace MysteryMud.Domain.Factories;
 
 public static class MobileFactory
 {
-    public static Entity CreateMob(World world, string name, string description, Entity room)
+    public static EntityId CreateMob(World world, string name, string description, EntityId room)
     {
-        var player = world.Create(
+        var player = world.CreateEntity(
             new CharacterTag(),
             new NpcTag(),
             new CommandLevel { Value = CommandLevelKind.Player },
@@ -58,7 +58,7 @@ public static class MobileFactory
                 Data = new EffectsCollection
                 {
                     Effects = [],
-                    EffectsByTag = new List<Entity>?[32]
+                    EffectsByTag = new List<EntityId>?[32]
                 },
             },
             new Location { Room = room },
@@ -67,7 +67,7 @@ public static class MobileFactory
             new DirtyStats() // dirty by default
         );
 
-        room.Get<RoomContents>().Characters.Add(player);
+        world.Get<RoomContents>(room).Characters.Add(player);
 
         return player;
     }

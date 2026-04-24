@@ -1,8 +1,8 @@
-﻿using Arch.Core;
-using MysteryMud.Application.Parsing;
+﻿using MysteryMud.Application.Parsing;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Services;
+using TinyECS;
 
 namespace MysteryMud.Application.Commands.Commands;
 
@@ -17,7 +17,7 @@ public sealed class GtellCommand : ICommand
         _msg = msg;
     }
 
-    public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(GameState state, EntityId actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 

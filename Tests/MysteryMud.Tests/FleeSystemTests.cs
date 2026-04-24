@@ -1,4 +1,4 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 using Arch.Core.Extensions;
 using MysteryMud.Core.Random;
 using MysteryMud.Domain.Components.Characters;

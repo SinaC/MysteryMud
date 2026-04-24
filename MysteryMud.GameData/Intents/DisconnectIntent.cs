@@ -1,8 +1,8 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.GameData.Intents;
 
 public struct DisconnectIntent
 {
-    public Entity Player;
+    public EntityId Player;
 }

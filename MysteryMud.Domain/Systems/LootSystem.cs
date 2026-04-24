@@ -1,26 +1,26 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Core;
+﻿using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Contracts;
 using MysteryMud.Domain.Components.Groups;
 using MysteryMud.Domain.Components.Items;
-using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Events;
 using MysteryMud.GameData.Intents;
+using TinyECS;
 
 namespace MysteryMud.Domain.Systems;
 
 public sealed class LootSystem
 {
+    private readonly World _world;
     private readonly IGameMessageService _msg;
     private readonly IIntentContainer _intents;
     private readonly IEventBuffer<ItemLootedEvent> _itemLootedEvents;
 
-    public LootSystem(IGameMessageService msg, IIntentContainer intents, IEventBuffer<ItemLootedEvent> itemLootedEvents)
+    public LootSystem(World world, IGameMessageService msg, IIntentContainer intents, IEventBuffer<ItemLootedEvent> itemLootedEvents)
     {
+        _world = world;
         _msg = msg;
         _intents = intents;
         _itemLootedEvents = itemLootedEvents;
@@ -43,31 +43,31 @@ public sealed class LootSystem
             DistributeQuestItems(state, ref intent);
 
             // Phase 2: autoloot for killer (priority) (if not killed in ActionOrchestrator by a proc/reaction)
-            if (CharacterHelpers.IsAlive(lootOwner) && lootOwner.HasAutoLoot())
+            if (CharacterHelpers.IsAlive(_world, lootOwner) && CharacterHelpers.HasAutoLoot(_world, lootOwner))
                 LootAll(lootOwner, corpse);
 
             // Phase 3: autoloot for rest of group
-            if (lootOwnerGroup != Entity.Null)
+            if (lootOwnerGroup != EntityId.Invalid)
             {
-                ref var group = ref lootOwnerGroup.TryGetRef<GroupInstance>(out var isInGroup);
+                ref var group = ref _world.TryGetRef<GroupInstance>(lootOwnerGroup, out var isInGroup);
                 if (isInGroup)
                 {
                     foreach (var member in group.Members)
                     {
                         if (member == lootOwner) continue;
-                        if (!CharacterHelpers.IsAlive(member)) continue; // <- member died too
-                        if (!CharacterHelpers.SameRoom(intent.LootOwner, member)) continue; // <- member not anymore in same room
-                        if (member.HasAutoLoot())
+                        if (!CharacterHelpers.IsAlive(_world, member)) continue; // <- member died too
+                        if (!CharacterHelpers.SameRoom(_world, intent.LootOwner, member)) continue; // <- member not anymore in same room
+                        if (CharacterHelpers.HasAutoLoot(_world, member))
                             LootAll(member, corpse);
                     }
                 }
             }
 
             // Phase 4: autosac only if corpse is truly empty
-            ref var contents = ref intent.Corpse.Get<ContainerContents>();
+            ref var contents = ref _world.Get<ContainerContents>(intent.Corpse);
             if (contents.Items.Count == 0
-                && intent.LootOwner.HasAutoSacrifice()
-                && CharacterHelpers.IsAlive(intent.LootOwner))
+                && CharacterHelpers.HasAutoSacrifice(_world, intent.LootOwner)
+                && CharacterHelpers.IsAlive(_world, intent.LootOwner))
             {
                 ref var sacIntent = ref _intents.AutoSacrifice.Add();
                 sacIntent.Actor = intent.LootOwner;
@@ -101,15 +101,15 @@ public sealed class LootSystem
         //}
     }
 
-    private void LootAll(Entity looter, Entity corpse)
+    private void LootAll(EntityId looter, EntityId corpse)
     {
-        ref var containerContent = ref corpse.Get<ContainerContents>();
+        ref var containerContent = ref _world.Get<ContainerContents>(corpse);
         foreach (var content in containerContent.Items.ToArray())
         {
             // get item, add to inventory, remove from corpse
-            if (ItemHelpers.TryGetItemFromContainer(looter, corpse, content, out var reason))
+            if (ItemHelpers.TryGetItemFromContainer(_world, looter, corpse, content, out var _))
             {
-                _msg.To(looter).Send($"You loot {content.DisplayName} from {corpse.DisplayName}.");
+                _msg.To(looter).Act("You loot {0} from {1}.").With(content, corpse);
 
                 // item looted event
                 ref var itemLootedEvt = ref _itemLootedEvents.Add();

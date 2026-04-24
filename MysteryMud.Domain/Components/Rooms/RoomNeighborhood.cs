@@ -1,9 +1,9 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.Domain.Components.Rooms;
 
 public struct RoomNeighborhood
 {
-    public List<Entity> Distance1;
-    public List<Entity> Distance2;
+    public List<EntityId> Distance1;
+    public List<EntityId> Distance2;
 }

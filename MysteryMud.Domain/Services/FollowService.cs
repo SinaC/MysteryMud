@@ -1,63 +1,65 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Domain.Components.Characters;
+﻿using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Helpers;
+using TinyECS;
 
 namespace MysteryMud.Domain.Services;
 
 public class FollowService : IFollowService
 {
+    private readonly World _world;
     private readonly IGameMessageService _msg;
 
-    public FollowService(IGameMessageService msg)
+    public FollowService(World world, IGameMessageService msg)
     {
+        _world = world;
         _msg = msg;
     }
 
-    public void Follow(Entity follower, Entity leader)
+    public void Follow(EntityId follower, EntityId leader)
     {
         // stop following current leader first if already following
-        if (follower.Has<Following>())
+        if (_world.Has<Following>(follower))
             StopFollowing(follower);
 
-        follower.Add(new Following { Leader = leader });
+        _world.Add(follower, new Following { Leader = leader });
 
-        if (!leader.Has<Followers>())
-            leader.Add(new Followers { Entities = [] });
+        if (!_world.Has<Followers>(leader))
+            _world.Add(leader, new Followers { Entities = [] });
 
-        leader.Get<Followers>().Entities.Add(follower);
+        _world.Get<Followers>(leader).Entities.Add(follower);
 
         _msg.To(follower).Act("You start following {0:N}.").With(leader);
         _msg.To(leader).Act("{0} starts following you.").With(follower);
     }
 
-    public void StopFollowing(Entity follower)
+    public void StopFollowing(EntityId follower)
     {
-        if (!follower.Has<Following>()) return;
+        if (!_world.Has<Following>(follower)) return;
 
-        var leader = follower.Get<Following>().Leader;
-        follower.Remove<Following>();
+        var leader = _world.Get<Following>(follower).Leader;
+        _world.Remove<Following>(follower);
 
-        if (leader.IsAlive() && leader.Has<Followers>())
-            leader.Get<Followers>().Entities.Remove(follower);
+        if (CharacterHelpers.IsAlive(_world, leader) && _world.Has<Followers>(leader))
+            _world.Get<Followers>(leader).Entities.Remove(follower);
 
         _msg.To(leader).Act("{0:N} stops following you.").With(follower);
         _msg.To(follower).Act("You stop following {0:N}.").With(leader);
     }
 
-    public void StopAllFollowers(Entity leader)
+    public void StopAllFollowers(EntityId leader)
     {
-        if (!leader.Has<Followers>()) return;
+        if (!_world.Has<Followers>(leader)) return;
 
-        ref var followers = ref leader.Get<Followers>();
+        ref var followers = ref _world.Get<Followers>(leader);
         foreach (var follower in followers.Entities.ToArray())
         {
-            if (!follower.IsAlive()) continue;
-            if (follower.Has<Following>())
-                follower.Remove<Following>();
+            if (!CharacterHelpers.IsAlive(_world, follower)) continue;
+            if (_world.Has<Following>(follower))
+                _world.Remove<Following>(follower);
             _msg.To(follower).Act("You stop following {0} as they have left.").With(leader);
         }
 
         followers.Entities.Clear();
-        leader.Remove<Followers>();
+        _world.Remove<Followers>(leader);
     }
 }

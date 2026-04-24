@@ -1,9 +1,9 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 using MysteryMud.Core;
 
 namespace MysteryMud.Application.Services;
 
 public interface IEffectDisplayService
 {
-    void DisplayEffects(GameState state, Entity viewer, List<Entity> effects);
+    void DisplayEffects(GameState state, EntityId viewer, List<EntityId> effects);
 }

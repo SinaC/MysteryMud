@@ -1,6 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Application.Parsing;
+﻿using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
@@ -10,6 +8,7 @@ using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Enums;
+using TinyECS;
 
 namespace MysteryMud.Application.Commands.Commands.Admin;
 
@@ -17,23 +16,26 @@ public sealed class TestCommand : ICommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetAndText;
 
+    private readonly World _world;
     private readonly IEffectRegistry _effectRegistry;
     private readonly IGameMessageService _msg;
     private readonly IIntentWriterContainer _intents;
 
-    public TestCommand(IEffectRegistry effectRegistry, IGameMessageService msg, IIntentWriterContainer intents)
+    public TestCommand(World world, IEffectRegistry effectRegistry, IGameMessageService msg, IIntentWriterContainer intents)
     {
+        _world = world;
         _effectRegistry = effectRegistry;
         _msg = msg;
         _intents = intents;
     }
 
-    public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(GameState state, EntityId actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
-        ref var roomContents = ref actor.Get<Location>().Room.Get<RoomContents>().Characters;
-        var target = CommandEntityFinder.SelectSingleTarget(actor, ctx.Primary, roomContents);
+        ref var room = ref _world.Get<Location>(actor).Room;
+        ref var people = ref _world.Get<RoomContents>(room).Characters;
+        var target = CommandEntityFinder.SelectSingleTarget(_world, actor, ctx.Primary, people);
 
         //_msg.To(actor).Send("Ansi16: %RR%GG%YY%BB%MM%CC%WW%rr%gg%yy%bb%mm%cc%ww%xnocolor");
         //_msg.To(actor).Send("Ansi256: %=214orange%xnocolor");

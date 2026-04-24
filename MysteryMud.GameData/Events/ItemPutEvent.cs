@@ -1,10 +1,10 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.GameData.Events;
 
 public struct ItemPutEvent
 {
-    public Entity Entity;
-    public Entity Item;
-    public Entity Container;
+    public EntityId Entity;
+    public EntityId Item;
+    public EntityId Container;
 }

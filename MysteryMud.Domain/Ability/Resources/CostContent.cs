@@ -1,11 +1,11 @@
-﻿using Arch.Core;
-using MysteryMud.GameData.Enums;
+﻿using MysteryMud.GameData.Enums;
+using TinyECS;
 
 namespace MysteryMud.Domain.Ability.Resources;
 
 public struct CostContext
 {
-    public Entity Entity;
+    public EntityId Entity;
     public ResourceKind Kind;
     public int BaseAmount;
     public int FinalAmount;

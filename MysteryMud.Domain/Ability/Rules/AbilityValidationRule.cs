@@ -1,4 +1,4 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.GameData.Enums;
 
@@ -17,10 +17,10 @@ public abstract class AbilityValidationRule : IAbilityValidationRule
         _failMessageKey = failMessageKey;
     }
 
-    public bool IsCandidateForValidation(Entity target)
-        => _condition.Matches(target);
+    public bool IsCandidateForValidation(World world, EntityId target)
+        => _condition.Matches(world, target);
 
-    public abstract AbilityValidationResult Validate(Entity source, Entity target);
+    public abstract AbilityValidationResult Validate(World world, EntityId source, EntityId target);
 
     protected AbilityValidationResult Success()
         => new() { Success = true };

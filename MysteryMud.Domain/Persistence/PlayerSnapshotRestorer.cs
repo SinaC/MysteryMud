@@ -1,4 +1,4 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 using MysteryMud.Core.Persistence;
 using MysteryMud.Core.Persistence.Snapshots;
 
@@ -6,7 +6,7 @@ namespace MysteryMud.Domain.Persistence;
 
 public sealed class PlayerSnapshotRestorer : ISnapshotRestorer
 {
-    public void Restore(World world, Entity entity, PlayerSnapshot snap, long currentTick)
+    public void Restore(World world, EntityId entity, PlayerSnapshot snap, long currentTick)
     {
         /*
         // Core
@@ -67,7 +67,7 @@ public sealed class PlayerSnapshotRestorer : ISnapshotRestorer
         */
     }
 
-    private static void RestoreOptional(World world, Entity entity, string json)
+    private static void RestoreOptional(World world, EntityId entity, string json)
     {
         /*
         using var doc = JsonDocument.Parse(json);

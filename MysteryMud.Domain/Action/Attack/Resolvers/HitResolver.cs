@@ -1,26 +1,28 @@
-﻿using Arch.Core.Extensions;
-using MysteryMud.Core.Random;
+﻿using MysteryMud.Core.Random;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
+using TinyECS;
 
 namespace MysteryMud.Domain.Action.Attack.Resolvers;
 
 public class HitResolver : IHitResolver
 {
+    private readonly World _world;
     private readonly IRandom _random;
     private readonly IGameMessageService _msg;
 
-    public HitResolver(IRandom random, IGameMessageService msg)
+    public HitResolver(World world,  IRandom random, IGameMessageService msg)
     {
+        _world = world;
         _random = random;
         _msg = msg;
     }
 
     public AttackResult Resolve(AttackData attackData)
     {
-        ref var stats = ref attackData.Target.Get<EffectiveStats>();
+        ref var stats = ref _world.Get<EffectiveStats>(attackData.Target);
         var roll = _random.NextPercent();
         AttackResultKind result;
 

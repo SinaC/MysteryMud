@@ -1,22 +1,39 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Domain.Action.Effect.Helpers;
+﻿using MysteryMud.Domain.Action.Effect.Helpers;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.GameData.Enums;
+using TinyECS;
 
 namespace MysteryMud.Domain.Helpers;
 
 public static class ModifierPipeline
 {
-    public static (decimal flat, decimal percent, decimal multiply, decimal? overriding) CalculateModifiers<TModifiers, TModifier>(CharacterEffects characterEffects, Func<TModifier, bool> keepModifierFunc, Func<TModifiers, IEnumerable<TModifier>> getModifiersFunc, Func<TModifier, ModifierKind> getModifierKindFunc, Func<TModifier, decimal> getModifierValueFunc)
-        => CalculateModifiers(characterEffects.Data.Effects, keepModifierFunc, getModifiersFunc, getModifierKindFunc, getModifierValueFunc);
+    public static (decimal flat, decimal percent, decimal multiply, decimal? overriding) CalculateModifiers<TModifiers, TModifier>(
+        World world,
+        CharacterEffects characterEffects,
+        Func<TModifier, bool> filterModifierFunc,
+        Func<TModifiers, IEnumerable<TModifier>> getModifiersFunc,
+        Func<TModifier, ModifierKind> getModifierKindFunc,
+        Func<TModifier, decimal> getModifierValueFunc)
+        => CalculateModifiers(world, characterEffects.Data.Effects, filterModifierFunc, getModifiersFunc, getModifierKindFunc, getModifierValueFunc);
 
-    public static (decimal flat, decimal percent, decimal multiply, decimal? overriding) CalculateModifiers<TModifiers, TModifier>(ItemEffects itemEffects, Func<TModifier, bool> keepModifierFunc, Func<TModifiers, IEnumerable<TModifier>> getModifiersFunc, Func<TModifier, ModifierKind> getModifierKindFunc, Func<TModifier, decimal> getModifierValueFunc)
-        => CalculateModifiers(itemEffects.Data.Effects, keepModifierFunc, getModifiersFunc, getModifierKindFunc, getModifierValueFunc);
+    public static (decimal flat, decimal percent, decimal multiply, decimal? overriding) CalculateModifiers<TModifiers, TModifier>(
+        World world,
+        ItemEffects itemEffects,
+        Func<TModifier, bool> filterModifierFunc,
+        Func<TModifiers, IEnumerable<TModifier>> getModifiersFunc,
+        Func<TModifier, ModifierKind> getModifierKindFunc,
+        Func<TModifier, decimal> getModifierValueFunc)
+        => CalculateModifiers(world, itemEffects.Data.Effects, filterModifierFunc, getModifiersFunc, getModifierKindFunc, getModifierValueFunc);
 
-    private static (decimal flat, decimal percent, decimal multiply, decimal? overriding) CalculateModifiers<TModifiers, TModifier>(IEnumerable<Entity> effects, Func<TModifier, bool> keepModifierFunc, Func<TModifiers, IEnumerable<TModifier>> getModifiersFunc, Func<TModifier, ModifierKind> getModifierKindFunc, Func<TModifier, decimal> getModifierValueFunc)
+    private static (decimal flat, decimal percent, decimal multiply, decimal? overriding) CalculateModifiers<TModifiers, TModifier>(
+        World world,
+        IEnumerable<EntityId> effects,
+        Func<TModifier, bool> filterModifierFunc,
+        Func<TModifiers, IEnumerable<TModifier>> getModifiersFunc,
+        Func<TModifier, ModifierKind> getModifierKindFunc,
+        Func<TModifier, decimal> getModifierValueFunc)
     {
         var flat = 0m;
         var percent = 0m;
@@ -25,19 +42,19 @@ public static class ModifierPipeline
 
         foreach (var effect in effects)
         {
-            if (!EffectHelpers.IsAlive(effect))
+            if (!EffectHelpers.IsAlive(world, effect))
                 continue;
 
             // get modifiers
-            ref var modifiers = ref effect.TryGetRef<TModifiers>(out var hasModifiers);
+            ref var modifiers = ref world.TryGetRef<TModifiers>(effect, out var hasModifiers);
             if (!hasModifiers)
                 continue;
 
-            ref var effectInstance = ref effect.Get<EffectInstance>();
+            ref var effectInstance = ref world.Get<EffectInstance>(effect);
             var stackCount = effectInstance.StackCount;
             foreach (var modifier in getModifiersFunc(modifiers))
             {
-                if (!keepModifierFunc(modifier))
+                if (!filterModifierFunc(modifier))
                     continue;
 
                 var modifierValue = getModifierValueFunc(modifier) * stackCount;
@@ -66,7 +83,8 @@ public static class ModifierPipeline
     // Accumulates modifiers for ALL stats in one pass into pre-allocated span buffers.
     // Avoids the O(stats × modifiers) cost of calling CalculateModifiers per stat.
     public static void AccumulateModifiers<TModifiers, TModifier>(
-        IEnumerable<Entity> effects,
+        World world,
+        IEnumerable<EntityId> effects,
         Func<TModifier, CharacterStatKind> getStatFunc,
         Func<TModifiers, IEnumerable<TModifier>> getModifiersFunc,
         Func<TModifier, ModifierKind> getModifierKindFunc,
@@ -79,14 +97,14 @@ public static class ModifierPipeline
     {
         foreach (var effect in effects)
         {
-            if (!EffectHelpers.IsAlive(effect))
+            if (!EffectHelpers.IsAlive(world, effect))
                 continue;
 
-            ref var modifiers = ref effect.TryGetRef<TModifiers>(out var hasModifiers);
+            ref var modifiers = ref world.TryGetRef<TModifiers>(effect, out var hasModifiers);
             if (!hasModifiers)
                 continue;
 
-            ref var effectInstance = ref effect.Get<EffectInstance>();
+            ref var effectInstance = ref world.Get<EffectInstance>(effect);
             var stackCount = effectInstance.StackCount;
 
             foreach (var modifier in getModifiersFunc(modifiers))

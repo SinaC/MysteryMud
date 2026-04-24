@@ -1,10 +1,9 @@
-﻿using Arch.Core.Extensions;
-using MysteryMud.Core.Random;
+﻿using MysteryMud.Core.Random;
 using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
-using MysteryMud.Domain.Extensions;
+using MysteryMud.Domain.Helpers;
 using MysteryMud.GameData.Enums;
 using System.Globalization;
 using System.Runtime.CompilerServices;
@@ -94,30 +93,31 @@ public class EffectFormulaCompiler
         {
             var stack = new Stack<decimal>();
 
+            var world = ctx.World;
             ref var source = ref ctx.Source;
             ref var target = ref ctx.Target;
 
             ref var effectiveDamageAmount = ref ctx.EffectiveDamageAmount;
 
-            var useSnapshot = mode == EffectFormulaEvaluationMode.Snapshotted && ctx.Effect.HasValue && ctx.Effect.Value.Has<EffectValuesSnapshot>();
+            var useSnapshot = mode == EffectFormulaEvaluationMode.Snapshotted && ctx.Effect.HasValue && world.Has<EffectValuesSnapshot>(ctx.Effect.Value);
             ref var snapshot = ref (useSnapshot
-                ? ref ctx.Effect!.Value.Get<EffectValuesSnapshot>()
+                ? ref world.Get<EffectValuesSnapshot>(ctx.Effect!.Value)
                 : ref Unsafe.NullRef<EffectValuesSnapshot>());
             ref var casterLevel = ref(useSnapshot
                 ? ref snapshot.SourceLevel
-                : ref source.Get<Level>().Value);
+                : ref world.Get<Level>(source).Value);
             ref var targetLevel = ref (useSnapshot
                 ? ref snapshot.TargetLevel
-                : ref target.Get<Level>().Value);
+                : ref world.Get<Level>(target).Value);
             ref var itemLevel = ref (useSnapshot
                 ? ref snapshot.ItemLevel
-                : ref target.Get<Level>().Value);
+                : ref world.Get<Level>(target).Value);
             ref var casterStats = ref (useSnapshot
                 ? ref snapshot.SourceStats
-                : ref source.Get<EffectiveStats>().Values);
+                : ref world.Get<EffectiveStats>(source).Values);
             ref var targetStats = ref (useSnapshot
                 ? ref snapshot.TargetStats
-                : ref target.Get<EffectiveStats>().Values);
+                : ref world.Get<EffectiveStats>(target).Values);
 
             foreach (var token in rpn)
             {
@@ -185,18 +185,18 @@ public class EffectFormulaCompiler
 
                     case TokenType.WeaponLevel: // TODO: precompute in put in context ?
                         {
-                            if (!source.TryGetMainHandWeapon(out var item, out var _))
+                            if (!CharacterHelpers.TryGetMainHandWeapon(world, source, out var item, out var _))
                                 stack.Push(1); // TODO:
                             else
                             {
-                                stack.Push(item.Get<Level>().Value);
+                                stack.Push(world.Get<Level>(item).Value);
                             }
                         }
                         break;
 
                     case TokenType.WeaponDamage: // TODO: precompute in put in context ?
                         {
-                            if (!source.TryGetMainHandWeapon(out var _, out var weapon))
+                            if (!CharacterHelpers.TryGetMainHandWeapon(world, source, out var _, out var weapon))
                                 stack.Push(1); // TODO:
                             else
                             {

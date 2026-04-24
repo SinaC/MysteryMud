@@ -1,7 +1,6 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Domain.Components.Items;
+﻿using MysteryMud.Domain.Components.Items;
 using MysteryMud.GameData.Enums;
+using TinyECS;
 
 namespace MysteryMud.Domain.Ability.Rules;
 
@@ -15,9 +14,9 @@ public class ItemNotAffectedByRule : AbilityValidationRule // opposite of Affect
         _effectTagIndex = 1UL << (int)effectTagId;
     }
 
-    public override AbilityValidationResult Validate(Entity _, Entity target)
+    public override AbilityValidationResult Validate(World world, EntityId _, EntityId target)
     {
-        ref var itemEffects = ref target.Get<ItemEffects>();
+        ref var itemEffects = ref world.Get<ItemEffects>(target);
         if ((itemEffects.Data.ActiveTags & _effectTagIndex) != 0)
             return Fail();
 

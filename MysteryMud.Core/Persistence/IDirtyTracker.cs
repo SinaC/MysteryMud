@@ -1,16 +1,16 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.Core.Persistence;
 
 public interface IDirtyTracker
 {
-    void MarkDirty(Entity entity, DirtyReason reason);
-    void MarkForDisconnect(Entity entity);
+    void MarkDirty(EntityId entity, DirtyReason reason);
+    void MarkForDisconnect(EntityId entity);
 
     IReadOnlyList<DirtyEntry> Drain(Func<DirtyEntry, bool>? filter = null);
-    DirtyEntry? DrainEntity(Entity entity);
+    DirtyEntry? DrainEntity(EntityId entity);
 
-    bool IsDirty(Entity entity);
+    bool IsDirty(EntityId entity);
 
     bool HasCritical { get; }
     int Count { get; }

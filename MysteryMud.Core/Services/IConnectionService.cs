@@ -1,15 +1,15 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.Core.Services;
 
 public interface IConnectionService
 {
-    Entity CreatePlayer(int connectionId);
+    EntityId CreatePlayer(int connectionId);
 
-    bool TryGetEntity(int connectionId, out Entity entity);
-    bool TryGetConnection(Entity entity, out int connectionId);
+    bool TryGetEntity(int connectionId, out EntityId entity);
+    bool TryGetConnection(EntityId entity, out int connectionId);
 
     bool Remove(int connectionId);
 
-    void Disconnect(Entity entity);
+    void Disconnect(EntityId entity);
 }

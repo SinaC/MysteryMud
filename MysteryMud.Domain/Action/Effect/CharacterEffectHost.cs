@@ -1,7 +1,5 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Core;
-using MysteryMud.Core.Persistence;
+﻿using MysteryMud.Core.Persistence;
+using MysteryMud.Domain.Action.Effect.Helpers;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
@@ -9,31 +7,36 @@ using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
+using TinyECS;
 
 namespace MysteryMud.Domain.Action.Effect;
 
 public class CharacterEffectHost : IEffectHost
 {
+    private readonly World _world;
     private readonly IDirtyTracker _dirtyTracker;
-    private readonly Entity _target;
+    private readonly EntityId _target;
 
-    public CharacterEffectHost(IDirtyTracker dirtyTracker, Entity target)
+    public CharacterEffectHost(World world, IDirtyTracker dirtyTracker, EntityId target)
     {
+        _world = world;
         _dirtyTracker = dirtyTracker;
         _target = target;
     }
 
-    public Entity Target => _target;
+    public EntityId Target => _target;
 
-    public Entity? FindEffect(EffectRuntime effectRuntime)
+    public EntityId? FindEffect(EffectRuntime effectRuntime)
     {
-        ref var targetEffects = ref _target.Get<CharacterEffects>();
+        ref var targetEffects = ref _world.Get<CharacterEffects>(_target);
 
         if (effectRuntime.Tag.CharacterTag == CharacterEffectTagId.None)
         {
             foreach (var effect in targetEffects.Data.Effects)
             {
-                ref var effectInstance = ref effect.Get<EffectInstance>();
+                if (EffectHelpers.IsAlive(_world, effect)) continue;
+
+                ref var effectInstance = ref _world.Get<EffectInstance>(effect);
                 if (effectInstance.EffectRuntime.Name == effectRuntime.Name)
                     return effect;
             }
@@ -45,17 +48,19 @@ public class CharacterEffectHost : IEffectHost
             return null;
         foreach (var effectByTag in effectsByTag)
         {
-            ref var effectInstance = ref effectByTag.Get<EffectInstance>();
+            if (EffectHelpers.IsAlive(_world, effectByTag)) continue;
+
+            ref var effectInstance = ref _world.Get<EffectInstance>(effectByTag);
             if (effectInstance.EffectRuntime.Name == effectRuntime.Name)
                 return effectByTag;
         }
         return null;
     }
 
-    public void RegisterEffect(Entity effect, EffectRuntime effectRuntime)
+    public void RegisterEffect(EntityId effect, EffectRuntime effectRuntime)
     {
         // add effect to target effect's cache
-        ref var targetEffects = ref _target.Get<CharacterEffects>();
+        ref var targetEffects = ref _world.Get<CharacterEffects>(_target);
         targetEffects.Data.Effects.Add(effect);
 
         // add tag if applicable
@@ -63,7 +68,7 @@ public class CharacterEffectHost : IEffectHost
         {
             var tagIndex = (int)effectRuntime.Tag.CharacterTag;
             // add EffectTag component to effect
-            effect.Add(new CharacterEffectTag
+            _world.Add(effect, new CharacterEffectTag
             {
                 Id = effectRuntime.Tag.CharacterTag
             });
@@ -78,17 +83,17 @@ public class CharacterEffectHost : IEffectHost
         }
 
         //
-        if (_target.Has<PlayerTag>())
+        if (_world.Has<PlayerTag>(_target))
             _dirtyTracker.MarkDirty(_target, DirtyReason.Effects);
     }
 
-    public void UnregisterEffect(GameState state, Entity effect, EffectRuntime effectRuntime)
+    public void UnregisterEffect(EntityId effect, EffectRuntime effectRuntime)
     {
-        if (!effect.IsAlive()) // don't use helpers, effect with ExpiredTag should be removable
+        if (!_world.IsAlive(effect)) // don't use helpers, effect with ExpiredTag should be removable
             return;
 
         // remove the effect from the target's CharacterEffects
-        ref var characterEffects = ref _target.Get<CharacterEffects>();
+        ref var characterEffects = ref _world.Get<CharacterEffects>(_target);
         characterEffects.Data.Effects.Remove(effect);
 
         // remove tag if applicable
@@ -109,41 +114,42 @@ public class CharacterEffectHost : IEffectHost
 
         MarkAsDirtyIfNeeded(effect);
 
-        // destroy effect
-        state.World.Destroy(effect);
+        // destroy effect: cannot delete an entity from where -> soft delete
+        if (!_world.Has<ExpiredTag>(effect))
+            _world.Add<ExpiredTag>(effect);
     }
 
-    public void MarkAsDirtyIfNeeded(Entity effect)
+    public void MarkAsDirtyIfNeeded(EntityId effect)
     {
         // if effect has StatModifiers
         // flag the _target's stats as dirty so they will be recalculated without this effect
-        if (effect.Has<CharacterStatModifiers>() && !_target.Has<DirtyStats>())
-            _target.Add<DirtyStats>();
+        if (_world.Has<CharacterStatModifiers>(effect) && !_world.Has<DirtyStats>(_target))
+            _world.Add<DirtyStats>(_target);
 
         // if effect has ResourceModifiers
         // flag the _target's resources as dirty so they will be recalculated without this effect
-        if (effect.Has<CharacterResourceModifiers<HealthModifier>>() && !_target.Has<DirtyHealth>())
-            _target.Add<DirtyHealth>();
-        if (effect.Has<CharacterResourceModifiers<ManaModifier>>() && !_target.Has<DirtyMana>())
-            _target.Add<DirtyMana>();
-        if (effect.Has<CharacterResourceModifiers<EnergyModifier>>() && !_target.Has<DirtyEnergy>())
-            _target.Add<DirtyEnergy>();
-        if (effect.Has<CharacterResourceModifiers<RageModifier>>() && !_target.Has<DirtyRage>())
-            _target.Add<DirtyRage>();
+        if (_world.Has<CharacterResourceModifiers<HealthModifier>>(effect) && !_world.Has<DirtyHealth>(_target))
+            _world.Add<DirtyHealth>(_target);
+        if (_world.Has<CharacterResourceModifiers<ManaModifier>>(effect) && !_world.Has<DirtyMana>(_target))
+            _world.Add<DirtyMana>(_target);
+        if (_world.Has<CharacterResourceModifiers<EnergyModifier>>(effect) && !_world.Has<DirtyEnergy>(_target))
+            _world.Add<DirtyEnergy>(_target);
+        if (_world.Has<CharacterResourceModifiers<RageModifier>>(effect) && !_world.Has<DirtyRage>(_target))
+            _world.Add<DirtyRage>(_target);
 
         // if effect has ResourceRegebModifiers
         // flag the _target's resource regens as dirty so they will be recalculated without this effect
-        if (effect.Has<CharacterResourceRegenModifiers<HealthRegenModifier>>() && !_target.Has<DirtyHealthRegen>())
-            _target.Add<DirtyHealthRegen>();
-        if (effect.Has<CharacterResourceRegenModifiers<ManaRegenModifier>>() && !_target.Has<DirtyManaRegen>())
-            _target.Add<DirtyManaRegen>();
-        if (effect.Has<CharacterResourceRegenModifiers<EnergyModifier>>() && !_target.Has<DirtyEnergyRegen>())
-            _target.Add<DirtyEnergyRegen>();
-        if (effect.Has<CharacterResourceRegenModifiers<RageDecayModifier>>() && !_target.Has<DirtyRageDecay>())
-            _target.Add<DirtyRageDecay>();
+        if (_world.Has<CharacterResourceRegenModifiers<HealthRegenModifier>>(effect) && !_world.Has<DirtyHealthRegen>(_target))
+            _world.Add<DirtyHealthRegen>(_target);
+        if (_world.Has<CharacterResourceRegenModifiers<ManaRegenModifier>>(effect) && !_world.Has<DirtyManaRegen>(_target))
+            _world.Add<DirtyManaRegen>(_target);
+        if (_world.Has<CharacterResourceRegenModifiers<EnergyModifier>>(effect) && !_world.Has<DirtyEnergyRegen>(_target))
+            _world.Add<DirtyEnergyRegen>(_target);
+        if (_world.Has<CharacterResourceRegenModifiers<RageDecayModifier>>(effect) && !_world.Has<DirtyRageDecay>(_target))
+            _world.Add<DirtyRageDecay>(_target);
 
         //
-        if (_target.Has<PlayerTag>())
+        if (_world.Has<PlayerTag>(_target))
             _dirtyTracker.MarkDirty(_target, DirtyReason.Effects);
     }
 
@@ -152,8 +158,8 @@ public class CharacterEffectHost : IEffectHost
         // snapshot target values
         var snapshottedValues = new EffectValuesSnapshot
         {
-            TargetLevel = _target.Get<Level>().Value,
-            TargetStats = _target.Get<EffectiveStats>().Values, // direct copy
+            TargetLevel = _world.Get<Level>(_target).Value,
+            TargetStats = _world.Get<EffectiveStats>(_target).Values, // direct copy
         };
         return snapshottedValues;
     }

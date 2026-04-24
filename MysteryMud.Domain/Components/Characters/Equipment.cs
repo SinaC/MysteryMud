@@ -1,9 +1,9 @@
-﻿using Arch.Core;
-using MysteryMud.GameData.Enums;
+﻿using MysteryMud.GameData.Enums;
+using TinyECS;
 
 namespace MysteryMud.Domain.Components.Characters;
 
 public struct Equipment
 {
-    public Dictionary<EquipmentSlotKind, Entity> Slots;
+    public Dictionary<EquipmentSlotKind, EntityId> Slots;
 }

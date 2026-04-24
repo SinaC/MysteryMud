@@ -1,9 +1,9 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.GameData.Intents;
 
 public struct AutoSacrificeIntent
 {
-    public Entity Actor;  // who gets the gold/reward
-    public Entity Corpse;   // Corpse to sacrifice
+    public EntityId Actor;  // who gets the gold/reward
+    public EntityId Corpse;   // Corpse to sacrifice
 }

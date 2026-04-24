@@ -1,39 +1,41 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Core.Bus;
+﻿using MysteryMud.Core.Bus;
 using MysteryMud.Core.Persistence;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Characters.Resources;
+using MysteryMud.Domain.Helpers;
 using MysteryMud.GameData.Events;
+using TinyECS;
 
 namespace MysteryMud.Domain.Services;
 
 public class ExperienceService : IExperienceService
 {
+    private readonly World _world;
     private readonly IGameMessageService _msg;
     private readonly IDirtyTracker _dirtyTracker;
     private readonly IEventBuffer<ExperienceGrantedEvent> _experiences;
     private readonly IEventBuffer<LevelIncreasedEvent> _levels;
 
-    public ExperienceService(IGameMessageService msg, IDirtyTracker dirtyTracker, IEventBuffer<ExperienceGrantedEvent> experiences, IEventBuffer<LevelIncreasedEvent> levels)
+    public ExperienceService(World world, IGameMessageService msg, IDirtyTracker dirtyTracker, IEventBuffer<ExperienceGrantedEvent> experiences, IEventBuffer<LevelIncreasedEvent> levels)
     {
+        _world = world;
         _msg = msg;
         _dirtyTracker = dirtyTracker;
         _experiences = experiences;
         _levels = levels;
     }
 
-    public long CalculateCombatXp(Entity player, Entity victim)
+    public long CalculateCombatXp(EntityId player, EntityId victim)
     {
-        if (!player.IsAlive())
+        if (!CharacterHelpers.IsAlive(_world, player))
             return 0;
 
-        ref var playerLevel = ref player.TryGetRef<Level>(out var hasPlayerLevel);
+        ref var playerLevel = ref _world.TryGetRef<Level>(player, out var hasPlayerLevel);
         if (!hasPlayerLevel)
             return 0;
-        ref var victimLevel = ref victim.TryGetRef<Level>(out var hasVictimLevel);
+        ref var victimLevel = ref _world.TryGetRef<Level>(victim, out var hasVictimLevel);
         if (!hasVictimLevel)
             return 0;
 
@@ -52,18 +54,18 @@ public class ExperienceService : IExperienceService
         return (long)(baseXp * modifier);
     }
 
-    public void GrantExperience(Entity player, long xpGained)
+    public void GrantExperience(EntityId player, long xpGained)
     {
-        if (!player.IsAlive())
+        if (!CharacterHelpers.IsAlive(_world, player))
             return;
 
         if (xpGained == 0)
             return;
 
-        ref var progression = ref player.TryGetRef<Progression>(out var hasProgression);
+        ref var progression = ref _world.TryGetRef<Progression>(player, out var hasProgression);
         if (!hasProgression)
             return;
-        ref var level = ref player.TryGetRef<Level>(out var hasLevel);
+        ref var level = ref _world.TryGetRef<Level>(player, out var hasLevel);
         if (!hasLevel)
             return;
 
@@ -75,7 +77,7 @@ public class ExperienceService : IExperienceService
         else
             _msg.To(player).Act("%gYou lose {0} XP.%x").With(-xpGained);
 
-        if (player.Has<PlayerTag>()) // to be sure
+        if (_world.Has<PlayerTag>(player)) // to be sure
             _dirtyTracker.MarkDirty(player, DirtyReason.Experience);
 
         var levelIncreased = false;
@@ -106,12 +108,12 @@ public class ExperienceService : IExperienceService
             SetResourceToMax<Rage>(player, x => x.Max, (ref x, value) => x.Current = value);
 
             // Recalculate derived stats
-            if (!player.Has<DirtyStats>())
-                player.Add<DirtyStats>();
+            if (!_world.Has<DirtyStats>(player))
+                _world.Add<DirtyStats>(player);
 
             // TODO: set dirty health, dirty mana, ... ?
 
-            if (player.Has<PlayerTag>())
+            if (_world.Has<PlayerTag>(player))
                 _dirtyTracker.MarkDirty(player, DirtyReason.CoreData);
         }
 
@@ -131,10 +133,10 @@ public class ExperienceService : IExperienceService
 
     private delegate void ResourceValueSetter<TResource>(ref TResource resource, int value);
 
-    private void SetResourceToMax<TResource>(Entity player, Func<TResource, int> getMaxValueFunc, ResourceValueSetter<TResource> setResourceValueAction)
+    private void SetResourceToMax<TResource>(EntityId player, Func<TResource, int> getMaxValueFunc, ResourceValueSetter<TResource> setResourceValueAction)
         where TResource : struct
     {
-        ref var resource = ref player.TryGetRef<TResource>(out var hasResource);
+        ref var resource = ref _world.TryGetRef<TResource>(player, out var hasResource);
         if (!hasResource)
             return;
 

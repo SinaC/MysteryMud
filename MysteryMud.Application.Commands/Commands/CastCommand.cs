@@ -1,4 +1,4 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Core;
@@ -27,7 +27,7 @@ public sealed class CastCommand : ICommand
         _intents = intents;
     }
 
-    public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(GameState state, EntityId actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 

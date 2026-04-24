@@ -1,3 +1,11 @@
+stop check world.IsAlive everywhere -> check specific tag instead
+    during a tick we are sure an entity always exists -> the only check on _world.IsAlive(entity) should be done in CommandHandling, Persistence and TimedEffectSystem because we 'store' entity between ticks for these systems
+
+transform helpers such as CharacterHelpers, ItemHelpers, ... into non-static class with world injected
+    Name, DisplayName should be moved to NameHelpers or NameService
+    DebugName should be moved to DebugHelpers or DebugService
+it's probably valid for every XXXHelpers, XXXFactory
+
 keep only one event buffer except for death/damage events which will have their own buffer to ensure they are processed separetely and can trigger things like death saves, death effects, etc without being mixed with other events
 
 ======================================

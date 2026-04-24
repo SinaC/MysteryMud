@@ -1,7 +1,7 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Core;
+﻿using MysteryMud.Core;
 using MysteryMud.Domain.Components.Characters.Mobiles;
+using TinyECS;
+using TinyECS.Extensions;
 
 namespace MysteryMud.Domain.Systems;
 
@@ -10,21 +10,31 @@ public class ThreatDecaySystem
     private const int Timeout = 100; // 100 ticks
     private const int DecayPercentagePerTick = 98; // exponential decay
 
+    private World _world;
+
+    public ThreatDecaySystem(World world)
+    {
+        _world = world;
+    }
+
     //Alternative: time-based decay
     //var dt = state.CurrentTick - entry.LastUpdateTick;
     //entry.Value *= MathF.Pow(DecayPercentagePerTick/100, dt);
 
+    private static readonly QueryDescription _hasActiveThreatQueryDesc = new QueryDescription()
+        .WithAll<ThreatTable, ActiveThreatTag>();
+
     public void Tick(GameState state)
     {
-        var query = new QueryDescription()
-            .WithAll<ThreatTable, ActiveThreatTag>();
-        state.World.Query(query, (Entity entity, ref ThreatTable table, ref ActiveThreatTag tag) =>
+        _world.Query(_hasActiveThreatQueryDesc, (EntityId entity,
+            ref ThreatTable table,
+            ref ActiveThreatTag tag) =>
         {
             // no threat modification for a long time, clear
             if (state.CurrentTick - table.LastUpdateTick > Timeout)
             {
                 table.Threat.Clear();
-                entity.Remove<ActiveThreatTag>();
+                _world.Remove<ActiveThreatTag>(entity);
                 return;
             }
 
@@ -37,7 +47,7 @@ public class ThreatDecaySystem
                     table.Threat[key] = decayed;
             }
             if (table.Threat.Count == 0) // if no more entries, remove active threat tag
-                entity.Remove<ActiveThreatTag>();
+                _world.Remove<ActiveThreatTag>(entity);
         });
     }
 }

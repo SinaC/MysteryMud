@@ -1,13 +1,13 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.GameData.Events;
 
 public struct LookedEvent
 {
-    public Entity Viewer;
+    public EntityId Viewer;
 
     public LookTargetKind TargetKind;
 
-    public Entity Entity; // room, character, or item being looked at
+    public EntityId Entity; // room, character, or item being looked at
 }

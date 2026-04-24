@@ -1,7 +1,7 @@
-﻿using Arch.Core;
-using MysteryMud.Core;
+﻿using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Infrastructure.Services;
+using TinyECS;
 
 namespace MysteryMud.Infrastructure.Eventing;
 
@@ -16,7 +16,7 @@ public class MessageBus : IMessageBus
         _outputService = outputService;
     }
 
-    public void Publish(Entity entity, string message)
+    public void Publish(EntityId entity, string message)
     {
         _queue.Enqueue(new MessageEvent { Entity = entity, Message = message });
     }

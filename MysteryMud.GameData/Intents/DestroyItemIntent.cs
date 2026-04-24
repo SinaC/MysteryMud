@@ -1,9 +1,9 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.GameData.Intents;
 
 public struct DestroyItemIntent
 {
-    public Entity Entity;
-    public Entity Item;
+    public EntityId Entity;
+    public EntityId Item;
 }

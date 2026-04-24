@@ -1,9 +1,8 @@
-﻿using Arch.Core;
-using MysteryMud.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.Application.Dispatching;
 
 public interface ICommandDispatcher
 {
-    void Dispatch(GameState state, Entity actor, ReadOnlySpan<char> input);
+    void Dispatch(EntityId actor, ReadOnlySpan<char> input);
 }

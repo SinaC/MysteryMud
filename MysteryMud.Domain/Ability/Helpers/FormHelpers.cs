@@ -1,16 +1,15 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Domain.Components.Characters;
+﻿using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.GameData.Enums;
+using TinyECS;
 
 namespace MysteryMud.Domain.Ability.Helpers;
 
 public static class FormHelpers
 {
-    public static void SwitchForm(Entity e, FormType newForm)
+    public static void SwitchForm(World world, EntityId entity, FormType newForm)
     {
-        ref var form = ref e.TryGetRef<Form>(out var hasForm);
+        ref var form = ref world.TryGetRef<Form>(entity, out var hasForm);
         if (!hasForm)
             return;
 
@@ -21,26 +20,26 @@ public static class FormHelpers
 
         // TODO: optimize to avoid removing and readding the same
         // Remove all usage tags
-        if (e.Has<UsesMana>())
-            e.Remove<UsesMana>();
-        if (e.Has<UsesRage>())
-            e.Remove<UsesRage>();
-        if (e.Has<UsesEnergy>())
-            e.Remove<UsesEnergy>();
+        if (world.Has<UsesMana>(entity))
+            world.Remove<UsesMana>(entity);
+        if (world.Has<UsesRage>(entity))
+            world.Remove<UsesRage>(entity);
+        if (world.Has<UsesEnergy>(entity))
+            world.Remove<UsesEnergy>(entity);
 
         // Add what the form allows
         switch (newForm)
         {
             case FormType.Humanoid:
-                e.Add<UsesMana>();
+                world.Add<UsesMana>(entity);
                 break;
 
             case FormType.Bear:
-                e.Add<UsesRage>();
+                world.Add<UsesRage>(entity);
                 break;
 
             case FormType.Cat:
-                e.Add<UsesEnergy>();
+                world.Add<UsesEnergy>(entity);
                 break;
         }
     }

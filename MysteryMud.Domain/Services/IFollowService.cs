@@ -1,10 +1,10 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.Domain.Services;
 
 public interface IFollowService
 {
-    void Follow(Entity follower, Entity leader);
-    void StopFollowing(Entity follower);
-    void StopAllFollowers(Entity leader);
+    void Follow(EntityId follower, EntityId leader);
+    void StopFollowing(EntityId follower);
+    void StopAllFollowers(EntityId leader);
 }

@@ -1,57 +1,59 @@
-﻿using Arch.Core;
-using MysteryMud.Core.Bus;
+﻿using MysteryMud.Core.Bus;
 using MysteryMud.Domain.Formatters;
+using TinyECS;
 
 namespace MysteryMud.Domain.Services;
 
 public class GameMessageService : IGameMessageService
 {
+    private readonly World _world;
     private readonly IMessageBus _messageBus;
     private readonly IActService _actService;
 
-    public GameMessageService(IMessageBus bus, IActService act)
+    public GameMessageService(World world, IMessageBus bus, IActService act)
     {
+        _world = world;
         _messageBus = bus;
         _actService = act;
     }
 
-    public IMessageTargetBuilder To(Entity entity)
+    public IMessageTargetBuilder To(EntityId entity)
         => new MessageTargetBuilder(_messageBus, _actService, [entity]);
 
-    public IMessageTargetBuilder To(IEnumerable<Entity> entities)
+    public IMessageTargetBuilder To(IEnumerable<EntityId> entities)
         => new MessageTargetBuilder(_messageBus, _actService, entities);
 
-    public IMessageTargetBuilder ToGroup(Entity group)
+    public IMessageTargetBuilder ToGroup(EntityId group)
     {
-        var targets = ActTargetResolver.GetGroupTargets(group);
+        var targets = ActTargetResolver.GetGroupTargets(_world, group);
         return new MessageTargetBuilder(_messageBus, _actService, targets);
     }
 
     // to everyone in the room except actor
-    public IMessageTargetBuilder ToRoom(Entity entity)
+    public IMessageTargetBuilder ToRoom(EntityId entity)
     {
-        var targets = ActTargetResolver.GetRoomTargets(entity);
+        var targets = ActTargetResolver.GetRoomTargets(_world, entity);
         return new MessageTargetBuilder(_messageBus, _actService, targets);
     }
 
     // to everyone in the room except 'actor' and 'except'
-    public IMessageTargetBuilder ToRoomExcept(Entity entity, Entity except)
+    public IMessageTargetBuilder ToRoomExcept(EntityId entity, EntityId except)
     {
-        var targets = ActTargetResolver.GetRoomTargetsExcept(entity, except);
+        var targets = ActTargetResolver.GetRoomTargetsExcept(_world, entity, except);
         return new MessageTargetBuilder(_messageBus, _actService, targets);
     }
 
     // to everyone in the room
-    public IMessageTargetBuilder ToAll(Entity entity)
+    public IMessageTargetBuilder ToAll(EntityId entity)
     {
-        var targets = ActTargetResolver.GetAllTargets(entity);
+        var targets = ActTargetResolver.GetAllTargets(_world, entity);
         return new MessageTargetBuilder(_messageBus, _actService, targets);
     }
 
     // to every in the room except 'except'
-    public IMessageTargetBuilder ToAllExcept(Entity entity, Entity except)
+    public IMessageTargetBuilder ToAllExcept(EntityId entity, EntityId except)
     {
-        var targets = ActTargetResolver.GetAllTargetsExcept(entity, except);
+        var targets = ActTargetResolver.GetAllTargetsExcept(_world, entity, except);
         return new MessageTargetBuilder(_messageBus, _actService, targets);
     }
 }

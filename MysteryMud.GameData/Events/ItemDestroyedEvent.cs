@@ -1,8 +1,8 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.GameData.Events;
 public struct ItemDestroyedEvent
 {
-    public Entity Entity;
-    public Entity Item;
+    public EntityId Entity;
+    public EntityId Item;
 }

@@ -1,6 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Application.Parsing;
+﻿using MysteryMud.Application.Parsing;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Core.Extensions;
@@ -10,11 +8,13 @@ using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.Domain.Components.Groups;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Extensions;
+using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Queries;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Enums;
 using System.Text;
+using TinyECS;
+using TinyECS.Extensions;
 
 namespace MysteryMud.Application.Commands.Commands;
 
@@ -22,16 +22,18 @@ public sealed class GroupCommand : ICommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.Target;
 
+    private readonly World _world;
     private readonly IGameMessageService _msg;
     private readonly IGroupService _groupService;
 
-    public GroupCommand(IGameMessageService msg, IGroupService groupService)
+    public GroupCommand(World world, IGameMessageService msg, IGroupService groupService)
     {
+        _world = world;
         _msg = msg;
         _groupService = groupService;
     }
 
-    public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(GameState state, EntityId actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
@@ -42,8 +44,9 @@ public sealed class GroupCommand : ICommand
             return;
         }
 
-        ref var people = ref actor.Get<Location>().Room.Get<RoomContents>().Characters;
-        var target = EntityFinder.SelectSingleTarget(actor, ctx.Primary.Kind, ctx.Primary.Index, ctx.Primary.Name, people);
+        ref var room = ref _world.Get<Location>(actor).Room;
+        ref var people = ref _world.Get<RoomContents>(room).Characters;
+        var target = EntityFinder.SelectSingleTarget(_world, actor, ctx.Primary.Kind, ctx.Primary.Index, ctx.Primary.Name, people);
         if (target == null)
         {
             _msg.To(actor).Send("They aren't here.");
@@ -56,30 +59,30 @@ public sealed class GroupCommand : ICommand
             return;
         }
 
-        if (!target.Value.Has<PlayerTag>())
+        if (!_world.Has<PlayerTag>(target.Value))
         {
             _msg.To(actor).Send("You can only group other players.");
             return;
         }
 
         // is target following us
-        ref var targetFollowing = ref target.Value.TryGetRef<Following>(out var isTargetFollowing);
+        ref var targetFollowing = ref _world.TryGetRef<Following>(target.Value, out var isTargetFollowing);
         if (!isTargetFollowing || targetFollowing.Leader != actor)
         {
             _msg.To(actor).Act("{0} is not following you.").With(target.Value);
             return;
         }
 
-        ref var actorGroupMember = ref actor.TryGetRef<GroupMember>(out var isActorGrouped);
+        ref var actorGroupMember = ref _world.TryGetRef<GroupMember>(actor, out var isActorGrouped);
         // we are not in a group, create a group and add target
         if (!isActorGrouped)
         {
-            var group = state.World.Create(new GroupInstance
+            var group = _world.CreateEntity(new GroupInstance
             {
                 Leader = actor, // already set as leader
                 LootRule = LootRule.FreeForAll,
                 Members = [], // use AddMember to add
-                MasterLooter = Entity.Null,
+                MasterLooter = EntityId.Invalid,
             });
             _groupService.AddMember(state, group, actor);
             _groupService.AddMember(state, group, target.Value);
@@ -87,21 +90,21 @@ public sealed class GroupCommand : ICommand
             return;
         }
         // we are in a group
-        ref var groupInstance = ref actorGroupMember.Group.Get<GroupInstance>();
+        ref var groupInstance = ref _world.Get<GroupInstance>(actorGroupMember.Group);
         // target is in the gorup, remove target
         if (groupInstance.Members.Contains(target.Value))
         {
-            _groupService.RemoveMember(state, actorGroupMember.Group, target.Value);
+            _groupService.RemoveMember(actorGroupMember.Group, target.Value);
             return;
         }
         // target is not in the group, add target
         _groupService.AddMember(state, actorGroupMember.Group, target.Value);
     }
 
-    private void DisplayGroup(Entity actor)
+    private void DisplayGroup(EntityId actor)
     {
-        ref var groupMember = ref actor.TryGetRef<GroupMember>(out var isInGroup);
-        ref var charmies = ref actor.TryGetRef<Charmies>(out var hasCharmies);
+        ref var groupMember = ref _world.TryGetRef<GroupMember>(actor, out var isInGroup); 
+        ref var charmies = ref _world.TryGetRef<Charmies>(actor, out var hasCharmies);
         // no group nor charmies -> nothing to display
         if (!isInGroup && !hasCharmies)
         {
@@ -115,8 +118,8 @@ public sealed class GroupCommand : ICommand
             return;
         }
         // in a group, display members and their charmies
-        ref var groupInstance = ref groupMember.Group.Get<GroupInstance>();
-        _msg.To(actor).Send($"{groupInstance.Leader.DisplayName}'s group:");
+        ref var groupInstance = ref _world.Get<GroupInstance>(groupMember.Group);
+        _msg.To(actor).Send($"{EntityHelpers.DisplayName(_world, groupInstance.Leader)}'s group:");
         foreach (var member in groupInstance.Members)
         {
             DisplayMember(actor, member);
@@ -124,29 +127,33 @@ public sealed class GroupCommand : ICommand
         }
     }
 
-    private void DisplayMember(Entity actor, Entity member)
+    private void DisplayMember(EntityId actor, EntityId member)
     {
-        var health = member.Get<Health>();
-        var move = member.Get<Move>();
+        var level = _world.Get<Level>(member);
+        var health = _world.Get<Health>(member);
+        var move = _world.Get<Move>(member);
         var resources = BuildResources(member);
-        _msg.To(actor).Send(string.Format("[{0,3} {1,3}] {2,-20} {3,5}/{4,5} hp {5} {6,5}/{7,5} mv", member.Level, /*TODO class*/"Plr", member.DisplayName.MaxLength(20), health.Current, health.Max, resources, move.Current, move.Max));
+        _msg.To(actor).Send(string.Format("[{0,3} {1,3}] {2,-20} {3,5}/{4,5} hp {5} {6,5}/{7,5} mv", level.Value, /*TODO class*/"Plr", EntityHelpers.DisplayName(_world, member).MaxLength(20), health.Current, health.Max, resources, move.Current, move.Max));
     }
 
-    private void DisplayCharmies(Entity actor, Entity member)
+    // TODO: pets
+
+    private void DisplayCharmies(EntityId actor, EntityId member)
     {
-        ref var charmies = ref member.TryGetRef<Charmies>(out var hasCharmies);
+        ref var charmies = ref _world.TryGetRef<Charmies>(member, out var hasCharmies);
         if (!hasCharmies)
             return;
         foreach (var charmie in charmies.Entities)
         {
-            var health = charmie.Get<Health>();
-            var move = charmie.Get<Move>();
+            var level = _world.Get<Level>(charmie);
+            var health = _world.Get<Health>(charmie);
+            var move = _world.Get<Move>(charmie);
             var resources = BuildResources(charmie);
-            _msg.To(actor).Send(string.Format("[{0,3} Pet] {1,-20} {2,5}/{3,5} hp {4} {5,5}/{6,5} mv", charmie.Level, charmie.DisplayName.MaxLength(20), health.Current, health.Max, resources, move.Current, move.Max));
+            _msg.To(actor).Send(string.Format("[{0,3} Pet] {1,-20} {2,5}/{3,5} hp {4} {5,5}/{6,5} mv", level.Value, EntityHelpers.DisplayName(_world, charmie).MaxLength(20), health.Current, health.Max, resources, move.Current, move.Max));
         }
     }
 
-    private static string BuildResources(Entity target)
+    private string BuildResources(EntityId target)
     {
         var sb = new StringBuilder();
 
@@ -157,14 +164,14 @@ public sealed class GroupCommand : ICommand
         return sb.ToString();
     }
 
-    private static StringBuilder AppendResource<TResource, TUses>(StringBuilder sb, Entity target, ResourceKind kind, Func<TResource, (int current, int max)> getCurrentMaxFunc)
+    private StringBuilder AppendResource<TResource, TUses>(StringBuilder sb, EntityId target, ResourceKind kind, Func<TResource, (int current, int max)> getCurrentMaxFunc)
        where TResource : struct
        where TUses : struct
     {
-        var uses = target.Has<TUses>();
+        var uses = _world.Has<TUses>(target);
         if (!uses)
             return sb;
-        ref var resource = ref target.TryGetRef<TResource>(out var hasResource);
+        ref var resource = ref _world.TryGetRef<TResource>(target, out var hasResource);
         if (!hasResource)
             return sb;
         var (current, max) = getCurrentMaxFunc(resource);

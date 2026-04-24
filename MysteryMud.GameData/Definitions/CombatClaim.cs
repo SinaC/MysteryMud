@@ -1,11 +1,11 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.GameData.Definitions;
 
 public struct CombatClaim
 {
-    public Entity Claimant;
-    public Entity ClaimantGroup;
+    public EntityId Claimant;
+    public EntityId ClaimantGroup;
     public long JoinedAtTick;    // for ordering
     public bool Forfeited;
 }

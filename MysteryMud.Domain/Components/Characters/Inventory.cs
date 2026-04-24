@@ -1,8 +1,8 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.Domain.Components.Characters;
 
 public struct Inventory
 {
-    public List<Entity> Items;
+    public List<EntityId> Items;
 }

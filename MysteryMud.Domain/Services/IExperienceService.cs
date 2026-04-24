@@ -1,9 +1,9 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.Domain.Services;
 
 public interface IExperienceService
 {
-    long CalculateCombatXp(Entity player, Entity victim);
-    void GrantExperience(Entity player, long xpGained);
+    long CalculateCombatXp(EntityId player, EntityId victim);
+    void GrantExperience(EntityId player, long xpGained);
 }

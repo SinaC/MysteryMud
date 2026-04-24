@@ -1,10 +1,17 @@
-﻿using Arch.Core;
-using MysteryMud.Domain.Formatters;
+﻿using MysteryMud.Domain.Formatters;
+using TinyECS;
 
 namespace MysteryMud.Domain.Services;
 
 public class ActService : IActService
 {
-    public string FormatFor(Entity viewer, string format, params object[] args)
-        => ActFormatter.FormatActOneLine(viewer, format, args);
+    private readonly World _world;
+
+    public ActService(World world)
+    {
+        _world = world;
+    }
+
+    public string FormatFor(EntityId viewer, string format, params object[] args)
+        => ActFormatter.FormatActOneLine(_world, viewer, format, args);
 }

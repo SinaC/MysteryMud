@@ -1,4 +1,4 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.Core.Persistence;
 
@@ -8,12 +8,12 @@ namespace MysteryMud.Core.Persistence;
 
 public sealed class DirtyEntry
 {
-    public Entity Entity { get; }
+    public EntityId Entity { get; }
     public DirtyReason Reasons { get; private set; }
     public DateTime FirstMark { get; }
     public DateTime LastMark { get; private set; }
 
-    public DirtyEntry(Entity entity, DirtyReason reason)
+    public DirtyEntry(EntityId entity, DirtyReason reason)
     {
         Entity = entity;
         Reasons = reason;

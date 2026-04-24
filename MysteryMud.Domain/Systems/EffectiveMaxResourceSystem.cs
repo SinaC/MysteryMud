@@ -1,10 +1,10 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Core;
+﻿using MysteryMud.Core;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.GameData.Enums;
+using TinyECS;
+using TinyECS.Extensions;
 
 namespace MysteryMud.Domain.Systems;
 
@@ -16,6 +16,7 @@ public class EffectiveMaxResourceSystem<TBase, TResource, TDirty, TModifier>
     where TDirty : struct
     where TModifier : struct
 {
+    private readonly World _world;
     private readonly Func<TBase, int> _getBaseMaxFunc;
     private readonly Func<TResource, int> _getCurrentFunc;
     private readonly ResourceValueSetter<TResource> _setCurrentAction;
@@ -23,8 +24,9 @@ public class EffectiveMaxResourceSystem<TBase, TResource, TDirty, TModifier>
     private readonly Func<TModifier, decimal> _getModifierValueFunc;
     private readonly Func<TModifier, ModifierKind> _getModifierKindFunc;
 
-    public EffectiveMaxResourceSystem(Func<TBase, int> getBaseMaxValueFunc, Func<TResource, int> getCurrentFunc, ResourceValueSetter<TResource> setCurrentAction, ResourceValueSetter<TResource> setMaxAction, Func<TModifier, ModifierKind> getModifierKindFunc, Func<TModifier, decimal> getModifierValueFunc)
+    public EffectiveMaxResourceSystem(World world, Func<TBase, int> getBaseMaxValueFunc, Func<TResource, int> getCurrentFunc, ResourceValueSetter<TResource> setCurrentAction, ResourceValueSetter<TResource> setMaxAction, Func<TModifier, ModifierKind> getModifierKindFunc, Func<TModifier, decimal> getModifierValueFunc)
     {
+        _world = world;
         _getBaseMaxFunc = getBaseMaxValueFunc;
         _getCurrentFunc = getCurrentFunc;
         _setCurrentAction = setCurrentAction;
@@ -33,25 +35,31 @@ public class EffectiveMaxResourceSystem<TBase, TResource, TDirty, TModifier>
         _getModifierKindFunc = getModifierKindFunc;
     }
 
+    private static readonly QueryDescription _hasDirtyResourceQueryDesc = new QueryDescription()
+        .WithAll<TBase, TResource, TDirty, CharacterEffects>()
+        .WithNone<Dead>();
+
     public void Tick(GameState state)
     {
-        var query = new QueryDescription()
-            .WithAll<TBase, TResource, TDirty>()
-            .WithNone<Dead>();
-        state.World.Query(query, (Entity entity,
+        _world.Query(_hasDirtyResourceQueryDesc, (EntityId entity,
             ref TBase baseRes,
             ref TResource effectiveRes,
-            ref TDirty dirty) =>
+            ref TDirty _,
+            ref CharacterEffects characterEffects) => // TODO: other kind of entity
         {
-            ref var characterEffects = ref entity.Get<CharacterEffects>(); // TODO: other kind of entity
-
             // get base max
             int baseMax = _getBaseMaxFunc(baseRes);
 
             // TODO: apply modifiers from equipment
 
             // apply modifiers from effects
-            var (flat, percent, multiply, overriding) = ModifierPipeline.CalculateModifiers<CharacterResourceModifiers<TModifier>, TModifier>(characterEffects, x => true, x => x.Values, _getModifierKindFunc, _getModifierValueFunc);
+            var (flat, percent, multiply, overriding) = ModifierPipeline.CalculateModifiers<CharacterResourceModifiers<TModifier>, TModifier>(
+                _world,
+                characterEffects,
+                x => true,
+                x => x.Values,
+                _getModifierKindFunc,
+                _getModifierValueFunc);
            
             var rawMax = overriding ?? ((baseMax + flat) * (100 + percent) * multiply / 100);
 
@@ -69,7 +77,7 @@ public class EffectiveMaxResourceSystem<TBase, TResource, TDirty, TModifier>
             _setCurrentAction(ref effectiveRes, current);
 
             // remove dirty tag
-            entity.Remove<TDirty>();
+            _world.Remove<TDirty>(entity);
         });
     }
 }

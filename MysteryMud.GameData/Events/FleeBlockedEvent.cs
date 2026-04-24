@@ -1,10 +1,10 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.GameData.Events;
 
 public struct FleeBlockedEvent
 {
-    public Entity Entity;
+    public EntityId Entity;
     public FleeBlockedReason Reason;
 }
 

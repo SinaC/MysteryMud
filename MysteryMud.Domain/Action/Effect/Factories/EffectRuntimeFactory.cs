@@ -1,19 +1,20 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Domain.Action.Effect.Definitions;
+﻿using MysteryMud.Domain.Action.Effect.Definitions;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
+using TinyECS;
 
 namespace MysteryMud.Domain.Action.Effect.Factories;
 
 public class EffectRuntimeFactory : IEffectRuntimeFactory
 {
+    private readonly World _world;
     private readonly IEffectActionFactory _effectActionFactory;
 
-    public EffectRuntimeFactory(IEffectActionFactory effectActionFactory)
+    public EffectRuntimeFactory(World world, IEffectActionFactory effectActionFactory)
     {
+        _world = world;
         _effectActionFactory = effectActionFactory;
     }
 
@@ -128,13 +129,13 @@ public class EffectRuntimeFactory : IEffectRuntimeFactory
         };
     }
 
-    private Entity? GetMessageTarget(Entity affectedEntity) // TODO: same code found in AbilityValidationSystem/AbilityCastingSystem
+    private EntityId? GetMessageTarget(EntityId affectedEntity) // TODO: same code found in AbilityValidationSystem/AbilityCastingSystem
     {
-        if (affectedEntity.Has<CharacterTag>())
+        if (_world.Has<CharacterTag>(affectedEntity))
             return affectedEntity;
-        if (affectedEntity.TryGet<Equipped>(out var equipped))
+        if (_world.TryGet<Equipped>(affectedEntity, out var equipped))
             return equipped.Wearer;
-        if (affectedEntity.TryGet<ContainedIn>(out var containedIn) && containedIn.Character.Has<CharacterTag>())
+        if (_world.TryGet<ContainedIn>(affectedEntity, out var containedIn) && _world.Has<CharacterTag>(containedIn.Character))
             return containedIn.Character;
         return null;
     }

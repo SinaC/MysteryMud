@@ -1,8 +1,8 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.Domain.Components.Characters;
 
 public struct Followers
 {
-    public List<Entity> Entities;
+    public List<EntityId> Entities;
 }

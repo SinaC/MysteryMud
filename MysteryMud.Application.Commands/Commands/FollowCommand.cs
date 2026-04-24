@@ -1,6 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Application.Parsing;
+﻿using MysteryMud.Application.Parsing;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Components;
@@ -8,6 +6,7 @@ using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Queries;
 using MysteryMud.Domain.Services;
+using TinyECS;
 
 namespace MysteryMud.Application.Commands.Commands;
 
@@ -15,21 +14,23 @@ public sealed class FollowCommand : ICommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.Target;
 
+    private readonly World _world;
     private readonly IGameMessageService _msg;
     private readonly IFollowService _followService;
 
-    public FollowCommand(IGameMessageService msg, IFollowService followService)
+    public FollowCommand(World world, IGameMessageService msg, IFollowService followService)
     {
+        _world = world;
         _msg = msg;
         _followService = followService;
     }
 
-    public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(GameState state, EntityId actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
         // get existing Following if any
-        ref var following = ref actor.TryGetRef<Following>(out var isFollowing);
+        ref var following = ref _world.TryGetRef<Following>(actor, out var isFollowing);
 
         // no argument: display leader
         if (ctx.TargetCount == 0)
@@ -42,8 +43,9 @@ public sealed class FollowCommand : ICommand
         }
 
         // search target
-        var people = actor.Get<Location>().Room.Get<RoomContents>().Characters;
-        var target = EntityFinder.SelectSingleTarget(actor, ctx.Primary.Kind, ctx.Primary.Index, ctx.Primary.Name, people);
+        var room = _world.Get<Location>(actor).Room;
+        var people = _world.Get<RoomContents>(room).Characters;
+        var target = EntityFinder.SelectSingleTarget(_world, actor, ctx.Primary.Kind, ctx.Primary.Index, ctx.Primary.Name, people);
         if (target == null)
         {
             _msg.To(actor).Send("They are not here.");
@@ -85,9 +87,9 @@ public sealed class FollowCommand : ICommand
         _followService.Follow(actor, target.Value);
     }
 
-    private static Entity? GetLeader(Entity entity)
+    private EntityId? GetLeader(EntityId entity)
     {
-        ref var following = ref entity.TryGetRef<Following>(out var isFollowing);
+        ref var following = ref _world.TryGetRef<Following>(entity, out var isFollowing);
         if (!isFollowing)
             return null;
         return following.Leader;

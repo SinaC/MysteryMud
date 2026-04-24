@@ -1,11 +1,11 @@
-﻿using Arch.Core;
-using MysteryMud.GameData.Enums;
+﻿using MysteryMud.GameData.Enums;
+using TinyECS;
 
 namespace MysteryMud.Infrastructure.Scheduler;
 
 public struct ScheduledEvent
 {
-    public Entity Target;
+    public EntityId Target;
     public ScheduledEventKind Kind;
     public long ExecuteAt;
 }

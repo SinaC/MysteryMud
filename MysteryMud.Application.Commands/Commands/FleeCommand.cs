@@ -1,35 +1,36 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Core;
+﻿using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Core.Contracts;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Services;
+using TinyECS;
 
 namespace MysteryMud.Application.Commands.Commands;
 
 public sealed class FleeCommand : ICommand
 {
+    private readonly World _world;
     private readonly IGameMessageService _msg;
     private readonly IIntentWriterContainer _intents;
 
-    public FleeCommand(IGameMessageService msg, IIntentWriterContainer intents)
+    public FleeCommand(World world, IGameMessageService msg, IIntentWriterContainer intents)
     {
+        _world = world;
         _msg = msg;
         _intents = intents;
     }
 
-    public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(GameState state, EntityId actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
-        if (!actor.Has<CombatState>())
+        if (!_world.Has<CombatState>(actor))
         {
             _msg.To(actor).Send("You aren't fighting anyone.");
             return;
         }
 
         // Get room
-        ref var room = ref actor.Get<Location>().Room;
+        ref var room = ref _world.Get<Location>(actor).Room;
 
         // intent to flee
         ref var intent = ref _intents.Flee.Add();

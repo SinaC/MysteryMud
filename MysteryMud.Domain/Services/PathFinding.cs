@@ -1,15 +1,14 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Domain.Components.Rooms;
+﻿using MysteryMud.Domain.Components.Rooms;
+using TinyECS;
 
 namespace MysteryMud.Domain.Services;
 
 public static class Pathfinding
 {
-    public static List<Entity> FindPath(Entity start, Entity goal)
+    public static List<EntityId> FindPath(World world, EntityId start, EntityId goal)
     {
-        Queue<Entity> open = new();
-        Dictionary<Entity, Entity> cameFrom = [];
+        Queue<EntityId> open = new();
+        Dictionary<EntityId, EntityId> cameFrom = [];
 
         open.Enqueue(start);
 
@@ -20,7 +19,7 @@ public static class Pathfinding
             if (room == goal)
                 break;
 
-            ref var roomGraph = ref room.Get<RoomGraph>();
+            ref var roomGraph = ref world.Get<RoomGraph>(room);
             foreach (var exit in roomGraph.Exits)
             {
                 if (exit is null)
@@ -36,9 +35,9 @@ public static class Pathfinding
         return Reconstruct(cameFrom, goal);
     }
 
-    private static List<Entity> Reconstruct(Dictionary<Entity, Entity> cameFrom, Entity current)
+    private static List<EntityId> Reconstruct(Dictionary<EntityId, EntityId> cameFrom, EntityId current)
     {
-        List<Entity> path = [];
+        List<EntityId> path = [];
         while (cameFrom.TryGetValue(current, out var prev))
         {
             path.Add(current);

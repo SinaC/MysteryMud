@@ -1,10 +1,10 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.GameData.Intents;
 
 public struct CorpseLootIntent
 {
-    public Entity Corpse;
-    public Entity LootOwner;        // priority looter
-    public Entity LootOwnerGroup;   // Entity.Null if no group
+    public EntityId Corpse;
+    public EntityId LootOwner;        // priority looter
+    public EntityId LootOwnerGroup;   // Entity.Null if no group
 }

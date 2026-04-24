@@ -1,22 +1,19 @@
-﻿using Arch.Core;
-using MysteryMud.Core;
-using MysteryMud.GameData.Definitions;
+﻿using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
+using TinyECS;
 
 namespace MysteryMud.Domain.Ability.Services;
 
 public interface IAbilityTargetResolver
 {
     TargetResolutionResult Resolve(
-            in Entity source,
+            in EntityId source,
             TargetKind targetKind,
             int targetIndex,
             string targetName,
-            AbilityTargetingDefinition targeting,
-            GameState state);
+            AbilityTargetingDefinition targeting);
 
     TargetResolutionResult Resolve(
-            in Entity source,
-            AbilityTargetingDefinition targeting,
-            GameState state);
+            in EntityId source,
+            AbilityTargetingDefinition targeting);
 }

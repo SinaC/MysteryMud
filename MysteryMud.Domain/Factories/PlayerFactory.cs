@@ -1,5 +1,5 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using TinyECS;
+using TinyECS.Extensions;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
@@ -12,9 +12,9 @@ namespace MysteryMud.Domain.Factories;
 
 public static class PlayerFactory
 {
-    public static Entity CreateConnectingPlayer(World world, int connectionId)
+    public static EntityId CreateConnectingPlayer(World world, int connectionId)
     {
-        var player = world.Create(new Connection
+        var player = world.CreateEntity(new Connection
         {
             ConnectionId = connectionId
         });
@@ -24,11 +24,11 @@ public static class PlayerFactory
         return player;
     }
 
-    public static Entity CreatePlayer(World world, string name, Entity room)
+    public static EntityId CreatePlayer(World world, string name, EntityId room)
     {
         var commandThrottle = new CommandThrottle();
         CommandThrottlingFactory.Initialize(ref commandThrottle);
-        var player = world.Create(
+        var player = world.CreateEntity(
             new CharacterTag(),
             new PlayerTag(),
             new CommandLevel { Value = CommandLevelKind.Player },
@@ -69,46 +69,46 @@ public static class PlayerFactory
                 Data = new EffectsCollection
                 {
                     Effects = [],
-                    EffectsByTag = new List<Entity>?[32]
+                    EffectsByTag = new List<EntityId>?[32]
                 },
             },
+            new Health { Current = 10, Max = 100 },
+            new BaseHealth { Max = 100 },
+            new HealthRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
+
+            new Move { Current = 100, Max = 100 },
+            new BaseMove { Max = 100 },
+            new MoveRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
+
+            new Mana { Current = 100, Max = 100 },
+            new BaseMana { Max = 100 },
+            new ManaRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
+            new UsesMana(),
+
+            new Energy { Current = 100, Max = 100 },
+            new BaseEnergy { Max = 100 },
+            new EnergyRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
+
+            new Rage { Current = 0, Max = 100 },
+            new BaseRage { Max = 100 },
+            new RageDecay { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
+
             new Location { Room = room },
             new Position { Value = PositionKind.Standing },
             new AutoBehaviour { Flags = AutoFlags.Loot | AutoFlags.Sacrifice | AutoFlags.Assist },
             new DirtyStats() // dirty by default
         );
-        player.Add(
-            new Health { Current = 10, Max = 100 },
-            new BaseHealth { Max = 100 },
-            new HealthRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
-        player.Add(
-            new Move { Current = 100, Max = 100 },
-            new BaseMove { Max = 100 },
-            new MoveRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
-        player.Add(
-            new Mana { Current = 100, Max = 100 },
-            new BaseMana { Max = 100 },
-            new ManaRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
-            new UsesMana());
-        player.Add(
-            new Energy { Current = 100, Max = 100 },
-            new BaseEnergy { Max = 100 },
-            new EnergyRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
-        player.Add(
-            new Rage { Current = 0, Max = 100 },
-            new BaseRage { Max = 100 },
-            new RageDecay { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
 
-        room.Get<RoomContents>().Characters.Add(player);
+        world.Get<RoomContents>(room).Characters.Add(player);
 
         return player;
     }
 
-    public static Entity CreateAdmin(World world, string name, Entity room)
+    public static EntityId CreateAdmin(World world, string name, EntityId room)
     {
         var commandThrottle = new CommandThrottle();
         CommandThrottlingFactory.Initialize(ref commandThrottle);
-        var player = world.Create(
+        var player = world.CreateEntity(
             new CharacterTag(),
             new PlayerTag(),
             new CommandLevel { Value = CommandLevelKind.Admin },
@@ -149,47 +149,48 @@ public static class PlayerFactory
                 Data = new EffectsCollection
                 {
                     Effects = [],
-                    EffectsByTag = new List<Entity>?[32]
+                    EffectsByTag = new List<EntityId>?[32]
                 },
             },
+
+            new Health { Current = 10000, Max = 10000 },
+            new BaseHealth { Max = 10000 },
+            new HealthRegen { BaseAmountPerSecond = 100, CurrentAmountPerSecond = 100 },
+
+            new Move { Current = 1000, Max = 1000 },
+            new BaseMove { Max = 1000 },
+            new MoveRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
+
+            new Mana { Current = 100, Max = 100 },
+            new BaseMana { Max = 100 },
+            new ManaRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
+            new UsesMana(),
+
+            new Energy { Current = 100, Max = 100 },
+            new BaseEnergy { Max = 100 },
+            new EnergyRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
+
+            new Rage { Current = 0, Max = 100 },
+            new BaseRage { Max = 100 },
+            new RageDecay { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
+
             new Location { Room = room },
             new Position { Value = PositionKind.Standing },
             new AutoBehaviour { Flags = AutoFlags.Loot | AutoFlags.Sacrifice | AutoFlags.Assist },
             new DirtyStats() // dirty by default
         );
-        player.Add(
-            new Health { Current = 10000, Max = 10000 },
-            new BaseHealth { Max = 10000 },
-            new HealthRegen { BaseAmountPerSecond = 100, CurrentAmountPerSecond = 100 });
-        player.Add(
-            new Move { Current = 1000, Max = 1000 },
-            new BaseMove { Max = 1000 },
-            new MoveRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
-        player.Add(
-            new Mana { Current = 100, Max = 100 },
-            new BaseMana { Max = 100 },
-            new ManaRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
-            new UsesMana());
-        player.Add(
-            new Energy { Current = 100, Max = 100 },
-            new BaseEnergy { Max = 100 },
-            new EnergyRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
-        player.Add(
-            new Rage { Current = 0, Max = 100 },
-            new BaseRage { Max = 100 },
-            new RageDecay { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
 
-        room.Get<RoomContents>().Characters.Add(player);
+        world.Get<RoomContents>(room).Characters.Add(player);
 
         return player;
     }
 
-    public static void InitializePlayer(Entity player)
+    public static void InitializePlayer(World world, EntityId player)
     {
         // TODO: read from pfile
         var commandThrottle = new CommandThrottle();
         CommandThrottlingFactory.Initialize(ref commandThrottle);
-        player.Add(
+        world.Add(player,
             new CharacterTag(),
             new PlayerTag(),
             new CommandLevel { Value = CommandLevelKind.Admin },
@@ -230,37 +231,37 @@ public static class PlayerFactory
                 Data = new EffectsCollection
                 {
                     Effects = [],
-                    EffectsByTag = new List<Entity>?[32]
+                    EffectsByTag = new List<EntityId>?[32]
                 },
             },
+
+            new Health { Current = 10000, Max = 10000 },
+            new BaseHealth { Max = 10000 },
+            new HealthRegen { BaseAmountPerSecond = 100, CurrentAmountPerSecond = 100 },
+
+            new Move { Current = 35, Max = 1000 },
+            new BaseMove { Max = 1000 },
+            new MoveRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
+
+            new Mana { Current = 100, Max = 100 },
+            new BaseMana { Max = 100 },
+            new ManaRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
+            new UsesMana(),
+
+            new Energy { Current = 100, Max = 100 },
+            new BaseEnergy { Max = 100 },
+            new EnergyRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
+
+            new Rage { Current = 0, Max = 100 },
+            new BaseRage { Max = 100 },
+            new RageDecay { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
+
             new Location { Room = RoomFactory.StartingRoomEntity },
             new Position { Value = PositionKind.Standing },
             new AutoBehaviour { Flags = AutoFlags.Loot | AutoFlags.Sacrifice | AutoFlags.Assist },
             new DirtyStats() // ensure stats are recomputed
             );
 
-        player.Add(
-            new Health { Current = 10000, Max = 10000 },
-            new BaseHealth { Max = 10000 },
-            new HealthRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
-        player.Add(
-            new Move { Current = 35, Max = 1000 },
-            new BaseMove { Max = 1000 },
-            new MoveRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
-        player.Add(
-            new Mana { Current = 100, Max = 1000 },
-            new BaseMana { Max = 100 },
-            new ManaRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
-            new UsesMana());
-        player.Add(
-            new Energy { Current = 100, Max = 100 },
-            new BaseEnergy { Max = 100 },
-            new EnergyRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 11 });
-        player.Add(
-            new Rage { Current = 0, Max = 100 },
-            new BaseRage { Max = 100 },
-            new RageDecay { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
-
-        RoomFactory.StartingRoomEntity.Get<RoomContents>().Characters.Add(player); // move to starting room
+        world.Get<RoomContents>(RoomFactory.StartingRoomEntity).Characters.Add(player); // move to starting room
     }
 }

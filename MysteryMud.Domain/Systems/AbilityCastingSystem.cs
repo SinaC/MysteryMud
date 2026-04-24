@@ -1,6 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Contracts;
 using MysteryMud.Domain.Ability;
@@ -10,11 +8,14 @@ using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
+using TinyECS;
+using TinyECS.Extensions;
 
 namespace MysteryMud.Domain.Systems;
 
 public class AbilityCastingSystem
 {
+    private readonly World _world;
     private readonly ILogger _logger;
     private readonly IGameMessageService _msg;
     private readonly ICastMessageService _castMessageService;
@@ -22,8 +23,9 @@ public class AbilityCastingSystem
     private readonly IAbilityRegistry _abilityRegistry;
     private readonly IAbilityTargetResolver _abilityTargetResolver;
 
-    public AbilityCastingSystem(ILogger logger, IGameMessageService msg, ICastMessageService castMessageService, IIntentContainer intents, IAbilityRegistry abilityRegistry, IAbilityTargetResolver abilityTargetResolver)
+    public AbilityCastingSystem(World world, ILogger logger, IGameMessageService msg, ICastMessageService castMessageService, IIntentContainer intents, IAbilityRegistry abilityRegistry, IAbilityTargetResolver abilityTargetResolver)
     {
+        _world = world;
         _logger = logger;
         _msg = msg;
         _castMessageService = castMessageService;
@@ -32,14 +34,17 @@ public class AbilityCastingSystem
         _abilityTargetResolver = abilityTargetResolver;
     }
 
+    private static readonly QueryDescription _isCastingQueryDesc = new QueryDescription()
+        .WithAll<Casting>()
+        .WithNone<Dead>();
+
     public void Tick(GameState state)
     {
         // TODO: interrupt: Your concentration is broken! You fail to cast '{spellName}'.
         // TODO: use scheduler instead of looping each tick
-        var query = new QueryDescription()
-            .WithAll<Casting>()
-            .WithNone<Dead>();
-        state.World.Query(query, (Entity entity, ref Casting casting) =>
+
+        _world.Query(_isCastingQueryDesc, (EntityId entity,
+            ref Casting casting) =>
         {
             var abilityId = casting.AbilityId;
             var source = casting.Source;
@@ -65,7 +70,7 @@ public class AbilityCastingSystem
             _msg.To(source).Act(_castMessageService.CasterFinishMessage).With(abilityRuntime.Name);
             _msg.ToRoom(source).Act(_castMessageService.RoomFinishMessage).With(source);
 
-            List<Entity> targets;
+            List<EntityId> targets;
             if (casting.ResolvedTargets is not null)
             {
                 // Single-target or CastStart AoE: targets already locked in
@@ -74,7 +79,7 @@ public class AbilityCastingSystem
             else
             {
                 // AoE CastCompletion: resolve the room snapshot now
-                var result = _abilityTargetResolver.Resolve(casting.Source, abilityRuntime.Targeting, state);
+                var result = _abilityTargetResolver.Resolve(casting.Source, abilityRuntime.Targeting);
                 var filtered = FilterTargets(abilityRuntime, result.Targets, casting.Source);
                 targets = filtered;
             }
@@ -86,24 +91,24 @@ public class AbilityCastingSystem
             executeAbilityIntent.Targets = targets;
 
             // not casting anymore
-            entity.Remove<Casting>();
+            _world.Remove<Casting>(entity);
         });
     }
 
-    private List<Entity> FilterTargets(
+    private List<EntityId> FilterTargets(
             AbilityRuntime ability,
-            List<Entity> candidates,
-            Entity source)
+            List<EntityId> candidates,
+            EntityId source)
     {
-        var passed = new List<Entity>(candidates.Count);
+        var passed = new List<EntityId>(candidates.Count);
 
         foreach (var target in candidates)
         {
             bool skip = false;
 
-            foreach (var rule in ability.TargetValidationRules.Where(x => x.IsCandidateForValidation(target)))
+            foreach (var rule in ability.TargetValidationRules.Where(x => x.IsCandidateForValidation(_world, target)))
             {
-                var result = rule.Validate(source, target);
+                var result = rule.Validate(_world, source, target);
                 if (result.Success)
                     continue;
 
@@ -122,7 +127,7 @@ public class AbilityCastingSystem
         return passed;
     }
 
-    private void ActAbilityMessage(Entity actor, AbilityRuntime ability, string key, Entity target) // TODO: same code found in AbilityValidationSystem
+    private void ActAbilityMessage(EntityId actor, AbilityRuntime ability, string key, EntityId target) // TODO: same code found in AbilityValidationSystem
     {
         if (key is null)
             return;
@@ -132,7 +137,7 @@ public class AbilityCastingSystem
             _logger.LogError("Ability {abilityName} validation rules refers to {key} but it's not found in messages", ability.Name, key);
     }
 
-    private void ActAbilityMessage(ContextualizedMessage msg, Entity actor, Entity target) // TODO: same code found in EffectRuntimeFactory/AbilityValidationSystem
+    private void ActAbilityMessage(ContextualizedMessage msg, EntityId actor, EntityId target) // TODO: same code found in EffectRuntimeFactory/AbilityValidationSystem
     {
         var source = actor;
         var affectedEntity = target;
@@ -154,13 +159,13 @@ public class AbilityCastingSystem
         }
     }
 
-    private Entity? GetMessageTarget(Entity affectedEntity) // TODO: same code found in EffectRuntimeFactory/AbilityValidationSystem
+    private EntityId? GetMessageTarget(EntityId affectedEntity) // TODO: same code found in EffectRuntimeFactory/AbilityValidationSystem
     {
-        if (affectedEntity.Has<CharacterTag>())
+        if (_world.Has<CharacterTag>(affectedEntity))
             return affectedEntity;
-        if (affectedEntity.TryGet<Equipped>(out var equipped))
+        if (_world.TryGet<Equipped>(affectedEntity, out var equipped))
             return equipped.Wearer;
-        if (affectedEntity.TryGet<ContainedIn>(out var containedIn) && containedIn.Character.Has<CharacterTag>())
+        if (_world.TryGet<ContainedIn>(affectedEntity, out var containedIn) && _world.Has<CharacterTag>(containedIn.Character))
             return containedIn.Character;
         return null;
     }

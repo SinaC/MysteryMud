@@ -1,6 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Core.Persistence;
+﻿using MysteryMud.Core.Persistence;
 using MysteryMud.Core.Persistence.Snapshots;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
@@ -8,23 +6,24 @@ using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.GameData.Enums;
 using System.Text.Json;
+using TinyECS;
 
 namespace MysteryMud.Domain.Persistence;
 
 public sealed class PlayerSnapshotBuilder : ISnapshotBuilder
 {
-    public PlayerSnapshot Build(World world, Entity entity, long currentTick)
+    public PlayerSnapshot Build(World world, EntityId entity, long currentTick)
     {
-        ref var name = ref entity.Get<Name>();
-        ref var level = ref entity.Get<Level>();
-        ref var location = ref entity.Get<Location>();
-        ref var position = ref entity.Get<Position>();
-        ref var form = ref entity.Get<Form>();
-        ref var progression = ref entity.Get<Progression>();
-        ref var autoBehavior = ref entity.Get<AutoBehaviour>();
-        ref var baseStats = ref entity.Get<BaseStats>();
-        ref var inventory = ref entity.Get<Inventory>();
-        ref var equipment = ref entity.Get<Equipment>();
+        ref var name = ref world.Get<Name>(entity);
+        ref var level = ref world.Get<Level>(entity);
+        ref var location = ref world.Get<Location>(entity);
+        ref var position = ref world.Get<Position>(entity);
+        ref var form = ref world.Get<Form>(entity);
+        ref var progression = ref world.Get<Progression>(entity);
+        ref var autoBehavior = ref world.Get<AutoBehaviour>(entity);
+        ref var baseStats = ref world.Get<BaseStats>(entity);
+        ref var inventory = ref world.Get<Inventory>(entity);
+        ref var equipment = ref world.Get<Equipment>(entity);
 
         // Optional components
         string? optionalJson = BuildOptionalJson(world, entity);
@@ -43,9 +42,9 @@ public sealed class PlayerSnapshotBuilder : ISnapshotBuilder
 
         // Items — merge inventory + equipped, get db id from ItemDbId component if present
         //var equippedSlots = equipment.Slots.ToDictionary(s => s.Item.Id, s => s.Slot);
-        var equippedSlots = new Dictionary<int, string>();
+        var equippedSlots = new Dictionary<uint, string>();
         var itemSnapshots = inventory.Items
-            .Where(x => !x.Has<DestroyedTag>())
+            .Where(x => !world.Has<DestroyedTag>(x))
             .Select(itemEntity => BuildItemSnapshot(world, itemEntity, equippedSlots, currentTick))
             .ToArray();
 
@@ -53,7 +52,7 @@ public sealed class PlayerSnapshotBuilder : ISnapshotBuilder
             Id: world.Has<PlayerDbId>(entity) ? world.Get<PlayerDbId>(entity).Value : 0,
             Name: name.Value,
             Level: level.Value,
-            LocationKey: location.Room.Id.ToString(),
+            LocationKey: location.Room.Index.ToString(),
             Position: position.Value.ToString(),
             Form: form.Value.ToString(),
             TotalXp: progression.Experience,
@@ -66,10 +65,10 @@ public sealed class PlayerSnapshotBuilder : ISnapshotBuilder
             Items: itemSnapshots);
     }
 
-    private static StatSnapshot[] BuildStats(World world, Entity entity)
+    private static StatSnapshot[] BuildStats(World world, EntityId entity)
     {
-        var baseStats = entity.Get<BaseStats>();
-        var effectiveStats = entity.Get<EffectiveStats>();
+        ref var baseStats = ref world.Get<BaseStats>(entity);
+        ref var effectiveStats = ref world.Get<EffectiveStats>(entity);
         var snapshots = new StatSnapshot[(int)CharacterStatKind.Count];
         for (int i = 0; i < snapshots.Length; i++)
         {
@@ -79,15 +78,15 @@ public sealed class PlayerSnapshotBuilder : ISnapshotBuilder
         return snapshots;
     }
 
-    private static EffectSnapshot[] BuildCharacterEffects(World world, Entity entity)
+    private static EffectSnapshot[] BuildCharacterEffects(World world, EntityId entity)
     {
-        ref var effects = ref entity.Get<CharacterEffects>();
+        ref var effects = ref world.Get<CharacterEffects>(entity);
         return BuildEffects(world, effects.Data);
     }
 
-    private static EffectSnapshot[] BuildItemEffects(World world, Entity entity)
+    private static EffectSnapshot[] BuildItemEffects(World world, EntityId entity)
     {
-        ref var effects = ref entity.Get<ItemEffects>();
+        ref var effects = ref world.Get<ItemEffects>(entity);
         return BuildEffects(world, effects.Data);
     }
 
@@ -97,9 +96,9 @@ public sealed class PlayerSnapshotBuilder : ISnapshotBuilder
         return [];
     }
 
-    private static AbilitySnapshot[] BuildAbilities(World world, Entity entity)
+    private static AbilitySnapshot[] BuildAbilities(World world, EntityId entity)
     {
-        ref var learnedAbilities = ref entity.TryGetRef<LearnedAbilities>(out var hasLearnedAbilities);
+        ref var learnedAbilities = ref world.TryGetRef<LearnedAbilities>(entity, out var hasLearnedAbilities);
         if (!hasLearnedAbilities)
             return [];
         // TODO
@@ -117,14 +116,14 @@ public sealed class PlayerSnapshotBuilder : ISnapshotBuilder
         //return snapshots;
     }
 
-    private static ResourceSnapshot[] BuildResources(World world, Entity entity)
+    private static ResourceSnapshot[] BuildResources(World world, EntityId entity)
     {
-        ref var health = ref entity.Get<Health>();
-        ref var baseHealth = ref entity.Get<BaseHealth>();
-        ref var healthRegen = ref entity.Get<HealthRegen>();
-        ref var move = ref entity.Get<Move>();
-        ref var baseMove = ref entity.Get<BaseMove>();
-        ref var moveRegen = ref entity.Get<MoveRegen>();
+        ref var health = ref world.Get<Health>(entity);
+        ref var baseHealth = ref world.Get<BaseHealth>(entity);
+        ref var healthRegen = ref world.Get<HealthRegen>(entity);
+        ref var move = ref world.Get<Move>(entity);
+        ref var baseMove = ref world.Get<BaseMove>(entity);
+        ref var moveRegen = ref world.Get<MoveRegen>(entity);
 
         var list = new List<ResourceSnapshot>
         {
@@ -141,14 +140,14 @@ public sealed class PlayerSnapshotBuilder : ISnapshotBuilder
     // TODO: save items in container
     private static ItemSnapshot BuildItemSnapshot(
         World world,
-        Entity item,
-        Dictionary<int, string> equippedSlots,
+        EntityId item,
+        Dictionary<uint, string> equippedSlots,
         long currentTick)
     {
         //TODO: var vnum = item.Get<ItemTemplate>(item).Vnum;
         var vnum = 0;
-        var slot = equippedSlots.GetValueOrDefault(item.Id);
-        var dbId = item.Has<ItemDbId>() ? item.Get<ItemDbId>().Value : 0L;
+        var slot = equippedSlots.GetValueOrDefault(item.Index);
+        var dbId = world.Has<ItemDbId>(item) ? world.Get<ItemDbId>(item).Value : 0L;
         //var paramsJson = item.Has<ItemParams>() ? item.Get<ItemParams>().Json : null;
         var paramsJson = (string)null!; // TODO
 
@@ -165,7 +164,7 @@ public sealed class PlayerSnapshotBuilder : ISnapshotBuilder
         return new ItemSnapshot(dbId, vnum, slot, containerId, paramsJson, effects);
     }
 
-    private static string? BuildOptionalJson(World world, Entity entity)
+    private static string? BuildOptionalJson(World world, EntityId entity)
     {
         var parts = new Dictionary<string, object?>();
 

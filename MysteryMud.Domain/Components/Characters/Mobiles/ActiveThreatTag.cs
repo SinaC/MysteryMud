@@ -1,5 +1,3 @@
 ﻿namespace MysteryMud.Domain.Components.Characters.Mobiles;
 
-public struct ActiveThreatTag
-{
-}
+public struct ActiveThreatTag { }

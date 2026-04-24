@@ -7,6 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Arch" Version="2.1.0" />
+    <ProjectReference Include="..\TinyECS\TinyECS.csproj" />
   </ItemGroup>
 </Project>

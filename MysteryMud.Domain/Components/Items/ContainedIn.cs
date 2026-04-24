@@ -1,9 +1,9 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.Domain.Components.Items;
 
 public struct ContainedIn
 {
-    public Entity Character;
-    public Entity Container;
+    public EntityId Character;
+    public EntityId Container;
 }

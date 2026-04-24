@@ -1,29 +1,30 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Core.Random;
+﻿using MysteryMud.Core.Random;
 using MysteryMud.Domain.Components.Characters;
+using TinyECS;
 
 namespace MysteryMud.Domain.Ability.Resolvers;
 
 public class BerserkOutcomeResolver : IAbilityOutcomeResolver
 {
+    private readonly World _world;
     private readonly IRandom _random;
 
-    public BerserkOutcomeResolver(IRandom random)
+    public BerserkOutcomeResolver(World world, IRandom random)
     {
         _random = random;
+        _world = world;
     }
 
-    public AbilityOutcomeResult Resolve(Entity caster, AbilityRuntime ability)
+    public AbilityOutcomeResult Resolve(EntityId caster, AbilityRuntime ability)
     {
         int chance = GetSkill(caster, ability); // however you store skills
 
         // fighting bonus
-        if (caster.Has<CombatState>())
+        if (_world.Has<CombatState>(caster))
             chance += 10;
 
         // hp modifier
-        ref var hp = ref caster.Get<Health>();
+        ref var hp = ref _world.Get<Health>(caster);
         int hpPercent = 100 * hp.Current / hp.Max;
         chance += 25 - hpPercent / 2;
 
@@ -43,7 +44,7 @@ public class BerserkOutcomeResolver : IAbilityOutcomeResolver
         };
     }
 
-    private int GetSkill(Entity caster, AbilityRuntime ability)
+    private int GetSkill(EntityId caster, AbilityRuntime ability)
     {
         // depends on your skill system
         //return caster.Get<SkillSet>().GetLevel(ability.Name);

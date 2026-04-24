@@ -1,23 +1,22 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Core;
+﻿using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Contracts;
 using MysteryMud.Core.Persistence;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
 using MysteryMud.GameData.Intents;
+using TinyECS;
 
 namespace MysteryMud.Domain.Systems;
 
 public class ItemInteractionSystem
 {
+    private readonly World _world;
     private readonly IGameMessageService _msg;
     private readonly ISacrificeService _sacrificeService;
     private readonly IDirtyTracker _dirtyTracker;
@@ -31,8 +30,9 @@ public class ItemInteractionSystem
     private readonly IEventBuffer<ItemDestroyedEvent> _itemDestroyedEvents;
     private readonly IEventBuffer<ItemSacrificiedEvent> _itemSacrificedEvents;
 
-    public ItemInteractionSystem(IGameMessageService gameMessageService, ISacrificeService sacrificeService, IDirtyTracker dirtyTracker, IIntentContainer intentContainer, IEventBuffer<ItemGotEvent> itemGotEvents, IEventBuffer<ItemDroppedEvent> itemDroppedEvents, IEventBuffer<ItemGivenEvent> itemGivenEvents, IEventBuffer<ItemPutEvent> itemPutEvents, IEventBuffer<ItemWornEvent> itemWornEvents, IEventBuffer<ItemRemovedEvent> itemRemovedEvents, IEventBuffer<ItemDestroyedEvent> itemDestroyedEvents, IEventBuffer<ItemSacrificiedEvent> itemSacrificedEvents)
+    public ItemInteractionSystem(World world, IGameMessageService gameMessageService, ISacrificeService sacrificeService, IDirtyTracker dirtyTracker, IIntentContainer intentContainer, IEventBuffer<ItemGotEvent> itemGotEvents, IEventBuffer<ItemDroppedEvent> itemDroppedEvents, IEventBuffer<ItemGivenEvent> itemGivenEvents, IEventBuffer<ItemPutEvent> itemPutEvents, IEventBuffer<ItemWornEvent> itemWornEvents, IEventBuffer<ItemRemovedEvent> itemRemovedEvents, IEventBuffer<ItemDestroyedEvent> itemDestroyedEvents, IEventBuffer<ItemSacrificiedEvent> itemSacrificedEvents)
     {
+        _world = world;
         _msg = gameMessageService;
         _sacrificeService = sacrificeService;
         _dirtyTracker = dirtyTracker;
@@ -51,24 +51,24 @@ public class ItemInteractionSystem
     {
         // handle get/drop/give/put/wear/remove/destroy/sacrifice intents
         foreach (ref var getIntent in _intentContainer.GetItemSpan)
-            HandleGet(state, getIntent);
+            HandleGet(getIntent);
         foreach (ref var dropIntent in _intentContainer.DropItemSpan)
-            HandleDrop(state, dropIntent);
+            HandleDrop(dropIntent);
         foreach (ref var giveIntent in _intentContainer.GiveItemSpan)
-            HandleGive(state, giveIntent);
+            HandleGive(giveIntent);
         foreach (ref var putIntent in _intentContainer.PutItemSpan)
-            HandlePut(state, putIntent);
+            HandlePut(putIntent);
         foreach(ref var wearIntent in _intentContainer.WearItemSpan)
-            HandleWear(state, wearIntent);
+            HandleWear(wearIntent);
         foreach(ref var removeIntent in _intentContainer.RemoveItemSpan)
-            HandleRemove(state, removeIntent);
+            HandleRemove(removeIntent);
         foreach(ref var destroyIntent in _intentContainer.DestroyItemSpan)
-            HandleDestroy(state, destroyIntent);
+            HandleDestroy(destroyIntent);
         foreach (ref var sacrificeIntent in _intentContainer.SacrificeItemSpan)
-            HandleSacrifice(state, sacrificeIntent);
+            HandleSacrifice(sacrificeIntent);
     }
 
-    private void HandleGet(GameState state, GetItemIntent getItemIntent)
+    private void HandleGet(GetItemIntent getItemIntent)
     {
         // TODO: validation
         var entity = getItemIntent.Entity;
@@ -77,22 +77,22 @@ public class ItemInteractionSystem
         var source = getItemIntent.Source;
 
         // get item from room/container and put it in entity's inventory
-        if (sourceKind == GetSourceKind.Room && source.Has<RoomContents>())
+        if (sourceKind == GetSourceKind.Room && _world.Has<RoomContents>(source))
         {
-            ItemHelpers.TryGetItemFromRoom(entity, source, item, out _);
+            ItemHelpers.TryGetItemFromRoom(_world, entity, source, item, out _);
 
-            _msg.To(entity).Send($"You get {item.DisplayName}.");
+            _msg.To(entity).Act("You get {0}.").With(item);
         }
-        else if (sourceKind == GetSourceKind.Container && source.Has<ContainerContents>())
+        else if (sourceKind == GetSourceKind.Container && _world.Has<ContainerContents>(source))
         {
-            ItemHelpers.TryGetItemFromContainer(entity, source, item, out _);
+            ItemHelpers.TryGetItemFromContainer(_world, entity, source, item, out _);
 
-            _msg.To(entity).Send($"You get {item.DisplayName} from {source.DisplayName}.");
+            _msg.To(entity).Act("You get {0} from {1}.").With(item, source);
         }
         else
             return; // invalid source, should not happen if validation is done correctly
 
-        if (entity.Has<PlayerTag>())
+        if (_world.Has<PlayerTag>(entity))
             _dirtyTracker.MarkDirty(entity, DirtyReason.ItemGained);
 
         // event
@@ -103,7 +103,7 @@ public class ItemInteractionSystem
         itemGotEvt.Source = source;
     }
 
-    private void HandleDrop(GameState state, DropItemIntent dropItemIntent)
+    private void HandleDrop(DropItemIntent dropItemIntent)
     {
         // TODO: validation
         var entity = dropItemIntent.Entity;
@@ -111,18 +111,18 @@ public class ItemInteractionSystem
         var room = dropItemIntent.Room;
 
         // Unequip if necessary
-        ref var equipped = ref item.TryGetRef<Equipped>(out var isEquipped);
+        ref var equipped = ref _world.TryGetRef<Equipped>(item, out var isEquipped);
         if (isEquipped)
         {
-            ItemHelpers.TryUnequipItem(entity, equipped.Slot, out _);
+            ItemHelpers.TryUnequipItem(_world, entity, equipped.Slot, out _);
         }
 
         // drop item from entity's inventory and put it in room
-        ItemHelpers.TryDropItem(entity, room, item, out _);
+        ItemHelpers.TryDropItem(_world, entity, room, item, out _);
 
-        _msg.To(entity).Send($"You drop {item.DisplayName}.");
+        _msg.To(entity).Act("You drop {0}.").With(item);
 
-        if (entity.Has<PlayerTag>())
+        if (_world.Has<PlayerTag>(entity))
             _dirtyTracker.MarkDirty(entity, DirtyReason.ItemLost);
 
         // event
@@ -132,7 +132,7 @@ public class ItemInteractionSystem
         itemDroppedEvt.Room = room;
     }
 
-    private void HandleGive(GameState state, GiveItemIntent giveItemIntent)
+    private void HandleGive(GiveItemIntent giveItemIntent)
     {
         // TODO: validation
         var entity = giveItemIntent.Entity;
@@ -140,21 +140,21 @@ public class ItemInteractionSystem
         var target = giveItemIntent.Target;
 
         // Unequip if necessary
-        ref var equipped = ref item.TryGetRef<Equipped>(out var isEquipped);
+        ref var equipped = ref _world.TryGetRef<Equipped>(item, out var isEquipped);
         if (isEquipped)
         {
-            ItemHelpers.TryUnequipItem(entity, equipped.Slot, out _);
+            ItemHelpers.TryUnequipItem(_world, entity, equipped.Slot, out _);
 
-            if (entity.Has<PlayerTag>())
+            if (_world.Has<PlayerTag>(entity))
                 _dirtyTracker.MarkDirty(entity, DirtyReason.ItemRemoved);
         }
 
         // give item from entity to target
-        ItemHelpers.TryGiveItem(entity, target, item, out _);
+        ItemHelpers.TryGiveItem(_world, entity, target, item, out _);
 
-        _msg.To(entity).Send($"You give {item.DisplayName} to {target.DisplayName}.");
+        _msg.To(entity).Act("You give {0} to {1}.").With(item, target);
 
-        if (entity.Has<PlayerTag>())
+        if (_world.Has<PlayerTag>(entity))
         {
             _dirtyTracker.MarkDirty(entity, DirtyReason.ItemLost);
             _dirtyTracker.MarkDirty(target, DirtyReason.ItemGained);
@@ -167,7 +167,7 @@ public class ItemInteractionSystem
         itemGivenEvt.Target = target;
     }
 
-    private void HandlePut(GameState state, PutItemIntent putItemIntent)
+    private void HandlePut(PutItemIntent putItemIntent)
     {
         // TODO: validation
         var entity = putItemIntent.Entity;
@@ -175,21 +175,21 @@ public class ItemInteractionSystem
         var container = putItemIntent.Container;
 
         // Unequip if necessary
-        ref var equipped = ref item.TryGetRef<Equipped>(out var isEquipped);
+        ref var equipped = ref _world.TryGetRef<Equipped>(item, out var isEquipped);
         if (isEquipped)
         {
-            ItemHelpers.TryUnequipItem(entity, equipped.Slot, out _);
+            ItemHelpers.TryUnequipItem(_world, entity, equipped.Slot, out _);
 
-            if (entity.Has<PlayerTag>())
+            if (_world.Has<PlayerTag>(entity))
                 _dirtyTracker.MarkDirty(entity, DirtyReason.ItemRemoved);
         }
 
         // put item from entity to container
-        ItemHelpers.TryPutItem(entity, container, item, out _);
+        ItemHelpers.TryPutItem(_world, entity, container, item, out _);
 
-        _msg.To(entity).Send($"You put {item.DisplayName} in {container.DisplayName}.");
+        _msg.To(entity).Act("You put {0} in {1}.").With(item, container);
 
-        if (entity.Has<PlayerTag>())
+        if (_world.Has<PlayerTag>(entity))
             _dirtyTracker.MarkDirty(entity, DirtyReason.ItemLost);
 
         // event
@@ -199,18 +199,18 @@ public class ItemInteractionSystem
         itemPutEvt.Container = container;
     }
 
-    private void HandleWear(GameState state, WearItemIntent wearItemIntent)
+    private void HandleWear(WearItemIntent wearItemIntent)
     {
         // TODO: validation
         var entity = wearItemIntent.Entity;
         var item = wearItemIntent.Item;
         var slot = wearItemIntent.Slot;
 
-        ItemHelpers.TryEquipItem(entity, item, out _);
+        ItemHelpers.TryEquipItem(_world, entity, item, out _);
 
-        _msg.To(entity).Send($"You wear {item.DisplayName}.");
+        _msg.To(entity).Act("You wear {0}.").With(item);
 
-        if (entity.Has<PlayerTag>())
+        if (_world.Has<PlayerTag>(entity))
             _dirtyTracker.MarkDirty(entity, DirtyReason.ItemEquipped);
 
         // event
@@ -220,18 +220,18 @@ public class ItemInteractionSystem
         itemWornEvt.Slot = slot;
     }
 
-    private void HandleRemove(GameState state, RemoveItemIntent removeItemIntent)
+    private void HandleRemove(RemoveItemIntent removeItemIntent)
     {
         // TODO: validation
         var entity = removeItemIntent.Entity;
         var item = removeItemIntent.Item;
         var slot = removeItemIntent.Slot;
 
-        ItemHelpers.TryUnequipItem(entity, slot, out _);
+        ItemHelpers.TryUnequipItem(_world, entity, slot, out _);
 
-        _msg.To(entity).Send($"You remove {item.DisplayName}.");
+        _msg.To(entity).Act("You remove {0}.").With(item);
 
-        if (entity.Has<PlayerTag>())
+        if (_world.Has<PlayerTag>(entity))
             _dirtyTracker.MarkDirty(entity, DirtyReason.ItemRemoved);
 
         // event
@@ -241,7 +241,7 @@ public class ItemInteractionSystem
         itemRemovedEvt.Slot = slot;
     }
 
-    private void HandleDestroy(GameState state, DestroyItemIntent destroyItemIntent)
+    private void HandleDestroy(DestroyItemIntent destroyItemIntent)
     {
         // TODO: validation
         var entity = destroyItemIntent.Entity;
@@ -249,18 +249,18 @@ public class ItemInteractionSystem
 
 
         // Unequip if necessary
-        ref var equipped = ref item.TryGetRef<Equipped>(out var isEquipped);
+        ref var equipped = ref _world.TryGetRef<Equipped>(item, out var isEquipped);
         if (isEquipped)
         {
-            ItemHelpers.TryUnequipItem(entity, equipped.Slot, out _);
+            ItemHelpers.TryUnequipItem(_world, entity, equipped.Slot, out _);
 
-            if (entity.Has<PlayerTag>())
+            if (_world.Has<PlayerTag>(entity))
                 _dirtyTracker.MarkDirty(entity, DirtyReason.ItemRemoved);
         }
 
         DestroyItem(item);
 
-        _msg.To(entity).Send($"You destroy {item.DisplayName}.");
+        _msg.To(entity).Act("You destroy {0}.").With(item);
 
         // event
         ref var itemDestroyedEvt = ref _itemDestroyedEvents.Add();
@@ -268,7 +268,7 @@ public class ItemInteractionSystem
         itemDestroyedEvt.Item = item;
     }
 
-    private void HandleSacrifice(GameState state, SacrificeItemIntent sacrificeItemIntent)
+    private void HandleSacrifice(SacrificeItemIntent sacrificeItemIntent)
     {
         _sacrificeService.Sacrifice(sacrificeItemIntent.Entity, sacrificeItemIntent.Item);
 
@@ -278,12 +278,12 @@ public class ItemInteractionSystem
         itemDestroyedEvt.Item = sacrificeItemIntent.Item;
     }
 
-    private static void DestroyItem(Entity item)
+    private void DestroyItem(EntityId item)
     {
         // TOOD: check if can be destroyed
-        if (item.Has<Container>())
+        if (_world.Has<Container>(item))
         {
-            var container = item.Get<ContainerContents>();
+            var container = _world.Get<ContainerContents>(item);
             foreach (var containedItem in container.Items)
             {
                 DestroyItem(containedItem); // recursive call to destroy contained items
@@ -291,7 +291,7 @@ public class ItemInteractionSystem
         }
 
         // TODO: if container, check if everything within is flagged as destroyed
-        if (!item.Has<DestroyedTag>())
-            item.Add<DestroyedTag>();
+        if (!_world.Has<DestroyedTag>(item))
+            _world.Add<DestroyedTag>(item);
     }
 }

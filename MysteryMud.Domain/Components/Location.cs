@@ -1,8 +1,8 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.Domain.Components;
 
 public struct Location
 {
-    public Entity Room;
+    public EntityId Room;
 }

@@ -1,6 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Core;
+﻿using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
@@ -8,19 +6,22 @@ using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Groups;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
+using TinyECS;
+using TinyECS.Extensions;
 
 namespace MysteryMud.Domain.Systems;
 
 public class AutoAssistSystem
 {
+    private readonly World _world;
     private readonly IEventBuffer<RoomEnteredEvent> _roomEnteredEvent;
 
-    public AutoAssistSystem(IEventBuffer<RoomEnteredEvent> roomEnteredEvent)
+    public AutoAssistSystem(World world, IEventBuffer<RoomEnteredEvent> roomEnteredEvent)
     {
+        _world = world;
         _roomEnteredEvent = roomEnteredEvent;
     }
 
@@ -35,14 +36,17 @@ public class AutoAssistSystem
         ProcessRoomEntries(state);   // consumes and clears RoomEnteredEvents
     }
 
+    private static readonly QueryDescription _newCombatantQueryDescr = new QueryDescription()
+        .WithAll<CombatState, NewCombatantTag>();
+
     private void ProcessNewCombatants(GameState state)
     {
-        var query = new QueryDescription()
-            .WithAll<CombatState, NewCombatantTag>();
-        state.World.Query(query, (Entity entity, ref CombatState combat, ref NewCombatantTag tag) =>
+        _world.Query(_newCombatantQueryDescr, (EntityId entity,
+            ref CombatState combat,
+            ref NewCombatantTag tag) =>
         {
-            entity.Remove<NewCombatantTag>(); // consume immediately
-            PropagateAssist(state, entity, combat.Target);
+            _world.Remove<NewCombatantTag>(entity); // consume immediately
+            PropagateAssist(entity, combat.Target);
         });
 
     }
@@ -50,28 +54,28 @@ public class AutoAssistSystem
     private void ProcessRoomEntries(GameState state)
     {
         foreach (ref var evt in _roomEnteredEvent.GetAll())
-            CheckAssistOnRoomEntry(state, ref evt);
+            CheckAssistOnRoomEntry(ref evt);
     }
 
-    private void CheckAssistOnRoomEntry(GameState state, ref RoomEnteredEvent evt)
+    private void CheckAssistOnRoomEntry(ref RoomEnteredEvent evt)
     {
-        ref var roomContents = ref evt.ToRoom.Get<RoomContents>();
+        ref var roomContents = ref _world.Get<RoomContents>(evt.ToRoom);
 
         foreach (var character in roomContents.Characters)
         {
             if (character == evt.Entity) continue;
-            if (!character.Has<CombatState>()) continue;
+            if (!_world.Has<CombatState>(character)) continue;
 
-            ref var combat = ref character.Get<CombatState>();
+            ref var combat = ref _world.Get<CombatState>(character);
 
             // check if entering entity should assist this combatant
             if (ShouldAssist(evt.Entity, character, combat.Target, out var reason))
             {
                 TryAssist(evt.Entity, combat.Target, reason);
                 // also check charmies of the entering entity
-                if (evt.Entity.Has<Charmies>())
+                if (_world.Has<Charmies>(evt.Entity))
                 {
-                    foreach (var charmie in evt.Entity.Get<Charmies>().Entities)
+                    foreach (var charmie in _world.Get<Charmies>(evt.Entity).Entities)
                         TryAssist(charmie, combat.Target, AssistReason.Charmed);
                 }
                 return; // assist first eligible combatant only
@@ -79,13 +83,13 @@ public class AutoAssistSystem
         }
     }
 
-    private bool ShouldAssist(Entity candidate, Entity victim, Entity aggressor, out AssistReason reason)
+    private bool ShouldAssist(EntityId candidate, EntityId victim, EntityId aggressor, out AssistReason reason)
     {
         // group member with autoassist
-        if (candidate.Has<GroupMember>() && victim.Has<GroupMember>())
+        if (_world.Has<GroupMember>(candidate) && _world.Has<GroupMember>(victim))
         {
-            if (candidate.Get<GroupMember>().Group == victim.Get<GroupMember>().Group)
-                if (candidate.HasAutoAssist())
+            if (_world.Get<GroupMember>(candidate).Group == _world.Get<GroupMember>(victim).Group)
+                if (CharacterHelpers.HasAutoAssist(_world, candidate))
                 {
                     reason = AssistReason.Group;
                     return true;
@@ -93,9 +97,9 @@ public class AutoAssistSystem
         }
 
         // npc social assist
-        if (candidate.Has<NpcAssistBehavior>())
+        if (_world.Has<NpcAssistBehavior>(candidate))
         {
-            ref var behavior = ref candidate.Get<NpcAssistBehavior>();
+            ref var behavior = ref _world.Get<NpcAssistBehavior>(candidate);
             if (ShouldNpcAssist(behavior, candidate, victim, aggressor))
             {
                 reason = AssistReason.Npc;
@@ -107,66 +111,67 @@ public class AutoAssistSystem
         return false;
     }
 
-    private void PropagateAssist(GameState state, Entity combatant, Entity aggressor)
+    private void PropagateAssist(EntityId combatant, EntityId aggressor)
     {
         // 1. group members with autoassist
-        if (combatant.Has<GroupMember>())
+        if (_world.Has<GroupMember>(combatant))
         {
-            var group = combatant.Get<GroupMember>().Group;
-            ref var groupData = ref group.Get<GroupInstance>();
+            var group = _world.Get<GroupMember>(combatant).Group;
+            ref var groupData = ref _world.Get<GroupInstance>(group);
             foreach (var member in groupData.Members)
             {
                 if (member == combatant) continue;
-                if (!CharacterHelpers.SameRoom(combatant, member)) continue;
-                if (!member.HasAutoAssist()) continue;
+                if (!CharacterHelpers.SameRoom(_world, combatant, member)) continue;
+                if (!CharacterHelpers.HasAutoAssist(_world, member)) continue;
                 TryAssist(member, aggressor, AssistReason.Group);
                 // also pull in their charmies
-                if (member.Has<Charmies>())
-                    foreach (var charmie in member.Get<Charmies>().Entities)
-                        if (CharacterHelpers.SameRoom(combatant, charmie))
+                if (_world.Has<Charmies>(member))
+                    foreach (var charmie in _world.Get<Charmies>(member).Entities)
+                        if (CharacterHelpers.SameRoom(_world, combatant, charmie))
                             TryAssist(charmie, aggressor, AssistReason.Charmed);
             }
         }
 
         // 2. charmies of the combatant auto-assist unconditionally
-        if (combatant.Has<Charmies>())
+        if (_world.Has<Charmies>(combatant))
         {
-            foreach (var charmie in combatant.Get<Charmies>().Entities)
+            foreach (var charmie in _world.Get<Charmies>(combatant).Entities)
             {
-                if (!CharacterHelpers.SameRoom(combatant, charmie)) continue;
+                if (!Helpers.CharacterHelpers.SameRoom(_world, combatant, charmie)) continue;
                 TryAssist(charmie, aggressor, AssistReason.Charmed);
             }
         }
 
         // 3. NPC social assist — same room scan
-        ref var roomContents = ref combatant.Get<Location>().Room.Get<RoomContents>();
+        ref var room = ref _world.Get<Location>(combatant).Room;
+        ref var roomContents = ref _world.Get<RoomContents>(room);
         foreach (var character in roomContents.Characters)
         {
             if (character == combatant || character == aggressor) continue;
-            if (!character.Has<NpcAssistBehavior>()) continue;
+            if (!_world.Has<NpcAssistBehavior>(character)) continue;
 
-            ref var behavior = ref character.Get<NpcAssistBehavior>();
+            ref var behavior = ref _world.Get<NpcAssistBehavior>(character);
             if (ShouldNpcAssist(behavior, character, combatant, aggressor))
                 TryAssist(character, aggressor, AssistReason.Npc);
         }
     }
 
-    private void TryAssist(Entity assistant, Entity target, AssistReason reason)
+    private void TryAssist(EntityId assistant, EntityId target, AssistReason reason)
     {
-        if (!CharacterHelpers.IsAlive(assistant)) return;
-        if (assistant.Has<CombatState>()) return; // already fighting
+        if (!CharacterHelpers.IsAlive(_world, assistant)) return;
+        if (_world.Has<CombatState>(assistant)) return; // already fighting
         if (assistant == target) return;
 
-        assistant.Add(new CombatState { Target = target, RoundDelay = 1 });
-        if (!assistant.Has<NewCombatantTag>())
-            assistant.Add<NewCombatantTag>(); // chain: this assist may trigger further assists
-                                              // will be picked up by the NEXT AutoAssistSystem pass
+        _world.Add(assistant,  new CombatState { Target = target, RoundDelay = 1 });
+        if (!_world.Has<NewCombatantTag>(assistant))
+            _world.Add<NewCombatantTag>(assistant); // chain: this assist may trigger further assists
+                                                    // will be picked up by the NEXT AutoAssistSystem pass
     }
 
-    private bool ShouldNpcAssist(NpcAssistBehavior behavior, Entity npc,
-                                  Entity victim, Entity aggressor)
+    private bool ShouldNpcAssist(NpcAssistBehavior behavior, EntityId npc,
+                                  EntityId victim, EntityId aggressor)
     {
-        if (behavior.Flags.HasFlag(AssistFlags.GuardPlayers) && victim.Has<PlayerTag>()) return true;
+        if (behavior.Flags.HasFlag(AssistFlags.GuardPlayers) && _world.Has<PlayerTag>(victim)) return true;
         if (behavior.Flags.HasFlag(AssistFlags.SameRace) && SameRace(npc, victim)) return true;
         if (behavior.Flags.HasFlag(AssistFlags.SameClass) && SameClass(npc, victim)) return true;
         if (behavior.Flags.HasFlag(AssistFlags.SameAlign) && SameAlignment(npc, victim)) return true;
@@ -174,16 +179,16 @@ public class AutoAssistSystem
         return false;
     }
 
-    private bool SameRace(Entity npc, Entity victim) // TODO
+    private bool SameRace(EntityId npc, EntityId victim) // TODO
         => false;
 
-    private bool SameClass(Entity npc, Entity victim) // TODO
+    private bool SameClass(EntityId npc, EntityId victim) // TODO
         => false;
 
-    private bool SameAlignment(Entity npc, Entity victim) // TODO
+    private bool SameAlignment(EntityId npc, EntityId victim) // TODO
         => false;
 
-    private bool SameFaction(Entity npc, Entity victim) // TODO
+    private bool SameFaction(EntityId npc, EntityId victim) // TODO
         => false;
 
     private enum AssistReason

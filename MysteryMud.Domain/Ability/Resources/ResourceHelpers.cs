@@ -1,25 +1,24 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Domain.Ability.Definitions;
+﻿using MysteryMud.Domain.Ability.Definitions;
 using MysteryMud.Domain.Ability.Helpers;
 using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.GameData.Enums;
+using TinyECS;
 
 namespace MysteryMud.Domain.Ability.Resources;
 
 public static class ResourceHelpers
 {
-    public static bool CanPayCosts(Entity e, AbilityRuntime ability, out CannotPayCostsResult result)
+    public static bool CanPayCosts(World world, EntityId entity, AbilityRuntime ability, out CannotPayCostsResult result)
     {
         foreach (var cost in ability.Costs)
         {
             // Handle form auto-switch (druid switches back to humanoid when casting a spell)
-            if (cost.Kind == ResourceKind.Mana && !e.Has<UsesMana>())
+            if (cost.Kind == ResourceKind.Mana && !world.Has<UsesMana>(entity))
             {
-                FormHelpers.SwitchForm(e, FormType.Humanoid);
+                FormHelpers.SwitchForm(world, entity, FormType.Humanoid);
             }
 
-            if (!CanUseResource(e, cost.Kind))
+            if (!CanUseResource(world, entity, cost.Kind))
             {
                 result = new CannotPayCostsResult
                 {
@@ -29,7 +28,7 @@ public static class ResourceHelpers
                 return false;
             }
 
-            if (!TryGetResource(e, cost.Kind, out var current, out _))
+            if (!TryGetResource(world, entity, cost.Kind, out var current, out _))
             {
                 result = new CannotPayCostsResult
                 {
@@ -56,20 +55,20 @@ public static class ResourceHelpers
         return true;
     }
 
-    public static void PayCosts(Entity e, AbilityRuntime ability)
+    public static void PayCosts(World world, EntityId entity, AbilityRuntime ability)
     {
         foreach (var cost in ability.Costs)
         {
-            var finalCost = ResolveCost(e, cost);
-            ModifyResource(e, cost.Kind, -finalCost);
+            var finalCost = ResolveCost(entity, cost);
+            ModifyResource(world, entity, cost.Kind, -finalCost);
         }
     }
 
-    public static int ResolveCost(Entity e, ResourceCost cost)
+    public static int ResolveCost(EntityId entity, ResourceCost cost)
     {
         var ctx = new CostContext
         {
-            Entity = e,
+            Entity = entity,
             Kind = cost.Kind,
             BaseAmount = cost.Amount,
             FinalAmount = cost.Amount
@@ -80,14 +79,14 @@ public static class ResourceHelpers
         return ctx.FinalAmount;
     }
 
-    public static bool TryGetResource(Entity e, ResourceKind type, out int current, out int max)
+    public static bool TryGetResource(World world, EntityId entity, ResourceKind type, out int current, out int max)
     {
         switch (type)
         {
             case ResourceKind.Mana:
-                if (e.Has<Mana>())
+                if (world.Has<Mana>(entity))
                 {
-                    ref var m = ref e.Get<Mana>();
+                    ref var m = ref world.Get<Mana>(entity);
                     current = m.Current;
                     max = m.Max;
                     return true;
@@ -95,9 +94,9 @@ public static class ResourceHelpers
                 break;
 
             case ResourceKind.Rage:
-                if (e.Has<Rage>())
+                if (world.Has<Rage>(entity))
                 {
-                    ref var r = ref e.Get<Rage>();
+                    ref var r = ref world.Get<Rage>(entity);
                     current = r.Current;
                     max = r.Max;
                     return true;
@@ -105,9 +104,9 @@ public static class ResourceHelpers
                 break;
 
             case ResourceKind.Energy:
-                if (e.Has<Energy>())
+                if (world.Has<Energy>(entity))
                 {
-                    ref var en = ref e.Get<Energy>();
+                    ref var en = ref world.Get<Energy>(entity);
                     current = en.Current;
                     max = en.Max;
                     return true;
@@ -119,34 +118,34 @@ public static class ResourceHelpers
         return false;
     }
 
-    public static void ModifyResource(Entity e, ResourceKind type, decimal delta)
+    public static void ModifyResource(World world, EntityId entity, ResourceKind type, decimal delta)
     {
         switch (type)
         {
             case ResourceKind.Mana:
-                ref var m = ref e.Get<Mana>();
+                ref var m = ref world.Get<Mana>(entity);
                 m.Current = (int)Math.Round(Math.Clamp(m.Current + delta, 0, m.Max), MidpointRounding.AwayFromZero);
                 break;
 
             case ResourceKind.Rage:
-                ref var r = ref e.Get<Rage>();
+                ref var r = ref world.Get<Rage>(entity);
                 r.Current = (int)Math.Round(Math.Clamp(r.Current + delta, 0, r.Max), MidpointRounding.AwayFromZero);
                 break;
 
             case ResourceKind.Energy:
-                ref var en = ref e.Get<Energy>();
+                ref var en = ref world.Get<Energy>(entity);
                 en.Current = (int)Math.Round(Math.Clamp(en.Current + delta, 0, en.Max), MidpointRounding.AwayFromZero);
                 break;
         }
     }
 
-    public static bool CanUseResource(Entity e, ResourceKind type)
+    public static bool CanUseResource(World world, EntityId entity, ResourceKind type)
     {
         return type switch
         {
-            ResourceKind.Mana => e.Has<UsesMana>(),
-            ResourceKind.Rage => e.Has<UsesRage>(),
-            ResourceKind.Energy => e.Has<UsesEnergy>(),
+            ResourceKind.Mana => world.Has<UsesMana>(entity),
+            ResourceKind.Rage => world.Has<UsesRage>(entity),
+            ResourceKind.Energy => world.Has<UsesEnergy>(entity),
             _ => false
         };
     }

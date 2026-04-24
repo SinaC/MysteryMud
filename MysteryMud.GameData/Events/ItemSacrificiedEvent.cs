@@ -1,9 +1,9 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.GameData.Events;
 public struct ItemSacrificiedEvent
 {
-    public Entity Entity;
-    public Entity Item;
-    public Entity Room;
+    public EntityId Entity;
+    public EntityId Item;
+    public EntityId Room;
 }

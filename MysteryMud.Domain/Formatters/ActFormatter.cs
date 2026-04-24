@@ -1,19 +1,20 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Core.Extensions;
+﻿using MysteryMud.Core.Extensions;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
+using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Extensions;
+using MysteryMud.Domain.Helpers;
 using MysteryMud.GameData.Enums;
 using System.Diagnostics;
 using System.Text;
+using TinyECS;
 
 namespace MysteryMud.Domain.Formatters;
 
 // IFormattable cannot be used because formatting depends on who'll receive the message (CanSee check)
 public static class ActFormatter
 {
-    public static string FormatActOneLine(Entity target, string format, params object[]? arguments)
+    public static string FormatActOneLine(World world, EntityId target, string format, params object[]? arguments)
     {
         StringBuilder result = new();
 
@@ -61,7 +62,7 @@ public static class ActFormatter
                 case ActParsingStates.ArgumentFound: // searching for } or :
                     if (c == '}')
                     {
-                        FormatActOneArgument(target, result, argumentIndex, null, currentArgument);
+                        FormatActOneArgument(world, target, result, argumentIndex, null, currentArgument);
                         state = ActParsingStates.Normal;
                     }
                     else if (c == ':')
@@ -71,7 +72,7 @@ public static class ActFormatter
                     if (c == '}')
                     {
                         Debug.Assert(argumentFormat != null);
-                        FormatActOneArgument(target, result, argumentIndex, argumentFormat.ToString(), currentArgument);
+                        FormatActOneArgument(world, target, result, argumentIndex, argumentFormat.ToString(), currentArgument);
                         state = ActParsingStates.Normal;
                     }
                     else
@@ -115,31 +116,31 @@ public static class ActFormatter
     //      exit name
     // TODO Ability
     //      ability name
-    private static void FormatActOneArgument(Entity target, StringBuilder sb, int argumentIndex, ReadOnlySpan<char> argumentFormat, object? argument)
+    private static void FormatActOneArgument(World world, EntityId target, StringBuilder sb, int argumentIndex, ReadOnlySpan<char> argumentFormat, object? argument)
     {
-        if (argument is Entity entity && !entity.IsAlive())
+        if (argument is EntityId entity && !world.IsAlive(entity))
             return;
 
-        if (argument is Entity character && character.Has<CharacterTag>())
+        if (argument is EntityId character && world.Has<CharacterTag>(character))
         {
             var letter = argumentFormat.Length > 0 ? argumentFormat[0] : (argumentIndex == 0 ? 'N' : 'n'); // default to 'N' or 'n' if no format specified
-            ref var gender = ref character.TryGetRef<Gender>(out var hasGender);
+            ref var gender = ref world.TryGetRef<Gender>(character, out var hasGender);
             var genderKind = hasGender ? gender.Value : GenderKind.Neutral;
             switch (letter)
             {
                 case 'p':
                     if (target == character) sb.Append("your");
-                    else AppendPossessive(sb, character.RelativeDisplayName(target));
+                    else AppendPossessive(sb, RelativeDisplayName(world, character, target));
                     break;
                 case 'P':
                     if (target == character) sb.Append("Your");
-                    else AppendPossessive(sb, character.RelativeDisplayName(target), true);
+                    else AppendPossessive(sb, RelativeDisplayName(world, character, target), true);
                     break;
                 case 'n':
-                    sb.Append(target == character ? "you" : character.RelativeDisplayName(target));
+                    sb.Append(target == character ? "you" : RelativeDisplayName(world, character, target));
                     break;
                 case 'N':
-                    sb.Append(target == character ? "You" : character.RelativeDisplayName(target).FirstCharToUpper());
+                    sb.Append(target == character ? "You" : RelativeDisplayName(world, character, target).FirstCharToUpper());
                     break;
                 case 'e':
                     sb.Append(target == character ? "you" : genderKind.Subject);
@@ -169,11 +170,11 @@ public static class ActFormatter
                     break;
                 case 'y':
                     if (target == character) sb.Append("your");
-                    else sb.Append(character.RelativeDisplayName(target)).Append("'s");
+                    else sb.Append(RelativeDisplayName(world, character, target)).Append("'s");
                     break;
                 case 'Y':
                     if (target == character) sb.Append("Your");
-                    else sb.Append(character.RelativeDisplayName(target)).Append("'s");
+                    else sb.Append(RelativeDisplayName(world, character, target)).Append("'s");
                     break;
                 case 'b':
                     sb.Append(target == character ? "are" : "is");
@@ -198,23 +199,23 @@ public static class ActFormatter
             return;
         }
 
-        if (argument is Entity item && item.Has<ItemTag>())
+        if (argument is EntityId item && world.Has<ItemTag>(item))
         {
             var letter = argumentFormat.Length > 0 ? argumentFormat[0] : (argumentIndex == 0 ? 'N' : 'n'); // default to 'N' or 'n' if no format specified
             var genderKind = GenderKind.Neutral;
             switch (letter)
             {
                 case 'p':
-                    AppendPossessive(sb, item.RelativeDisplayName(target));
+                    AppendPossessive(sb, RelativeDisplayName(world, item, target));
                     break;
                 case 'P':
-                    AppendPossessive(sb, item.RelativeDisplayName(target), true);
+                    AppendPossessive(sb, RelativeDisplayName(world, item, target), true);
                     break;
                 case 'n':
-                    sb.Append(item.DisplayName);
+                    sb.Append(RelativeDisplayName(world, item, target));
                     break;
                 case 'N':
-                    sb.Append(item.RelativeDisplayName(target).FirstCharToUpper());
+                    sb.Append(RelativeDisplayName(world, item, target).FirstCharToUpper());
                     break;
                 case 'e':
                     sb.Append(genderKind.Subject);
@@ -243,10 +244,10 @@ public static class ActFormatter
                     sb.Append("self");
                     break;
                 case 'y':
-                    sb.Append(item.RelativeDisplayName(target)).Append("'s");
+                    sb.Append(RelativeDisplayName(world, item, target)).Append("'s");
                     break;
                 case 'Y':
-                    sb.Append(item.RelativeDisplayName(target)).Append("'s");
+                    sb.Append(RelativeDisplayName(world, item, target)).Append("'s");
                     break;
                 case 'b':
                     sb.Append("is");
@@ -268,6 +269,12 @@ public static class ActFormatter
                     sb.Append("<???>");
                     break;
             }
+            return;
+        }
+
+        if (argument is EntityId room && world.Has<Room>(room))
+        {
+            sb.Append(EntityHelpers.DisplayName(world, room));
             return;
         }
 
@@ -298,11 +305,11 @@ public static class ActFormatter
             sb.Append(argument);
     }
 
-    private static string RelativeDisplayName(this Entity entity, Entity observer)
+    private static string RelativeDisplayName(World world, EntityId entity, EntityId observer)
     {
         // TODO
         // Placeholder: in a real implementation, this would check visibility, relationships, etc.
-        return entity.DisplayName;
+        return EntityHelpers.DisplayName(world, entity);
     }
 
     // Helper to append possessive without extra string allocation

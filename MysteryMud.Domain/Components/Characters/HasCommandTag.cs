@@ -1,5 +1,3 @@
 ﻿namespace MysteryMud.Domain.Components.Characters;
 
-public struct HasCommandTag
-{
-}
+public struct HasCommandTag { }

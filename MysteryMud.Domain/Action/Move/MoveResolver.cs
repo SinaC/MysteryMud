@@ -1,18 +1,20 @@
-﻿using Arch.Core.Extensions;
-using MysteryMud.Core;
+﻿using MysteryMud.Core;
 using MysteryMud.Core.Effects;
 using MysteryMud.Domain.Action.Calculators;
-using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
+using TinyECS;
 
 namespace MysteryMud.Domain.Action.Move;
 
 public class MoveResolver : IMoveResolver
 {
+    private readonly World _world;
     private readonly IGameMessageService _msg;
 
-    public MoveResolver(IGameMessageService msg)
+    public MoveResolver(World world, IGameMessageService msg)
     {
+        _world = world;
         _msg = msg;
     }
 
@@ -21,10 +23,10 @@ public class MoveResolver : IMoveResolver
         var source = action.Source;
         var target = action.Target;
         var amount = action.Amount;
-        if (!target.IsAlive() || target.Has<Dead>()) // already dead
+        if (!CharacterHelpers.IsAlive(_world, target)) // already dead
             return new RestoreMoveResult { IsSuccess = false };
 
-        ref var move = ref target.TryGetRef<Components.Characters.Move>(out var hasMove);
+        ref var move = ref _world.TryGetRef<Components.Characters.Move>(target, out var hasMove);
         if (!hasMove)
             return new RestoreMoveResult { IsSuccess = false };
 
@@ -36,7 +38,7 @@ public class MoveResolver : IMoveResolver
             };
 
         // apply move modifiers
-        decimal modifiedMove = MoveCalculator.ModifyRestoreMove(target, amount, source);
+        decimal modifiedMove = MoveCalculator.ModifyRestoreMove(target, source, amount);
         // cap to max move-current
         decimal maxPossibleMove = move.Max - move.Current;
         decimal finalMove = Math.Min(modifiedMove, maxPossibleMove);

@@ -1,9 +1,9 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.Domain.Components.Characters.Mobiles;
 
 public struct ThreatTable
 {
-    public Dictionary<Entity, long> Threat;
+    public Dictionary<EntityId, long> Threat;
     public long LastUpdateTick;
 }

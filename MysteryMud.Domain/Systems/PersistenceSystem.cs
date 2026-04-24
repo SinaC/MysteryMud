@@ -1,8 +1,7 @@
-﻿
-using Arch.Core;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Persistence;
+using TinyECS;
 
 namespace MysteryMud.Domain.Systems;
 
@@ -10,9 +9,10 @@ namespace MysteryMud.Domain.Systems;
 /// ECS system responsible for draining the DirtyTracker and writing to the DB.
 ///
 /// Three save triggers:
-///   1. Periodic autosave  — flushes non-cooldown-only entries every AutosaveInterval
-///   2. Significant events — flushed every tick if the batch threshold is reached
-///   3. Disconnect         — immediate flush via SaveOnDisconnectAsync (called externally)
+///   1. Critical           - flushed immediately regardless of player count
+///   2. Pressure           - enough dirty players to justify a batch write
+///   3. Periodic autosave  — flushes entries every AutosaveInterval
+///   4. Disconnect         — immediate flush via SaveOnDisconnectAsync (called externally)
 ///
 /// The system must be updated once per tick by your ECS scheduler.
 /// It is intentionally NOT an Arch ISystem to avoid pulling in scheduler coupling —
@@ -101,7 +101,7 @@ public sealed class PersistenceSystem
     /// Called by the connection handler when a player disconnects cleanly.
     /// Forces a save even if the entity isn't currently dirty.
     /// </summary>
-    public async Task SaveOnDisconnectAsync(Entity entity, long currentTick)
+    public async Task SaveOnDisconnectAsync(EntityId entity, long currentTick)
     {
         // Remove from dirty queue (we're saving now)
         _tracker.DrainEntity(entity);
@@ -140,14 +140,14 @@ public sealed class PersistenceSystem
             {
                 _log.LogError(ex,
                     "Persistence: failed to save entity {EntityId} (reasons: {Reasons})",
-                    entry.Entity.Id, entry.Reasons);
+                    entry.Entity.Index, entry.Reasons);
                 // Re-mark dirty so we retry next cycle
                 _tracker.MarkDirty(entry.Entity, entry.Reasons);
             }
         }
     }
 
-    private async Task SaveEntityAsync(Entity entity, long tick)
+    private async Task SaveEntityAsync(EntityId entity, long tick)
     {
         // Build snapshot on the calling thread.
         // If this is called from Update() it's already on the game thread.
@@ -155,7 +155,7 @@ public sealed class PersistenceSystem
         // ensure the entity is still alive and not being modified concurrently.
         if (!_world.IsAlive(entity))
         {
-            _log.LogWarning("Persistence: skipping dead entity {EntityId}", entity.Id);
+            _log.LogWarning("Persistence: skipping dead entity {EntityId}", entity.Index);
             return;
         }
 

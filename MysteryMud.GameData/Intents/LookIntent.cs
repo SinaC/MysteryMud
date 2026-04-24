@@ -1,15 +1,15 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.GameData.Intents;
 
 public struct LookIntent
 {
-    public Entity Viewer;
+    public EntityId Viewer;
 
     public LookTargetKind TargetKind;
 
-    public Entity Target; // room, character, or item being looked at
+    public EntityId Target; // room, character, or item being looked at
 
     public LookMode Mode;
 }

@@ -1,6 +1,6 @@
-﻿using Arch.Core;
-using MysteryMud.Core.Persistence;
+﻿using MysteryMud.Core.Persistence;
 using System.Collections.Concurrent;
+using TinyECS;
 
 namespace MysteryMud.Infrastructure.Persistence;
 
@@ -15,15 +15,15 @@ namespace MysteryMud.Infrastructure.Persistence;
 public sealed class DirtyTracker : IDirtyTracker
 {
     // entity id → dirty entry
-    private readonly ConcurrentDictionary<int, DirtyEntry> _dirty = new();
+    private readonly ConcurrentDictionary<uint, DirtyEntry> _dirty = new();
 
     // ── Public API ───────────────────────────────────────────
 
     /// <summary>Mark an entity dirty with one or more reasons.</summary>
-    public void MarkDirty(Entity entity, DirtyReason reason)
+    public void MarkDirty(EntityId entity, DirtyReason reason)
     {
         _dirty.AddOrUpdate(
-            entity.Id,
+            entity.Index,
             _ => new DirtyEntry(entity, reason),
             (_, existing) => { existing.Accumulate(reason); return existing; });
     }
@@ -32,7 +32,7 @@ public sealed class DirtyTracker : IDirtyTracker
     /// Mark an entity for immediate disconnect-save.
     /// Adds all reasons so nothing is skipped.
     /// </summary>
-    public void MarkForDisconnect(Entity entity)
+    public void MarkForDisconnect(EntityId entity)
         => MarkDirty(entity, DirtyReason.All);
 
     /// <summary>
@@ -58,13 +58,13 @@ public sealed class DirtyTracker : IDirtyTracker
     /// <summary>
     /// Drain a single entity (used on disconnect to force an immediate save).
     /// </summary>
-    public DirtyEntry? DrainEntity(Entity entity)
+    public DirtyEntry? DrainEntity(EntityId entity)
     {
-        _dirty.TryRemove(entity.Id, out var entry);
+        _dirty.TryRemove(entity.Index, out var entry);
         return entry;
     }
 
-    public bool IsDirty(Entity entity) => _dirty.ContainsKey(entity.Id);
+    public bool IsDirty(EntityId entity) => _dirty.ContainsKey(entity.Index);
 
     public bool HasCritical
         => _dirty.Values.Any(e => e.Has(DirtyReason.Critical));

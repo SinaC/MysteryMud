@@ -1,10 +1,10 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.GameData.Events;
 
 public struct TriggeredScheduledEvent
 {
-    public Entity Effect;
+    public EntityId Effect;
     public ScheduledEventKind Kind;
 }

@@ -1,25 +1,26 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Logging;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Factories;
 using MysteryMud.Infrastructure.Network;
+using TinyECS;
 
 namespace MysteryMud.ConsoleApp.Hosting;
 
 internal class GameServer
 {
+    private readonly World _world;
     private readonly ILogger _logger;
     private readonly IConnectionService _connections;
     private readonly ICommandBus _commandBus;
     private readonly TelnetServer _telnet;
     private readonly GameLoop _gameLoop;
 
-    public GameServer(ILogger logger, IConnectionService connections, ICommandBus commandBus, TelnetServer telnetServer, GameLoop gameLoop)
+    public GameServer(World world, ILogger logger, IConnectionService connections, ICommandBus commandBus, TelnetServer telnetServer, GameLoop gameLoop)
     {
+        _world = world;
         _logger = logger;
         _connections = connections;
         _commandBus = commandBus;
@@ -78,17 +79,17 @@ internal class GameServer
         //room.Get<RoomContents>().Characters.Remove(entity);
 
         // mark as disconnected and let the cleanup system handle the actual destruction and cleanup of the entity, this allows us to still show the character in the room for a short time after disconnecting, and also allows us to handle any necessary cleanup in a more controlled way
-        if (!entity.Has<DisconnectedTag>())
-            entity.Add<DisconnectedTag>();
+        if (!_world.Has<DisconnectedTag>(entity))
+            _world.Add<DisconnectedTag>(entity);
 
         // remove from connection service
         _connections.Remove(connectionId);
     }
 
-    private void InitializePlayer(Entity player, int connectionId)
+    private void InitializePlayer(EntityId player, int connectionId)
     {
         // TODO: fill in with actual character creation data, load from file, etc
-        PlayerFactory.InitializePlayer(player);
+        PlayerFactory.InitializePlayer(_world, player);
 
         _telnet.Write(connectionId, "Welcome to the game!\r\n> ");
         _telnet.Flush(connectionId);

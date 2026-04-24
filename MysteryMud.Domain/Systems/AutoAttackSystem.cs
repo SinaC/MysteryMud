@@ -1,9 +1,9 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Core;
+﻿using MysteryMud.Core;
 using MysteryMud.Core.Contracts;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.GameData.Enums;
+using TinyECS;
+using TinyECS.Extensions;
 
 namespace MysteryMud.Domain.Systems;
 
@@ -11,25 +11,30 @@ public class AutoAttackSystem
 {
     private const int DefaultHits = 1; // e.g., base autoattack hits
 
+    private readonly World _world;
     private readonly IIntentContainer _intentContainer;
 
-    public AutoAttackSystem(IIntentContainer intentContainer)
+    public AutoAttackSystem(World world, IIntentContainer intentContainer)
     {
+        _world = world;
         _intentContainer = intentContainer;
     }
 
+    private static readonly QueryDescription _inCombatButNotCasting = new QueryDescription()
+        .WithAll<CombatState, EffectiveStats>()
+        .WithNone<Dead, Casting>(); // no autoattack if dead or casting
+
     public void Tick(GameState state)
     {
-        var query = new QueryDescription()
-            .WithAll<CombatState, EffectiveStats>()
-            .WithNone<Dead, Casting>(); // no autoattack if dead or casting
-        state.World.Query(query, (Entity actor, ref CombatState combat, ref EffectiveStats stats) =>
+        _world.Query(_inCombatButNotCasting, (EntityId actor,
+            ref CombatState combat,
+            ref EffectiveStats stats) =>
         {
             var target = combat.Target;
-            if (target.Has<Dead>())
+            if (_world.Has<Dead>(target))
             {
                 // Target is gone, exit combat
-                actor.Remove<CombatState>();
+                _world.Remove<CombatState>(actor);
                 return;
                 // TODO: Alternatively, could try to select new target here instead of exiting combat
             }

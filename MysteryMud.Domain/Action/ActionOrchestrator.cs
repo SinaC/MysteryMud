@@ -1,6 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Contracts;
@@ -15,11 +13,13 @@ using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
 using MysteryMud.GameData.Intents;
+using TinyECS;
 
 namespace MysteryMud.Domain.Action;
 
 public class ActionOrchestrator
 {
+    private readonly World _world;
     private readonly ILogger _logger;
     private readonly IIntentContainer _intents;
     private readonly IEventBuffer<AttackResolvedEvent> _attackResolved;
@@ -35,8 +35,9 @@ public class ActionOrchestrator
     private readonly IWeaponProcResolver _weaponProcResolver;
     private readonly IReactionResolver _reactionResolver;
 
-    public ActionOrchestrator(ILogger logger, IIntentContainer intents, IEventBuffer<AttackResolvedEvent> attackResolved, IEventBuffer<EffectResolvedEvent> effectResolved, IEventBuffer<AggressedEvent> aggressed, IEventBuffer<KillRewardEvent> killRewards, IEffectRegistry effectRegistry, IEffectApplicationManager effectApplicationManager, IExperienceService experienceService, IHitResolver hitResolver, IHitDamageFactory hitDamageFactory, IDamageResolver damageResolver, IWeaponProcResolver weaponProcResolver, IReactionResolver reactionResolver)
+    public ActionOrchestrator(World world, ILogger logger, IIntentContainer intents, IEventBuffer<AttackResolvedEvent> attackResolved, IEventBuffer<EffectResolvedEvent> effectResolved, IEventBuffer<AggressedEvent> aggressed, IEventBuffer<KillRewardEvent> killRewards, IEffectRegistry effectRegistry, IEffectApplicationManager effectApplicationManager, IExperienceService experienceService, IHitResolver hitResolver, IHitDamageFactory hitDamageFactory, IDamageResolver damageResolver, IWeaponProcResolver weaponProcResolver, IReactionResolver reactionResolver)
     {
+        _world = world;
         _logger = logger;
         _intents = intents;
         _attackResolved = attackResolved;
@@ -85,8 +86,10 @@ public class ActionOrchestrator
     private void ResolveAttack(GameState state, ref ActionIntent actionIntent)
     {
         ref var attackData = ref actionIntent.Attack;
+        var attackSource = attackData.Source;
+        var attackTarget = attackData.Source;
 
-        if (!CharacterHelpers.IsAlive(attackData.Source, attackData.Target))
+        if (!CharacterHelpers.IsAlive(_world, attackSource, attackTarget))
             return;
 
         // resolve hit
@@ -94,8 +97,8 @@ public class ActionOrchestrator
 
         // the intent was hostile regardless of hit/miss/dodge outcome
         ref var aggrEvt = ref _aggressed.Add();
-        aggrEvt.Source = attackData.Source;
-        aggrEvt.Target = attackData.Target;
+        aggrEvt.Source = attackSource;
+        aggrEvt.Target = attackTarget;
 
         // attack resolved event
         ref var attackResolvedEvt = ref _attackResolved.Add();
@@ -113,7 +116,7 @@ public class ActionOrchestrator
             _weaponProcResolver.Resolve(state, resolvedHit, damageResult);
         }
 
-        if (!CharacterHelpers.IsAlive(attackData.Target))
+        if (!CharacterHelpers.IsAlive(_world, attackSource, attackTarget))
             return;
 
         // if still alive after damage, check reaction (such as counterattack)
@@ -135,8 +138,10 @@ public class ActionOrchestrator
     private void ResolveEffect(GameState state, ref ActionIntent actionIntent)
     {
         ref var effectData = ref actionIntent.Effect;
+        var effectSource = effectData.Source;
+        var effectTarget = effectData.Source;
 
-        if (!CharacterHelpers.IsAlive(effectData.Source, effectData.Target))
+        if (!CharacterHelpers.IsAlive(_world, effectSource, effectTarget))
             return;
 
         if (!_effectRegistry.TryGetRuntime(effectData.EffectId, out var effectRuntime) || effectRuntime == null)
@@ -150,39 +155,39 @@ public class ActionOrchestrator
         if (effectData.IsHarmful)
         {
             ref var aggrEvt = ref _aggressed.Add();
-            aggrEvt.Source = effectData.Source;
-            aggrEvt.Target = effectData.Target;
+            aggrEvt.Source = effectSource;
+            aggrEvt.Target = effectTarget;
         }
 
         // attack resolved event
         ref var effectResolvedEvt = ref _effectResolved.Add();
-        effectResolvedEvt.Source = effectData.Source;
-        effectResolvedEvt.Target = effectData.Target;
+        effectResolvedEvt.Source = effectSource;
+        effectResolvedEvt.Target = effectTarget;
         effectResolvedEvt.EffectId = effectData.EffectId;
     }
 
     private void GrantReward(ref KillRewardEvent killRewardEvt)
     {
-        if (killRewardEvt.RewardOwner != killRewardEvt.Victim && killRewardEvt.RewardOwner.Has<Progression>())
+        if (killRewardEvt.RewardOwner != killRewardEvt.Victim && _world.Has<Progression>(killRewardEvt.RewardOwner))
             GrantExperience(killRewardEvt.RewardOwner, killRewardEvt.Victim);
 
-        if (killRewardEvt.RewardOwnerGroup != Entity.Null)
+        if (killRewardEvt.RewardOwnerGroup != EntityId.Invalid)
         {
-            ref var groupInstance = ref killRewardEvt.RewardOwnerGroup.TryGetRef<GroupInstance>(out var isInGroup);
+            ref var groupInstance = ref _world.TryGetRef<GroupInstance>(killRewardEvt.RewardOwnerGroup, out var isInGroup);
             if (isInGroup)
             {
                 foreach (var member in groupInstance.Members)
                 {
                     if (member == killRewardEvt.RewardOwner) continue;
-                    if (!CharacterHelpers.IsAlive(member)) continue; // <- member died too
-                    if (!CharacterHelpers.SameRoom(killRewardEvt.RewardOwner, member)) continue; // <- member not anymore in same room
+                    if (!CharacterHelpers.IsAlive(_world, member)) continue; // <- member died too
+                    if (!CharacterHelpers.SameRoom(_world, killRewardEvt.RewardOwner, member)) continue; // <- member not anymore in same room
                     GrantExperience(member, killRewardEvt.Victim);
                 }
             }
         }
     }
 
-    private void GrantExperience(Entity target, Entity victim)
+    private void GrantExperience(EntityId target, EntityId victim)
     {
         var xpReward = _experienceService.CalculateCombatXp(target, victim);
         _experienceService.GrantExperience(target, xpReward);

@@ -1,6 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Core;
@@ -11,6 +9,7 @@ using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
+using TinyECS;
 
 namespace MysteryMud.Application.Commands.DataDrivenCommands;
 
@@ -18,6 +17,7 @@ public sealed class SocialCommand : IExplicitCommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.Target;
 
+    private readonly World _world;
     private readonly ILogger _logger;
     private readonly IGameMessageService _msg;
 
@@ -25,8 +25,9 @@ public sealed class SocialCommand : IExplicitCommand
 
     public CommandDefinition Definition { get; }
 
-    public SocialCommand(ILogger logger, IGameMessageService msg, SocialDefinition socialDefinition)
+    public SocialCommand(World world, ILogger logger, IGameMessageService msg, SocialDefinition socialDefinition)
     {
+        _world = world;
         _logger = logger;
         _msg = msg;
         _socialDefinition = socialDefinition;
@@ -48,19 +49,19 @@ public sealed class SocialCommand : IExplicitCommand
         };
     }
 
-    public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(GameState state, EntityId actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
         var useCharacterNotFound = false;
-        Entity? victim = null;
+        EntityId? victim = null;
 
         if (ctx.TargetCount > 0)
         {
-            ref var room = ref actor.Get<Location>().Room;
-            ref var roomContents = ref room.Get<RoomContents>();
+            ref var room = ref _world.Get<Location>(actor).Room;
+            ref var roomContents = ref _world.Get<RoomContents>(room);
 
-            victim = CommandEntityFinder.SelectSingleTarget(actor, ctx.Primary, roomContents.Characters);
+            victim = CommandEntityFinder.SelectSingleTarget(_world, actor, ctx.Primary, roomContents.Characters);
             if (victim == null)
             {
                 if (_socialDefinition.CharacterNotFound is null)

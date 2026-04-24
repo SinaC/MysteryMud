@@ -1,27 +1,28 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Core;
+﻿using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Core.Persistence;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Services;
+using TinyECS;
 
 namespace MysteryMud.Application.Commands.Commands;
 
 public sealed class SaveCommand : ICommand
 {
+    private readonly World _world;
     private readonly IGameMessageService _msg;
     private readonly IDirtyTracker _dirtyTracker;
 
-    public SaveCommand(IGameMessageService msg, IDirtyTracker dirtyTracker)
+    public SaveCommand(World world, IGameMessageService msg, IDirtyTracker dirtyTracker)
     {
+        _world = world;
         _msg = msg;
         _dirtyTracker = dirtyTracker;
     }
 
-    public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(GameState state, EntityId actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
-        if (!actor.Has<PlayerTag>())
+        if (!_world.Has<PlayerTag>(actor))
             return;
 
         _dirtyTracker.MarkDirty(actor, DirtyReason.All);

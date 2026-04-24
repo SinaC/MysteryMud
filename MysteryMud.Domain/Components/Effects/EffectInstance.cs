@@ -1,12 +1,12 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 using MysteryMud.Domain.Action.Effect;
 
 namespace MysteryMud.Domain.Components.Effects;
 
 public struct EffectInstance
 {
-    public Entity Source;
-    public Entity Target;
+    public EntityId Source;
+    public EntityId Target;
 
     public int StackCount; // for stacking effects, otherwise 1
     public EffectRuntime EffectRuntime;

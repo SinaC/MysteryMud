@@ -2,15 +2,18 @@
 using MysteryMud.Core.Bus;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.GameData.Events;
+using TinyECS;
 
 namespace MysteryMud.Domain.Systems;
 
 public class AggressionSystem
 {
+    private readonly World _world;
     private readonly IEventBuffer<AggressedEvent> _aggressed;
 
-    public AggressionSystem(IEventBuffer<AggressedEvent> aggressed)
+    public AggressionSystem(World world, IEventBuffer<AggressedEvent> aggressed)
     {
+        _world = world;
         _aggressed = aggressed;
     }
 
@@ -19,7 +22,7 @@ public class AggressionSystem
     {
         foreach (ref var evt in _aggressed.GetAll())
         {
-            CombatHelpers.EnterCombat(state, evt.Source, evt.Target);
+            CombatHelpers.EnterCombat(_world, state, evt.Source, evt.Target);
         }
     }
 }

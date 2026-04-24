@@ -1,10 +1,10 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.GameData.Intents;
 
 public struct FleeIntent
 {
-    public Entity Entity;
-    public Entity FromRoom;
+    public EntityId Entity;
+    public EntityId FromRoom;
 }
 

@@ -1,6 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Contracts;
 using MysteryMud.Core.Effects;
@@ -9,17 +7,19 @@ using MysteryMud.Core.Persistence;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
-using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Time;
+using TinyECS;
+using TinyECS.Extensions;
 
 namespace MysteryMud.Domain.Action.Effect;
 
 public partial class EffectApplicationManager : IEffectApplicationManager
 {
+    private readonly World _world;
     private readonly ILogger _logger;
     private readonly IGameMessageService _msg;
     private readonly IDirtyTracker _dirtyTracker;
@@ -27,8 +27,9 @@ public partial class EffectApplicationManager : IEffectApplicationManager
     private readonly IEffectExecutor _effectExecutor;
     private readonly IEffectLifecycleManager _effectLifecycleManager;
 
-    public EffectApplicationManager(ILogger logger, IGameMessageService msg, IDirtyTracker dirtyTracker, IIntentWriterContainer intent, IEffectExecutor effectExecutor, IEffectLifecycleManager effectLifecycleManager)
+    public EffectApplicationManager(World world, ILogger logger, IGameMessageService msg, IDirtyTracker dirtyTracker, IIntentWriterContainer intent, IEffectExecutor effectExecutor, IEffectLifecycleManager effectLifecycleManager)
     {
+        _world = world;
         _logger = logger;
         _msg = msg;
         _dirtyTracker = dirtyTracker;
@@ -40,7 +41,7 @@ public partial class EffectApplicationManager : IEffectApplicationManager
     public void CreateEffect(GameState state, EffectRuntime effectRuntime, ref EffectData effectData)
     {
         var target = effectData.Target;
-        var actualKind = target.Has<CharacterEffects>() ? EffectTargetKind.Character : EffectTargetKind.Item;
+        var actualKind = _world.Has<CharacterEffects>(target) ? EffectTargetKind.Character : EffectTargetKind.Item;
 
         if ((effectRuntime.SupportedTargets & actualKind) == 0)
         {
@@ -67,11 +68,11 @@ public partial class EffectApplicationManager : IEffectApplicationManager
         var source = effectData.Source;
         var target = effectData.Target;
 
-        var isTargetCharacter = target.Has<CharacterEffects>();
+        var isTargetCharacter = _world.Has<CharacterEffects>(target);
         // Resolve which host to use — single branch point
         IEffectHost host = isTargetCharacter
-            ? new CharacterEffectHost(_dirtyTracker, target)
-            : new ItemEffectHost(_dirtyTracker, target);
+            ? new CharacterEffectHost(_world, _dirtyTracker, target)
+            : new ItemEffectHost(_world, _dirtyTracker, target);
 
         var existingEffect = host.FindEffect(effectRuntime);
 
@@ -92,11 +93,11 @@ public partial class EffectApplicationManager : IEffectApplicationManager
 
         // Snapshot — host provides target-side values, caller provides source-side
         var snapshot = host.CreateSnapshot();
-        snapshot.SourceLevel = source.Get<Level>().Value;
-        snapshot.SourceStats = source.Get<EffectiveStats>().Values;
+        snapshot.SourceLevel = _world.Get<Level>(source).Value;
+        snapshot.SourceStats = _world.Get<EffectiveStats>(source).Values;
 
         // create effect with snapshotted values
-        var effect = state.World.Create(new EffectInstance
+        var effect = _world.CreateEntity(new EffectInstance
         {
             Source = source,
             Target = target,
@@ -107,7 +108,7 @@ public partial class EffectApplicationManager : IEffectApplicationManager
         // add effect to target effect cache
         host.RegisterEffect(effect, effectRuntime);
 
-        _logger.LogInformation(LogEvents.Factory, "Creating Effect {name} Source {source} Target {target}", effectRuntime.Name, source.DebugName, target.DebugName);
+        _logger.LogInformation(LogEvents.Factory, "Creating Effect {name} Source {source} Target {target}", effectRuntime.Name, EntityHelpers.DebugName(_world, source), EntityHelpers.DebugName(_world, target));
 
         // --- Everything below is target-agnostic ---
 
@@ -123,6 +124,7 @@ public partial class EffectApplicationManager : IEffectApplicationManager
             StackCount = 1,
 
             State = state,
+            World = _world,
         };
 
         // add TimedEffect component to effect
@@ -132,7 +134,7 @@ public partial class EffectApplicationManager : IEffectApplicationManager
             ? state.CurrentTick
             : state.CurrentTick + effectRuntime.TickRate; // 0: means pure duration
         var tickRate = effectRuntime.TickRate; // 0: means pure duration
-        effect.Add(new TimedEffect
+        _world.Add(effect, new TimedEffect
         {
             StartTick = state.CurrentTick,
             ExpirationTick = expirationTick,
@@ -169,7 +171,7 @@ public partial class EffectApplicationManager : IEffectApplicationManager
 
             foreach (var onApply in effectRuntime.OnApply)
             {
-                if (CharacterHelpers.IsAlive(source, target))
+                if (CharacterHelpers.IsAlive(_world, source, target))
                     onApply.Invoke(effectExecutionContext);
             }
         }
@@ -196,6 +198,7 @@ public partial class EffectApplicationManager : IEffectApplicationManager
                 StackCount = 1,
 
                 State = state,
+                World = _world,
             };
             var effectExecutionContext = new EffectExecutionContext
             {
@@ -206,20 +209,20 @@ public partial class EffectApplicationManager : IEffectApplicationManager
 
             foreach (var onApply in effectRuntime.OnApply)
             {
-                if (CharacterHelpers.IsAlive(source, target))
+                if (CharacterHelpers.IsAlive(_world, source, target))
                     onApply.Invoke(effectExecutionContext);
             }
         }
     }
 
-    private StackingResult HandleStacking(GameState state, EffectRuntime effectRuntime, Entity source, Entity target, Entity existingEffect)
+    private StackingResult HandleStacking(GameState state, EffectRuntime effectRuntime, EntityId source, EntityId target, EntityId existingEffect)
     {
-        ref var instance = ref state.World.Get<EffectInstance>(existingEffect);
+        ref var instance = ref _world.Get<EffectInstance>(existingEffect);
         if (source != instance.Source)
             return StackingResult.DifferentSource;
 
         // now we can check stacking rules
-        ref var timedEffect = ref existingEffect.TryGetRef<TimedEffect>(out var isTimedEffect);
+        ref var timedEffect = ref _world.TryGetRef<TimedEffect>(existingEffect, out var isTimedEffect);
 
         switch (effectRuntime.Stacking)
         {
@@ -241,6 +244,7 @@ public partial class EffectApplicationManager : IEffectApplicationManager
                         StackCount = instance.StackCount,
 
                         State = state,
+                        World = _world,
                     };
 
                     // update Duration
@@ -250,7 +254,7 @@ public partial class EffectApplicationManager : IEffectApplicationManager
                     timedEffect.ExpirationTick = expirationTick;
 
                     // schedule a new expiration event (don't remove the old one, just add a new one with the new expiration tick - when the old one executes it will check the current expiration tick and do nothing if it's different)
-                    _logger.LogInformation(LogEvents.Factory, "Refreshing Effect {name} Source {source} Target {target} Duration {duration} Expiration {expirationTick}", effectRuntime.Name, source.DebugName, instance.Target.DebugName, duration, expirationTick);
+                    _logger.LogInformation(LogEvents.Factory, "Refreshing Effect {name} Source {source} Target {target} Duration {duration} Expiration {expirationTick}", effectRuntime.Name, EntityHelpers.DebugName(_world, source), EntityHelpers.DebugName(_world, instance.Target), duration, expirationTick);
 
                     // expire schedule intent
                     ref var expireScheduleIntent = ref _intent.Schedule.Add();
@@ -280,6 +284,7 @@ public partial class EffectApplicationManager : IEffectApplicationManager
                         StackCount = instance.StackCount,
 
                         State = state,
+                        World = _world,
                     };
 
                     // update Duration
@@ -289,7 +294,7 @@ public partial class EffectApplicationManager : IEffectApplicationManager
                     timedEffect.ExpirationTick = expirationTick;
 
                     // schedule a new expiration event (don't remove the old one, just add a new one with the new expiration tick - when the old one executes it will check the current expiration tick and do nothing if it's different)
-                    _logger.LogInformation(LogEvents.Factory, "Stacking/Refreshing Effect {name} Source {source} Target {target} Duration {duration} Expiration {expirationTick} New Stack Count {newStackCount}", effectRuntime.Name, source.DebugName, instance.Target.DebugName, duration, expirationTick, instance.StackCount);
+                    _logger.LogInformation(LogEvents.Factory, "Stacking/Refreshing Effect {name} Source {source} Target {target} Duration {duration} Expiration {expirationTick} New Stack Count {newStackCount}", effectRuntime.Name, EntityHelpers.DebugName(_world, source), EntityHelpers.DebugName(_world, instance.Target), duration, expirationTick, instance.StackCount);
 
                     // expire schedule intent
                     ref var expireScheduleIntent = ref _intent.Schedule.Add();
@@ -302,8 +307,8 @@ public partial class EffectApplicationManager : IEffectApplicationManager
                 else
                     return StackingResult.Refreshed;
             case StackingRule.Replace:
-                _logger.LogInformation(LogEvents.Factory, "Replacing Effect {name} Source {source} Target {target}", effectRuntime.Name, source.DebugName, instance.Target.DebugName);
-                _effectLifecycleManager.RemoveEffect(state, existingEffect); // destroy current effect (no wear off message because it's a replacement)
+                _logger.LogInformation(LogEvents.Factory, "Replacing Effect {name} Source {source} Target {target}", effectRuntime.Name, EntityHelpers.DebugName(_world, source), EntityHelpers.DebugName(_world, instance.Target));
+                _effectLifecycleManager.RemoveEffect(existingEffect); // destroy current effect (no wear off message because it's a replacement)
                 return StackingResult.Replaced;
         }
 

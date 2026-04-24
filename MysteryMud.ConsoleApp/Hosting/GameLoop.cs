@@ -1,6 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Contracts;
@@ -9,7 +7,7 @@ using MysteryMud.Core.Scheduler;
 using MysteryMud.Domain.Action;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Resources;
-using MysteryMud.Domain.Extensions;
+using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Definitions;
@@ -17,7 +15,8 @@ using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Time;
 using MysteryMud.Infrastructure.Eventing;
 using MysteryMud.Infrastructure.Services;
-using System.Net.Sockets;
+using TinyECS;
+using TinyECS.Extensions;
 using static Dapper.SqlMapper;
 
 namespace MysteryMud.ConsoleApp.Hosting;
@@ -203,7 +202,6 @@ internal class GameLoop
         {
             var state = new GameState
             {
-                World = _world,
                 CurrentTick = currentTick,
                 CurrentTimeMs = currentTick * TimeRate.TicksInMilliseconds
             };
@@ -330,11 +328,11 @@ internal class GameLoop
     private void DumpWorld()
     {
         Console.WriteLine("Dumping world state:");
-        var query = new QueryDescription();
-        _world.Query(query, (Entity entity) =>
+        var query = new Query(_world); // TODO: fix
+        foreach(var entity in query)
         {
-            Console.WriteLine($"Entity Id: {entity.Id} Alive: {entity.IsAlive()} DebugName: {entity.DebugName}");
-            Console.WriteLine($"  Components: {string.Join(", ", entity.GetAllComponents().Select(c => c?.GetType().Name))}");
-        });
+            Console.WriteLine($"Entity Id: {entity.Index} Alive: {_world.IsAlive(entity)} DebugName: {EntityHelpers.DebugName(_world, entity)}");
+            Console.WriteLine($"  Components: {string.Join(", ", _world.GetAllComponents(entity).Select(c => c.GetType().Name))}");
+        }
     }
 }

@@ -1,11 +1,11 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.GameData.Definitions;
 
 public struct AttackData
 {
-    public Entity Source;
-    public Entity Target;
+    public EntityId Source;
+    public EntityId Target;
 
     public int RemainingHits;
     public bool IsReaction; // to prevent infinite loops, reactions can't trigger other reactions

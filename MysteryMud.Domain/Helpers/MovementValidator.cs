@@ -1,60 +1,62 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Domain.Components.Characters;
+﻿using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.GameData.Enums;
+using TinyECS;
 
 namespace MysteryMud.Domain.Helpers;
 
 public static class MovementValidator
 {
     public static bool CanPayMoveCost(
-        Entity mover,
-        Entity fromRoom,
-        Entity toRoom,
+        World world,
+        EntityId mover,
+        EntityId fromRoom,
+        EntityId toRoom,
         DirectionKind direction,
         out int cost)
     {
-        cost = ResolveMoveCost(mover, fromRoom, toRoom, direction);
-        ref var move = ref mover.Get<Move>();
+        cost = ResolveMoveCost(world, mover, fromRoom, toRoom, direction);
+        ref var move = ref world.Get<Move>(mover);
         return cost <= move.Current;
     }
 
-    public static void PayMoveCost(Entity mover, int cost)
+    public static void PayMoveCost(World world, EntityId mover, int cost)
     {
-        ref var move = ref mover.Get<Move>();
+        ref var move = ref world.Get<Move>(mover);
         move.Current -= cost;
     }
 
     public static int ResolveMoveCost(
-        Entity mover,
-        Entity fromRoom,
-        Entity toRoom,
+        World world,
+        EntityId mover,
+        EntityId fromRoom,
+        EntityId toRoom,
         DirectionKind direction)
     {
         return 10; // TODO: use sector to calculate move cost
     }
 
     public static bool CanEnter(
-        Entity mover,
-        Entity fromRoom,
-        Entity toRoom,
+        World world,
+        EntityId mover,
+        EntityId fromRoom,
+        EntityId toRoom,
         DirectionKind direction,
         out string blockReason)
     {
         blockReason = default!;
 
         // 1. Destination room must exist
-        if (toRoom == Entity.Null || !toRoom.IsAlive())
+        if (toRoom == EntityId.Invalid|| !world.IsAlive(toRoom))
         {
             blockReason = "There is no exit in that direction";
             return false;
         }
 
         // 2. Exit must not be closed
-        if (fromRoom.Has<RoomGraph>())
+        if (world.Has<RoomGraph>(fromRoom))
         {
-            ref readonly var graph = ref fromRoom.Get<RoomGraph>();
+            ref readonly var graph = ref world.Get<RoomGraph>(fromRoom);
             if (graph.Exits[direction]?.Closed == true)
             {
                 blockReason = "The door is closed";
@@ -68,7 +70,7 @@ public static class MovementValidator
         }
 
         // 3. Mover must not be in combat
-        if (mover.Has<CombatState>())
+        if (world.Has<CombatState>(mover))
         {
             blockReason = "You are fighting!";
             return false;
@@ -76,19 +78,19 @@ public static class MovementValidator
 
         // TODO
         //// 4. Mover must not be stunned / incapacitated / sleeping
-        //if (mover.Has<Stunned>())
+        //if (world.Has<Stunned>(mover))
         //{
         //    blockReason = "You are stunned";
         //    return false;
         //}
 
-        //if (mover.Has<Incapacitated>())
+        //if (world.Has<Incapacitated>(mover))
         //{
         //    blockReason = "You are incapacitated";
         //    return false;
         //}
 
-        //if (mover.Has<Sleeping>())
+        //if (world.Has<Sleeping>(mover))
         //{
         //    blockReason = "You are sleeping";
         //    return false;
@@ -96,11 +98,11 @@ public static class MovementValidator
 
         // TODO
         //// 5. Sector / room flags
-        //if (toRoom.Has<RoomFlags>())
+        //if (world.Has<RoomFlags>(toRoom))
         //{
-        //    ref readonly var flags = ref toRoom.Get<RoomFlags>();
+        //    ref readonly var flags = ref world.Get<RoomFlags>(toRoom);
 
-        //    if (flags.Has(RoomFlag.NoMob) && mover.Has<NpcMarker>())
+        //    if (flags.Has(RoomFlag.NoMob) && world.Has<NpcMarker>(mover))
         //    {
         //        blockReason = "NPCs cannot enter this area";
         //        return false;
@@ -110,8 +112,8 @@ public static class MovementValidator
         //    {
         //        // Private rooms: block if already 2+ players inside
         //        // (classic ROM rule — adjust threshold as needed)
-        //        int playerCount = CountPlayersInRoom(toRoom);
-        //        if (playerCount >= 2 && !mover.Has<NpcMarker>())
+        //        int playerCount = CountPlayersInRoom(world, toRoom);
+        //        if (playerCount >= 2 && !world.Has<NpcMarker>(mover))
         //        {
         //            blockReason = "That room is private";
         //            return false;
@@ -121,13 +123,13 @@ public static class MovementValidator
 
         // TODO
         //// 6. Water/fly sector checks
-        //if (toRoom.Has<SectorKind>())
+        //if (world.Has<SectorKind>(toRoom))
         //{
-        //    ref readonly var sector = ref toRoom.Get<SectorKind>();
+        //    ref readonly var sector = ref world.Get<SectorKind>(toRoom);
 
-        //    bool canSwim = mover.Has<CanSwim>()
-        //                || mover.Has<WaterBreathing>();
-        //    bool canFly = mover.Has<Flying>();
+        //    bool canSwim = world.Has<CanSwim>(mover)
+        //                || world.Has<WaterBreathing>(mover);
+        //    bool canFly = world.Has<Flying>(mover);
 
         //    if (sector.Value == Sector.WaterNoSwim && !canFly && !canSwim)
         //    {
@@ -148,9 +150,10 @@ public static class MovementValidator
     }
 
     public static bool CanFlee(
-        Entity fleer,
-        Entity fromRoom,
-        Entity toRoom,
+        World world,
+        EntityId fleer,
+        EntityId fromRoom,
+        EntityId toRoom,
         DirectionKind direction)
     {
         // TODO: same as CanEnter without checking combat
@@ -158,9 +161,9 @@ public static class MovementValidator
     }
 
     // ------------------------------------------------------------------
-    private static int CountPlayersInRoom(Entity room)
+    private static int CountPlayersInRoom(World world, EntityId room)
     {
-        ref var roomContents = ref room.Get<RoomContents>();
+        ref var roomContents = ref world.Get<RoomContents>(room);
         return roomContents.Characters.Count;
     }
 }

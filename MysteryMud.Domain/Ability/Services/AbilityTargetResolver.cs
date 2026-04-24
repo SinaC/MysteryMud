@@ -1,7 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Core;
-using MysteryMud.Domain.Components;
+﻿using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.Domain.Components.Characters.Players;
@@ -10,42 +7,47 @@ using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Queries;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
+using TinyECS;
 
 namespace MysteryMud.Domain.Ability.Services;
 
 public sealed class AbilityTargetResolver : IAbilityTargetResolver
 {
+    private readonly World _world;
+
+    public AbilityTargetResolver(World world)
+    {
+        _world = world;
+    }
+
     public TargetResolutionResult Resolve(
-        in Entity source,
+        in EntityId source,
         TargetKind targetKind,
         int targetIndex,
         string targetName,
-        AbilityTargetingDefinition targeting,
-        GameState state)
+        AbilityTargetingDefinition targeting)
     {
         return targeting.Selection switch
         {
-            AbilityTargetSelection.Single => ResolveSingle(source, targetKind, targetIndex, targetName, targeting, state.World),
-            AbilityTargetSelection.AoE => ResolveAoE(source, targeting, state.World),
+            AbilityTargetSelection.Single => ResolveSingle(source, targetKind, targetIndex, targetName, targeting),
+            AbilityTargetSelection.AoE => ResolveAoE(source, targeting),
             _ => TargetResolutionResult.Failure(TargetResolutionStatus.NoTarget)
         };
     }
 
     public TargetResolutionResult Resolve(
-            in Entity source,
-            AbilityTargetingDefinition targeting,
-            GameState state)
-        => Resolve(in source, TargetKind.Self, 0, null!, targeting, state);
+            in EntityId source,
+            AbilityTargetingDefinition targeting)
+        => Resolve(in source, TargetKind.Self, 0, null!, targeting);
 
     // ---- Single ----------------------------------------------------------
 
     private TargetResolutionResult ResolveSingle(
-        in Entity source,
+        in EntityId source,
         TargetKind targetKind,
         int targetIndex,
         string targetName,
-        AbilityTargetingDefinition targeting,
-        World world)
+        AbilityTargetingDefinition targeting)
     {
         // Requirement.None → always self
         if (targeting.Requirement == AbilityTargetRequirement.None)
@@ -63,9 +65,9 @@ public sealed class AbilityTargetResolver : IAbilityTargetResolver
             foreach (var ctx in targeting.Contexts)
             {
                 // TODO: don't generate a list of entities then search among the list a matching target -> apply name filter while iterating
-                var candidates = GetScopedEntities(world, source, ctx.Scope)
+                var candidates = GetScopedEntities(source, ctx.Scope)
                     .Where(x => PassesFilter(in x, ctx.Filter)).ToList();
-                var candidate = EntityFinder.SelectSingleTarget(source, targetKind, targetIndex, targetName, candidates);
+                var candidate = EntityFinder.SelectSingleTarget(_world, source, targetKind, targetIndex, targetName, candidates);
 
                 if (candidate.HasValue
                     && PassesFilter(candidate.Value, ctx.Filter))
@@ -103,18 +105,17 @@ public sealed class AbilityTargetResolver : IAbilityTargetResolver
     // ---- AoE -------------------------------------------------------------
 
     private TargetResolutionResult ResolveAoE(
-        in Entity source,
-        AbilityTargetingDefinition targeting,
-        World world)
+        in EntityId source,
+        AbilityTargetingDefinition targeting)
     {
         // Union all contexts, deduplicate in case scopes overlap
-        var seen = new HashSet<Entity>();
-        var results = new List<Entity>();
+        var seen = new HashSet<EntityId>();
+        var results = new List<EntityId>();
 
         foreach (var ctx in targeting.Contexts)
         {
             // TODO: don't generate a list of entities then search among the list a matching target -> apply filters while iterating
-            var candidates = GetScopedEntities(world, source, ctx.Scope);
+            var candidates = GetScopedEntities(source, ctx.Scope);
 
             foreach (var entity in candidates)
             {
@@ -131,45 +132,46 @@ public sealed class AbilityTargetResolver : IAbilityTargetResolver
 
     // ---- Helpers ---------------------------------------------------------
 
-    private static IEnumerable<Entity> GetScopedEntities(World world, in Entity source, AbilityTargetScope scope)
+    private IEnumerable<EntityId> GetScopedEntities(in EntityId source, AbilityTargetScope scope)
         => scope switch
         {
             AbilityTargetScope.Self => [source],
             AbilityTargetScope.Room => GetEntitiesInSameRoom(source),
-            AbilityTargetScope.World => GetAllEntities(world),
+            AbilityTargetScope.World => GetAllEntities(),
             AbilityTargetScope.Inventory => GetInventoryEntities(source),
             _ => []
         };
 
-    private static IEnumerable<Entity> GetEntitiesInSameRoom(Entity source)
+    private IEnumerable<EntityId> GetEntitiesInSameRoom(EntityId source)
     {
-        var roomContents = source.Get<Location>().Room.Get<RoomContents>();
+        ref var room = ref _world.Get<Location>(source).Room;
+        ref var roomContents = ref _world.Get<RoomContents>(room);
         return [.. roomContents.Characters, .. roomContents.Items];
     }
 
-    private static IEnumerable<Entity> GetAllEntities(World world)
+    private static IEnumerable<EntityId> GetAllEntities()
     {
         // TODO
         return [];
     }
 
-    private static IEnumerable<Entity> GetInventoryEntities(Entity source)
+    private IEnumerable<EntityId> GetInventoryEntities(EntityId source)
     {
-        ref var inventory = ref source.TryGetRef<Inventory>(out var hasInventory);
+        ref var inventory = ref _world.TryGetRef<Inventory>(source, out var hasInventory);
         if (!hasInventory)
             return [];
         return inventory.Items;
     }
 
-    private static Entity? GetCurrentOpponent(Entity source)
+    private EntityId? GetCurrentOpponent(EntityId source)
     {
-        ref var combatState = ref source.TryGetRef<CombatState>(out var inCombat);
+        ref var combatState = ref _world.TryGetRef<CombatState>(source, out var inCombat);
         if (!inCombat)
             return null;
         return combatState.Target;
     }
 
-    private static bool PassesFilter(in Entity entity, AbilityTargetFilter filter)
+    private bool PassesFilter(in EntityId entity, AbilityTargetFilter filter)
     {
         // Delegate to world component checks — placeholder pattern shown here.
         // Replace with actual Arch component lookups.
@@ -179,8 +181,8 @@ public sealed class AbilityTargetResolver : IAbilityTargetResolver
         return false;
     }
 
-    // Thin wrappers — replace with actual Arch Has<T> calls
-    private static bool IsPlayer(in Entity e) => e.Has<PlayerTag>();
-    private static bool IsNPC(in Entity e) => e.Has<NpcTag>();
-    private static bool IsItem(in Entity e) => e.Has<ItemTag>();
+    // Thin wrappers — replace with actual ECS Has<T> calls
+    private bool IsPlayer(in EntityId entity) => _world.Has<PlayerTag>(entity);
+    private bool IsNPC(in EntityId entity) => _world.Has<NpcTag>(entity);
+    private bool IsItem(in EntityId entity) => _world.Has<ItemTag>(entity);
 }

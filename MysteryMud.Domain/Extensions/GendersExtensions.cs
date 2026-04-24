@@ -7,14 +7,14 @@ public static class GendersExtensions
     extension(GenderKind gender)
     {
         public string Subject
-               => gender switch
-               {
-                   GenderKind.Male => "he",
-                   GenderKind.Female => "she",
-                   GenderKind.Neutral => "it",
-                   //GenderType.Neutral => "they",
-                   _ => throw new ArgumentOutOfRangeException(nameof(gender), gender, "Unknown value"),
-               };
+            => gender switch
+            {
+                GenderKind.Male => "he",
+                GenderKind.Female => "she",
+                GenderKind.Neutral => "it",
+                //GenderType.Neutral => "they",
+                _ => throw new ArgumentOutOfRangeException(nameof(gender), gender, "Unknown value"),
+            };
 
         public string Objective
             => gender switch

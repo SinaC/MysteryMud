@@ -1,8 +1,8 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.GameData.Events;
 
 public struct EffectTickedEvent
 {
-    public Entity Effect;
+    public EntityId Effect;
 }

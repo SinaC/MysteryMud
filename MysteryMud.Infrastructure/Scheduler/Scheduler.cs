@@ -1,30 +1,32 @@
-﻿using Arch.Core;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Scheduler;
-using MysteryMud.Domain.Extensions;
+using MysteryMud.Domain.Helpers;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
+using TinyECS;
 
 namespace MysteryMud.Infrastructure.Scheduler;
 
 public class Scheduler : IScheduler
 {
+    private readonly World _world;
     private readonly ILogger _logger;
     private readonly IEventBuffer<TriggeredScheduledEvent> _triggeredScheduledEvents;
 
     private readonly PriorityQueue<ScheduledEvent, (long time, ScheduledEventKind eventKind)> _queue = new();
 
-    public Scheduler(ILogger logger, IEventBuffer<TriggeredScheduledEvent> triggeredScheduledEvents)
+    public Scheduler(World world, ILogger logger, IEventBuffer<TriggeredScheduledEvent> triggeredScheduledEvents)
     {
+        _world = world;
         _logger = logger;
         _triggeredScheduledEvents = triggeredScheduledEvents;
     }
 
-    public void Schedule(GameState state, Entity entity, ScheduledEventKind kind, long executeAt)
+    public void Schedule(GameState state, EntityId entity, ScheduledEventKind kind, long executeAt)
     {
-        _logger.LogDebug("[{system}]: schedule {effectName} kind {kind} execute at {executeAt}", nameof(Scheduler), entity.DebugName, kind, executeAt);
+        _logger.LogDebug("[{system}]: schedule {effectName} kind {kind} execute at {executeAt}", nameof(Scheduler), EntityHelpers.DebugName(_world, entity), kind, executeAt);
 
         var scheduledEvent = new ScheduledEvent
         {
@@ -42,13 +44,13 @@ public class Scheduler : IScheduler
         while (_queue.TryPeek(out var ev, out var priority) && priority.time <= state.CurrentTick)
         {
             _queue.Dequeue();
-            Execute(state, ref ev);
+            Execute(ref ev);
         }
     }
 
-    private void Execute(GameState state, ref ScheduledEvent ev)
+    private void Execute(ref ScheduledEvent ev)
     {
-        _logger.LogDebug("[{system}]: execute {effectName} kind {kind} execute at {executeAt}", nameof(Scheduler), ev.Target.DebugName, ev.Kind, ev.ExecuteAt);
+        _logger.LogDebug("[{system}]: execute {effectName} kind {kind} execute at {executeAt}", nameof(Scheduler), EntityHelpers.DebugName(_world, ev.Target), ev.Kind, ev.ExecuteAt);
 
         switch (ev.Kind)
         {

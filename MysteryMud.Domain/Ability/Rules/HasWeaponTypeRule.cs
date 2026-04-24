@@ -1,6 +1,6 @@
-﻿using Arch.Core;
-using MysteryMud.Domain.Extensions;
+﻿using MysteryMud.Domain.Helpers;
 using MysteryMud.GameData.Enums;
+using TinyECS;
 
 namespace MysteryMud.Domain.Ability.Rules;
 
@@ -14,9 +14,9 @@ public class HasWeaponTypeRule : AbilityValidationRule
         _required = required;
     }
 
-    public override AbilityValidationResult Validate(Entity _, Entity target)
+    public override AbilityValidationResult Validate(World world, EntityId _, EntityId target)
     {
-        if (!target.TryGetMainHandWeapon(out var _, out var weapon))
+        if (!CharacterHelpers.TryGetMainHandWeapon(world, target, out var _, out var weapon))
             return Fail();
         if (weapon.Kind != _required)
             return Fail();

@@ -1,4 +1,4 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 using MysteryMud.Application.Commands.DataDrivenCommands;
 using MysteryMud.Application.Registry;
 using MysteryMud.Core;
@@ -39,7 +39,7 @@ public sealed class SocialsCommand : IExplicitCommand
         _msg = msg;
     }
 
-    public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(GameState state, EntityId actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         var socialCommandDefinitions = _commandRegistry.GetCommands<SocialCommand>();
         foreach (var chunk in socialCommandDefinitions.OrderBy(x => x.Definition.Name).Chunk(4))

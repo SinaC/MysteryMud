@@ -1,6 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Application.Registry;
@@ -11,10 +9,10 @@ using MysteryMud.Domain.Commands;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
+using TinyECS;
 
 namespace MysteryMud.Application.Commands.RegistryDependentCommands.Admin;
 
@@ -23,6 +21,7 @@ public sealed class ForceCommand : IExplicitCommand
     private const string Name = "force";
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetAndText;
 
+    private readonly World _world;
     private readonly ILogger _logger;
     private readonly ICommandRegistry _commandRegistry;
     private readonly IGameMessageService _msg;
@@ -46,14 +45,15 @@ This is typically used for 'force all save'.",
         ThrottlingCategories = CommandThrottlingCategories.Admin,
     };
 
-    public ForceCommand(ILogger logger, ICommandRegistry commandRegistry, IGameMessageService msg)
+    public ForceCommand(World world, ILogger logger, ICommandRegistry commandRegistry, IGameMessageService msg)
     {
+        _world = world;
         _logger = logger;
         _commandRegistry = commandRegistry;
         _msg = msg;
     }
 
-    public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(GameState state, EntityId actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
@@ -66,8 +66,9 @@ This is typically used for 'force all save'.",
         // TODO: force all (see TellCommand)
 
         // search target
-        ref var people = ref actor.Get<Location>().Room.Get<RoomContents>().Characters;  // TODO: in world
-        var target = CommandEntityFinder.SelectSingleTarget(actor, ctx.Primary, people);
+        ref var room = ref _world.Get<Location>(actor).Room;
+        ref var people = ref _world.Get<RoomContents>(room).Characters;  // TODO: in world
+        var target = CommandEntityFinder.SelectSingleTarget(_world, actor, ctx.Primary, people);
 
         if (target == null)
         {
@@ -82,7 +83,7 @@ This is typically used for 'force all save'.",
         }
 
         // get target position
-        ref var targetPosition = ref target.Value.Get<Position>();
+        ref var targetPosition = ref _world.Get<Position>(target.Value);
 
         var inputStr = ctx.Text.ToString(); // ONE allocation
 
@@ -98,12 +99,12 @@ This is typically used for 'force all save'.",
         }
         else if (findResult == CommandFindResult.WrongPosition)
         {
-            _msg.To(actor).Send($"{target.Value.DisplayName} is in the wrong position.");
+            _msg.To(actor).Act("{0} is in the wrong position.").With(target.Value);
             return;
         }
         else if (findResult == CommandFindResult.NoPermission)
         {
-            _msg.To(actor).Send($"{target.Value.DisplayName} is not allowed to use this command.");
+            _msg.To(actor).Act("{0} is not allowed to use this command.").With(target.Value);
             return;
         }
         else if (forcedCommand is null)
@@ -119,7 +120,7 @@ This is typically used for 'force all save'.",
         }
 
         // add forced command request to target command buffer
-        ref var buffer = ref target.Value.Get<CommandBuffer>();
+        ref var buffer = ref _world.Get<CommandBuffer>(target.Value);
         buffer.Add(new CommandRequest
         {
             Command = forcedCommand,
@@ -134,8 +135,8 @@ This is typically used for 'force all save'.",
             Cancelled = false,
             Force = true
         });
-        if (!target.Value.Has<HasCommandTag>())
-            target.Value.Add<HasCommandTag>();
+        if (!_world.Has<HasCommandTag>(target.Value))
+            _world.Add<HasCommandTag>(target.Value);
 
         // if forced commands must be executed before other
         //Array.Copy(buffer.Items, 0, buffer.Items, 1, buffer.Count);

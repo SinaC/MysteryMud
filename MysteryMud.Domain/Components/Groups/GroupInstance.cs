@@ -1,12 +1,12 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Components.Groups;
 
 public struct GroupInstance
 {
-    public Entity Leader;
-    public List<Entity> Members;   // includes leader
+    public EntityId Leader;
+    public List<EntityId> Members;   // includes leader
     public LootRule LootRule;      // FreeForAll, RoundRobin, MasterLooter, etc.
-    public Entity MasterLooter;    // only relevant if LootRule == MasterLooter
+    public EntityId MasterLooter;    // only relevant if LootRule == MasterLooter
 }

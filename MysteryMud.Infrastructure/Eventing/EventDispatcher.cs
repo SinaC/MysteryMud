@@ -5,7 +5,7 @@ namespace MysteryMud.Infrastructure.Eventing;
 public sealed class EventDispatcher<T> : IEventDispatcher<T>
     where T : struct
 {
-    private readonly List<Action<T>> _subs = new();
+    private readonly List<Action<T>> _subs = [];
 
     public void Subscribe(Action<T> handler) => _subs.Add(handler);
 

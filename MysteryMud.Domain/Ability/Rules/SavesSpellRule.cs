@@ -1,7 +1,7 @@
-﻿using Arch.Core;
-using MysteryMud.Core.Random;
-using MysteryMud.Domain.Extensions;
+﻿using MysteryMud.Core.Random;
+using MysteryMud.Domain.Helpers;
 using MysteryMud.GameData.Enums;
+using TinyECS;
 
 namespace MysteryMud.Domain.Ability.Rules;
 
@@ -17,9 +17,9 @@ public class SavesSpellRule : AbilityValidationRule
         _damageKind = damageKind;
     }
 
-    public override AbilityValidationResult Validate(Entity source, Entity target)
+    public override AbilityValidationResult Validate(World world, EntityId source, EntityId target)
     {
-        var save = 50 + (target.Level - source.Level);
+        var save = 50 + (CharacterHelpers.Level(world, target) - CharacterHelpers.Level(world, source));
         save = Math.Clamp(save, 5, 95);
         if (_random.Chance(save))
             return Fail(); // fail because target successfully saves vs spell

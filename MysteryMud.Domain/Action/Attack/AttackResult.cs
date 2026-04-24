@@ -1,11 +1,11 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Action.Attack;
 
 public struct AttackResult
 {
-    public Entity Source;
-    public Entity Target;
+    public EntityId Source;
+    public EntityId Target;
     public AttackResultKind Result;
 }

@@ -1,20 +1,19 @@
-﻿using Arch.Core;
-using MysteryMud.Core;
-using MysteryMud.Domain.Components.Effects;
+﻿using MysteryMud.Domain.Components.Effects;
+using TinyECS;
 
 namespace MysteryMud.Domain.Action.Effect;
 
 public interface IEffectHost
 {
-    Entity Target { get; }
+    EntityId Target { get; }
 
-    Entity? FindEffect(EffectRuntime effectRuntime);
+    EntityId? FindEffect(EffectRuntime effectRuntime);
 
-    void RegisterEffect(Entity effect, EffectRuntime effectRuntime);
-    void UnregisterEffect(GameState state, Entity effect, EffectRuntime effectRuntime);
+    void RegisterEffect(EntityId effect, EffectRuntime effectRuntime);
+    void UnregisterEffect(EntityId effect, EffectRuntime effectRuntime);
 
     // Dirty if needed
-    void MarkAsDirtyIfNeeded(Entity effect);
+    void MarkAsDirtyIfNeeded(EntityId effect);
 
     // Snapshot for formula evaluation
     EffectValuesSnapshot CreateSnapshot();

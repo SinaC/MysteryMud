@@ -1,7 +1,7 @@
-﻿using Arch.Core;
-using MysteryMud.Core.Services;
+﻿using MysteryMud.Core.Services;
 using MysteryMud.Domain.Factories;
 using MysteryMud.Infrastructure.Network;
+using TinyECS;
 
 namespace MysteryMud.Infrastructure.Services;
 
@@ -10,8 +10,8 @@ public class ConnectionService : IConnectionService
     private readonly World _world;
     private readonly TelnetServer _telnet;   // ← inject this
 
-    private readonly Dictionary<int, Entity> _connToEntity = new();
-    private readonly Dictionary<Entity, int> _entityToConn = new();
+    private readonly Dictionary<int, EntityId> _connToEntity = [];
+    private readonly Dictionary<EntityId, int> _entityToConn = [];
 
     public ConnectionService(World world, TelnetServer telnetServer)
     {
@@ -19,7 +19,7 @@ public class ConnectionService : IConnectionService
         _telnet = telnetServer;
     }
 
-    public Entity CreatePlayer(int connectionId)
+    public EntityId CreatePlayer(int connectionId)
     {
         var player = PlayerFactory.CreateConnectingPlayer(_world, connectionId);
 
@@ -29,10 +29,10 @@ public class ConnectionService : IConnectionService
         return player;
     }
 
-    public bool TryGetEntity(int connectionId, out Entity entity)
+    public bool TryGetEntity(int connectionId, out EntityId entity)
         => _connToEntity.TryGetValue(connectionId, out entity);
 
-    public bool TryGetConnection(Entity entity, out int connectionId)
+    public bool TryGetConnection(EntityId entity, out int connectionId)
         => _entityToConn.TryGetValue(entity, out connectionId);
 
     public bool Remove(int connectionId)
@@ -44,7 +44,7 @@ public class ConnectionService : IConnectionService
         return true;
     }
 
-    public void Disconnect(Entity entity)
+    public void Disconnect(EntityId entity)
     {
         if (!_entityToConn.TryGetValue(entity, out var connectionId))
             return;

@@ -1,7 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using CommunityToolkit.HighPerformance;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Contracts;
@@ -14,11 +11,13 @@ using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
+using TinyECS;
 
 namespace MysteryMud.Domain.Systems;
 
 public class AbilityValidationSystem
 {
+    private readonly World _world;
     private readonly ILogger _logger;
     private readonly IGameMessageService _msg;
     private readonly ICastMessageService _castMessageService;
@@ -28,8 +27,9 @@ public class AbilityValidationSystem
     private readonly IAbilityOutcomeResolverRegistry _abilityOutcomeResolverRegistry;
     private readonly IAbilityTargetResolver _abilityTargetResolver;
 
-    public AbilityValidationSystem(ILogger logger, IGameMessageService msg, ICastMessageService castMessageService, IIntentContainer intents, IEventBuffer<AbilityUsedEvent> abilityUsed, IAbilityRegistry abilityRegistry, IAbilityOutcomeResolverRegistry abilityOutcomeResolverRegistry, IAbilityTargetResolver abilityTargetResolver)
+    public AbilityValidationSystem(World world, ILogger logger, IGameMessageService msg, ICastMessageService castMessageService, IIntentContainer intents, IEventBuffer<AbilityUsedEvent> abilityUsed, IAbilityRegistry abilityRegistry, IAbilityOutcomeResolverRegistry abilityOutcomeResolverRegistry, IAbilityTargetResolver abilityTargetResolver)
     {
+        _world = world;
         _logger = logger;
         _msg = msg;
         _castMessageService = castMessageService;
@@ -68,7 +68,7 @@ public class AbilityValidationSystem
                 continue;
 
             // already casting a spell
-            ref var casting = ref source.TryGetRef<Casting>(out var isCasting);
+            ref var casting = ref _world.TryGetRef<Casting>(source, out var isCasting);
             if (isCasting)
             {
                 _msg.To(source).Send($"You are already focused on {abilityRuntime.Name}");
@@ -76,12 +76,12 @@ public class AbilityValidationSystem
             }
 
             // Resolve targets(Single always at CastStart)
-            List<Entity>? resolvedTargets = null;
+            List<EntityId>? resolvedTargets = null;
 
             if (abilityRuntime.Targeting.Selection == AbilityTargetSelection.Single ||
                 abilityRuntime.Targeting.ResolveAt == AbilityTargetResolveAt.CastStart)
             {
-                var result = _abilityTargetResolver.Resolve(source, targetKind, targetIndex, targetName, abilityRuntime.Targeting, state);
+                var result = _abilityTargetResolver.Resolve(source, targetKind, targetIndex, targetName, abilityRuntime.Targeting);
 
                 if (result.Status != TargetResolutionStatus.Ok)
                 {
@@ -101,7 +101,7 @@ public class AbilityValidationSystem
             //    continue;
 
             // check if has enough resources
-            if (!ResourceHelpers.CanPayCosts(source, abilityRuntime, out var cannotPayResult))
+            if (!ResourceHelpers.CanPayCosts(_world, source, abilityRuntime, out var cannotPayResult))
             {
                 var msg = GenerateCannotPayCostsMessage(cannotPayResult);
                 _msg.To(source).Send(msg);
@@ -109,7 +109,7 @@ public class AbilityValidationSystem
             }
 
             // pay resource costs
-            ResourceHelpers.PayCosts(source, abilityRuntime);
+            ResourceHelpers.PayCosts(_world, source, abilityRuntime);
 
             // check if ability directly fails (skill learned % for example)
             if (abilityRuntime.OutcomeResolver is { Hook: AbilityOutcomeHook.Validation })
@@ -141,7 +141,7 @@ public class AbilityValidationSystem
                 _msg.To(source).Act(_castMessageService.CasterStartMessage).With(abilityRuntime.Name);
                 _msg.ToRoom(source).Act(_castMessageService.RoomStartMessage).With(source);
 
-                source.Add(new Casting
+                _world.Add(source, new Casting
                 {
                     AbilityId = abilityId,
                     Source = source,
@@ -158,7 +158,7 @@ public class AbilityValidationSystem
             // For instant AoE that deferred resolution, resolve now
             if (resolvedTargets is null)
             {
-                var result = _abilityTargetResolver.Resolve(source, targetKind, targetIndex, targetName, abilityRuntime.Targeting, state);
+                var result = _abilityTargetResolver.Resolve(source, targetKind, targetIndex, targetName, abilityRuntime.Targeting);
                 resolvedTargets = result.Status == TargetResolutionStatus.Ok
                     ? FilterTargets(abilityRuntime, result.Targets, source, abortOnFirst: false) ?? []
                     : [];
@@ -180,21 +180,21 @@ public class AbilityValidationSystem
     }
 
     // Returns filtered list, or null if an Abort-rule fired
-    private List<Entity>? FilterTargets(
+    private List<EntityId>? FilterTargets(
         AbilityRuntime ability,
-        List<Entity> candidates,
-        Entity source,
+        List<EntityId> candidates,
+        EntityId source,
         bool abortOnFirst)
     {
-        var passed = new List<Entity>(candidates.Count);
+        var passed = new List<EntityId>(candidates.Count);
 
         foreach (var target in candidates)
         {
             bool skip = false;
 
-            foreach (var rule in ability.TargetValidationRules.Where(x => x.IsCandidateForValidation(target)))
+            foreach (var rule in ability.TargetValidationRules.Where(x => x.IsCandidateForValidation(_world, target)))
             {
-                var result = rule.Validate(source, target);
+                var result = rule.Validate(_world, source, target);
                 if (result.Success)
                     continue;
 
@@ -230,11 +230,11 @@ public class AbilityValidationSystem
         return passed;
     }
 
-    private bool ValidateSource(AbilityRuntime ability, Entity source)
+    private bool ValidateSource(AbilityRuntime ability, EntityId source)
     {
         foreach (var rule in ability.SourceValidationRules)
         {
-            var result = rule.Validate(source, source);
+            var result = rule.Validate(_world, source, source);
             if (result.Success)
                 continue;
 
@@ -266,7 +266,7 @@ public class AbilityValidationSystem
             _ => "You don't have enough resources."
         };
 
-    private void SendAbilityMessage(Entity actor, AbilityRuntime ability, string key)
+    private void SendAbilityMessage(EntityId actor, AbilityRuntime ability, string key)
     {
         if (key is null)
             return;
@@ -276,7 +276,7 @@ public class AbilityValidationSystem
             _logger.LogError("Ability {abilityName} validation rules refers to {key} but it's not found in messages", ability.Name, key);
     }
 
-    private void ActAbilityMessage(Entity actor, AbilityRuntime ability, string key, Entity target) // TODO: same code found in AbilityCastingSystem
+    private void ActAbilityMessage(EntityId actor, AbilityRuntime ability, string key, EntityId target) // TODO: same code found in AbilityCastingSystem
     {
         if (key is null)
             return;
@@ -286,7 +286,7 @@ public class AbilityValidationSystem
             _logger.LogError("Ability {abilityName} validation rules refers to {key} but it's not found in messages", ability.Name, key);
     }
 
-    private void ActAbilityMessage(ContextualizedMessage msg, Entity actor, Entity target) // TODO: same code found in EffectRuntimeFactory/AbilityCastingSystem
+    private void ActAbilityMessage(ContextualizedMessage msg, EntityId actor, EntityId target) // TODO: same code found in EffectRuntimeFactory/AbilityCastingSystem
     {
         var source = actor;
         var affectedEntity = target;
@@ -308,13 +308,13 @@ public class AbilityValidationSystem
         }
     }
 
-    private Entity? GetMessageTarget(Entity affectedEntity) // TODO: same code found in EffectRuntimeFactory/AbilityCastingSystem
+    private EntityId? GetMessageTarget(EntityId affectedEntity) // TODO: same code found in EffectRuntimeFactory/AbilityCastingSystem
     {
-        if (affectedEntity.Has<CharacterTag>())
+        if (_world.Has<CharacterTag>(affectedEntity))
             return affectedEntity;
-        if (affectedEntity.TryGet<Equipped>(out var equipped))
+        if (_world.TryGet<Equipped>(affectedEntity, out var equipped))
             return equipped.Wearer;
-        if (affectedEntity.TryGet<ContainedIn>(out var containedIn) && containedIn.Character.Has<CharacterTag>())
+        if (_world.TryGet<ContainedIn>(affectedEntity, out var containedIn) && _world.Has<CharacterTag>(containedIn.Character))
             return containedIn.Character;
         return null;
     }

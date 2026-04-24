@@ -1,9 +1,9 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.Domain.Components.Rooms;
 
 public struct RoomContents
 {
-    public List<Entity> Characters;
-    public List<Entity> Items;
+    public List<EntityId> Characters;
+    public List<EntityId> Items;
 }

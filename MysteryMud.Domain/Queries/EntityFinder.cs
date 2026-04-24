@@ -1,19 +1,18 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Domain.Components;
+﻿using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Queries.Matching;
 using MysteryMud.GameData.Enums;
+using TinyECS;
 
 namespace MysteryMud.Domain.Queries;
 
 public static class EntityFinder
 {
-    public static List<Entity> SelectTargets(Entity actor, TargetKind targetKind, int targetIndex, ReadOnlySpan<char> targetName, List<Entity> entities)
+    public static List<EntityId> SelectTargets(World world, EntityId actor, TargetKind targetKind, int targetIndex, ReadOnlySpan<char> targetName, List<EntityId> entities)
     {
-        var results = new List<Entity>();
+        var results = new List<EntityId>();
 
         if (targetKind == TargetKind.Self)
         {
@@ -26,7 +25,7 @@ public static class EntityFinder
         for (int i = 0; i < entities.Count; i++)
         {
             var entity = entities[i];
-            if (!Matches(entity, targetName, targetKind == TargetKind.All)) // of course, 'All' with an empty name should match everything
+            if (!Matches(world, entity, targetName, targetKind == TargetKind.All)) // of course, 'All' with an empty name should match everything
                 continue;
 
             matchCount++;
@@ -52,7 +51,7 @@ public static class EntityFinder
         return results;
     }
 
-    public static Entity? SelectSingleTarget(Entity actor, TargetKind targetKind, int targetIndex, ReadOnlySpan<char> targetName, List<Entity> entities)
+    public static EntityId? SelectSingleTarget(World world, EntityId actor, TargetKind targetKind, int targetIndex, ReadOnlySpan<char> targetName, List<EntityId> entities)
     {
         if (targetKind == TargetKind.Self)
         {
@@ -64,7 +63,7 @@ public static class EntityFinder
         for (int i = 0; i < entities.Count; i++)
         {
             var entity = entities[i];
-            if (!Matches(entity, targetName, targetKind == TargetKind.All)) // of course, 'All' with an empty name should match everything
+            if (!Matches(world, entity, targetName, targetKind == TargetKind.All)) // of course, 'All' with an empty name should match everything
                 continue;
 
             matchCount++;
@@ -88,19 +87,19 @@ public static class EntityFinder
         return null;
     }
 
-    public static Entity? FindContainer(Entity actor, TargetKind targetKind, int targetIndex, ReadOnlySpan<char> targetName)
+    public static EntityId? FindContainer(World world, EntityId actor, TargetKind targetKind, int targetIndex, ReadOnlySpan<char> targetName)
     {
         // Search in room first
-        var room = actor.Get<Location>().Room;
-        var roomContents = room.Get<RoomContents>();
+        var room = world.Get<Location>(actor).Room;
+        var roomContents = world.Get<RoomContents>(room);
 
-        var container = SelectSingleTarget(actor, targetKind, targetIndex, targetName, roomContents.Items);
+        var container = SelectSingleTarget(world, actor, targetKind, targetIndex, targetName, roomContents.Items);
         if (container != default)
             return container;
 
         // Then inventory
-        var inventory = actor.Get<Inventory>();
-        container = SelectSingleTarget(actor, targetKind, targetIndex, targetName, inventory.Items);
+        var inventory = world.Get<Inventory>(actor);
+        container = SelectSingleTarget(world, actor, targetKind, targetIndex, targetName, inventory.Items);
         if (container != default)
             return container;
 
@@ -108,12 +107,12 @@ public static class EntityFinder
     }
 
     // Simple prefix matching, case-insensitive
-    public static bool Matches(Entity e, ReadOnlySpan<char> query, bool isAll = false)
+    public static bool Matches(World world, EntityId entity, ReadOnlySpan<char> query, bool isAll = false)
     {
-        if (e.Has<Dead>() || e.Has<DestroyedTag>()) // don't consider dead/destroyed entities as valid targets
+        if (world.Has<Dead>(entity) || world.Has<DestroyedTag>(entity)) // don't consider dead/destroyed entities as valid targets
             return false;
         if (query.IsEmpty)
             return isAll;
-        return NameMatcher.Matches(e, query);
+        return NameMatcher.Matches(world, entity, query);
     }
 }

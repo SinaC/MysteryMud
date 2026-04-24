@@ -1,16 +1,15 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Core.Contracts;
 using MysteryMud.Domain.Ability;
 using MysteryMud.Domain.Components.Characters;
-using MysteryMud.Domain.Extensions;
+using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
+using TinyECS;
 
 namespace MysteryMud.Application.Commands.DataDrivenCommands;
 
@@ -18,6 +17,7 @@ public sealed class SkillCommand : IExplicitCommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetPair;
 
+    private readonly World _world;
     private readonly ILogger _logger;
     private readonly IAbilityRegistry _abilityRegistry;
     private readonly IGameMessageService _msg;
@@ -25,8 +25,9 @@ public sealed class SkillCommand : IExplicitCommand
 
     public CommandDefinition Definition { get; }
 
-    public SkillCommand(ILogger logger, IAbilityRegistry abilityRegistry, IGameMessageService msg, IIntentWriterContainer intents, CommandDefinition definition)
+    public SkillCommand(World world, ILogger logger, IAbilityRegistry abilityRegistry, IGameMessageService msg, IIntentWriterContainer intents, CommandDefinition definition)
     {
+        _world = world;
         _logger = logger;
         _abilityRegistry = abilityRegistry;
         _msg = msg;
@@ -35,7 +36,7 @@ public sealed class SkillCommand : IExplicitCommand
         Definition = definition;
     }
 
-    public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(GameState state, EntityId actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
@@ -64,13 +65,13 @@ public sealed class SkillCommand : IExplicitCommand
         // TODO: check arguments depending on skill
 
         // TODO: check resource/cooldown/position/...
-        ref var casting = ref actor.TryGetRef<Casting>(out var isCasting);
+        ref var casting = ref _world.TryGetRef<Casting>(actor, out var isCasting);
         if (isCasting)
         {
             if (!_abilityRegistry.TryGetRuntime(casting.AbilityId, out var castingAbilityRuntime) || castingAbilityRuntime == null)
             {
-                _logger.LogError("{actorName} is focused on an unknown ability {abilityId}", actor.DebugName, casting.AbilityId);
-                actor.Remove<Casting>(); // remove casting and allow to cast a new spell
+                _logger.LogError("{actorName} is focused on an unknown ability {abilityId}", EntityHelpers.DebugName(_world, actor), casting.AbilityId);
+                _world.Remove<Casting>(actor); // remove casting and allow to cast a new spell
             }
             else
             {

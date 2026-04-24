@@ -1,29 +1,31 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Core;
+﻿using MysteryMud.Core;
 using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Action.Effect.Definitions;
+using MysteryMud.Domain.Action.Effect.Helpers;
 using MysteryMud.Domain.Components.Effects;
-using MysteryMud.Domain.Extensions;
+using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Time;
+using TinyECS;
 
 namespace MysteryMud.Application.Services;
 
 public class EffectDisplayService : IEffectDisplayService
 {
+    private readonly World _world;
     private readonly IGameMessageService _msg;
     private readonly IEffectRegistry _effectRegistry;
 
-    public EffectDisplayService(IGameMessageService msg, IEffectRegistry effectRegistry)
+    public EffectDisplayService(World world, IGameMessageService msg, IEffectRegistry effectRegistry)
     {
+        _world = world;
         _msg = msg;
         _effectRegistry = effectRegistry;
     }
 
-    public void DisplayEffects(GameState state, Entity viewer, List<Entity> effects)
+    public void DisplayEffects(GameState state, EntityId viewer, List<EntityId> effects)
     {
         if (effects.Count == 0)
         {
@@ -37,11 +39,11 @@ public class EffectDisplayService : IEffectDisplayService
         }
     }
 
-    private void DisplayEffect(GameState state, Entity viewer, Entity effect)
+    private void DisplayEffect(GameState state, EntityId viewer, EntityId effect)
     {
-        if (!effect.IsAlive() || effect.Has<ExpiredTag>())
+        if (!EffectHelpers.IsAlive(_world, effect))
             return;
-        ref var effectInstance = ref effect.Get<EffectInstance>();
+        ref var effectInstance = ref _world.Get<EffectInstance>(effect);
         if (effectInstance.EffectRuntime != null)
         {
             var effectId = effectInstance.EffectRuntime.Id;
@@ -49,13 +51,13 @@ public class EffectDisplayService : IEffectDisplayService
             var stackCount = effectInstance.StackCount;
             var source = effectInstance.Source;
             var target = effectInstance.Target;
-            var sourceName = source.DisplayName;
+            var sourceName = EntityHelpers.DisplayName(_world, source);
 
             // get effect definition
             _effectRegistry.TryGetDefinition(effectId, out var effectDefinition);
 
             // duration
-            ref var timedEffect = ref effect.TryGetRef<TimedEffect>(out var isTimedEffect);
+            ref var timedEffect = ref _world.TryGetRef<TimedEffect>(effect, out var isTimedEffect);
             if (isTimedEffect)
             {
                 var remainingTicks = timedEffect.ExpirationTick - state.CurrentTick;
@@ -88,7 +90,7 @@ public class EffectDisplayService : IEffectDisplayService
             }
 
             // character stat modifiers
-            ref var characterStatModifiers = ref effect.TryGetRef<CharacterStatModifiers>(out var hasCharacterStatModifiers);
+            ref var characterStatModifiers = ref _world.TryGetRef<CharacterStatModifiers>(effect, out var hasCharacterStatModifiers);
             if (hasCharacterStatModifiers)
             {
                 foreach (var modifier in characterStatModifiers.Values)
@@ -113,10 +115,10 @@ public class EffectDisplayService : IEffectDisplayService
         }
     }
 
-    private void DisplayResourceModifier<TResourceModifier>(Entity viewer, Entity effect, string resourceName, Func<TResourceModifier, ModifierKind> getModifierFunc, Func<TResourceModifier, decimal> getValueFunc)
+    private void DisplayResourceModifier<TResourceModifier>(EntityId viewer, EntityId effect, string resourceName, Func<TResourceModifier, ModifierKind> getModifierFunc, Func<TResourceModifier, decimal> getValueFunc)
         where TResourceModifier : struct
     {
-        ref var resourceModifiers = ref effect.TryGetRef<CharacterResourceModifiers<TResourceModifier>>(out var hasResourceModifiers);
+        ref var resourceModifiers = ref _world.TryGetRef<CharacterResourceModifiers<TResourceModifier>>(effect, out var hasResourceModifiers);
         if (hasResourceModifiers)
         {
             foreach (var modifier in resourceModifiers.Values)
@@ -124,10 +126,10 @@ public class EffectDisplayService : IEffectDisplayService
         }
     }
 
-    private void DisplayResourceRegenModifier<TResourceRegenModifier>(Entity viewer, Entity effect, string resourceName, Func<TResourceRegenModifier, ModifierKind> getModifierFunc, Func<TResourceRegenModifier, decimal> getValueFunc)
+    private void DisplayResourceRegenModifier<TResourceRegenModifier>(EntityId viewer, EntityId effect, string resourceName, Func<TResourceRegenModifier, ModifierKind> getModifierFunc, Func<TResourceRegenModifier, decimal> getValueFunc)
         where TResourceRegenModifier : struct
     {
-        ref var resourceRegenModifiers = ref effect.TryGetRef<CharacterResourceRegenModifiers<TResourceRegenModifier>>(out var hasResourceModifiers);
+        ref var resourceRegenModifiers = ref _world.TryGetRef<CharacterResourceRegenModifiers<TResourceRegenModifier>>(effect, out var hasResourceModifiers);
         if (hasResourceModifiers)
         {
             foreach (var modifier in resourceRegenModifiers.Values)
@@ -135,12 +137,12 @@ public class EffectDisplayService : IEffectDisplayService
         }
     }
 
-    public static decimal EvaluateForDisplay(
+    public decimal EvaluateForDisplay(
         EffectCompiledFormula compiledFormula,
-        Entity effectEntity,
+        EntityId effectEntity,
         ref EffectInstance effectInstance,
-        ref Entity source,
-        ref Entity target,
+        ref EntityId source,
+        ref EntityId target,
         GameState state)
     {
         var ctx = new EffectContext
@@ -151,6 +153,7 @@ public class EffectDisplayService : IEffectDisplayService
             StackCount = effectInstance.StackCount,
             EffectiveDamageAmount = 0, // unknown at display time, formula will use 0
             State = state,
+            World = _world
         };
 
         return compiledFormula.Compiled(ctx);

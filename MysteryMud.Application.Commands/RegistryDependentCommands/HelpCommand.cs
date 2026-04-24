@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using MysteryMud.Application.Parsing;
+﻿using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Registry;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
@@ -7,6 +6,7 @@ using MysteryMud.Core.Extensions;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
+using TinyECS;
 
 namespace MysteryMud.Application.Commands.RegistryDependentCommands;
 
@@ -40,7 +40,7 @@ public sealed class HelpCommand : IExplicitCommand
         _msg = msg;
     }
 
-    public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(GameState state, EntityId actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 

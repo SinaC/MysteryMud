@@ -1,30 +1,35 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Domain.Components.Characters;
-using MysteryMud.Domain.Extensions;
+using MysteryMud.Domain.Helpers;
+using TinyECS;
+using TinyECS.Extensions;
 
 namespace MysteryMud.Domain.Systems;
 
 public class CommandExecutionSystem
 {
+    private readonly World _world;
     private readonly ILogger _logger;
 
-    public CommandExecutionSystem(ILogger logger)
+    public CommandExecutionSystem(World world, ILogger logger)
     {
+        _world = world;
         _logger = logger;
     }
+
+    private static readonly QueryDescription _hasCommandQueryDesc = new QueryDescription()
+        .WithAll<CommandBuffer, HasCommandTag>();
 
     public void Execute(GameState state)
     {
         long now = state.CurrentTimeMs;
 
-        var query = new QueryDescription()
-            .WithAll<CommandBuffer, HasCommandTag>();
-        state.World.Query(query, (Entity entity, ref CommandBuffer buffer, ref HasCommandTag _) =>
+        _world.Query(_hasCommandQueryDesc, (EntityId entity,
+            ref CommandBuffer buffer,
+            ref HasCommandTag _) =>
         {
-            if (!entity.IsAlive())
+            if (!CharacterHelpers.IsAlive(_world, entity))
                 return;
 
             int writeIndex = 0; // keep commands not ready yet
@@ -51,14 +56,14 @@ public class CommandExecutionSystem
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error executing command {Command} for {Entity}", request.CommandSpan.ToString(), entity.DebugName);
+                    _logger.LogError(ex, "Error executing command {Command} for {Entity}", request.CommandSpan.ToString(), EntityHelpers.DebugName(_world, entity));
                 }
             }
 
             // clear buffer after execution
             buffer.Clear();
             // remove has active command tag
-            entity.Remove<HasCommandTag>();
+            _world.Remove<HasCommandTag>(entity);
         });
     }
 }

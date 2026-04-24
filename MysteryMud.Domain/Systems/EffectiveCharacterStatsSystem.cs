@@ -1,12 +1,12 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Core;
+﻿using MysteryMud.Core;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
+using TinyECS;
+using TinyECS.Extensions;
 
 namespace MysteryMud.Domain.Systems;
 
@@ -16,19 +16,26 @@ public class EffectiveCharacterStatsSystem
         .Take((int)CharacterStatKind.Count) // Count is used by to InlineArray attribute
         .ToArray();
 
+    private readonly World _world;
+
+    public EffectiveCharacterStatsSystem(World world)
+    {
+        _world = world;
+    }
+
+    private static readonly QueryDescription _hasDirtyStatsQueryDesc = new QueryDescription()
+        .WithAll<BaseStats, EffectiveStats, DirtyStats, CharacterEffects, Equipment>()
+        .WithNone<Dead>();
+
     public void Tick(GameState state)
     {
-        var query = new QueryDescription()
-                .WithAll<BaseStats, EffectiveStats, DirtyStats>()
-                .WithNone<Dead>();
-        state.World.Query(query, (Entity character,
-                     ref BaseStats baseStats,
-                     ref EffectiveStats effectiveStats,
-                     ref DirtyStats dirty) =>
+        _world.Query(_hasDirtyStatsQueryDesc, (EntityId character,
+             ref BaseStats baseStats,
+             ref EffectiveStats effectiveStats,
+             ref DirtyStats _,
+             ref CharacterEffects characterEffects,
+             ref Equipment equipment) =>
         {
-            ref var characterEffects = ref character.Get<CharacterEffects>();
-            ref var equipment = ref character.Get<Equipment>();
-
             // accumulators indexed by stat — stack alloc, no heap pressure
             var statCount = _allStats.Length;
             Span<decimal> flat = stackalloc decimal[statCount];
@@ -41,8 +48,9 @@ public class EffectiveCharacterStatsSystem
             // single pass over equipment modifiers — O(slots × modifiers_per_item)
             foreach (var (slot, equippedItem) in equipment.Slots)
             {
-                ref var itemEffects = ref equippedItem.Get<ItemEffects>();
+                ref var itemEffects = ref _world.Get<ItemEffects>(equippedItem);
                 ModifierPipeline.AccumulateModifiers<CharacterStatModifiers, CharacterStatModifier>(
+                    _world,
                     itemEffects.Data.Effects,
                     x => x.Stat,           // route modifier to correct stat bucket
                     x => x.Values,
@@ -53,6 +61,7 @@ public class EffectiveCharacterStatsSystem
 
             // single pass over all character effects
             ModifierPipeline.AccumulateModifiers<CharacterStatModifiers, CharacterStatModifier>(
+                _world,
                 characterEffects.Data.Effects,
                 x => x.Stat,
                 x => x.Values,
@@ -73,7 +82,7 @@ public class EffectiveCharacterStatsSystem
             }
 
             // mark as clean
-            character.Remove<DirtyStats>();
+            _world.Remove<DirtyStats>(character);
         });
     }
 }

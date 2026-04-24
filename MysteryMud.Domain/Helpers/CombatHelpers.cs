@@ -1,48 +1,48 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Core;
+﻿using MysteryMud.Core;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.GameData.Definitions;
+using TinyECS;
+using TinyECS.Extensions;
 
 namespace MysteryMud.Domain.Helpers;
 
 public static class CombatHelpers
 {
-    public static void EnterCombat(GameState state, Entity source, Entity target)
+    public static void EnterCombat(World world, GameState state, EntityId source, EntityId target)
     {
-        if (!CharacterHelpers.IsAlive(source, target)) return;
+        if (!CharacterHelpers.IsAlive(world, source, target)) return;
 
         // flag both as in combat with each other, with the target striking back after a delay
-        if (!source.Has<CombatState>())
+        if (!world.Has<CombatState>(source))
         {
-            source.Add(new CombatState { Target = target, RoundDelay = 0 });
-            if (!source.Has<NewCombatantTag>())
-                source.Add<NewCombatantTag>();
+            world.Add(source, new CombatState { Target = target, RoundDelay = 0 });
+            if (!world.Has<NewCombatantTag>(source))
+                world.Add<NewCombatantTag>(source);
         }
 
-        if (!target.Has<CombatState>())
+        if (!world.Has<CombatState>(target))
         {
-            target.Add(new CombatState { Target = source, RoundDelay = 1 });
-            if (!target.Has<NewCombatantTag>())
-                target.Add<NewCombatantTag>();
+            world.Add(target, new CombatState { Target = source, RoundDelay = 1 });
+            if (!world.Has<NewCombatantTag>(target))
+                world.Add<NewCombatantTag>(target);
         }
 
-        AddCombatClaim(target, source, state.CurrentTick);
+        AddCombatClaim(world, state, target, source);
     }
 
-    public static void RemoveFromCombat(GameState state, Entity character)
+    public static void RemoveFromCombat(World world, GameState state, EntityId character)
     {
-        if (character.Has<CombatState>())
-            character.Remove<CombatState>();
-        if (character.Has<NewCombatantTag>())
-            character.Remove<NewCombatantTag>();
-        if (character.Has<CombatInitiator>())
-            character.Remove<CombatInitiator>();
-        if (character.Has<ActiveThreatTag>())
-            character.Remove<ActiveThreatTag>();
-        ref var threatTable = ref character.TryGetRef<ThreatTable>(out var hasThreatTable);
+        if (world.Has<CombatState>(character))
+            world.Remove<CombatState>(character);
+        if (world.Has<NewCombatantTag>(character))
+            world.Remove<NewCombatantTag>(character);
+        if (world.Has<CombatInitiator>(character))
+            world.Remove<CombatInitiator>(character);
+        if (world.Has<ActiveThreatTag>(character))
+            world.Remove<ActiveThreatTag>(character);
+        ref var threatTable = ref world.TryGetRef<ThreatTable>(character, out var hasThreatTable);
         if (hasThreatTable)
         {
             threatTable.Threat.Clear();
@@ -50,50 +50,55 @@ public static class CombatHelpers
         }
     }
 
+    private readonly static QueryDescription _inCombatQueryDesc = new QueryDescription()
+        .WithAll<CombatState>();
+
     // TODO: this could be optimized by having a "Targeting" component that lists all entities targeting a given entity, so we don't have to scan everyone in the world for combat state every time someone dies. We would need to maintain this list as combat states are added/removed, but it would make removing combat state on death much more efficient.
     // mutually remove combat state from victim and anyone targeting the victim in one query if possible
-    public static void RemoveFromAllCombat(GameState state, Entity character)
+    public static void RemoveFromAllCombat(World world, GameState state, EntityId character)
     {
         // clean up character's own state fully
-        RemoveFromCombat(state, character);
+        RemoveFromCombat(world, state, character);
 
         // for anyone targeting this character:
         // only remove their CombatState, do NOT call RemoveFromCombat
         // which would wrongly wipe their entire threat table
-        var query = new QueryDescription().WithAll<CombatState>();
-        state.World.Query(query, (Entity entity, ref CombatState combat) =>
+        world.Query(in _inCombatQueryDesc, (EntityId entity, ref CombatState combat) =>
         {
             if (combat.Target == character)
             {
-                if (entity.Has<CombatState>())
-                    entity.Remove<CombatState>();
-                if (entity.Has<NewCombatantTag>())
-                    entity.Remove<NewCombatantTag>();
-                if (entity.Has<CombatInitiator>()) // they were initiator on someone else, irrelevant now
-                    entity.Remove<CombatInitiator>();
-                if (entity.Has<ActiveThreatTag>()) // no more active threat if not in combat
-                    entity.Remove<ActiveThreatTag>();
+                if (world.Has<CombatState>(entity))
+                    world.Remove<CombatState>(entity);
+                if (world.Has<NewCombatantTag>(entity))
+                    world.Remove<NewCombatantTag>(entity);
+                if (world.Has<CombatInitiator>(entity)) // they were initiator on someone else, irrelevant now
+                    world.Remove<CombatInitiator>(entity);
+                if (world.Has<ActiveThreatTag>(entity)) // no more active threat if not in combat
+                    world.Remove<ActiveThreatTag>(entity);
             }
         });
     }
 
-    public static void RemoveFromAllThreatTable(World world, Entity character) // TODO: optimize, this will loop on every NPC
+    private readonly static QueryDescription _threatQueryDesc = new QueryDescription()
+        .WithAll<ThreatTable, ActiveThreatTag>();
+
+    public static void RemoveFromAllThreatTable(World world, EntityId character) // TODO: optimize, this will loop on every NPC
     {
-        var query = new QueryDescription()
-            .WithAll<ThreatTable, ActiveThreatTag>();
-        world.Query(query, (Entity actor, ref ThreatTable threatTable) =>
+        world.Query(_threatQueryDesc, (EntityId _,
+            ref ThreatTable threatTable,
+            ref ActiveThreatTag _) =>
         {
             threatTable.Threat.Remove(character);
         });
     }
 
-    public static bool TryDetermineLootOwner(Entity victim, Entity killer, out Entity looter)
+    public static bool TryDetermineLootOwner(World world, EntityId victim, EntityId killer, out EntityId looter)
     {
-        if (victim.Has<CombatInitiator>())
+        if (world.Has<CombatInitiator>(victim))
         {
-            ref var initiator = ref victim.Get<CombatInitiator>();
+            ref var initiator = ref world.Get<CombatInitiator>(victim);
             var activeClaim = initiator.Claims
-                .Where(c => !c.Forfeited && CharacterHelpers.IsAlive(c.Claimant))
+                .Where(c => !c.Forfeited && CharacterHelpers.IsAlive(world, c.Claimant))
                 .OrderBy(c => c.JoinedAtTick)
                 .Cast<CombatClaim?>()  // nullable so FirstOrDefault returns null, not zeroed struct
                 .FirstOrDefault();
@@ -106,20 +111,23 @@ public static class CombatHelpers
         }
 
         // killer could be an NPC (e.g. orc kills a player), Entity.Null, or a player
-        if (killer != Entity.Null && killer.Has<PlayerTag>())
+        if (killer != EntityId.Invalid && world.Has<PlayerTag>(killer))
         {
             looter = killer;
             return true;
         }
 
-        looter = Entity.Null; // NPC killer or no killer — no loot intent
+        looter = EntityId.Invalid; // NPC killer or no killer — no loot intent
         return false;
     }
 
-    public static void ForfeitAllClaims(World world, Entity claimant)
+    private static readonly QueryDescription _initiatorQueryDesc = new QueryDescription()
+        .WithAll<CombatInitiator>();
+
+    public static void ForfeitAllClaims(World world, EntityId claimant)
     {
-        var query = new QueryDescription().WithAll<CombatInitiator>();
-        world.Query(query, (ref CombatInitiator initiator) =>
+        world.Query(in _initiatorQueryDesc, (EntityId _,
+            ref CombatInitiator initiator) =>
         {
             for (int i = 0; i < initiator.Claims.Count; i++)
             {
@@ -129,25 +137,25 @@ public static class CombatHelpers
         });
     }
 
-    public static void ForfeitClaim(Entity npc, Entity claimant)
+    public static void ForfeitClaim(World world, EntityId npc, EntityId claimant)
     {
-        if (!npc.Has<CombatInitiator>()) return;
+        if (!world.Has<CombatInitiator>(npc)) return;
 
-        ref var initiator = ref npc.Get<CombatInitiator>();
+        ref var initiator = ref world.Get<CombatInitiator>(npc);
         var idx = initiator.Claims.FindIndex(c => c.Claimant == claimant);
         if (idx >= 0)
             initiator.Claims[idx] = initiator.Claims[idx] with { Forfeited = true };
     }
 
-    public static void AddCombatClaim(Entity npc, Entity claimant, long currentTick)
+    public static void AddCombatClaim(World world, GameState state, EntityId npc, EntityId claimant)
     {
-        if (!npc.Has<NpcTag>()) return; // only track on NPCs
-        if (!claimant.Has<PlayerTag>()) return; // only players can claim
+        if (!world.Has<NpcTag>(npc)) return; // only track on NPCs
+        if (!world.Has<PlayerTag>(claimant)) return; // only players can claim
 
-        if (!npc.Has<CombatInitiator>())
-            npc.Add(new CombatInitiator { Claims = [] });
+        if (!world.Has<CombatInitiator>(npc))
+            world.Add(npc, new CombatInitiator { Claims = [] });
 
-        ref var initiator = ref npc.Get<CombatInitiator>();
+        ref var initiator = ref world.Get<CombatInitiator>(npc);
 
         // don't add duplicate claims
         if (initiator.Claims.Any(c => c.Claimant == claimant)) return;
@@ -155,10 +163,10 @@ public static class CombatHelpers
         initiator.Claims.Add(new CombatClaim
         {
             Claimant = claimant,
-            ClaimantGroup = claimant.Has<GroupMember>()
-                ? claimant.Get<GroupMember>().Group
-                : Entity.Null,
-            JoinedAtTick = currentTick,
+            ClaimantGroup = world.Has<GroupMember>(claimant)
+                ? world.Get<GroupMember>(claimant).Group
+                : EntityId.Invalid,
+            JoinedAtTick = state.CurrentTick,
             Forfeited = false
         });
     }

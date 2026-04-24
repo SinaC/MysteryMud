@@ -1,13 +1,13 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.GameData.Intents;
 
 public struct MoveIntent
 {
-    public Entity Actor;
-    public Entity FromRoom;
-    public Entity ToRoom;
+    public EntityId Actor;
+    public EntityId FromRoom;
+    public EntityId ToRoom;
     public DirectionKind Direction;
     public bool AutoLook;
 }

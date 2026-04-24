@@ -1,4 +1,4 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.GameData.Intents;
@@ -7,7 +7,7 @@ public struct UseAbilityIntent
 {
     public int AbilityId;
 
-    public Entity Source;
+    public EntityId Source;
 
     public TargetKind TargetKind; // Single, All, Indexed, Self
     public int TargetIndex; // for N.something

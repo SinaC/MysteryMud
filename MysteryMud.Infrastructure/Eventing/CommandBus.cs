@@ -1,9 +1,9 @@
-﻿using Arch.Core;
-using MysteryMud.Application.Dispatching;
+﻿using MysteryMud.Application.Dispatching;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using System.Buffers;
 using System.Collections.Concurrent;
+using TinyECS;
 
 namespace MysteryMud.Infrastructure.Eventing;
 
@@ -18,7 +18,7 @@ public class CommandBus : ICommandBus
         _dispatcher = dispatcher;
     }
 
-    public void Publish(Entity player, ReadOnlySpan<char> span)
+    public void Publish(EntityId player, ReadOnlySpan<char> span)
     {
         var buffer = ArrayPool<char>.Shared.Rent(span.Length);
 
@@ -40,7 +40,7 @@ public class CommandBus : ICommandBus
             var span = cmd.Buffer.AsSpan(0, cmd.Length);
 
             // TODO: check min position
-            _dispatcher.Dispatch(state, cmd.Player, span);
+            _dispatcher.Dispatch(cmd.Player, span);
 
             ArrayPool<char>.Shared.Return(cmd.Buffer);
         }

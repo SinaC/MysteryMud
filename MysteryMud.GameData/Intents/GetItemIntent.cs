@@ -1,14 +1,14 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.GameData.Intents;
 
 public struct GetItemIntent
 {
-    public Entity Entity;
-    public Entity Item;
+    public EntityId Entity;
+    public EntityId Item;
 
     public GetSourceKind SourceKind;
 
-    public Entity Source; // room or container
+    public EntityId Source; // room or container
 }

@@ -1,13 +1,11 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Application.Parsing;
+﻿using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Registry;
-using MysteryMud.Core;
 using MysteryMud.Domain.Commands;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
-using MysteryMud.GameData.Enums;
+using TinyECS;
 
 namespace MysteryMud.Application.Dispatching;
 
@@ -15,22 +13,24 @@ public class CommandDispatcher : ICommandDispatcher
 {
     private const int MAX_COMMANDS_PER_TICK = 10;
 
+    private readonly World _world;
     private readonly ICommandRegistry _commandRegistry;
     private readonly IGameMessageService _msg;
 
-    public CommandDispatcher(ICommandRegistry commandRegistry, IGameMessageService msg)
+    public CommandDispatcher(World world, ICommandRegistry commandRegistry, IGameMessageService msg)
     {
+        _world = world;
         _commandRegistry = commandRegistry;
         _msg = msg;
     }
 
-    public void Dispatch(GameState state, Entity actor, ReadOnlySpan<char> input)
+    public void Dispatch(EntityId actor, ReadOnlySpan<char> input)
     {
-        if (!actor.IsAlive())
+        if (!CharacterHelpers.IsAlive(_world, actor))
             return;
 
         // Get or create buffer
-        ref var buffer = ref actor.Get<CommandBuffer>();
+        ref var buffer = ref _world.Get<CommandBuffer>(actor);
 
         if (buffer.Count >= MAX_COMMANDS_PER_TICK)
             return;
@@ -42,10 +42,10 @@ public class CommandDispatcher : ICommandDispatcher
         var cmdSpan = input.Slice(cmdStart, cmdLength);
 
         // get command level
-        ref var commandLevel = ref actor.Get<CommandLevel>();
+        ref var commandLevel = ref _world.Get<CommandLevel>(actor);
 
         // get position
-        ref var position = ref actor.Get<Position>();
+        ref var position = ref _world.Get<Position>(actor);
 
         // search command in registry
         var findResult = _commandRegistry.Find(commandLevel.Value, position.Value, cmdSpan, out var registeredCommand); 
@@ -77,7 +77,7 @@ public class CommandDispatcher : ICommandDispatcher
             Cancelled = false,
             Force = false
         });
-        if (!actor.Has<HasCommandTag>())
-            actor.Add<HasCommandTag>();
+        if (!_world.Has<HasCommandTag>(actor))
+            _world.Add<HasCommandTag>(actor);
     }
 }

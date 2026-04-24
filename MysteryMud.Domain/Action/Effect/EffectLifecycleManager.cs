@@ -1,37 +1,37 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Core;
-using MysteryMud.Core.Persistence;
+﻿using MysteryMud.Core.Persistence;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
+using TinyECS;
 
 namespace MysteryMud.Domain.Action.Effect;
 
 public class EffectLifecycleManager : IEffectLifecycleManager
 {
+    private readonly World _world;
     private readonly IDirtyTracker _dirtyTracker;
 
-    public EffectLifecycleManager(IDirtyTracker dirtyTracker)
+    public EffectLifecycleManager(World world, IDirtyTracker dirtyTracker)
     {
+        _world = world;
         _dirtyTracker = dirtyTracker;
     }
 
-    public void RemoveEffect(GameState state, Entity effect)
+    public void RemoveEffect(EntityId effect)
     {
-        if (!effect.IsAlive()) // don't use helpers, effect with ExpiredTag should be removable
+        if (!_world.IsAlive(effect)) // don't use helpers, effect with ExpiredTag should be removable
             return;
 
-        ref var instance = ref state.World.Get<EffectInstance>(effect);
-        if (!instance.Target.IsAlive())
-            return;
-
+        ref var instance = ref _world.Get<EffectInstance>(effect);
         var target = instance.Target;
 
-        // Resolve which host to use — single branch point
-        IEffectHost host = target.Has<CharacterEffects>()
-            ? new CharacterEffectHost(_dirtyTracker, target)
-            : new ItemEffectHost(_dirtyTracker, target);
+        if (!_world.IsAlive(target))
+            return;
 
-        host.UnregisterEffect(state, effect, instance.EffectRuntime);
+        // Resolve which host to use — single branch point
+        IEffectHost host = _world.Has<CharacterEffects>(target)
+            ? new CharacterEffectHost(_world, _dirtyTracker, target)
+            : new ItemEffectHost(_world, _dirtyTracker, target);
+
+        host.UnregisterEffect(effect, instance.EffectRuntime);
     }
 }

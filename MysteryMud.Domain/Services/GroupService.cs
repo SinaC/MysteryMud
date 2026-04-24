@@ -1,27 +1,29 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Core;
+﻿using MysteryMud.Core;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Groups;
+using TinyECS;
+using TinyECS.Extensions;
 
 namespace MysteryMud.Domain.Services;
 
 public class GroupService : IGroupService
 {
+    private readonly World _world;
     private readonly IGameMessageService _msg;
 
-    public GroupService(IGameMessageService msg)
+    public GroupService(World world,  IGameMessageService msg)
     {
+        _world = world;
         _msg = msg;
     }
 
-    public void AddMember(GameState state, Entity group, Entity member)
+    public void AddMember(GameState state, EntityId group, EntityId member)
     {
-        ref var groupInstance = ref group.Get<GroupInstance>();
+        ref var groupInstance = ref _world.Get<GroupInstance>(group);
 
         groupInstance.Members.Add(member);
-        member.Add(new GroupMember
+        _world.Add(member, new GroupMember
         {
             Group = group,
             JoinedAtTick = state.CurrentTick
@@ -30,23 +32,23 @@ public class GroupService : IGroupService
         _msg.ToGroup(group).Act("{0} join{0:v} the group.").With(member);
     }
 
-    public void RemoveMember(GameState state, Entity group, Entity member)
+    public void RemoveMember(EntityId group, EntityId member)
     {
         _msg.To(member).Send("You have left the group.");
 
-        ref var groupInstance = ref group.Get<GroupInstance>();
+        ref var groupInstance = ref _world.Get<GroupInstance>(group);
         groupInstance.Members.Remove(member);
-        if (member.Has<GroupMember>())
-            member.Remove<GroupMember>();
+        if (_world.Has<GroupMember>(member))
+            _world.Remove<GroupMember>(member);
 
         // forfeit combat claims for this member
-        ClearGroupFromClaims(state, member, group);
+        ClearGroupFromClaims(member, group);
 
         _msg.ToGroup(group).Act("{0} leaves the group.").With(member);
 
         if (groupInstance.Members.Count == 1)
         {
-            Disband(state, group);
+            Disband(group);
             return;
         }
 
@@ -55,53 +57,56 @@ public class GroupService : IGroupService
             PromoteNewLeader(group);
     }
 
-    private void PromoteNewLeader(Entity group)
+    private void PromoteNewLeader(EntityId group)
     {
-        ref var groupInstance = ref group.Get<GroupInstance>();
+        ref var groupInstance = ref _world.Get<GroupInstance>(group);
 
         var newLeader = groupInstance.Members
-            .OrderBy(m => m.Get<GroupMember>().JoinedAtTick)
+            .OrderBy(m => _world.Get<GroupMember>(m).JoinedAtTick)
             .First();
 
         groupInstance.Leader = newLeader;
         _msg.ToGroup(group).Act("{0} {0:b} now the group leader.").With(newLeader);
     }
 
-    public void Disband(GameState state, Entity group)
+    public void Disband(EntityId group)
     {
-        ref var groupInstance = ref group.Get<GroupInstance>();
+        ref var groupInstance = ref _world.Get<GroupInstance>(group);
 
         // clear group reference on all active combat claims before destroying group entity
         foreach (var member in groupInstance.Members)
         {
             // find all NPCs this member has claims on and clear the group reference
             // we need to scan — member doesn't track which entities they have claims on
-            ClearGroupFromClaims(state, member, group);
+            ClearGroupFromClaims(member, group);
         }
 
         foreach (var member in groupInstance.Members.ToArray())
         {
-            if (member.Has<GroupMember>())
-                member.Remove<GroupMember>();
+            if (_world.Has<GroupMember>(member))
+                _world.Remove<GroupMember>(member);
             _msg.To(member).Send("Your group has been disbanded.");
         }
 
         groupInstance.Members.Clear();
-        state.World.Destroy(group); // group entity is gone
+        // destroy group: cannot delete an entity from where -> soft delete
+        if (!_world.Has<DisbandedTag>(group))
+            _world.Add<DisbandedTag>(group);
     }
 
+    private static readonly QueryDescription _initiatorQueryDesc = new QueryDescription()
+        .WithAll<CombatInitiator>();
 
-    private void ClearGroupFromClaims(GameState state, Entity member, Entity group)
+    private void ClearGroupFromClaims(EntityId member, EntityId group)
     {
-        var query = new QueryDescription().WithAll<CombatInitiator>();
-        state.World.Query(query, (ref CombatInitiator initiator) =>
+        _world.Query(in _initiatorQueryDesc, (EntityId entity, ref CombatInitiator initiator) =>
         {
             for (int i = 0; i < initiator.Claims.Count; i++)
             {
                 if (initiator.Claims[i].Claimant == member
                     && initiator.Claims[i].ClaimantGroup == group)
                 {
-                    initiator.Claims[i] = initiator.Claims[i] with { ClaimantGroup = Entity.Null };
+                    initiator.Claims[i] = initiator.Claims[i] with { ClaimantGroup = EntityId.Invalid };
                 }
             }
         });
@@ -134,7 +139,7 @@ public class GroupService : IGroupService
     //}
 
 
-    private static void ForfeitAllClaims(Entity player)
+    private static void ForfeitAllClaims(EntityId player)
     {
         // TODO
         // Option A — claims are personal, survive disband: player A initiated combat as part of group, group disbands, A still has their personal claim. Simpler, fairer to the player.

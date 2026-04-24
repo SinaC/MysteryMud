@@ -1,8 +1,8 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.Domain.Services;
 
 public interface ISacrificeService
 {
-    void Sacrifice(Entity actor, Entity item);
+    void Sacrifice(EntityId actor, EntityId item);
 }

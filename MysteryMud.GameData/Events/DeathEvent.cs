@@ -1,9 +1,9 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.GameData.Events;
 
 public struct DeathEvent
 {
-    public Entity Killer;
-    public Entity Victim;
+    public EntityId Killer;
+    public EntityId Victim;
 }

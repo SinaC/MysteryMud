@@ -1,22 +1,21 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Domain.Components.Characters;
+﻿using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.GameData.Enums;
+using TinyECS;
 
 namespace MysteryMud.Domain.Extensions;
 
 public static class TargetConditionExtensions
 {
-    public static bool Matches(this TargetCondition condition, Entity entity) => condition switch
+    public static bool Matches(this TargetCondition condition, World world, EntityId entity) => condition switch
     {
-        TargetCondition.IsCharacter => entity.Has<CharacterTag>(),
-        TargetCondition.IsItem => entity.Has<ItemTag>(),
-        TargetCondition.IsNPC => entity.Has<NpcTag>(),
-        TargetCondition.IsPlayer => entity.Has<PlayerTag>(),
-        TargetCondition.IsWeapon => entity.Has<Weapon>(),
+        TargetCondition.IsCharacter => world.Has<CharacterTag>(entity),
+        TargetCondition.IsItem => world.Has<ItemTag>(entity),
+        TargetCondition.IsNPC => world.Has<NpcTag>(entity),
+        TargetCondition.IsPlayer => world.Has<PlayerTag>(entity),
+        TargetCondition.IsWeapon => world.Has<Weapon>(entity),
         // TODO: IsArmor
         _ => true,
     };

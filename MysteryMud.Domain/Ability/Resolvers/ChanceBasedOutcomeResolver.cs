@@ -1,18 +1,20 @@
-﻿using Arch.Core;
-using MysteryMud.Core.Random;
+﻿using MysteryMud.Core.Random;
+using TinyECS;
 
 namespace MysteryMud.Domain.Ability.Resolvers;
 
 public class ChanceBasedOutcomeResolver : IAbilityOutcomeResolver
 {
+    private readonly World _world;
     private readonly IRandom _random;
 
-    public ChanceBasedOutcomeResolver(IRandom random)
+    public ChanceBasedOutcomeResolver(World world, IRandom random)
     {
+        _world = world;
         _random = random;
     }
 
-    public AbilityOutcomeResult Resolve(Entity caster, AbilityRuntime ability)
+    public AbilityOutcomeResult Resolve(EntityId caster, AbilityRuntime ability)
     {
         int chance = GetSkill(caster, ability);
 
@@ -33,7 +35,7 @@ public class ChanceBasedOutcomeResolver : IAbilityOutcomeResolver
     }
 
 
-    private int GetSkill(Entity caster, AbilityRuntime ability)
+    private int GetSkill(EntityId caster, AbilityRuntime ability)
     {
         // depends on your skill system
         //return caster.Get<SkillSet>().GetLevel(ability.Name);

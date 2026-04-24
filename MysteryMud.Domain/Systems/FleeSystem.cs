@@ -1,6 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Core;
+﻿using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Contracts;
 using MysteryMud.Core.Random;
@@ -12,6 +10,7 @@ using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
+using TinyECS;
 
 namespace MysteryMud.Domain.Systems;
 
@@ -19,14 +18,16 @@ public sealed class FleeSystem
 {
     private const int MaxFleeTries = 6;
 
+    private readonly World _world;
     private readonly IRandom _random;
     private readonly IGameMessageService _msg;
     private readonly IIntentContainer _intents;
     private readonly IExperienceService _experienceService;
     private readonly IEventBuffer<FleeBlockedEvent> _fleeBlockedEvents;
 
-    public FleeSystem(IRandom random, IGameMessageService msg, IIntentContainer intents, IExperienceService experienceService, IEventBuffer<FleeBlockedEvent> fleeBlockedEvents)
+    public FleeSystem(World world, IRandom random, IGameMessageService msg, IIntentContainer intents, IExperienceService experienceService, IEventBuffer<FleeBlockedEvent> fleeBlockedEvents)
     {
+        _world = world;
         _random = random;
         _msg = msg;
         _intents = intents;
@@ -43,7 +44,7 @@ public sealed class FleeSystem
             var entity = flee.Entity;
 
             // Must be in combat
-            if (!entity.Has<CombatState>())
+            if (!_world.Has<CombatState>(entity))
             {
                 BlockFlee(entity, FleeBlockedReason.NotInCombat);
                 return;
@@ -75,10 +76,10 @@ public sealed class FleeSystem
         }
     }
 
-    private bool TryGetRandomRoom(Entity entity, out Entity? toRoom, out FleeBlockedReason? reason)
+    private bool TryGetRandomRoom(EntityId entity, out EntityId? toRoom, out FleeBlockedReason? reason)
     {
-        ref var room = ref entity.Get<Location>().Room;
-        ref var roomGraph = ref room.Get<RoomGraph>();
+        ref var room = ref _world.Get<Location>(entity).Room;
+        ref var roomGraph = ref _world.Get<RoomGraph>(room);
 
         // Check if any exit exists at all
         var hasAnyExit = roomGraph.Exits.HasAnyExit();
@@ -96,7 +97,7 @@ public sealed class FleeSystem
             if (exit == null)
                 continue;
 
-            if (MovementValidator.CanFlee(entity, room, exit.Value.TargetRoom, randomDirection))
+            if (MovementValidator.CanFlee(_world, entity, room, exit.Value.TargetRoom, randomDirection))
             {
                 toRoom = exit.Value.TargetRoom;
                 reason = null;
@@ -109,7 +110,7 @@ public sealed class FleeSystem
         return false;
     }
 
-    private void BlockFlee(Entity entity, FleeBlockedReason reason)
+    private void BlockFlee(EntityId entity, FleeBlockedReason reason)
     {
         ref var evt = ref _fleeBlockedEvents.Add();
         evt.Entity = entity;
@@ -117,13 +118,13 @@ public sealed class FleeSystem
     }
 
     // remove from combat and forfeit claim for player
-    private static void RemoveFromCombat(GameState state, Entity fleeingEntity)
+    private void RemoveFromCombat(GameState state, EntityId fleeingEntity)
     {
-        var previousTarget = fleeingEntity.Get<CombatState>().Target;
+        var previousTarget = _world.Get<CombatState>(fleeingEntity).Target;
 
-        CombatHelpers.RemoveFromAllCombat(state, fleeingEntity);
+        CombatHelpers.RemoveFromAllCombat(_world, state, fleeingEntity);
 
-        if (fleeingEntity.Has<PlayerTag>())
-            CombatHelpers.ForfeitClaim(previousTarget, fleeingEntity);
+        if (_world.Has<PlayerTag>(fleeingEntity))
+            CombatHelpers.ForfeitClaim(_world, previousTarget, fleeingEntity);
     }
 }

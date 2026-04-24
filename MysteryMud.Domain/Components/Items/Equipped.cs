@@ -1,10 +1,10 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Components.Items;
 
 public struct Equipped
 {
-    public Entity Wearer;
+    public EntityId Wearer;
     public EquipmentSlotKind Slot;
 }

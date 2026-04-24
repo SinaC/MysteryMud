@@ -1,6 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Application.Parsing;
+﻿using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
@@ -8,6 +6,7 @@ using MysteryMud.Core.Contracts;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Services;
+using TinyECS;
 
 namespace MysteryMud.Application.Commands.Commands;
 
@@ -15,16 +14,18 @@ public sealed class WearCommand : ICommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.Target;
 
+    private readonly World _world;
     private readonly IGameMessageService _msg;
     private readonly IIntentWriterContainer _intents;
 
-    public WearCommand(IGameMessageService msg, IIntentWriterContainer intents)
+    public WearCommand(World world, IGameMessageService msg, IIntentWriterContainer intents)
     {
+        _world = world;
         _msg = msg;
         _intents = intents;
     }
 
-    public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(GameState state, EntityId actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
@@ -34,21 +35,19 @@ public sealed class WearCommand : ICommand
             return;
         }
 
-        ref var inventory = ref actor.Get<Inventory>();
+        ref var inventory = ref _world.Get<Inventory>(actor);
+        ref var equipment = ref _world.Get<Equipment>(actor);
 
-        foreach (var item in CommandEntityFinder.SelectTargets(actor, ctx.Primary, inventory.Items))
+        foreach (var item in CommandEntityFinder.SelectTargets(_world,  actor, ctx.Primary, inventory.Items))
         {
-            ref var equipable = ref item.TryGetRef<Equipable>(out var isEquipable);
+            ref var equipable = ref _world.TryGetRef<Equipable>(item, out var isEquipable);
             if (!isEquipable)
             {
                 _msg.To(actor).Send("You can't wear that.");
                 return;
             }
 
-            ref var equipment = ref actor.Get<Equipment>();
-
             var slot = equipable.Slot;
-
             if (equipment.Slots.ContainsKey(slot))
             {
                 _msg.To(actor).Send("You already wear.");

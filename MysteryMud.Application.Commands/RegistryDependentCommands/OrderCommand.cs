@@ -1,6 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Application.Registry;
@@ -10,10 +8,10 @@ using MysteryMud.Core.Extensions;
 using MysteryMud.Domain.Commands;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
-using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
+using TinyECS;
 
 namespace MysteryMud.Application.Commands.RegistryDependentCommands;
 
@@ -22,6 +20,7 @@ public sealed class OrderCommand : IExplicitCommand
     private const string Name = "order";
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetAndText;
 
+    private readonly World _world;
     private readonly ILogger _logger;
     private readonly ICommandRegistry _commandRegistry;
     private readonly IGameMessageService _msg;
@@ -49,14 +48,15 @@ If your charmed creature engages in combat, that will break the charm.",
         ThrottlingCategories = CommandThrottlingCategories.Utility,
     };
 
-    public OrderCommand(ILogger logger, ICommandRegistry commandRegistry, IGameMessageService msg)
+    public OrderCommand(World world, ILogger logger, ICommandRegistry commandRegistry, IGameMessageService msg)
     {
+        _world = world;
         _logger = logger;
         _commandRegistry = commandRegistry;
         _msg = msg;
     }
 
-    public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
+    public void Execute(GameState state, EntityId actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
@@ -66,7 +66,7 @@ If your charmed creature engages in combat, that will break the charm.",
             return;
         }
 
-        ref var charmies = ref actor.TryGetRef<Charmies>(out var hasCharmies);
+        ref var charmies = ref _world.TryGetRef<Charmies>(actor, out var hasCharmies);
         if (!hasCharmies)
         {
             _msg.To(actor).Send("You don't have followers.");
@@ -76,7 +76,7 @@ If your charmed creature engages in combat, that will break the charm.",
         // TODO: force all (see TellCommand)
 
         // search target
-        var target = CommandEntityFinder.SelectSingleTarget(actor, ctx.Primary, charmies.Entities);
+        var target = CommandEntityFinder.SelectSingleTarget(_world, actor, ctx.Primary, charmies.Entities);
         if (target == null)
         {
             _msg.To(actor).Send("They aren't here.");
@@ -84,7 +84,7 @@ If your charmed creature engages in combat, that will break the charm.",
         }
 
         // get target position
-        ref var targetPosition = ref target.Value.Get<Position>();
+        ref var targetPosition = ref _world.Get<Position>(target.Value);
 
         var inputStr = ctx.Text.ToString(); // ONE allocation
 
@@ -100,12 +100,12 @@ If your charmed creature engages in combat, that will break the charm.",
         }
         else if (findResult == CommandFindResult.WrongPosition)
         {
-            _msg.To(actor).Send($"{target.Value.DisplayName} is in the wrong position.");
+            _msg.To(actor).Act("{0} is in the wrong position.").With(target.Value);
             return;
         }
         else if (findResult == CommandFindResult.NoPermission)
         {
-            _msg.To(actor).Send($"{target.Value.DisplayName} is not allowed to use this command.");
+            _msg.To(actor).Act("{0} is not allowed to use this command.").With(target.Value);
             return;
         }
         else if (orderedCommand is null)
@@ -116,7 +116,7 @@ If your charmed creature engages in combat, that will break the charm.",
         }
 
         // add ordered command request to target command buffer
-        ref var buffer = ref target.Value.Get<CommandBuffer>();
+        ref var buffer = ref _world.Get<CommandBuffer>(target.Value);
         buffer.Add(new CommandRequest
         {
             Command = orderedCommand,
@@ -131,7 +131,7 @@ If your charmed creature engages in combat, that will break the charm.",
             Cancelled = false,
             Order = true
         });
-        if (!target.Value.Has<HasCommandTag>())
-            target.Value.Add<HasCommandTag>();
+        if (!_world.Has<HasCommandTag>(target.Value))
+            _world.Add<HasCommandTag>(target.Value);
     }
 }

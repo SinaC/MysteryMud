@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Contracts;
@@ -10,11 +9,13 @@ using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
+using TinyECS;
 
 namespace MysteryMud.Domain.Systems;
 
 public class AbilityExecutionSystem
 {
+    private readonly World _world;
     private readonly ILogger _logger;
     private readonly IGameMessageService _msg;
     private readonly IIntentContainer _intents;
@@ -23,8 +24,9 @@ public class AbilityExecutionSystem
     private readonly IEffectRegistry _effectRegistry;
     private readonly IAbilityOutcomeResolverRegistry _abilityOutcomeResolverRegistry;
 
-    public AbilityExecutionSystem(ILogger logger, IGameMessageService msg, IIntentContainer intents, IEventBuffer<AbilityExecutedEvent> abilityExecuted, IAbilityRegistry abilityRegistry, IEffectRegistry effectRegistry, IAbilityOutcomeResolverRegistry abilityOutcomeResolverRegistry)
+    public AbilityExecutionSystem(World world, ILogger logger, IGameMessageService msg, IIntentContainer intents, IEventBuffer<AbilityExecutedEvent> abilityExecuted, IAbilityRegistry abilityRegistry, IEffectRegistry effectRegistry, IAbilityOutcomeResolverRegistry abilityOutcomeResolverRegistry)
     {
+        _world = world;
         _logger = logger;
         _msg = msg;
         _intents = intents;
@@ -70,13 +72,13 @@ public class AbilityExecutionSystem
             foreach (var target in targets)
             {
                 // TODO: check if still in same room ? except for some effect such as summon
-                if (!CharacterHelpers.IsAlive(target))
+                if (!CharacterHelpers.IsAlive(_world, target))
                     continue;
 
                 // Find the first (most specific) condition group that matches this target
                 var matchedGroup = abilityRuntime.ConditionalEffectGroups
                     .OrderByDescending(g => g.Condition.Specificity())
-                    .FirstOrDefault(g => g.Condition.Matches(target));
+                    .FirstOrDefault(g => g.Condition.Matches(_world, target));
 
                 if (matchedGroup is null)
                     continue;
@@ -109,7 +111,7 @@ public class AbilityExecutionSystem
         }
     }
 
-    private void SendAbilityOutcomeMessage(Entity actor, AbilityRuntime ability, string key)
+    private void SendAbilityOutcomeMessage(EntityId actor, AbilityRuntime ability, string key)
     {
         if (key is null)
             return;

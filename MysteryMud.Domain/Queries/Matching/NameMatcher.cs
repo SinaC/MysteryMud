@@ -1,25 +1,24 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Domain.Components;
+﻿using MysteryMud.Domain.Components;
+using TinyECS;
 
 namespace MysteryMud.Domain.Queries.Matching;
 
 public static class NameMatcher
 {
-    public static bool Matches(Entity e, string query)
+    public static bool Matches(World world, EntityId entity, string query)
     {
-        if (!e.Has<Name>())
+        ref var name = ref world.TryGetRef<Name>(entity, out var hasName);
+        if (!hasName)
             return false;
-        var name = e.Get<Name>().Value;
-        return Matches(query, name);
+        return Matches(query, name.Value);
     }
 
-    public static bool Matches(Entity e, ReadOnlySpan<char> query)
+    public static bool Matches(World world, EntityId entity, ReadOnlySpan<char> query)
     {
-        if (!e.Has<Name>())
+        ref var name = ref world.TryGetRef<Name>(entity, out var hasName);
+        if (!hasName)
             return false;
-        var name = e.Get<Name>().Value;
-        return Matches(query, name);
+        return Matches(query, name.Value);
     }
 
     public static bool Matches(string query, string name)

@@ -1,11 +1,11 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 using MysteryMud.Core;
 
 namespace MysteryMud.Domain.Services;
 
 public interface IGroupService
 {
-    void AddMember(GameState state, Entity group, Entity member);
-    void RemoveMember(GameState state, Entity group, Entity member);
-    void Disband(GameState state, Entity group);
+    void AddMember(GameState state, EntityId group, EntityId member);
+    void RemoveMember(EntityId group, EntityId member);
+    void Disband(EntityId group);
 }

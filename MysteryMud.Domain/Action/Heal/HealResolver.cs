@@ -1,23 +1,26 @@
-﻿using Arch.Core.Extensions;
-using MysteryMud.Core;
+﻿using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Effects;
 using MysteryMud.Domain.Action.Attack.Resolvers;
 using MysteryMud.Domain.Action.Calculators;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Events;
+using TinyECS;
 
 namespace MysteryMud.Domain.Action.Heal;
 
 public class HealResolver : IHealResolver
 {
+    private readonly World _world;
     private readonly IAggroResolver _aggroResolver;
     private readonly IGameMessageService _msg;
     private readonly IEventBuffer<HealedEvent> _healed;
 
-    public HealResolver(IAggroResolver aggroResolver, IGameMessageService msg, IEventBuffer<HealedEvent> healed)
+    public HealResolver(World world, IAggroResolver aggroResolver, IGameMessageService msg, IEventBuffer<HealedEvent> healed)
     {
+        _world = world;
         _aggroResolver = aggroResolver;
         _msg = msg;
         _healed = healed;
@@ -28,10 +31,10 @@ public class HealResolver : IHealResolver
         var source = heal.Source;
         var target = heal.Target;
         var amount = heal.Amount;
-        if (!target.IsAlive() || target.Has<Dead>()) // already dead
+        if (!CharacterHelpers.IsAlive(_world, target)) // already dead
             return new HealResult { IsSuccess = false };
 
-        ref var health = ref target.TryGetRef<Health>(out var hasHealth);
+        ref var health = ref _world.TryGetRef<Health>(target, out var hasHealth);
         if (!hasHealth)
             return new HealResult { IsSuccess = false };
 
@@ -43,7 +46,7 @@ public class HealResolver : IHealResolver
             };
 
         // apply heal modifiers
-        decimal modifiedHeal = HealCalculator.ModifyHeal(target, amount, source);
+        decimal modifiedHeal = HealCalculator.ModifyHeal(target, source, amount);
         // cap to max health-current
         decimal maxPossibleHeal = health.Max - health.Current;
         decimal finalHeal = Math.Min(modifiedHeal, maxPossibleHeal);

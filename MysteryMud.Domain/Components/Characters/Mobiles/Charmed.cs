@@ -1,8 +1,8 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.Domain.Components.Characters.Mobiles;
 
 public struct Charmed
 {
-    public Entity Master;         // back-reference
+    public EntityId Master;         // back-reference
 }

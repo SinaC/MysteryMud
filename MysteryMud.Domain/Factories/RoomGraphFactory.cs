@@ -1,17 +1,16 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Domain.Components.Rooms;
+﻿using MysteryMud.Domain.Components.Rooms;
+using TinyECS;
 
 namespace MysteryMud.Domain.Factories;
 
 public static class RoomGraphFactory
 {
-    public static void BuildNeighborhood(Entity room)
+    public static void BuildNeighborhood(World world, EntityId room)
     {
-        ref var graph = ref room.Get<RoomGraph>();
+        ref var graph = ref world.Get<RoomGraph>(room);
 
-        var neighbors1 = new List<Entity>();
-        var neighbors2 = new List<Entity>();
+        var neighbors1 = new List<EntityId>();
+        var neighbors2 = new List<EntityId>();
 
         foreach (var exit in graph.Exits)
         {
@@ -20,13 +19,13 @@ public static class RoomGraphFactory
 
             neighbors1.Add(exit!.Value.TargetRoom);
 
-            ref var nextGraph = ref exit!.Value.TargetRoom.Get<RoomGraph>();
+            ref var nextGraph = ref world.Get<RoomGraph>(exit!.Value.TargetRoom);
 
             foreach (var nextExit in nextGraph.Exits)
                 neighbors2.Add(nextExit!.Value.TargetRoom);
         }
 
-        room.Set(new RoomNeighborhood
+        world.Set(room, new RoomNeighborhood
         {
             Distance1 = neighbors1,
             Distance2 = neighbors2

@@ -1,4 +1,4 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 using MysteryMud.Core.Bus;
 
 namespace MysteryMud.Domain.Services;
@@ -7,12 +7,13 @@ public class ActMessageBuilder : IActMessageBuilder
 {
     private readonly IMessageBus _messageBus;
     private readonly IActService _actService;
-    private readonly IEnumerable<Entity> _targets;
+    private readonly IEnumerable<EntityId> _targets;
     private readonly string _format;
 
-    public ActMessageBuilder(IMessageBus messageBus,
+    public ActMessageBuilder(
+        IMessageBus messageBus,
         IActService actService,
-        IEnumerable<Entity> targets,
+        IEnumerable<EntityId> targets,
         string format)
     {
         _targets = targets;

@@ -1,8 +1,8 @@
-﻿using Arch.Core;
+﻿using TinyECS;
 
 namespace MysteryMud.Domain.Components.Characters;
 
 public struct Dead
 {
-    public Entity Killer;
+    public EntityId Killer;
 }

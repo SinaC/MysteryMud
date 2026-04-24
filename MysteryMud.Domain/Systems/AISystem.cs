@@ -1,21 +1,31 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Core;
+﻿using MysteryMud.Core;
 using MysteryMud.Domain.Commands;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
+using TinyECS;
+using TinyECS.Extensions;
 
 namespace MysteryMud.Domain.Systems;
 
 public class AISystem
 {
+    private World _world;
+
+    public AISystem(World world)
+    {
+        _world = world;
+    }
+
+    private static readonly QueryDescription _autoCommandQueryDesc = new QueryDescription()
+        .WithAll<CommandBuffer, AutoCommand>();
+
     public void Execute(GameState state)
     {
         long now = state.CurrentTimeMs;
 
-        var query = new QueryDescription()
-            .WithAll<CommandBuffer, AutoCommand>();
-        state.World.Query(query, (Entity entity, ref CommandBuffer buffer, ref AutoCommand autoCommand) =>
+        _world.Query(_autoCommandQueryDesc, (EntityId entity,
+            ref CommandBuffer buffer,
+            ref AutoCommand autoCommand) =>
         {
             // Skip if AI tick rate not reached
             if (now - autoCommand.LastCommandTick < autoCommand.CommandTickRate)
@@ -37,15 +47,15 @@ public class AISystem
             }
 
             // Mark entity for processing
-            if (!entity.Has<HasCommandTag>())
-                entity.Add<HasCommandTag>();
+            if (!_world.Has<HasCommandTag>(entity))
+                _world.Add<HasCommandTag>(entity);
 
             // Update last AI tick
             autoCommand.LastCommandTick = now;
         });
     }
 
-    private IEnumerable<CommandRequest> DecideNextCommands(Entity npc, AutoCommand autoCommand)
+    private IEnumerable<CommandRequest> DecideNextCommands(EntityId npc, AutoCommand autoCommand)
     {
         // TODO
         //// Example: move or attack
