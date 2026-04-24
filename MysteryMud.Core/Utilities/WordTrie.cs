@@ -61,10 +61,16 @@ public class WordTrie<T>
         {
             var match = FindMatch(node, token, out bool ambiguous);
 
-            if (ambiguous || match == null)
+            if (ambiguous)
             {
                 value = default;
                 return StartsWithResult.Ambiguous;
+            }
+
+            if (match == null)
+            {
+                value = default;
+                return StartsWithResult.NotFound;
             }
 
             node = match;

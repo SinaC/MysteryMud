@@ -3,7 +3,7 @@ using MysteryMud.Domain.Components.Groups;
 using MysteryMud.Domain.Components.Rooms;
 using TinyECS;
 
-namespace MysteryMud.Domain.Formatters;
+namespace MysteryMud.Domain.Services;
 
 public static class ActTargetResolver
 {

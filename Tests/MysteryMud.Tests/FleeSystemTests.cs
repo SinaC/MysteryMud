@@ -1,61 +1,57 @@
-﻿using TinyECS;
-using Arch.Core.Extensions;
-using MysteryMud.Core.Random;
+﻿using MysteryMud.Core.Random;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
 using MysteryMud.Tests.Infrastructure;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using TinyECS;
 
 namespace MysteryMud.Tests;
 
 public class FleeSystemTests : IDisposable
 {
-    private readonly MudTestFixture _fixture;
+    private readonly MudTestFixture _f;
     private readonly TestEventBuffer<FleeBlockedEvent> _fleeBlockedEvents = new();
 
     public FleeSystemTests()
     {
-        _fixture = new MudTestFixture();
+        _f = new MudTestFixture();
     }
 
-    public void Dispose() => _fixture.Dispose();
+    public void Dispose() => _f.Dispose();
 
     private FleeSystem CreateSystem(IRandom random)
-        => new(random, _fixture.GameMessage, _fixture.Intents, _fixture.TestExperienceService, _fleeBlockedEvents);
+        => new(_f.World, random, _f.GameMessage, _f.Intents, _f.TestExperienceService, _fleeBlockedEvents);
 
     // Helpers
 
-    private (Entity player, Entity room) CreatePlayerInRoom()
+    private (EntityId player, EntityId room) CreatePlayerInRoom()
     {
-        var room = _fixture.Room().Build();
-        var player = _fixture.Player()
+        var room = _f.Room().Build();
+        var player = _f.Player()
             .WithLocation(room)
             .Build();
         return (player, room);
     }
 
-    private Entity CreateConnectedRoom(Entity fromRoom, DirectionKind direction)
+    private EntityId CreateConnectedRoom(EntityId fromRoom, DirectionKind direction)
     {
-        var toRoom = _fixture.Room().Build();
-        ref var graph = ref fromRoom.Get<RoomGraph>();
+        var toRoom = _f.Room().Build();
+        ref var graph = ref _f.World.Get<RoomGraph>(fromRoom);
         graph.Exits[direction] = new Exit { Direction = direction, TargetRoom = toRoom };
         return toRoom;
     }
 
-    private void PutInCombat(Entity attacker, Entity target)
+    private void PutInCombat(EntityId attacker, EntityId target)
     {
-        attacker.Add(new CombatState { Target = target });
-        target.Add(new CombatState { Target = attacker });
+        _f.World.Add(attacker, new CombatState { Target = target });
+        _f.World.Add(target, new CombatState { Target = attacker });
     }
 
-    private void QueueFlee(Entity entity, Entity fromRoom)
+    private void QueueFlee(EntityId entity, EntityId fromRoom)
     {
-        ref var flee = ref _fixture.Intents.Flee.Add();
+        ref var flee = ref _f.Intents.Flee.Add();
         flee.Entity = entity;
         flee.FromRoom = fromRoom;
     }
@@ -73,7 +69,7 @@ public class FleeSystemTests : IDisposable
         QueueFlee(player, room);
 
         var system = CreateSystem(new FixedRandom());
-        system.Tick(_fixture.State);
+        system.Tick(_f.State);
 
         var evt = Assert.Single(_fleeBlockedEvents);
         Assert.Equal(player, evt.Entity);
@@ -87,21 +83,21 @@ public class FleeSystemTests : IDisposable
         QueueFlee(player, room);
 
         var system = CreateSystem(new FixedRandom());
-        system.Tick(_fixture.State);
+        system.Tick(_f.State);
 
-        Assert.Empty(_fixture.Intents.Move.Span.ToArray());
+        Assert.Empty(_f.Intents.Move.Span.ToArray());
     }
 
     [Fact]
     public void Flee_NoExits_EmitsNoExitBlockedEvent()
     {
         var (player, room) = CreatePlayerInRoom();
-        var npc = _fixture.Npc().WithLocation(room).Build();
+        var npc = _f.Npc().WithLocation(room).Build();
         PutInCombat(player, npc);
         QueueFlee(player, room);
 
         var system = CreateSystem(new FixedRandom());
-        system.Tick(_fixture.State);
+        system.Tick(_f.State);
 
         var evt = Assert.Single(_fleeBlockedEvents);
         Assert.Equal(FleeBlockedReason.NoExit, evt.Reason);
@@ -111,21 +107,21 @@ public class FleeSystemTests : IDisposable
     public void Flee_NoExits_SendsPanicMessage()
     {
         var (player, room) = CreatePlayerInRoom();
-        var npc = _fixture.Npc().WithLocation(room).Build();
+        var npc = _f.Npc().WithLocation(room).Build();
         PutInCombat(player, npc);
         QueueFlee(player, room);
 
         var system = CreateSystem(new FixedRandom());
-        system.Tick(_fixture.State);
+        system.Tick(_f.State);
 
-        Assert.Contains(_fixture.GameMessage.GetMessagesFor(player), m => m.Contains("PANIC"));
+        Assert.Contains(_f.GameMessage.GetMessagesFor(player), m => m.Contains("PANIC"));
     }
 
     [Fact]
     public void Flee_AllAttemptsPickMissingDirection_EmitsFailedToFlee()
     {
         var (player, room) = CreatePlayerInRoom();
-        var npc = _fixture.Npc().WithLocation(room).Build();
+        var npc = _f.Npc().WithLocation(room).Build();
         PutInCombat(player, npc);
         QueueFlee(player, room);
 
@@ -134,7 +130,7 @@ public class FleeSystemTests : IDisposable
         var southPicks = Enumerable.Repeat(DirectionValue(DirectionKind.South), 6).ToArray();
 
         var system = CreateSystem(new FixedRandom(southPicks));
-        system.Tick(_fixture.State);
+        system.Tick(_f.State);
 
         var evt = Assert.Single(_fleeBlockedEvents);
         Assert.Equal(FleeBlockedReason.FailedToFlee, evt.Reason);
@@ -144,15 +140,15 @@ public class FleeSystemTests : IDisposable
     public void Flee_Success_EmitsMoveIntent()
     {
         var (player, room) = CreatePlayerInRoom();
-        var npc = _fixture.Npc().WithLocation(room).Build();
+        var npc = _f.Npc().WithLocation(room).Build();
         PutInCombat(player, npc);
         QueueFlee(player, room);
 
         var toRoom = CreateConnectedRoom(room, DirectionKind.North);
         var system = CreateSystem(new FixedRandom(DirectionValue(DirectionKind.North)));
-        system.Tick(_fixture.State);
+        system.Tick(_f.State);
 
-        var move = Assert.Single(_fixture.Intents.Move.Span.ToArray());
+        var move = Assert.Single(_f.Intents.Move.Span.ToArray());
         Assert.Equal(player, move.Actor);
         Assert.Equal(room, move.FromRoom);
         Assert.Equal(toRoom, move.ToRoom);
@@ -163,53 +159,53 @@ public class FleeSystemTests : IDisposable
     public void Flee_Success_RemovesPlayerFromCombat()
     {
         var (player, room) = CreatePlayerInRoom();
-        var npc = _fixture.Npc().WithLocation(room).Build();
+        var npc = _f.Npc().WithLocation(room).Build();
         PutInCombat(player, npc);
         QueueFlee(player, room);
 
         CreateConnectedRoom(room, DirectionKind.North);
         var system = CreateSystem(new FixedRandom(DirectionValue(DirectionKind.North)));
-        system.Tick(_fixture.State);
+        system.Tick(_f.State);
 
-        Assert.False(player.Has<CombatState>());
+        Assert.False(_f.World.Has<CombatState>(player));
     }
 
     [Fact]
     public void Flee_Success_GrantsNegativeExperience()
     {
         var (player, room) = CreatePlayerInRoom();
-        var npc = _fixture.Npc().WithLocation(room).Build();
+        var npc = _f.Npc().WithLocation(room).Build();
         PutInCombat(player, npc);
         QueueFlee(player, room);
 
         CreateConnectedRoom(room, DirectionKind.North);
         var system = CreateSystem(new FixedRandom(DirectionValue(DirectionKind.North)));
-        system.Tick(_fixture.State);
+        system.Tick(_f.State);
 
-        Assert.Equal(-10, _fixture.TestExperienceService.LastGranted);
+        Assert.Equal(-10, _f.TestExperienceService.LastGranted);
     }
 
     [Fact]
     public void Flee_Success_SendsFleeMessages()
     {
         var (player, room) = CreatePlayerInRoom();
-        var npc = _fixture.Npc().WithLocation(room).Build();
+        var npc = _f.Npc().WithLocation(room).Build();
         PutInCombat(player, npc);
         QueueFlee(player, room);
 
         CreateConnectedRoom(room, DirectionKind.North);
         var system = CreateSystem(new FixedRandom(DirectionValue(DirectionKind.North)));
-        system.Tick(_fixture.State);
+        system.Tick(_f.State);
 
-        Assert.Contains(_fixture.GameMessage.GetMessagesFor(player), m => m.Contains("flee"));
-        Assert.Contains(_fixture.GameMessage.GetMessagesFor(npc), m => m.Contains("fled"));
+        Assert.Contains(_f.GameMessage.GetMessagesFor(player), m => m.Contains("flee"));
+        Assert.Contains(_f.GameMessage.GetMessagesFor(npc), m => m.Contains("fled"));
     }
 
     [Fact]
     public void Flee_Success_FirstAttemptMisses_SecondSucceeds()
     {
         var (player, room) = CreatePlayerInRoom();
-        var npc = _fixture.Npc().WithLocation(room).Build();
+        var npc = _f.Npc().WithLocation(room).Build();
         PutInCombat(player, npc);
         QueueFlee(player, room);
 
@@ -218,9 +214,9 @@ public class FleeSystemTests : IDisposable
         var system = CreateSystem(new FixedRandom(
             DirectionValue(DirectionKind.South),
             DirectionValue(DirectionKind.North)));
-        system.Tick(_fixture.State);
+        system.Tick(_f.State);
 
-        var move = Assert.Single(_fixture.Intents.Move.Span.ToArray());
+        var move = Assert.Single(_f.Intents.Move.Span.ToArray());
         Assert.Equal(toRoom, move.ToRoom);
     }
 
@@ -228,9 +224,9 @@ public class FleeSystemTests : IDisposable
     public void Flee_NoFleeIntents_DoesNothing()
     {
         var system = CreateSystem(new FixedRandom());
-        system.Tick(_fixture.State); // should not throw
+        system.Tick(_f.State); // should not throw
 
         Assert.Empty(_fleeBlockedEvents);
-        Assert.Empty(_fixture.Intents.Move.Span.ToArray());
+        Assert.Empty(_f.Intents.Move.Span.ToArray());
     }
 }

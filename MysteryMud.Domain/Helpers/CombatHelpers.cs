@@ -63,7 +63,8 @@ public static class CombatHelpers
         // for anyone targeting this character:
         // only remove their CombatState, do NOT call RemoveFromCombat
         // which would wrongly wipe their entire threat table
-        world.Query(in _inCombatQueryDesc, (EntityId entity, ref CombatState combat) =>
+        world.Query(in _inCombatQueryDesc, (EntityId entity,
+            ref CombatState combat) =>
         {
             if (combat.Target == character)
             {
@@ -94,6 +95,12 @@ public static class CombatHelpers
 
     public static bool TryDetermineLootOwner(World world, EntityId victim, EntityId killer, out EntityId looter)
     {
+        if (killer == victim)
+        {
+            looter = EntityId.Invalid;
+            return false;
+        }
+
         if (world.Has<CombatInitiator>(victim))
         {
             ref var initiator = ref world.Get<CombatInitiator>(victim);

@@ -47,12 +47,12 @@ public class MoveResolver : IMoveResolver
 
         // we have to split sending to source and sending to room because source may not be in the same room
         if (source == target)
-            _msg.To(action.Source).Act("%gYou move yourself for {0} move.%x").With(moveToApply);
+            _msg.To(action.Source).Act("%gYou restore yourself for {0} move{0:x}.%x").With(moveToApply);
         else
         {
-            _msg.To(source).Act("%gYou move {0:n} for {1} move.%x").With(target, moveToApply);
-            _msg.To(target).Act("%g{0} move{0:v} you for {1} move.%x").With(source, moveToApply);
-            _msg.ToRoomExcept(target, source).Act("%y{0} move{0:v} {1} for {2} move.%x").With(source, target, moveToApply);
+            _msg.To(source).Act("%gYou restore {0:n} for {1} move{1:x}.%x").With(target, moveToApply);
+            _msg.To(target).Act("%g{0} restore{0:v} you for {1} move{1:x}.%x").With(source, moveToApply);
+            _msg.ToRoomExcept(target, source).Act("%y{0} restore{0:v} {1} for {2} move{1:x}.%x").With(source, target, moveToApply);
         }
 
         // apply move

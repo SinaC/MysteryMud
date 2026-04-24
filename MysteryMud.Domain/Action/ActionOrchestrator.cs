@@ -87,7 +87,7 @@ public class ActionOrchestrator
     {
         ref var attackData = ref actionIntent.Attack;
         var attackSource = attackData.Source;
-        var attackTarget = attackData.Source;
+        var attackTarget = attackData.Target;
 
         if (!CharacterHelpers.IsAlive(_world, attackSource, attackTarget))
             return;
@@ -139,7 +139,7 @@ public class ActionOrchestrator
     {
         ref var effectData = ref actionIntent.Effect;
         var effectSource = effectData.Source;
-        var effectTarget = effectData.Source;
+        var effectTarget = effectData.Target;
 
         if (!CharacterHelpers.IsAlive(_world, effectSource, effectTarget))
             return;

@@ -1,6 +1,4 @@
-﻿using TinyECS;
-using Arch.Core.Extensions;
-using MysteryMud.Domain.Components.Characters;
+﻿using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Systems;
@@ -17,7 +15,7 @@ public class AutoAssistSystemTests : IDisposable
 
     public AutoAssistSystemTests()
     {
-        _sut = new AutoAssistSystem(_f.RoomEnteredEvents);
+        _sut = new AutoAssistSystem(_f.World, _f.RoomEnteredEvents);
     }
 
     public void Dispose() => _f.Dispose();
@@ -35,13 +33,13 @@ public class AutoAssistSystemTests : IDisposable
         _f.AddGroupMembers(group, alice, bob);
 
         // orc attacks alice
-        alice.Add(new CombatState { Target = orc }); alice.Add<NewCombatantTag>();
-        orc.Add(new CombatState { Target = alice }); orc.Add<NewCombatantTag>();
+        _f.World.Add(alice, new CombatState { Target = orc }); _f.World.Add<NewCombatantTag>(alice);
+        _f.World.Add(orc, new CombatState { Target = alice }); _f.World.Add<NewCombatantTag>(orc);
 
         _sut.TickCombatInitiated(_f.State);
 
-        Assert.True(bob.Has<CombatState>());
-        Assert.Equal(orc, bob.Get<CombatState>().Target);
+        Assert.True(_f.World.Has<CombatState>(bob));
+        Assert.Equal(orc, _f.World.Get<CombatState>(bob).Target);
     }
 
     [Fact]
@@ -55,12 +53,12 @@ public class AutoAssistSystemTests : IDisposable
         var orc = _f.Npc("Orc").WithLocation(room).Build();
 
         _f.AddGroupMembers(group, alice, bob);
-        alice.Add(new CombatState { Target = orc }); alice.Add<NewCombatantTag>();
-        orc.Add(new CombatState { Target = alice }); orc.Add<NewCombatantTag>();
+        _f.World.Add(alice, new CombatState { Target = orc }); _f.World.Add<NewCombatantTag>(alice);
+        _f.World.Add(orc, new CombatState { Target = alice }); _f.World.Add<NewCombatantTag>(orc);
 
         _sut.TickCombatInitiated(_f.State);
 
-        Assert.False(bob.Has<CombatState>());
+        Assert.False(_f.World.Has<CombatState>(bob));
     }
 
     [Fact]
@@ -75,12 +73,12 @@ public class AutoAssistSystemTests : IDisposable
         var orc = _f.Npc("Orc").WithLocation(room1).Build();
 
         _f.AddGroupMembers(group, alice, bob);
-        alice.Add(new CombatState { Target = orc }); alice.Add<NewCombatantTag>();
-        orc.Add(new CombatState { Target = alice }); orc.Add<NewCombatantTag>();
+        _f.World.Add(alice, new CombatState { Target = orc }); _f.World.Add<NewCombatantTag>(alice);
+        _f.World.Add(orc, new CombatState { Target = alice }); _f.World.Add<NewCombatantTag>(orc);
 
         _sut.TickCombatInitiated(_f.State);
 
-        Assert.False(bob.Has<CombatState>());
+        Assert.False(_f.World.Has<CombatState>(bob));
     }
 
     [Fact]
@@ -91,16 +89,16 @@ public class AutoAssistSystemTests : IDisposable
         var bear = _f.Npc("Bear").WithLocation(room).Build();
         var orc = _f.Npc("Orc").WithLocation(room).Build();
 
-        alice.Add(new Charmies { Entities = [bear] });
-        bear.Add(new Charmed { Master = alice });
+        _f.World.Add(alice, new Charmies { Entities = [bear] }); 
+        _f.World.Add(bear, new Charmed { Master = alice });
 
-        alice.Add(new CombatState { Target = orc }); alice.Add<NewCombatantTag>();
-        orc.Add(new CombatState { Target = alice }); orc.Add<NewCombatantTag>();
+        _f.World.Add(alice, new CombatState { Target = orc }); _f.World.Add<NewCombatantTag>(alice);
+        _f.World.Add(orc, new CombatState { Target = alice }); _f.World.Add<NewCombatantTag>(orc);
 
         _sut.TickCombatInitiated(_f.State);
 
-        Assert.True(bear.Has<CombatState>());
-        Assert.Equal(orc, bear.Get<CombatState>().Target);
+        Assert.True(_f.World.Has<CombatState>(bear));
+        Assert.Equal(orc, _f.World.Get<CombatState>(bear).Target);
     }
 
     [Fact]
@@ -113,15 +111,15 @@ public class AutoAssistSystemTests : IDisposable
         var orc = _f.Npc("Orc").WithLocation(room).Build();
 
         // fight already in progress in the room
-        player.Add(new CombatState { Target = orc });
-        orc.Add(new CombatState { Target = player });
+        _f.World.Add(player, new CombatState { Target = orc });
+        _f.World.Add(orc, new CombatState { Target = player }); 
 
         // guard walks in
         _f.RoomEnteredEvents.Add(new RoomEnteredEvent { Entity = guard, ToRoom = room });
 
         _sut.TickMovement(_f.State);
 
-        Assert.True(guard.Has<CombatState>());
-        Assert.Equal(orc, guard.Get<CombatState>().Target);
+        Assert.True(_f.World.Has<CombatState>(guard));
+        Assert.Equal(orc, _f.World.Get<CombatState>(guard).Target);
     }
 }

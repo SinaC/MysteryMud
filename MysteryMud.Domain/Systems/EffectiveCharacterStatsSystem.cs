@@ -23,9 +23,23 @@ public class EffectiveCharacterStatsSystem
         _world = world;
     }
 
+    // TODO: redo when query with 5 components are back
+    //private static readonly QueryDescription _hasDirtyStatsQueryDesc = new QueryDescription()
+    //    .WithAll<BaseStats, EffectiveStats, DirtyStats, CharacterEffects, Equipment>()
+    //    .WithNone<Dead>();
+
+    //public void Tick(GameState state)
+    //{
+    //    _world.Query(_hasDirtyStatsQueryDesc, (EntityId character,
+    //         ref BaseStats baseStats,
+    //         ref EffectiveStats effectiveStats,
+    //         ref DirtyStats _,
+    //         ref CharacterEffects characterEffects,
+    //         ref Equipment equipment) =>
+    //    {
     private static readonly QueryDescription _hasDirtyStatsQueryDesc = new QueryDescription()
-        .WithAll<BaseStats, EffectiveStats, DirtyStats, CharacterEffects, Equipment>()
-        .WithNone<Dead>();
+       .WithAll<BaseStats, EffectiveStats, DirtyStats, CharacterEffects>()
+       .WithNone<Dead>();
 
     public void Tick(GameState state)
     {
@@ -33,9 +47,10 @@ public class EffectiveCharacterStatsSystem
              ref BaseStats baseStats,
              ref EffectiveStats effectiveStats,
              ref DirtyStats _,
-             ref CharacterEffects characterEffects,
-             ref Equipment equipment) =>
+             ref CharacterEffects characterEffects) =>
         {
+            ref var equipment = ref _world.Get<Equipment>(character);
+
             // accumulators indexed by stat — stack alloc, no heap pressure
             var statCount = _allStats.Length;
             Span<decimal> flat = stackalloc decimal[statCount];

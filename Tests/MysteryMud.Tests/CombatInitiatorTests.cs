@@ -1,6 +1,4 @@
-﻿using TinyECS;
-using Arch.Core.Extensions;
-using MysteryMud.Core;
+﻿using MysteryMud.Core;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Helpers;
@@ -8,6 +6,7 @@ using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Intents;
 using MysteryMud.Tests.Infrastructure;
+using TinyECS;
 
 namespace MysteryMud.Tests;
 
@@ -19,7 +18,7 @@ public class CombatInitiatorTests : IDisposable
     public CombatInitiatorTests()
     {
         // wire up systems with test doubles
-        _lootSystem = new LootSystem(_f.GameMessage, _f.Intents, _f.ItemLootedEvents);
+        _lootSystem = new LootSystem(_f.World, _f.GameMessage, _f.Intents, _f.ItemLootedEvents);
     }
 
     public void Dispose() => _f.Dispose();
@@ -37,9 +36,9 @@ public class CombatInitiatorTests : IDisposable
 
         SetInitiator(npc, alice);
 
-        Assert.True(npc.Has<CombatInitiator>());
-        Assert.Equal(alice, npc.Get<CombatInitiator>().Claims[0].Claimant);
-        Assert.False(npc.Get<CombatInitiator>().Claims[0].Forfeited);
+        Assert.True(_f.World.Has<CombatInitiator>(npc));
+        Assert.Equal(alice, _f.World.Get<CombatInitiator>(npc).Claims[0].Claimant);
+        Assert.False(_f.World.Get<CombatInitiator>(npc).Claims[0].Forfeited);
     }
 
     [Fact]
@@ -53,7 +52,7 @@ public class CombatInitiatorTests : IDisposable
         SetInitiator(npc, alice, tick: 1);
         AddClaim(npc, bob, tick: 5);
 
-        ref var initiator = ref npc.Get<CombatInitiator>();
+        ref var initiator = ref _f.World.Get<CombatInitiator>(npc);
         Assert.Equal(2, initiator.Claims.Count);
         Assert.Equal(alice, initiator.Claims[0].Claimant); // alice still first
         Assert.Equal(bob, initiator.Claims[1].Claimant);
@@ -69,7 +68,7 @@ public class CombatInitiatorTests : IDisposable
         SetInitiator(npc, alice, tick: 1);
         AddClaim(npc, alice, tick: 5); // same player again
 
-        Assert.Single(npc.Get<CombatInitiator>().Claims);
+        Assert.Single(_f.World.Get<CombatInitiator>(npc).Claims);
     }
 
     [Fact]
@@ -81,7 +80,7 @@ public class CombatInitiatorTests : IDisposable
 
         SetInitiator(orc, guard, tick: 1); // NPC attacking NPC
 
-        Assert.False(orc.Has<CombatInitiator>()); // no claim added
+        Assert.False(_f.World.Has<CombatInitiator>(orc)); // no claim added
     }
 
     // -------------------------------------------------------------------------
@@ -98,7 +97,7 @@ public class CombatInitiatorTests : IDisposable
         var bob = _f.Player("Bob").WithLocation(room).WithAutoLoot().Build();
 
         // alice initiated but died (forfeited), bob second
-        corpse.Add(new CombatInitiator
+        _f.World.Add(corpse, new CombatInitiator
         {
             Claims =
             [
@@ -111,13 +110,13 @@ public class CombatInitiatorTests : IDisposable
         {
             Corpse = corpse,
             LootOwner = bob,
-            LootOwnerGroup = Entity.Null
+            LootOwnerGroup = EntityId.Invalid
         };
 
         _lootSystem.Tick(_f.State);
 
-        Assert.Contains(sword, bob.Get<Inventory>().Items);
-        Assert.DoesNotContain(sword, alice.Get<Inventory>().Items);
+        Assert.Contains(sword, _f.World.Get<Inventory>(bob).Items);
+        Assert.DoesNotContain(sword, _f.World.Get<Inventory>(alice).Items);
     }
 
     [Fact]
@@ -130,7 +129,7 @@ public class CombatInitiatorTests : IDisposable
         var bob = _f.Player("Bob").WithLocation(room).WithAutoLoot().Build();
 
         // alice initiated but died, no other claimants
-        corpse.Add(new CombatInitiator
+        _f.World.Add(corpse, new CombatInitiator
         {
             Claims =
             [
@@ -142,12 +141,12 @@ public class CombatInitiatorTests : IDisposable
         {
             Corpse = corpse,
             LootOwner = bob,
-            LootOwnerGroup = Entity.Null
+            LootOwnerGroup = EntityId.Invalid
         };
 
         _lootSystem.Tick(_f.State);
 
-        Assert.Contains(sword, bob.Get<Inventory>().Items); // falls back to killer
+        Assert.Contains(sword, _f.World.Get<Inventory>(bob).Items); // falls back to killer
     }
 
     // -------------------------------------------------------------------------
@@ -168,7 +167,7 @@ public class CombatInitiatorTests : IDisposable
         // alice flees — forfeit her claim
         ForfeitClaim(npc, alice);
 
-        ref var initiator = ref npc.Get<CombatInitiator>();
+        ref var initiator = ref _f.World.Get<CombatInitiator>(npc);
         Assert.True(initiator.Claims[0].Forfeited);   // alice forfeited
         Assert.False(initiator.Claims[1].Forfeited);  // bob still valid
     }
@@ -182,7 +181,7 @@ public class CombatInitiatorTests : IDisposable
         var alice = _f.Player("Alice").WithLocation(room).WithAutoLoot().Build();
         var bob = _f.Player("Bob").WithLocation(room).WithAutoLoot().Build();
 
-        corpse.Add(new CombatInitiator
+        _f.World.Add(corpse,  new CombatInitiator
         {
             Claims =
             [
@@ -195,12 +194,12 @@ public class CombatInitiatorTests : IDisposable
         {
             Corpse = corpse,
             LootOwner = bob,
-            LootOwnerGroup = Entity.Null
+            LootOwnerGroup = EntityId.Invalid
         };
 
         _lootSystem.Tick(_f.State);
 
-        Assert.Contains(sword, bob.Get<Inventory>().Items);
+        Assert.Contains(sword, _f.World.Get<Inventory>(bob).Items);
     }
 
     // -------------------------------------------------------------------------
@@ -220,7 +219,7 @@ public class CombatInitiatorTests : IDisposable
 
         PeaceRoom(_f.State, room);
 
-        Assert.False(npc.Has<CombatInitiator>());
+        Assert.False(_f.World.Has<CombatInitiator>(npc));
     }
 
     [Fact]
@@ -242,12 +241,12 @@ public class CombatInitiatorTests : IDisposable
         {
             Corpse = corpse,
             LootOwner = charlie,
-            LootOwnerGroup = Entity.Null
+            LootOwnerGroup = EntityId.Invalid
         };
 
         _lootSystem.Tick(_f.State);
 
-        Assert.Contains(sword, charlie.Get<Inventory>().Items);
+        Assert.Contains(sword, _f.World.Get<Inventory>(charlie).Items);
     }
 
     // -------------------------------------------------------------------------
@@ -270,7 +269,7 @@ public class CombatInitiatorTests : IDisposable
         // tick 10: NPC kills A -> alice forfeited
         // tick 12: C joins
         // tick 15: B kills NPC
-        corpse.Add(new CombatInitiator
+        _f.World.Add(corpse, new CombatInitiator
         {
             Claims =
             [
@@ -284,14 +283,14 @@ public class CombatInitiatorTests : IDisposable
         {
             Corpse = corpse,
             LootOwner = bob,
-            LootOwnerGroup = Entity.Null
+            LootOwnerGroup = EntityId.Invalid
         };
 
         _lootSystem.Tick(_f.State);
 
-        Assert.Contains(sword, bob.Get<Inventory>().Items);     // bob gets it — first non-forfeited
-        Assert.DoesNotContain(sword, alice.Get<Inventory>().Items);
-        Assert.DoesNotContain(sword, charlie.Get<Inventory>().Items);
+        Assert.Contains(sword, _f.World.Get<Inventory>(bob).Items);     // bob gets it — first non-forfeited
+        Assert.DoesNotContain(sword, _f.World.Get<Inventory>(alice).Items);
+        Assert.DoesNotContain(sword, _f.World.Get<Inventory>(charlie).Items);
     }
 
     // -------------------------------------------------------------------------
@@ -311,37 +310,37 @@ public class CombatInitiatorTests : IDisposable
         {
             Corpse = corpse,
             LootOwner = bob,
-            LootOwnerGroup = Entity.Null
+            LootOwnerGroup = EntityId.Invalid
         };
 
         _lootSystem.Tick(_f.State);
 
-        Assert.Contains(sword, bob.Get<Inventory>().Items);
+        Assert.Contains(sword, _f.World.Get<Inventory>(bob).Items);
     }
 
     // -------------------------------------------------------------------------
     // Helpers — mirror what the real systems would do
     // -------------------------------------------------------------------------
 
-    private static void SetInitiator(Entity npc, Entity claimant, int tick = 0)
+    private void SetInitiator(EntityId npc, EntityId claimant, int tick = 0)
     {
-        CombatHelpers.AddCombatClaim(npc, claimant, tick);
+        CombatHelpers.AddCombatClaim(_f.World, _f.State, npc, claimant);
     }
 
-    private static void AddClaim(Entity npc, Entity claimant, int tick)
+    private void AddClaim(EntityId npc, EntityId claimant, int tick)
         => SetInitiator(npc, claimant, tick); // same logic, named for readability
 
-    private static void ForfeitClaim(Entity npc, Entity claimant)
+    private void ForfeitClaim(EntityId npc, EntityId claimant)
     {
-        CombatHelpers.ForfeitClaim(npc, claimant);
+        CombatHelpers.ForfeitClaim(_f.World, npc, claimant);
     }
 
-    private static void PeaceRoom(GameState state, Entity room)
+    private void PeaceRoom(GameState state, EntityId room)
     {
-        ref var contents = ref room.Get<RoomContents>();
+        ref var contents = ref _f.World.Get<RoomContents>(room);
         foreach (var character in contents.Characters)
         {
-            CombatHelpers.RemoveFromCombat(state, character);
+            CombatHelpers.RemoveFromCombat(_f.World, state, character);
         }
     }
 }

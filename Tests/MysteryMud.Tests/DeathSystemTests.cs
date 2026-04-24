@@ -1,5 +1,4 @@
-﻿using TinyECS;
-using Arch.Core.Extensions;
+﻿using MysteryMud.Core;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.Domain.Components.Items;
@@ -9,6 +8,7 @@ using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Events;
 using MysteryMud.Infrastructure.Persistence;
 using MysteryMud.Tests.Infrastructure;
+using TinyECS;
 
 namespace MysteryMud.Tests;
 
@@ -22,6 +22,7 @@ public class DeathSystemTests : IDisposable
     {
         var dirtyTracker = new DirtyTracker();
         _sut = new DeathSystem(
+            _f.World,
             _followService,
             dirtyTracker,
             _f.Intents,
@@ -37,12 +38,12 @@ public class DeathSystemTests : IDisposable
     {
         var room = _f.Room().Build();
         var alice = _f.Player("Alice").WithLocation(room).Build();
-        alice.Add<Casting>();
+        _f.World.Add<Casting>(alice);
 
-        _f.DeathEvents.Add() = new DeathEvent { Victim = alice, Killer = Entity.Null };
+        _f.DeathEvents.Add() = new DeathEvent { Victim = alice, Killer = EntityId.Invalid };
         _sut.Tick(_f.State);
 
-        Assert.False(alice.Has<Casting>());
+        Assert.False(_f.World.Has<Casting>(alice));
     }
 
     // -------------------------------------------------------------------------
@@ -57,9 +58,9 @@ public class DeathSystemTests : IDisposable
         var bob = _f.Player("Bob").WithLocation(room)
                       .With(new Following { Leader = alice })
                       .Build();
-        alice.Add(new Followers { Entities = [bob] });
+        _f.World.Add(alice, new Followers { Entities = [bob] });
 
-        _f.DeathEvents.Add() = new DeathEvent { Victim = bob, Killer = Entity.Null };
+        _f.DeathEvents.Add() = new DeathEvent { Victim = bob, Killer = EntityId.Invalid };
         _sut.Tick(_f.State);
 
         Assert.Contains(bob, _followService.StopFollowingCalled);
@@ -76,9 +77,9 @@ public class DeathSystemTests : IDisposable
         var carol = _f.Player("Carol").WithLocation(room)
                       .With(new Following { Leader = alice })
                       .Build();
-        alice.Add(new Followers { Entities = [bob, carol] });
+        _f.World.Add(alice, new Followers { Entities = [bob, carol] });
 
-        _f.DeathEvents.Add() = new DeathEvent { Victim = alice, Killer = Entity.Null };
+        _f.DeathEvents.Add() = new DeathEvent { Victim = alice, Killer = EntityId.Invalid };
         _sut.Tick(_f.State);
 
         Assert.Contains(alice, _followService.StopAllFollowersCalled);
@@ -94,14 +95,14 @@ public class DeathSystemTests : IDisposable
         var room = _f.Room().Build();
         var alice = _f.Player("Alice").WithLocation(room).Build();
         var orc = _f.Npc("Orc").WithLocation(room).Build();
-        alice.Add(new CombatState { Target = orc });
-        orc.Add(new CombatState { Target = alice });
+        _f.World.Add(alice, new CombatState { Target = orc });
+        _f.World.Add(orc, new CombatState { Target = alice });
 
         _f.DeathEvents.Add() = new DeathEvent { Victim = alice, Killer = orc };
         _sut.Tick(_f.State);
 
-        Assert.False(alice.Has<CombatState>());
-        Assert.False(orc.Has<CombatState>()); // orc no longer targeting dead alice
+        Assert.False(_f.World.Has<CombatState>(alice));
+        Assert.False(_f.World.Has<CombatState>(orc)); // orc no longer targeting dead alice
     }
 
     [Fact]
@@ -110,19 +111,19 @@ public class DeathSystemTests : IDisposable
         var room = _f.Room().Build();
         var alice = _f.Player("Alice").WithLocation(room).Build();
         var orc1 = _f.Npc("Orc1").WithLocation(room)
-                      .With(new ThreatTable { Threat = new Dictionary<Entity, long> { [alice] = 100 } })
+                      .With(new ThreatTable { Threat = new Dictionary<EntityId, long> { [alice] = 100 } })
                       .Build();
         var orc2 = _f.Npc("Orc2").WithLocation(room)
-                      .With(new ThreatTable { Threat = new Dictionary<Entity, long> { [alice] = 50 } })
+                      .With(new ThreatTable { Threat = new Dictionary<EntityId, long> { [alice] = 50 } })
                       .Build();
-        orc1.Add<ActiveThreatTag>();
-        orc2.Add<ActiveThreatTag>();
+        _f.World.Add<ActiveThreatTag>(orc1);
+        _f.World.Add<ActiveThreatTag>(orc2);
 
         _f.DeathEvents.Add() = new DeathEvent { Victim = alice, Killer = orc1 };
         _sut.Tick(_f.State);
 
-        Assert.False(orc1.Get<ThreatTable>().Threat.ContainsKey(alice));
-        Assert.False(orc2.Get<ThreatTable>().Threat.ContainsKey(alice));
+        Assert.False(_f.World.Get<ThreatTable>(orc1).Threat.ContainsKey(alice));
+        Assert.False(_f.World.Get<ThreatTable>(orc2).Threat.ContainsKey(alice));
     }
 
     [Fact]
@@ -131,16 +132,16 @@ public class DeathSystemTests : IDisposable
         var room = _f.Room().Build();
         var alice = _f.Player("Alice").WithLocation(room).Build();
         var orc = _f.Npc("Orc").WithLocation(room)
-                      .With(new ThreatTable { Threat = new Dictionary<Entity, long> { [alice] = 100 } })
+                      .With(new ThreatTable { Threat = new Dictionary<EntityId, long> { [alice] = 100 } })
                       .Build();
-        orc.Add<ActiveThreatTag>();
+        _f.World.Add<ActiveThreatTag>(orc);
 
         _f.DeathEvents.Add() = new DeathEvent { Victim = orc, Killer = alice };
         _sut.Tick(_f.State);
 
         // orc's own threat table cleared by RemoveFromCombat
-        Assert.Empty(orc.Get<ThreatTable>().Threat);
-        Assert.False(orc.Has<ActiveThreatTag>());
+        Assert.Empty(_f.World.Get<ThreatTable>(orc).Threat);
+        Assert.False(_f.World.Has<ActiveThreatTag>(orc));
     }
 
     [Fact]
@@ -149,20 +150,20 @@ public class DeathSystemTests : IDisposable
         var room = _f.Room().Build();
         var alice = _f.Player("Alice").WithLocation(room).Build();
         var orc1 = _f.Npc("Orc1").WithLocation(room)
-                      .With(new ThreatTable { Threat = new Dictionary<Entity, long> { [alice] = 100 } })
+                      .With(new ThreatTable { Threat = new Dictionary<EntityId, long> { [alice] = 100 } })
                       .Build();
         var orc2 = _f.Npc("Orc2").WithLocation(room)
-                      .With(new ThreatTable { Threat = new Dictionary<Entity, long> { [alice] = 50 } })
+                      .With(new ThreatTable { Threat = new Dictionary<EntityId, long> { [alice] = 50 } })
                       .Build();
-        orc1.Add<ActiveThreatTag>();
-        orc2.Add<ActiveThreatTag>();
+        _f.World.Add<ActiveThreatTag>(orc1);
+        _f.World.Add<ActiveThreatTag>(orc2);
 
         _f.DeathEvents.Add() = new DeathEvent { Victim = alice, Killer = orc1 };
         _sut.Tick(_f.State);
 
         // alice removed from other NPCs' threat tables by RemoveFromAllThreatTable
-        Assert.False(orc1.Get<ThreatTable>().Threat.ContainsKey(alice));
-        Assert.False(orc2.Get<ThreatTable>().Threat.ContainsKey(alice));
+        Assert.False(_f.World.Get<ThreatTable>(orc1).Threat.ContainsKey(alice));
+        Assert.False(_f.World.Get<ThreatTable>(orc2).Threat.ContainsKey(alice));
     }
 
     [Fact]
@@ -171,14 +172,14 @@ public class DeathSystemTests : IDisposable
         var room = _f.Room().Build();
         var alice = _f.Player("Alice").WithLocation(room).Build();
         var orc = _f.Npc("Orc").WithLocation(room).Build();
-        orc.Add(new CombatInitiator { Claims = [] }); // orc had initiator component
-        orc.Add(new CombatState { Target = alice });
+        _f.World.Add(orc, new CombatInitiator { Claims = [] }); // orc had initiator component
+        _f.World.Add(orc, new CombatState { Target = alice });
 
         _f.DeathEvents.Add() = new DeathEvent { Victim = orc, Killer = alice };
         _sut.Tick(_f.State);
 
         // RemoveFromCombat removes CombatInitiator
-        Assert.False(orc.Has<CombatInitiator>());
+        Assert.False(_f.World.Has<CombatInitiator>(orc));
     }
 
     [Fact]
@@ -187,14 +188,14 @@ public class DeathSystemTests : IDisposable
         var room = _f.Room().Build();
         var alice = _f.Player("Alice").WithLocation(room).Build();
         var orc = _f.Npc("Orc").WithLocation(room).Build();
-        alice.Add(new CombatState { Target = orc });
-        alice.Add<NewCombatantTag>();
+        _f.World.Add(alice,new CombatState { Target = orc });
+        _f.World.Add<NewCombatantTag>(alice);
 
         _f.DeathEvents.Add() = new DeathEvent { Victim = alice, Killer = orc };
         _sut.Tick(_f.State);
 
-        Assert.False(alice.Has<NewCombatantTag>());
-        Assert.False(alice.Has<CombatState>());
+        Assert.False(_f.World.Has<NewCombatantTag>(alice));
+        Assert.False(_f.World.Has<CombatState>(alice));
     }
 
     // -------------------------------------------------------------------------
@@ -208,14 +209,14 @@ public class DeathSystemTests : IDisposable
         var alice = _f.Player("Alice").WithLocation(room).Build();
         var orc1 = _f.Npc("Orc1").WithLocation(room).Build();
         var orc2 = _f.Npc("Orc2").WithLocation(room).Build();
-        CombatHelpers.AddCombatClaim(orc1, alice, _f.State.CurrentTick);
-        CombatHelpers.AddCombatClaim(orc2, alice, _f.State.CurrentTick);
+        CombatHelpers.AddCombatClaim(_f.World, _f.State, orc1, alice);
+        CombatHelpers.AddCombatClaim(_f.World, _f.State, orc2, alice);
 
         _f.DeathEvents.Add() = new DeathEvent { Victim = alice, Killer = orc1 };
         _sut.Tick(_f.State);
 
-        Assert.True(orc1.Get<CombatInitiator>().Claims[0].Forfeited);
-        Assert.True(orc2.Get<CombatInitiator>().Claims[0].Forfeited);
+        Assert.True(_f.World.Get<CombatInitiator>(orc1).Claims[0].Forfeited);
+        Assert.True(_f.World.Get<CombatInitiator>(orc2).Claims[0].Forfeited);
     }
 
     [Fact]
@@ -224,7 +225,7 @@ public class DeathSystemTests : IDisposable
         var room = _f.Room().Build();
         var alice = _f.Player("Alice").WithLocation(room).Build();
         var orc = _f.Npc("Orc").WithLocation(room).Build();
-        CombatHelpers.AddCombatClaim(orc, alice, _f.State.CurrentTick);
+        CombatHelpers.AddCombatClaim(_f.World, _f.State, orc, alice);
 
         // orc dies — killed by someone else
         var bob = _f.Player("Bob").WithLocation(room).Build();
@@ -243,7 +244,7 @@ public class DeathSystemTests : IDisposable
         var alice = _f.Player("Alice").WithLocation(room).Build();
 
         // environmental death — no killer, no initiator
-        _f.DeathEvents.Add() = new DeathEvent { Victim = alice, Killer = Entity.Null };
+        _f.DeathEvents.Add() = new DeathEvent { Victim = alice, Killer = EntityId.Invalid };
         _sut.Tick(_f.State);
 
         Assert.Equal(0, _f.Intents.CorpseLoot.Count);
@@ -255,10 +256,10 @@ public class DeathSystemTests : IDisposable
         var room = _f.Room().Build();
         var alice = _f.Player("Alice").WithLocation(room).Build();
         var orc = _f.Npc("Orc").WithLocation(room).Build();
-        CombatHelpers.AddCombatClaim(orc, alice, _f.State.CurrentTick);
+        CombatHelpers.AddCombatClaim(_f.World, _f.State, orc, alice);
 
         // orc dies environmentally — no killer but alice had initiated
-        _f.DeathEvents.Add() = new DeathEvent { Victim = orc, Killer = Entity.Null };
+        _f.DeathEvents.Add() = new DeathEvent { Victim = orc, Killer = EntityId.Invalid };
         _sut.Tick(_f.State);
 
         Assert.Equal(1, _f.Intents.CorpseLoot.Count);
@@ -277,7 +278,7 @@ public class DeathSystemTests : IDisposable
         var orc = _f.Npc("Orc").WithLocation(room)
                       .With(new Inventory { Items = [sword] })
                       .Build();
-        sword.Add(new ContainedIn { Character = orc });
+        _f.World.Add(sword, new ContainedIn { Character = orc });
         var bob = _f.Player("Bob").WithLocation(room).Build();
 
         _f.DeathEvents.Add() = new DeathEvent { Victim = orc, Killer = bob }; // killer must be a player to generate a loot intent
@@ -285,8 +286,8 @@ public class DeathSystemTests : IDisposable
 
         Assert.True(_f.Intents.CorpseLoot.Count > 0);
         var lootIntent = _f.Intents.CorpseLoot.Span[0];
-        Assert.True(lootIntent.Corpse.IsAlive());
-        Assert.True(lootIntent.Corpse.Has<ContainerContents>());
+        Assert.True(_f.World.IsAlive(lootIntent.Corpse));
+        Assert.True(_f.World.Has<ContainerContents>(lootIntent.Corpse));
     }
 
     [Fact]
@@ -297,15 +298,15 @@ public class DeathSystemTests : IDisposable
         var orc = _f.Npc("Orc").WithLocation(room)
                        .With(new Inventory { Items = [sword] })
                        .Build();
-        sword.Add(new ContainedIn { Character = orc });
+        _f.World.Add(sword, new ContainedIn { Character = orc });
         var bob = _f.Player("Bob").WithLocation(room).Build();
 
         _f.DeathEvents.Add() = new DeathEvent { Victim = orc, Killer = bob }; // killer must be a player to generate a loot intent
         _sut.Tick(_f.State);
 
         var corpse = _f.Intents.CorpseLoot.Span[0].Corpse;
-        Assert.Contains(sword, corpse.Get<ContainerContents>().Items);
-        Assert.Empty(bob.Get<Inventory>().Items);
+        Assert.Contains(sword, _f.World.Get<ContainerContents>(corpse).Items);
+        Assert.Empty(_f.World.Get<Inventory>(bob).Items);
     }
 
     [Fact]
@@ -345,8 +346,8 @@ public class DeathSystemTests : IDisposable
         var alice = _f.Player("Alice").WithLocation(room).Build();
         var bob = _f.Player("Bob").WithLocation(room).Build();
         var orc = _f.Npc("Orc").WithLocation(room).Build();
-        CombatHelpers.AddCombatClaim(orc, alice, currentTick: 1);
-        CombatHelpers.AddCombatClaim(orc, bob, currentTick: 5);
+        CombatHelpers.AddCombatClaim(_f.World, new GameState { CurrentTick = 1, CurrentTimeMs = 1 }, orc, alice);
+        CombatHelpers.AddCombatClaim(_f.World, new GameState { CurrentTick = 5, CurrentTimeMs = 5 }, orc, bob);
 
         // bob delivers killing blow
         _f.DeathEvents.Add() = new DeathEvent { Victim = orc, Killer = bob };
@@ -364,9 +365,9 @@ public class DeathSystemTests : IDisposable
         var bob = _f.Player("Bob").WithLocation(room).Build();
         var orc = _f.Npc("Orc").WithLocation(room).Build();
 
-        CombatHelpers.AddCombatClaim(orc, alice, currentTick: 1);
+        CombatHelpers.AddCombatClaim(_f.World, _f.State, orc, alice);
         // alice died — forfeit her claim
-        CombatHelpers.ForfeitClaim(orc, alice);
+        CombatHelpers.ForfeitClaim(_f.World, orc, alice);
 
         _f.DeathEvents.Add() = new DeathEvent { Victim = orc, Killer = bob };
         _sut.Tick(_f.State);
@@ -383,7 +384,7 @@ public class DeathSystemTests : IDisposable
         var alice = _f.Player("Alice").WithLocation(room).InGroup(group).Build();
         var orc = _f.Npc("Orc").WithLocation(room).Build();
         _f.AddGroupMembers(group, alice);
-        CombatHelpers.AddCombatClaim(orc, alice, currentTick: 1);
+        CombatHelpers.AddCombatClaim(_f.World, _f.State, orc, alice);
 
         _f.DeathEvents.Add() = new DeathEvent { Victim = orc, Killer = alice };
         _sut.Tick(_f.State);
@@ -406,22 +407,22 @@ public class DeathSystemTests : IDisposable
         var orc = _f.Npc("Orc").WithLocation(room)
                       .With(new ThreatTable
                       {
-                          Threat = new Dictionary<Entity, long>
+                          Threat = new Dictionary<EntityId, long>
                           {
                               [alice] = 100,
                               [bob] = 50   // orc also has threat on bob
                           }
                       })
                       .Build();
-        orc.Add<ActiveThreatTag>();
-        orc.Add(new CombatState { Target = alice });
+        _f.World.Add<ActiveThreatTag>(orc);
+        _f.World.Add(orc, new CombatState { Target = alice });
 
-        CombatHelpers.RemoveFromAllCombat(_f.State, alice);
+        CombatHelpers.RemoveFromAllCombat(_f.World, _f.State, alice);
 
         // orc's threat on bob must survive — only alice's entry should be removed separately
-        Assert.False(orc.Has<CombatState>());
-        Assert.True(orc.Get<ThreatTable>().Threat.ContainsKey(bob));  // bob's threat intact
-        Assert.Equal(50, orc.Get<ThreatTable>().Threat[bob]);
+        Assert.False(_f.World.Has<CombatState>(orc));
+        Assert.True(_f.World.Get<ThreatTable>(orc).Threat.ContainsKey(bob));  // bob's threat intact
+        Assert.Equal(50, _f.World.Get<ThreatTable>(orc).Threat[bob]);
     }
 }
 
@@ -431,14 +432,14 @@ public class DeathSystemTests : IDisposable
 
 internal class TestFollowService : IFollowService
 {
-    public HashSet<Entity> StopFollowingCalled { get; } = [];
-    public HashSet<Entity> StopAllFollowersCalled { get; } = [];
+    public HashSet<EntityId> StopFollowingCalled { get; } = [];
+    public HashSet<EntityId> StopAllFollowersCalled { get; } = [];
 
-    public void Follow(Entity follower, Entity leader) { }
+    public void Follow(EntityId follower, EntityId leader) { }
 
-    public void StopFollowing(Entity follower)
+    public void StopFollowing(EntityId follower)
         => StopFollowingCalled.Add(follower);
 
-    public void StopAllFollowers(Entity leader)
+    public void StopAllFollowers(EntityId leader)
         => StopAllFollowersCalled.Add(leader);
 }

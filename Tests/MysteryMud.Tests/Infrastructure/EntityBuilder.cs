@@ -1,12 +1,11 @@
-﻿using TinyECS;
-using Arch.Core.Extensions;
-using MysteryMud.Domain.Components;
+﻿using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.GameData.Enums;
+using TinyECS;
 
 namespace MysteryMud.Tests.Infrastructure;
 
@@ -35,7 +34,7 @@ internal class EntityBuilder
         => With(new Level { Value = level });
     public EntityBuilder WithHealth(int current, int max) 
         => With(new Health { Current = current, Max = max });
-    public EntityBuilder WithLocation(Entity room)
+    public EntityBuilder WithLocation(EntityId room)
      => With(new Location { Room = room });
     public EntityBuilder WithAutoAssist()
         => WithAuto(AutoFlags.Assist);
@@ -43,9 +42,9 @@ internal class EntityBuilder
         => WithAuto(AutoFlags.Loot);
     public EntityBuilder WithNpcAssist(AssistFlags flags)
         => With(new NpcAssistBehavior { Flags = flags });
-    public EntityBuilder WithOwner(Entity owner)
+    public EntityBuilder WithOwner(EntityId owner)
         => With(new ItemOwner { Owner = owner });
-    public EntityBuilder InGroup(Entity group)
+    public EntityBuilder InGroup(EntityId group)
         => With(new GroupMember { Group = group });
     // ... etc.
 
@@ -75,39 +74,39 @@ internal class EntityBuilder
         return this;
     }
 
-    public Entity Build()
+    public EntityId Build()
     {
-        var entity = _world.Create();
+        var entity = _world.CreateEntity();
 
         var isCharacter = _components.ContainsKey(typeof(CharacterTag));
         var isItem = _components.ContainsKey(typeof(ItemTag));
 
         foreach (var component in _components.Values)
         {
-            entity.Add(component);
+            _world.AddRawComponent(entity, component);
 
             switch (component)
             {
                 case Location location:
                     if (isCharacter)
-                        location.Room.Get<RoomContents>().Characters.Add(entity);
+                        _world.Get<RoomContents>(location.Room).Characters.Add(entity);
                     else if (isItem)
-                        location.Room.Get<RoomContents>().Items.Add(entity);
+                        _world.Get<RoomContents>(location.Room).Items.Add(entity);
                     break;
 
                 case ContainerContents containerContents:
                     foreach (var item in containerContents.Items)
                     {
-                        if (item.Has<ContainedIn>())
+                        if (_world.Has<ContainedIn>(item))
                         {
-                            ref var containedIn = ref item.Get<ContainedIn>();
+                            ref var containedIn = ref _world.Get<ContainedIn>(item);
                             SetContainedIn(ref containedIn, entity, isItem, isCharacter);
                         }
                         else
                         {
                             var newContainedIn = new ContainedIn();
                             SetContainedIn(ref newContainedIn, entity, isItem, isCharacter);
-                            item.Add(newContainedIn);
+                            _world.Add(item, newContainedIn);
                         }
                     }
                     break;
@@ -117,17 +116,17 @@ internal class EntityBuilder
         return entity;
     }
 
-    private void SetContainedIn(ref ContainedIn containedIn, Entity container, bool isItem, bool isCharacter)
+    private void SetContainedIn(ref ContainedIn containedIn, EntityId container, bool isItem, bool isCharacter)
     {
         if (isItem)
         {
-            containedIn.Character = Entity.Null;
+            containedIn.Character = EntityId.Invalid;
             containedIn.Container = container;
         }
         else if (isCharacter)
         {
             containedIn.Character = container;
-            containedIn.Container = Entity.Null;
+            containedIn.Container = EntityId.Invalid;
         }
     }
 }

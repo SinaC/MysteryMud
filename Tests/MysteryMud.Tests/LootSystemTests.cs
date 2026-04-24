@@ -1,10 +1,9 @@
-﻿using TinyECS;
-using Arch.Core.Extensions;
-using MysteryMud.Domain.Components.Characters;
+﻿using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Intents;
 using MysteryMud.Tests.Infrastructure;
+using TinyECS;
 
 namespace MysteryMud.Tests;
 
@@ -15,7 +14,7 @@ public class LootSystemTests : IDisposable
 
     public LootSystemTests()
     {
-        _sut = new LootSystem(_f.GameMessage, _f.Intents, _f.ItemLootedEvents);
+        _sut = new LootSystem(_f.World, _f.GameMessage, _f.Intents, _f.ItemLootedEvents);
     }
 
     public void Dispose() => _f.Dispose();
@@ -33,13 +32,13 @@ public class LootSystemTests : IDisposable
         {
             Corpse = corpse,
             LootOwner = killer,
-            LootOwnerGroup = Entity.Null
+            LootOwnerGroup = EntityId.Invalid
         });
 
         _sut.Tick(_f.State);
 
-        Assert.Empty(corpse.Get<ContainerContents>().Items);
-        Assert.Contains(sword, killer.Get<Inventory>().Items);
+        Assert.Empty(_f.World.Get<ContainerContents>(corpse).Items);
+        Assert.Contains(sword, _f.World.Get<Inventory>(killer).Items);
     }
 
     [Fact]
@@ -66,9 +65,9 @@ public class LootSystemTests : IDisposable
 
         _sut.Tick(_f.State);
 
-        Assert.DoesNotContain(questItem, killer.Get<Inventory>().Items);
-        Assert.Contains(questItem, quester.Get<Inventory>().Items);
-        Assert.Contains(sword, killer.Get<Inventory>().Items); // killer gets non-quest loot
+        Assert.DoesNotContain(questItem, _f.World.Get<Inventory>(killer).Items);
+        Assert.Contains(questItem, _f.World.Get<Inventory>(quester).Items);
+        Assert.Contains(sword, _f.World.Get<Inventory>(killer).Items); // killer gets non-quest loot
     }
 
     [Fact]
@@ -94,6 +93,6 @@ public class LootSystemTests : IDisposable
         _sut.Tick(_f.State);
 
         Assert.False(_f.Intents.AutoSacrifice.Any(i => i.Corpse == corpse));
-        Assert.Contains(questItem, corpse.Get<ContainerContents>().Items); // still there
+        Assert.Contains(questItem, _f.World.Get<ContainerContents>(corpse).Items); // still there
     }
 }

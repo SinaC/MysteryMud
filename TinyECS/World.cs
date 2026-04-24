@@ -81,6 +81,14 @@ public sealed class World
         return slot.Alive && slot.Generation == entity.Generation;
     }
 
+    public void Shutdown()
+    {
+        for (int i = 0; i < _slots.Length; i++)
+            _slots[i] = new Slot(0, false);
+        _freeList.Clear();
+        _stores.Clear();
+    }
+
     // -------------------------------------------------------------------------
     // Component access facade
     // -------------------------------------------------------------------------
@@ -204,10 +212,31 @@ public sealed class World
         ReadOnlySpan<EntityId> Entities { get; }
     }
 
+    // -------------------------------------------------------------------------
+    // Internal methods only used by unit tests (I know this is crappy)
+    // -------------------------------------------------------------------------
+    internal object AddRawComponent(EntityId entity, object component = default!)
+    {
+        AssertAlive(entity);
+
+        var type = component.GetType();
+
+        if (!_stores.TryGetValue(type, out var raw))
+        {
+            var storeType = typeof(ComponentStore<>).MakeGenericType(type);
+            raw = Activator.CreateInstance(storeType)!;
+            _stores[type] = raw;
+        }
+
+        var store = (IComponentStore)raw;
+        return store.AddRaw(entity, component);
+    }
+
     // Internal non-generic interface so Destroy can call RemoveIfPresent without knowing T.
     // ComponentStore<T> implements this explicitly so it doesn't pollute its public surface.
     internal interface IComponentStore : ICountable
     {
+        object AddRaw(EntityId entity, object value);
         bool Has(EntityId entity);
         void RemoveIfPresent(EntityId entity);
         /// <summary>Returns the component boxed, or null if the EntityId doesn't have it.</summary>

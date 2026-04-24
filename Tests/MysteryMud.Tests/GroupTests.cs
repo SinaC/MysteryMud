@@ -1,11 +1,10 @@
-﻿using TinyECS;
-using Arch.Core.Extensions;
-using MysteryMud.Domain.Components.Characters;
+﻿using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Groups;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 using MysteryMud.Tests.Infrastructure;
+using TinyECS;
 
 namespace MysteryMud.Tests;
 
@@ -16,7 +15,7 @@ public class GroupTests : IDisposable
 
     public GroupTests()
     {
-        _groupService = new GroupService(_f.GameMessage);
+        _groupService = new GroupService(_f.World, _f.GameMessage);
     }
 
     public void Dispose() => _f.Dispose();
@@ -29,10 +28,10 @@ public class GroupTests : IDisposable
         var bob = _f.Player("Bob").InGroup(group).Build();
         _f.AddGroupMembers(group, alice, bob);
 
-        _groupService.RemoveMember(_f.State, group, alice);
+        _groupService.RemoveMember(group, alice);
 
-        Assert.False(group.IsAlive());        // group entity destroyed
-        Assert.False(bob.Has<GroupMember>()); // last member freed
+        Assert.True(_f.World.Has<DisbandedTag>(group)); // group entity destroyed
+        Assert.False(_f.World.Has<GroupMember>(bob));   // last member freed
     }
 
     [Fact]
@@ -45,14 +44,14 @@ public class GroupTests : IDisposable
         _f.AddGroupMembers(group, alice, bob, carol);
 
         // alice joined tick 1, bob tick 5, carol tick 10
-        alice.Get<GroupMember>().JoinedAtTick = 1;
-        bob.Get<GroupMember>().JoinedAtTick = 5;
-        carol.Get<GroupMember>().JoinedAtTick = 10;
-        group.Get<GroupInstance>().Leader = alice;
+        _f.World.Get<GroupMember>(alice).JoinedAtTick = 1;
+        _f.World.Get<GroupMember>(bob).JoinedAtTick = 5;
+        _f.World.Get<GroupMember>(carol).JoinedAtTick = 10;
+        _f.World.Get<GroupInstance>(group).Leader = alice;
 
-        _groupService.RemoveMember(_f.State, group, alice);
+        _groupService.RemoveMember(group, alice);
 
-        Assert.Equal(bob, group.Get<GroupInstance>().Leader); // bob oldest remaining
+        Assert.Equal(bob, _f.World.Get<GroupInstance>(group).Leader); // bob oldest remaining
     }
 
     [Fact]
@@ -63,12 +62,12 @@ public class GroupTests : IDisposable
         var bob = _f.Player("Bob").InGroup(group).Build();
         var carol = _f.Player("Carol").InGroup(group).Build();
         _f.AddGroupMembers(group, alice, bob, carol);
-        group.Get<GroupInstance>().Leader = alice;
+        _f.World.Get<GroupInstance>(group).Leader = alice;
 
-        _groupService.RemoveMember(_f.State, group, alice);
+        _groupService.RemoveMember(group, alice);
 
-        Assert.Equal(bob, group.Get<GroupInstance>().Leader); // first remaining member promoted
-        Assert.True(group.IsAlive());                 // group survives with 2 members
+        Assert.Equal(bob, _f.World.Get<GroupInstance>(group).Leader); // first remaining member promoted
+        Assert.False(_f.World.Has<DisbandedTag>(group));              // group survives with 2 members
     }
 
     [Fact]
@@ -79,11 +78,11 @@ public class GroupTests : IDisposable
         var bob = _f.Player("Bob").InGroup(group).Build();
         _f.AddGroupMembers(group, alice, bob);
 
-        _groupService.Disband(_f.State, group);
+        _groupService.Disband(group);
 
-        Assert.False(alice.Has<GroupMember>());
-        Assert.False(bob.Has<GroupMember>());
-        Assert.False(group.IsAlive());
+        Assert.False(_f.World.Has<GroupMember>(alice));
+        Assert.False(_f.World.Has<GroupMember>(bob));
+        Assert.True(_f.World.Has<DisbandedTag>(group));
     }
 
     [Fact]
@@ -96,11 +95,11 @@ public class GroupTests : IDisposable
         var bob = _f.Player("Bob").WithLocation(room).InGroup(group).Build();
         _f.AddGroupMembers(group, alice, bob);
 
-        CombatHelpers.AddCombatClaim(npc, alice, 1);
-        _groupService.Disband(_f.State, group);
+        CombatHelpers.AddCombatClaim(_f.World, _f.State, npc, alice);
+        _groupService.Disband(group);
 
-        var claim = npc.Get<CombatInitiator>().Claims.Single();
-        Assert.Equal(Entity.Null, claim.ClaimantGroup); // cleared by disband
+        var claim = _f.World.Get<CombatInitiator>(npc).Claims.Single();
+        Assert.Equal(EntityId.Invalid, claim.ClaimantGroup); // cleared by disband
         Assert.Equal(alice, claim.Claimant);            // personal claim preserved
         Assert.False(claim.Forfeited);
     }

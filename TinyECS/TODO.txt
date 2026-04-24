@@ -1,7 +1,4 @@
-query
-	.WithAll<C1, C2, ..., CX>()
-	.WithNone<<C1, C2, ..., CX>()
-query enumerator should return (Entity, ref C1, ref C2, ... ref CX) or a delegate (see Arch)
+Query<5 components>
 
 extension methods for Set/Get/Has/Remove/TryGet/TryGetRef/GetAllComponents
 

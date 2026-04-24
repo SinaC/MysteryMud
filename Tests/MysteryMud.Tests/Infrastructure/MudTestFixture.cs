@@ -1,6 +1,4 @@
-﻿using TinyECS;
-using Arch.Core.Extensions;
-using MysteryMud.Core;
+﻿using MysteryMud.Core;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
@@ -10,6 +8,7 @@ using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Events;
+using TinyECS;
 
 namespace MysteryMud.Tests.Infrastructure;
 
@@ -17,18 +16,19 @@ internal class MudTestFixture : IDisposable
 {
     public World World { get; }
     public GameState State { get; }
-    public TestGameMessageService GameMessage { get; } = new();
+    public TestGameMessageService GameMessage { get; } 
     public TestIntentContainer Intents { get; } = new();
     public TestExperienceService TestExperienceService { get; } = new();
-    public TestEventBuffer<RoomEnteredEvent> RoomEnteredEvents { get; } = new();
-    public TestEventBuffer<DeathEvent> DeathEvents { get; } = new();
-    public TestEventBuffer<ItemLootedEvent> ItemLootedEvents { get; } = new();
+    public TestEventBuffer<RoomEnteredEvent> RoomEnteredEvents { get; } = [];
+    public TestEventBuffer<DeathEvent> DeathEvents { get; } = [];
+    public TestEventBuffer<ItemLootedEvent> ItemLootedEvents { get; } = [];
     // ... other buffers
 
     public MudTestFixture()
     {
-        World = World.Create();
-        State = new GameState { World = World, CurrentTick = 0, CurrentTimeMs = 0 };
+        World = new World();
+        State = new GameState { CurrentTick = 0, CurrentTimeMs = 0 };
+        GameMessage = new TestGameMessageService(World);
     }
 
     // fluent entity builders
@@ -50,7 +50,7 @@ internal class MudTestFixture : IDisposable
                 Data = new EffectsCollection
                 {
                     Effects = [],
-                    EffectsByTag = new List<Entity>?[32]
+                    EffectsByTag = new List<EntityId>?[32]
                 },
             })
             .With(new Position { Value = PositionKind.Standing });
@@ -72,7 +72,7 @@ internal class MudTestFixture : IDisposable
                 Data = new EffectsCollection
                 {
                     Effects = [],
-                    EffectsByTag = new List<Entity>?[32]
+                    EffectsByTag = new List<EntityId>?[32]
                 },
             })
             .With(new Position { Value = PositionKind.Standing })
@@ -101,11 +101,11 @@ internal class MudTestFixture : IDisposable
                 Data = new EffectsCollection
                 {
                     Effects = [],
-                    EffectsByTag = new List<Entity>?[32]
+                    EffectsByTag = new List<EntityId>?[32]
                 },
             });
 
-    public EntityBuilder Corpse(string name = "corpse", string description = "a corpse", IEnumerable<Entity> items = default!)
+    public EntityBuilder Corpse(string name = "corpse", string description = "a corpse", IEnumerable<EntityId> items = default!)
         => new EntityBuilder(World)
             .WithTag<ItemTag>()
             .WithName(name)
@@ -116,7 +116,7 @@ internal class MudTestFixture : IDisposable
                 Data = new EffectsCollection
                 {
                     Effects = [],
-                    EffectsByTag = new List<Entity>?[32]
+                    EffectsByTag = new List<EntityId>?[32]
                 },
             })
             .With(new Container { Capacity = 1000 })
@@ -126,11 +126,11 @@ internal class MudTestFixture : IDisposable
         => new EntityBuilder(World)
             .With(new GroupInstance { Members = [] });
 
-    public void AddGroupMembers(Entity group, params Entity[] members)
+    public void AddGroupMembers(EntityId group, params EntityId[] members)
     {
-        group.Get<GroupInstance>().Members.AddRange(members);
+        World.Get<GroupInstance>(group).Members.AddRange(members);
     }
 
     public void Dispose()
-        => World.Destroy(World);
+        => World.Shutdown();
 }

@@ -346,7 +346,7 @@ public class ComponentStoreTests
 
         var seen = new List<EntityId>();
         var it = store.Each();
-        while (it.MoveNext()) seen.Add(it.EntityId);
+        while (it.MoveNext()) seen.Add(it.Entity);
 
         Assert.Equal(3, seen.Count);
         Assert.Contains(ids[0], seen);

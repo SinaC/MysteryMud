@@ -5,20 +5,20 @@ namespace MysteryMud.Tests.Infrastructure;
 
 internal class TestExperienceService : IExperienceService
 {
-    private readonly Dictionary<Entity, long> _lastGranted = [];
+    private readonly Dictionary<EntityId, long> _lastGranted = [];
     private long _lastGrantedGlobal;
 
-    public long CalculateCombatXp(Entity player, Entity victim)
+    public long CalculateCombatXp(EntityId player, EntityId victim)
     {
         return 1;
     }
 
-    public void GrantExperience(Entity player, long xpGained)
+    public void GrantExperience(EntityId player, long xpGained)
     {
         _lastGrantedGlobal = xpGained;
         _lastGranted[player] = xpGained;
     }
 
     public long LastGranted => _lastGrantedGlobal;
-    public long GetLastGrantedFor(Entity player) => _lastGranted[player];
+    public long GetLastGrantedFor(EntityId player) => _lastGranted[player];
 }
