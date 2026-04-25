@@ -246,6 +246,95 @@ public static class WorldQueryExtensions
     }
 
     // =========================================================================
+    // Query<T1, T2, T3, T4, T5>
+    // =========================================================================
+
+    public static void Query<T1, T2, T3, T4, T5>(
+        this World world,
+        in QueryDescription desc,
+        QueryCallback<T1, T2, T3, T4, T5> callback)
+    {
+        var s1 = world.Store<T1>();
+        var s2 = world.Store<T2>();
+        var s3 = world.Store<T3>();
+        var s4 = world.Store<T4>();
+        var s5 = world.Store<T5>();
+        EnsureCache(world, desc);
+        var none = desc.CachedNone!;
+        var any = desc.CachedAny!;
+
+        int pivotIdx = MinIndex(s1.Count, s2.Count, s3.Count, s4.Count, s5.Count);
+        switch (pivotIdx)
+        {
+            case 0:
+                for (int i = s1.Count - 1; i >= 0; i--)
+                {
+                    EntityId e = s1.EntityAt(i);
+                    int p2 = s2.GetDenseIndexFast(e); if (p2 < 0) continue;
+                    int p3 = s3.GetDenseIndexFast(e); if (p3 < 0) continue;
+                    int p4 = s4.GetDenseIndexFast(e); if (p4 < 0) continue;
+                    int p5 = s5.GetDenseIndexFast(e); if (p5 < 0) continue;
+                    if (AnyHas(none, e)) continue;
+                    if (!PassesAny(any, e)) continue;
+                    callback(e, ref s1.GetAtDenseIndex(i), ref s2.GetAtDenseIndex(p2), ref s3.GetAtDenseIndex(p3), ref s4.GetAtDenseIndex(p4), ref s5.GetAtDenseIndex(p5));
+                }
+                break;
+            case 1:
+                for (int i = s2.Count - 1; i >= 0; i--)
+                {
+                    EntityId e = s2.EntityAt(i);
+                    int p1 = s1.GetDenseIndexFast(e); if (p1 < 0) continue;
+                    int p3 = s3.GetDenseIndexFast(e); if (p3 < 0) continue;
+                    int p4 = s4.GetDenseIndexFast(e); if (p4 < 0) continue;
+                    int p5 = s5.GetDenseIndexFast(e); if (p5 < 0) continue;
+                    if (AnyHas(none, e)) continue;
+                    if (!PassesAny(any, e)) continue;
+                    callback(e, ref s1.GetAtDenseIndex(p1), ref s2.GetAtDenseIndex(i), ref s3.GetAtDenseIndex(p3), ref s4.GetAtDenseIndex(p4), ref s5.GetAtDenseIndex(p5));
+                }
+                break;
+            case 2:
+                for (int i = s3.Count - 1; i >= 0; i--)
+                {
+                    EntityId e = s3.EntityAt(i);
+                    int p1 = s1.GetDenseIndexFast(e); if (p1 < 0) continue;
+                    int p2 = s2.GetDenseIndexFast(e); if (p2 < 0) continue;
+                    int p4 = s4.GetDenseIndexFast(e); if (p4 < 0) continue;
+                    int p5 = s5.GetDenseIndexFast(e); if (p5 < 0) continue;
+                    if (AnyHas(none, e)) continue;
+                    if (!PassesAny(any, e)) continue;
+                    callback(e, ref s1.GetAtDenseIndex(p1), ref s2.GetAtDenseIndex(p2), ref s3.GetAtDenseIndex(i), ref s4.GetAtDenseIndex(p4), ref s5.GetAtDenseIndex(p5));
+                }
+                break;
+            case 3:
+                for (int i = s4.Count - 1; i >= 0; i--)
+                {
+                    EntityId e = s4.EntityAt(i);
+                    int p1 = s1.GetDenseIndexFast(e); if (p1 < 0) continue;
+                    int p2 = s2.GetDenseIndexFast(e); if (p2 < 0) continue;
+                    int p3 = s3.GetDenseIndexFast(e); if (p3 < 0) continue;
+                    int p5 = s5.GetDenseIndexFast(e); if (p5 < 0) continue;
+                    if (AnyHas(none, e)) continue;
+                    if (!PassesAny(any, e)) continue;
+                    callback(e, ref s1.GetAtDenseIndex(p1), ref s2.GetAtDenseIndex(p2), ref s3.GetAtDenseIndex(p3), ref s4.GetAtDenseIndex(i), ref s5.GetAtDenseIndex(p5));
+                }
+                break;
+            default:
+                for (int i = s5.Count - 1; i >= 0; i--)
+                {
+                    EntityId e = s5.EntityAt(i);
+                    int p1 = s1.GetDenseIndexFast(e); if (p1 < 0) continue;
+                    int p2 = s2.GetDenseIndexFast(e); if (p2 < 0) continue;
+                    int p3 = s3.GetDenseIndexFast(e); if (p3 < 0) continue;
+                    int p4 = s4.GetDenseIndexFast(e); if (p4 < 0) continue;
+                    if (AnyHas(none, e)) continue;
+                    if (!PassesAny(any, e)) continue;
+                    callback(e, ref s1.GetAtDenseIndex(p1), ref s2.GetAtDenseIndex(p2), ref s3.GetAtDenseIndex(p3), ref s4.GetAtDenseIndex(p4), ref s5.GetAtDenseIndex(i));
+                }
+                break;
+        }
+    }
+
+    // =========================================================================
     // Cache management
     // =========================================================================
 
@@ -303,6 +392,13 @@ public static class WorldQueryExtensions
         int idx3 = MinIndex(a, b, c);
         int val3 = idx3 switch { 0 => a, 1 => b, _ => c };
         return d < val3 ? 3 : idx3;
+    }
+
+    private static int MinIndex(int a, int b, int c, int d, int e)
+    {
+        int idx4 = MinIndex(a, b, c, d);
+        int val4 = idx4 switch { 0 => a, 1 => b, 2 => c, _ => d };
+        return e < val4 ? 4 : idx4;
     }
 }
 
@@ -1248,7 +1344,7 @@ public static class WorldQueryExtensions
 /// Extension methods that add delegate-based Query overloads to <see cref="World"/>.
 ///
 /// Performance design (see OPTIMISATIONS section below for rationale):
-///   1. Filter predicates are cached on QueryDescription as Func&lt;EntityId,bool&gt;
+///   1. Filter predicates are cached on QueryDescription as Func<EntityId,bool>
 ///      arrays — resolved once, zero allocation on subsequent calls.
 ///   2. IsAlive() is NOT called in the hot loop — the dense-index generation
 ///      check in GetDenseIndex already rejects stale entities, and DestroyEntity
@@ -1491,8 +1587,8 @@ public static class WorldQueryExtensions
     /// Ensures the QueryDescription's filter predicates are resolved for the
     /// given world.  A no-op on every call after the first (for the same world).
     ///
-    /// Stores as Func&lt;EntityId,bool&gt; delegates capturing the concrete
-    /// ComponentStore&lt;T&gt; — the JIT can devirtualise and inline Has() through
+    /// Stores as Func<EntityId,bool> delegates capturing the concrete
+    /// ComponentStore<T> — the JIT can devirtualise and inline Has() through
     /// a delegate far more effectively than through an IComponentStore interface.
     /// </summary>
     private static void EnsureCache(World world, QueryDescription desc)
@@ -1506,7 +1602,7 @@ public static class WorldQueryExtensions
 
     /// <summary>
     /// Builds a predicate array for a list of component types.
-    /// Each predicate captures the concrete ComponentStore&lt;T&gt; by reference,
+    /// Each predicate captures the concrete ComponentStore<T> by reference,
     /// so the JIT can see the real type and inline Has() in the hot loop.
     /// </summary>
     private static Func<EntityId, bool>[] BuildPredicates(World world, List<Type> types)

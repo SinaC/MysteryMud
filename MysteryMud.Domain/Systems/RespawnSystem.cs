@@ -24,17 +24,16 @@ public class RespawnSystem
     }
 
     private static readonly QueryDescription _respawnRequiredQueryDesc = new QueryDescription()
-        .WithAll<PlayerTag, RespawnState, Location>(); // TODO: add health, move when query on 5 is implemented
+        .WithAll<PlayerTag, RespawnState, Location, Health, Move>();
 
     public void Tick(GameState state)
     {
         _world.Query(_respawnRequiredQueryDesc, (EntityId player,
             ref PlayerTag playerTag,
             ref RespawnState respawnState,
-            ref Location location) =>
-        /*, TODO when Query on 5 is implemented
+            ref Location location,
             ref Health health,
-            ref Move move*/
+            ref Move move) =>
         {
             // Optional: respawn timer check
             //if (Time.time - dead.TimeOfDeath >= RespawnDelay)
@@ -49,9 +48,6 @@ public class RespawnSystem
                 // Add player back to RoomContents
                 ref var respawnRoomContents = ref _world.Get<RoomContents>(respawnState.RespawnRoom);
                 respawnRoomContents.Characters.Add(player);
-
-                ref var health = ref _world.Get<Health>(player);
-                ref var move = ref _world.Get<Move>(player);
 
                 // Reset health and move to 1
                 health.Current = 1;

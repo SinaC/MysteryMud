@@ -6,9 +6,9 @@ namespace TinyECS;
 /// Declarative, reusable query spec.  Build once, pass to World.Query() every tick.
 ///
 ///   var desc = new QueryDescription()
-///       .WithAll&lt;Position, Velocity&gt;()
-///       .WithAny&lt;CombatState, Stunned&gt;()
-///       .WithNone&lt;Dead&gt;();
+///       .WithAll<Position, Velocity>()
+///       .WithAny<CombatState, Stunned>()
+///       .WithNone<Dead>();
 ///
 /// Filter predicates are resolved lazily on the first Query() call and then
 /// cached for the lifetime of the QueryDescription.  Subsequent calls pay
@@ -61,6 +61,14 @@ public sealed class QueryDescription
     {
         All.Add(typeof(T1)); All.Add(typeof(T2));
         All.Add(typeof(T3)); All.Add(typeof(T4));
+        return this;
+    }
+
+    public QueryDescription WithAll<T1, T2, T3, T4, T5>()
+    {
+        All.Add(typeof(T1)); All.Add(typeof(T2));
+        All.Add(typeof(T3)); All.Add(typeof(T4));
+        All.Add(typeof(T5));
         return this;
     }
 
@@ -136,6 +144,11 @@ public delegate void QueryCallback<T1, T2, T3>(
 public delegate void QueryCallback<T1, T2, T3, T4>(
     EntityId entity,
     ref T1 c1, ref T2 c2, ref T3 c3, ref T4 c4);
+
+public delegate void QueryCallback<T1, T2, T3, T4, T5>(
+    EntityId entity,
+    ref T1 c1, ref T2 c2, ref T3 c3, ref T4 c4, ref T5 c5);
+
 
 /*
 /// <summary>
@@ -275,9 +288,9 @@ public delegate void QueryCallback<T1, T2, T3, T4, T5>(
 /// Declarative, reusable query spec.  Build once, pass to World.Query() every tick.
 ///
 ///   var desc = new QueryDescription()
-///       .WithAll&lt;Position, Velocity&gt;()
-///       .WithAny&lt;CombatState, Stunned&gt;()
-///       .WithNone&lt;Dead&gt;();
+///       .WithAll<Position, Velocity>()
+///       .WithAny<CombatState, Stunned>()
+///       .WithNone<Dead>();
 ///
 /// Filter predicates are resolved lazily on the first Query() call and then
 /// cached for the lifetime of the QueryDescription.  Subsequent calls pay

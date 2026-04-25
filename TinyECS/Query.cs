@@ -4,16 +4,16 @@ namespace TinyECS;
 
 /// <summary>
 /// Fluent query builder.  Intersects sparse-sets to produce only entities
-/// that satisfy every With&lt;T&gt; constraint (and none of the Without&lt;T&gt; ones).
+/// that satisfy every With<T> constraint (and none of the Without<T> ones).
 ///
 /// Usage:
 ///   var query = new Query(world)
-///       .With&lt;Position&gt;()
-///       .With&lt;Health&gt;()
-///       .Without&lt;Dead&gt;();
+///       .With<Position>()
+///       .With<Health>()
+///       .Without<Dead>();
 ///
 ///   foreach (EntityId e in query)
-///       world.Get&lt;Health&gt;(e).Current -= 5;
+///       world.Get<Health>(e).Current -= 5;
 ///
 /// The query always iterates the *smallest* matching store first, so the inner
 /// Has() checks are as fast as possible.

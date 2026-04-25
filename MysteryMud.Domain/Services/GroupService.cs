@@ -99,7 +99,8 @@ public class GroupService : IGroupService
 
     private void ClearGroupFromClaims(EntityId member, EntityId group)
     {
-        _world.Query(in _initiatorQueryDesc, (EntityId entity, ref CombatInitiator initiator) =>
+        _world.Query(in _initiatorQueryDesc, (EntityId entity,
+            ref CombatInitiator initiator) =>
         {
             for (int i = 0; i < initiator.Claims.Count; i++)
             {

@@ -169,7 +169,8 @@ public class CleanupSystem
     {
         // destroy items
         var toDestroy = new List<EntityId>();
-        _world.Query(_destroyItemsQuery, (EntityId item, ref DestroyedTag destroyedTag) =>
+        _world.Query(_destroyItemsQuery, (EntityId item,
+            ref DestroyedTag destroyedTag) =>
         {
             // check if the item is on the ground
             ref var location = ref _world.TryGetRef<Location>(item, out var hasLocation);

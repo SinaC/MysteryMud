@@ -8,10 +8,11 @@ namespace TinyECS.UnitTests;
 ///
 /// Covers:
 ///   • QueryDescription builder (WithAll / WithAny / WithNone arities, fluent chaining)
-///   • Query&lt;T1&gt;        — single-component
-///   • Query&lt;T1,T2&gt;     — two-component, pivot logic
-///   • Query&lt;T1,T2,T3&gt;  — three-component, all pivot positions
-///   • Query&lt;T1,T2,T3,T4&gt; — four-component, all pivot positions
+///   • Query<T1>             — single-component
+///   • Query<T1,T2>          — two-component, pivot logic
+///   • Query<T1,T2,T3>       — three-component, all pivot positions
+///   • Query<T1,T2,T3,T4>    — four-component, all pivot positions
+///   • Query<T1,T2,T3,T4,T5> — five-component, all pivot positions
 ///   • WithNone exclusion on every arity
 ///   • WithAny (at-least-one) filtering on every arity
 ///   • Combined WithAll + WithAny + WithNone on all arities
@@ -47,7 +48,7 @@ public class WorldQueryExtensionsTests
 
     private static World NewWorld() => new();
 
-    /// <summary>Collect every EntityId visited by a Query&lt;T1&gt; call.</summary>
+    /// <summary>Collect every EntityId visited by a Query<T1> call.</summary>
     private static List<EntityId> RunT1<T1>(
         World world, QueryDescription desc)
     {
@@ -82,14 +83,14 @@ public class WorldQueryExtensionsTests
         return seen;
     }
 
-    //private static List<EntityId> RunT5<T1, T2, T3, T4, T5>(
-    //    World world, QueryDescription desc)
-    //{
-    //    var seen = new List<EntityId>();
-    //    world.Query<T1, T2, T3, T4,T5>(in desc,
-    //        (EntityId e, ref T1 _, ref T2 __, ref T3 ___, ref T4 ____, ref T5 _____) => seen.Add(e));
-    //    return seen;
-    //}
+    private static List<EntityId> RunT5<T1, T2, T3, T4, T5>(
+        World world, QueryDescription desc)
+    {
+        var seen = new List<EntityId>();
+        world.Query<T1, T2, T3, T4, T5>(in desc,
+            (EntityId e, ref T1 _, ref T2 __, ref T3 ___, ref T4 ____, ref T5 _____) => seen.Add(e));
+        return seen;
+    }
 
     // =========================================================================
     // QueryDescription builder
@@ -755,179 +756,179 @@ public class WorldQueryExtensionsTests
     // Query<T1, T2, T3, T4, T5> — give components
     // =========================================================================
 
-    //[Fact]
-    //public void QueryT5_RequiresAllFive()
-    //{
-    //    var world = NewWorld();
-    //    var all5 = world.CreateEntity();
-    //    world.Set<Position>(all5); world.Set<Velocity>(all5);
-    //    world.Set<Health>(all5); world.Set<Mana>(all5);
-    //    world.Set<Energy>(all5);
+    [Fact]
+    public void QueryT5_RequiresAllFive()
+    {
+        var world = NewWorld();
+        var all5 = world.CreateEntity();
+        world.Set<Position>(all5); world.Set<Velocity>(all5);
+        world.Set<Health>(all5); world.Set<Mana>(all5);
+        world.Set<Energy>(all5);
 
-    //    var four = world.CreateEntity();
-    //    world.Set<Position>(four); world.Set<Velocity>(four); world.Set<Health>(four); world.Set<Mana>(four);
+        var four = world.CreateEntity();
+        world.Set<Position>(four); world.Set<Velocity>(four); world.Set<Health>(four); world.Set<Mana>(four);
 
-    //    var desc = new QueryDescription().WithAll<Position, Velocity, Health, Mana, Energy>();
-    //    var seen = RunT5<Position, Velocity, Health, Mana, Energy>(world, desc);
+        var desc = new QueryDescription().WithAll<Position, Velocity, Health, Mana, Energy>();
+        var seen = RunT5<Position, Velocity, Health, Mana, Energy>(world, desc);
 
-    //    Assert.Single(seen);
-    //    Assert.Contains(all5, seen);
-    //}
+        Assert.Single(seen);
+        Assert.Contains(all5, seen);
+    }
 
-    //[Fact]
-    //public void QueryT5_RefMutation_AllFiveComponentsPersist()
-    //{
-    //    var world = NewWorld();
-    //    var e = world.CreateEntity();
-    //    world.Set(e, new Position { X = 1 });
-    //    world.Set(e, new Velocity { Dx = 2 });
-    //    world.Set(e, new Health { Current = 10 });
-    //    world.Set(e, new Mana { Current = 20 });
-    //    world.Set(e, new Energy { Current = 30 });
+    [Fact]
+    public void QueryT5_RefMutation_AllFiveComponentsPersist()
+    {
+        var world = NewWorld();
+        var e = world.CreateEntity();
+        world.Set(e, new Position { X = 1 });
+        world.Set(e, new Velocity { Dx = 2 });
+        world.Set(e, new Health { Current = 10 });
+        world.Set(e, new Mana { Current = 20 });
+        world.Set(e, new Energy { Current = 30 });
 
-    //    var desc = new QueryDescription().WithAll<Position, Velocity, Health, Mana, Energy>();
-    //    world.Query<Position, Velocity, Health, Mana, Energy>(in desc,
-    //        (EntityId _, ref Position pos, ref Velocity vel, ref Health hp, ref Mana mp, ref Energy ep) =>
-    //        {
-    //            pos.X += 1; vel.Dx += 1; hp.Current += 1; mp.Current += 1; ep.Current += 1;
-    //        });
+        var desc = new QueryDescription().WithAll<Position, Velocity, Health, Mana, Energy>();
+        world.Query<Position, Velocity, Health, Mana, Energy>(in desc,
+            (EntityId _, ref Position pos, ref Velocity vel, ref Health hp, ref Mana mp, ref Energy ep) =>
+            {
+                pos.X += 1; vel.Dx += 1; hp.Current += 1; mp.Current += 1; ep.Current += 1;
+            });
 
-    //    Assert.Equal(2, world.Get<Position>(e).X);
-    //    Assert.Equal(3, world.Get<Velocity>(e).Dx);
-    //    Assert.Equal(11, world.Get<Health>(e).Current);
-    //    Assert.Equal(21, world.Get<Mana>(e).Current);
-    //    Assert.Equal(31, world.Get<Energy>(e).Current);
-    //}
+        Assert.Equal(2, world.Get<Position>(e).X);
+        Assert.Equal(3, world.Get<Velocity>(e).Dx);
+        Assert.Equal(11, world.Get<Health>(e).Current);
+        Assert.Equal(21, world.Get<Mana>(e).Current);
+        Assert.Equal(31, world.Get<Energy>(e).Current);
+    }
 
-    //[Fact]
-    //public void QueryT5_WithNone_ExcludesCorrectly()
-    //{
-    //    var world = NewWorld();
-    //    var ok = world.CreateEntity();
-    //    world.Set<Position>(ok); world.Set<Velocity>(ok); world.Set<Health>(ok); world.Set<Mana>(ok); world.Set<Energy>(ok);
+    [Fact]
+    public void QueryT5_WithNone_ExcludesCorrectly()
+    {
+        var world = NewWorld();
+        var ok = world.CreateEntity();
+        world.Set<Position>(ok); world.Set<Velocity>(ok); world.Set<Health>(ok); world.Set<Mana>(ok); world.Set<Energy>(ok);
 
-    //    var bad = world.CreateEntity();
-    //    world.Set<Position>(bad); world.Set<Velocity>(bad); world.Set<Health>(bad); world.Set<Mana>(bad); world.Set<Energy>(bad);
-    //    world.Set<Stunned>(bad);
+        var bad = world.CreateEntity();
+        world.Set<Position>(bad); world.Set<Velocity>(bad); world.Set<Health>(bad); world.Set<Mana>(bad); world.Set<Energy>(bad);
+        world.Set<Stunned>(bad);
 
-    //    var desc = new QueryDescription()
-    //        .WithAll<Position, Velocity, Health, Mana, Energy>()
-    //        .WithNone<Stunned>();
-    //    var seen = RunT5<Position, Velocity, Health, Mana, Energy>(world, desc);
+        var desc = new QueryDescription()
+            .WithAll<Position, Velocity, Health, Mana, Energy>()
+            .WithNone<Stunned>();
+        var seen = RunT5<Position, Velocity, Health, Mana, Energy>(world, desc);
 
-    //    Assert.Single(seen);
-    //    Assert.Contains(ok, seen);
-    //}
+        Assert.Single(seen);
+        Assert.Contains(ok, seen);
+    }
 
     // -------------------------------------------------------------------------
     // Pivot for T5 — all five positions tested
     // -------------------------------------------------------------------------
 
-    //[Fact]
-    //public void QueryT5_PivotIndex0_S1Smallest()
-    //{
-    //    var world = NewWorld();
-    //    var all5 = world.CreateEntity();
-    //    world.Set<Position>(all5); world.Set<Velocity>(all5); world.Set<Health>(all5); world.Set<Mana>(all5); world.Set<Energy>(all5);
+    [Fact]
+    public void QueryT5_PivotIndex0_S1Smallest()
+    {
+        var world = NewWorld();
+        var all5 = world.CreateEntity();
+        world.Set<Position>(all5); world.Set<Velocity>(all5); world.Set<Health>(all5); world.Set<Mana>(all5); world.Set<Energy>(all5);
 
-    //    // Add extras to s2, s3, s4, s5 — s1 stays at count=1
-    //    for (int i = 0; i < 5; i++)
-    //    {
-    //        var e = world.CreateEntity();
-    //        world.Set<Velocity>(e); world.Set<Health>(e); world.Set<Mana>(e); world.Set<Energy>(e);
-    //    }
+        // Add extras to s2, s3, s4, s5 — s1 stays at count=1
+        for (int i = 0; i < 5; i++)
+        {
+            var e = world.CreateEntity();
+            world.Set<Velocity>(e); world.Set<Health>(e); world.Set<Mana>(e); world.Set<Energy>(e);
+        }
 
-    //    var seen = RunT5<Position, Velocity, Health, Mana, Energy>(world, new QueryDescription().WithAll<Position, Velocity, Health, Mana, Energy>());
-    //    Assert.Single(seen);
-    //    Assert.Contains(all5, seen);
-    //}
+        var seen = RunT5<Position, Velocity, Health, Mana, Energy>(world, new QueryDescription().WithAll<Position, Velocity, Health, Mana, Energy>());
+        Assert.Single(seen);
+        Assert.Contains(all5, seen);
+    }
 
-    //[Fact]
-    //public void QueryT5_PivotIndex1_S2Smallest()
-    //{
-    //    var world = NewWorld();
-    //    var all5 = world.CreateEntity();
-    //    world.Set<Position>(all5); world.Set<Velocity>(all5); world.Set<Health>(all5); world.Set<Mana>(all5); world.Set<Energy>(all5);
+    [Fact]
+    public void QueryT5_PivotIndex1_S2Smallest()
+    {
+        var world = NewWorld();
+        var all5 = world.CreateEntity();
+        world.Set<Position>(all5); world.Set<Velocity>(all5); world.Set<Health>(all5); world.Set<Mana>(all5); world.Set<Energy>(all5);
 
-    //    for (int i = 0; i < 5; i++)
-    //    {
-    //        var e = world.CreateEntity();
-    //        world.Set<Position>(e); world.Set<Health>(e); world.Set<Mana>(e); world.Set<Energy>(e);// s2 (Velocity) stays 1
-    //    }
+        for (int i = 0; i < 5; i++)
+        {
+            var e = world.CreateEntity();
+            world.Set<Position>(e); world.Set<Health>(e); world.Set<Mana>(e); world.Set<Energy>(e);// s2 (Velocity) stays 1
+        }
 
-    //    var seen = RunT5<Position, Velocity, Health, Mana, Energy>(world, new QueryDescription().WithAll<Position, Velocity, Health, Mana, Energy>());
-    //    Assert.Single(seen);
-    //    Assert.Contains(all5, seen);
-    //}
+        var seen = RunT5<Position, Velocity, Health, Mana, Energy>(world, new QueryDescription().WithAll<Position, Velocity, Health, Mana, Energy>());
+        Assert.Single(seen);
+        Assert.Contains(all5, seen);
+    }
 
-    //[Fact]
-    //public void QueryT5_PivotIndex2_S3Smallest()
-    //{
-    //    var world = NewWorld();
-    //    var all5 = world.CreateEntity();
-    //    world.Set<Position>(all5); world.Set<Velocity>(all5); world.Set<Health>(all5); world.Set<Mana>(all5); world.Set<Energy>(all5);
+    [Fact]
+    public void QueryT5_PivotIndex2_S3Smallest()
+    {
+        var world = NewWorld();
+        var all5 = world.CreateEntity();
+        world.Set<Position>(all5); world.Set<Velocity>(all5); world.Set<Health>(all5); world.Set<Mana>(all5); world.Set<Energy>(all5);
 
-    //    for (int i = 0; i < 5; i++)
-    //    {
-    //        var e = world.CreateEntity();
-    //        world.Set<Position>(e); world.Set<Velocity>(e); world.Set<Mana>(e); world.Set<Energy>(e);// s3 (Health) stays 1
-    //    }
+        for (int i = 0; i < 5; i++)
+        {
+            var e = world.CreateEntity();
+            world.Set<Position>(e); world.Set<Velocity>(e); world.Set<Mana>(e); world.Set<Energy>(e);// s3 (Health) stays 1
+        }
 
-    //    var seen = RunT5<Position, Velocity, Health, Mana, Energy>(world, new QueryDescription().WithAll<Position, Velocity, Health, Mana, Energy>());
-    //    Assert.Single(seen);
-    //    Assert.Contains(all5, seen);
-    //}
+        var seen = RunT5<Position, Velocity, Health, Mana, Energy>(world, new QueryDescription().WithAll<Position, Velocity, Health, Mana, Energy>());
+        Assert.Single(seen);
+        Assert.Contains(all5, seen);
+    }
 
-    //[Fact]
-    //public void QueryT5_PivotIndex3_S4Smallest()
-    //{
-    //    var world = NewWorld();
-    //    var all5 = world.CreateEntity();
-    //    world.Set<Position>(all5); world.Set<Velocity>(all5); world.Set<Health>(all5); world.Set<Mana>(all5); world.Set<Energy>(all5);
+    [Fact]
+    public void QueryT5_PivotIndex3_S4Smallest()
+    {
+        var world = NewWorld();
+        var all5 = world.CreateEntity();
+        world.Set<Position>(all5); world.Set<Velocity>(all5); world.Set<Health>(all5); world.Set<Mana>(all5); world.Set<Energy>(all5);
 
-    //    for (int i = 0; i < 5; i++)
-    //    {
-    //        var e = world.CreateEntity();
-    //        world.Set<Position>(e); world.Set<Velocity>(e); world.Set<Health>(e); world.Set<Energy>(all5); // s4 (Mana) stays 1
-    //    }
+        for (int i = 0; i < 5; i++)
+        {
+            var e = world.CreateEntity();
+            world.Set<Position>(e); world.Set<Velocity>(e); world.Set<Health>(e); world.Set<Energy>(all5); // s4 (Mana) stays 1
+        }
 
-    //    var seen = RunT5<Position, Velocity, Health, Mana, Energy>(world, new QueryDescription().WithAll<Position, Velocity, Health, Mana, Energy>());
-    //    Assert.Single(seen);
-    //    Assert.Contains(all5, seen);
-    //}
+        var seen = RunT5<Position, Velocity, Health, Mana, Energy>(world, new QueryDescription().WithAll<Position, Velocity, Health, Mana, Energy>());
+        Assert.Single(seen);
+        Assert.Contains(all5, seen);
+    }
 
-    //[Fact]
-    //public void QueryT5_PivotIndex4_S5Smallest()
-    //{
-    //    var world = NewWorld();
-    //    var all5 = world.CreateEntity();
-    //    world.Set<Position>(all5); world.Set<Velocity>(all5); world.Set<Health>(all5); world.Set<Mana>(all5); world.Set<Energy>(all5);
+    [Fact]
+    public void QueryT5_PivotIndex4_S5Smallest()
+    {
+        var world = NewWorld();
+        var all5 = world.CreateEntity();
+        world.Set<Position>(all5); world.Set<Velocity>(all5); world.Set<Health>(all5); world.Set<Mana>(all5); world.Set<Energy>(all5);
 
-    //    for (int i = 0; i < 5; i++)
-    //    {
-    //        var e = world.CreateEntity();
-    //        world.Set<Position>(e); world.Set<Velocity>(e); world.Set<Health>(e); world.Set<Mana>(e); // s5 (Energy) stays 1
-    //    }
+        for (int i = 0; i < 5; i++)
+        {
+            var e = world.CreateEntity();
+            world.Set<Position>(e); world.Set<Velocity>(e); world.Set<Health>(e); world.Set<Mana>(e); // s5 (Energy) stays 1
+        }
 
-    //    var seen = RunT5<Position, Velocity, Health, Mana, Energy>(world, new QueryDescription().WithAll<Position, Velocity, Health, Mana, Energy>());
-    //    Assert.Single(seen);
-    //    Assert.Contains(all5, seen);
-    //}
+        var seen = RunT5<Position, Velocity, Health, Mana, Energy>(world, new QueryDescription().WithAll<Position, Velocity, Health, Mana, Energy>());
+        Assert.Single(seen);
+        Assert.Contains(all5, seen);
+    }
 
-    //[Fact]
-    //public void QueryT5_NoDuplicates()
-    //{
-    //    var world = NewWorld();
-    //    for (int i = 0; i < 20; i++)
-    //    {
-    //        var e = world.CreateEntity();
-    //        world.Set<Position>(e); world.Set<Velocity>(e);
-    //        world.Set<Health>(e); world.Set<Mana>(e);
-    //        world.Set<Energy>(e);
-    //    }
-    //    var seen = RunT5<Position, Velocity, Health, Mana, Energy>(world, new QueryDescription().WithAll<Position, Velocity, Health, Mana, Energy>());
-    //    Assert.Equal(seen.Count, seen.Distinct().Count());
-    //}
+    [Fact]
+    public void QueryT5_NoDuplicates()
+    {
+        var world = NewWorld();
+        for (int i = 0; i < 20; i++)
+        {
+            var e = world.CreateEntity();
+            world.Set<Position>(e); world.Set<Velocity>(e);
+            world.Set<Health>(e); world.Set<Mana>(e);
+            world.Set<Energy>(e);
+        }
+        var seen = RunT5<Position, Velocity, Health, Mana, Energy>(world, new QueryDescription().WithAll<Position, Velocity, Health, Mana, Energy>());
+        Assert.Equal(seen.Count, seen.Distinct().Count());
+    }
 
     // =========================================================================
     // WithNone — cross-arity edge cases

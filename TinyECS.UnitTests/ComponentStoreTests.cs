@@ -1,7 +1,7 @@
 ﻿namespace TinyECS.UnitTests;
 
 /// <summary>
-/// Tests for ComponentStore&lt;T&gt; in isolation (no World).
+/// Tests for ComponentStore<T> in isolation (no World).
 /// We fabricate EntityIds directly since the constructor is internal — we access
 /// it from the same assembly via InternalsVisibleTo, or we use the World as a
 /// factory.  Here we just use the World to get valid IDs.
