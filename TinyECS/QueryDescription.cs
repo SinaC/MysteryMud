@@ -1,4 +1,5 @@
 ﻿using TinyECS.Extensions;
+using TinyECS.Pool;
 
 namespace TinyECS;
 
@@ -34,6 +35,13 @@ public sealed class QueryDescription
     internal WorldQueryExtensions.HasPredicate[]? CachedNone;
     internal WorldQueryExtensions.HasPredicate[]? CachedAny;
     internal World? CachedWorld;
+
+    // Cache for WorldPoolQueryExtensions (flat-pool PoolWorld)
+    // Separate fields so the same QueryDescription can be used with both
+    // world types simultaneously without cache collisions.
+    internal WorldPoolQueryExtensions.HasPredicate[]? CachedPoolNone;
+    internal WorldPoolQueryExtensions.HasPredicate[]? CachedPoolAny;
+    internal PoolWorld? CachedPoolWorld;
 
     // ------------------------------------------------------------------
     // WithAll — all listed components must be present

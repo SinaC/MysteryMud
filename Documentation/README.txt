@@ -241,6 +241,7 @@ Item
     ItemOwner: item owner if any
     DestroyedTag: is destroyed ? will be remove from world by CleanupSystem
     Weapon: is a weapon ? kind, dice count, dice value, list of proc id
+    not yet implemented: other type of item (armor, portal, ...)
 
 Room
   ├RoomTag
@@ -249,6 +250,11 @@ Room
 
 Zone
     not yet implemented
+
+Group
+  └GroupInstance: leader, members, loot rule, master looter
+  optional
+    DisbandedTag: disbanded will be removed on next cleanup
 
 Effect (not stacking if difference source)
  ├EffectInstance: Source, Target, Definition, StackCount
