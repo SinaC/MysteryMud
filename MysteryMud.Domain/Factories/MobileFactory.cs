@@ -60,6 +60,7 @@ public static class MobileFactory
                 EffectsByTag = new List<Entity>?[32]
             },
         });
+        mob.Set(new IRV { Immunities = 0, Resistances = 0, Vulnerabilities = 0 });
         mob.Set(new Location { Room = room });
         mob.Set(new Position { Value = PositionKind.Standing });
         mob.Set(new ThreatTable { Threat = [] });

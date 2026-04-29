@@ -1,10 +1,9 @@
 ﻿using MysteryMud.Domain.Ability.Definitions;
 using MysteryMud.Domain.Ability.Rules;
 
-namespace MysteryMud.Domain.Ability.Factories
+namespace MysteryMud.Domain.Ability.Factories;
+
+public interface IValidationRuleFactory
 {
-    public interface IValidationRuleFactory
-    {
-        IAbilityValidationRule Create(AbilityRuleDefinition def);
-    }
+    IAbilityValidationRule Create(AbilityRuleDefinition def);
 }

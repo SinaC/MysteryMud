@@ -108,7 +108,7 @@ public class EffectDisplayService : IEffectDisplayService
             DisplayResourceRegenModifier<EnergyRegenModifier>(viewer, effect, "Energy", x => x.Modifier, x => x.Value);
             DisplayResourceRegenModifier<RageDecayModifier>(viewer, effect, "Rage", x => x.Modifier, x => x.Value);
 
-            // TODO: expire ?
+            // TODO: expire actions ?
         }
     }
 

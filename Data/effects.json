@@ -5,7 +5,7 @@
       {
         "Type": "InstantDamage",
         "DamageFormula": "weapon.Damage * 3 + caster.Level",
-		"DamageKind": "Pierce"
+    "DamageKind": "Pierce"
       }
     ]
   },
@@ -15,7 +15,7 @@
       {
         "Type": "InstantDamage",
         "DamageFormula": "weapon.Damage",
-		"DamageKind": "Pierce"
+    "DamageKind": "Pierce"
       }
     ]
   },
@@ -25,31 +25,31 @@
       {
         "Type": "InstantDamage",
         "DamageFormula": "10 + caster.Strength",
-		"DamageKind": "Bash"
+    "DamageKind": "Bash"
       }
     ]
   },
   {
     "Name": "BashStun",
     "DurationFormula": "2",
-	"Tag": "Stun",
-	"WearOffMessage": "You regain your equilibrium.",
+  "Tag": "Stun",
+  "WearOffMessage": "You regain your equilibrium.",
     "Actions": [
       {
         "Type": "ApplyTag",
-		"Tag": "Stun"
+    "Tag": "Stun"
       }
     ]
   },
   {
     "Name": "BashSelfStun",
     "DurationFormula": "1",
-	"Tag": "Stun",
-	"WearOffMessage": "You regain your equilibrium.",
+  "Tag": "Stun",
+  "WearOffMessage": "You regain your equilibrium.",
     "Actions": [
       {
         "Type": "ApplyTag",
-		"Tag": "Stun"
+    "Tag": "Stun"
       }
     ]
   },
@@ -88,6 +88,12 @@
         "Stat": "ArmorClass",
         "Mode": "Flat",
         "ValueFormula": "-max(10, 10 * (caster.Level / 5))"
+      },
+      {
+        "Type": "StatModifier",
+        "Stat": "SavingThrow",
+        "Mode": "Flat",
+        "ValueFormula": "caster.Level/2"
       }
     ]
   },
@@ -98,7 +104,7 @@
     "Stacking": "None",
     "MaxStacks": 1,
     "DurationFormula": "caster.Level / 4",
-	"ApplyMessage": "A wave of calm passes over you.",
+  "ApplyMessage": "A wave of calm passes over you.",
     "WearOffMessage": "You have lost your peace of mind.",
     "Actions": [
       {
@@ -414,6 +420,28 @@
         "Type": "InstantRestoreResource",
         "Resource": "Mana",
         "ValueFormula": "100"
+      }
+    ]
+  },
+  {
+    "Name": "SeedsOfCorruption",
+    "Stacking": "Stack",
+    "MaxStacks": 3,
+    "DurationFormula": "5",
+    "TickRate": 1,
+    "ApplyMessage": "TBD",
+    "Actions": [
+      {
+        "Trigger": "OnTick",
+        "Type": "PeriodicDamage",
+        "DamageKind": "Negative",
+        "DamageFormula": "15"
+      },
+      {
+        "Trigger": "OnExpire",
+        "Type": "InstantDamage",
+        "DamageKind": "Negative",
+        "DamageFormula": "caster.Level * 2"
       }
     ]
   }

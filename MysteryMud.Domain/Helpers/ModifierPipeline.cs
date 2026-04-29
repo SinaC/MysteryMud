@@ -91,17 +91,17 @@ public static class ModifierPipeline
 
             foreach (var modifier in getModifiersFunc(modifiers))
             {
-                var i = (int)getStatFunc(modifier);
+                var statIndex = (int)getStatFunc(modifier);
                 var value = getModifierValueFunc(modifier) * stackCount;
 
                 switch (getModifierKindFunc(modifier))
                 {
-                    case ModifierKind.Flat: flat[i] += value; break;
-                    case ModifierKind.AddPercent: percent[i] += value; break;
-                    case ModifierKind.Multiply: multiply[i] *= value; break;
+                    case ModifierKind.Flat: flat[statIndex] += value; break;
+                    case ModifierKind.AddPercent: percent[statIndex] += value; break;
+                    case ModifierKind.Multiply: multiply[statIndex] *= value; break;
                     case ModifierKind.Override:
-                        overriding[i] = value;
-                        hasOverriding[i] = true;
+                        overriding[statIndex] = value;
+                        hasOverriding[statIndex] = true;
                         break;
                 }
             }

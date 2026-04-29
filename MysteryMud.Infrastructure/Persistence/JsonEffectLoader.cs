@@ -4,6 +4,7 @@ using MysteryMud.Domain.Action.Effect.Definitions;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
+using MysteryMud.GameData.Time;
 using MysteryMud.Infrastructure.Persistence.Converters;
 using MysteryMud.Infrastructure.Persistence.Dto;
 using MysteryMud.Infrastructure.Persistence.Dto.Actions;
@@ -52,6 +53,7 @@ public class JsonEffectLoader
 
         var isHarmful = MapIsHarmful(data);
         var tag = MapTag(data, actions);
+        var tickRate = TimeConversion.SecondsToTicks(data.TickRate);
 
         return new EffectDefinition
         {
@@ -66,7 +68,7 @@ public class JsonEffectLoader
             Stacking = EnumParser.Parse(data.Stacking, StackingRule.None),
             MaxStacks = data.MaxStacks,
             TickOnApply = data.TickOnApply,
-            TickRate = data.TickRate,
+            TickRate = tickRate,
 
             WearOffMessage = MapContextualizedMessage(data.WearOffMessage),
             ApplyMessage = MapContextualizedMessage(data.ApplyMessage),

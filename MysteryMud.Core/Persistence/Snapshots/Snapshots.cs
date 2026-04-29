@@ -61,6 +61,9 @@ public record PlayerSnapshot(
     string LocationKey,    // "zone_id::room_vnum"
     string Position,       // enum name
     string Form,           // enum name
+    ulong Immunities,        // bitmask
+    ulong Resistances,       // bitmask
+    ulong Vulnerabilities,   // bitmask
     long TotalXp,
     int AutoBehavior,   // bitmask
     string? OptionalJson,   // Gender, RespawnState, etc.

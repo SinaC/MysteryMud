@@ -72,6 +72,7 @@ public static class PlayerFactory
                     EffectsByTag = new List<Entity>?[32]
                 },
             });
+        player.Set(new IRV { Immunities = 0, Resistances = 0, Vulnerabilities = 0 });
         player.Set(new Location { Room = room });
         player.Set(new Position { Value = PositionKind.Standing });
         player.Set(new AutoBehaviour { Flags = AutoFlags.Loot | AutoFlags.Sacrifice | AutoFlags.Assist });
@@ -146,6 +147,7 @@ public static class PlayerFactory
                 EffectsByTag = new List<Entity>?[32]
             },
         });
+        player.Set(new IRV { Immunities = 0, Resistances = 0, Vulnerabilities = 0 });
         player.Set(new Location { Room = room });
         player.Set(new Position { Value = PositionKind.Standing });
         player.Set(new AutoBehaviour { Flags = AutoFlags.Loot | AutoFlags.Sacrifice | AutoFlags.Assist });
@@ -220,6 +222,7 @@ public static class PlayerFactory
                 EffectsByTag = new List<Entity>?[32]
             },
         });
+        player.Set(new IRV { Immunities = 0, Resistances = 0, Vulnerabilities = 0 });
         player.Set(new Location { Room = RoomFactory.StartingRoomEntity });
         player.Set(new Position { Value = PositionKind.Standing });
         player.Set(new AutoBehaviour { Flags = AutoFlags.Loot | AutoFlags.Sacrifice | AutoFlags.Assist });

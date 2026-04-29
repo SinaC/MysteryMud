@@ -132,10 +132,10 @@ public partial class EffectApplicationManager : IEffectApplicationManager
         // add TimedEffect component to effect
         var duration = Math.Max(1, effectRuntime.DurationFunc!.Invoke(ctx));
         var expirationTick = state.CurrentTick + TimeConversion.SecondsToTicks(duration);
+        var tickRate = effectRuntime.TickRate; // 0: means pure duration
         var nextTick = effectRuntime.TickOnApply
             ? state.CurrentTick
-            : state.CurrentTick + effectRuntime.TickRate; // 0: means pure duration
-        var tickRate = effectRuntime.TickRate; // 0: means pure duration
+            : state.CurrentTick + tickRate; // 0: means pure duration
         effect.Set(new TimedEffect
         {
             StartTick = state.CurrentTick,

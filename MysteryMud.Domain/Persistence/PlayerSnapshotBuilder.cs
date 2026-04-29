@@ -25,6 +25,7 @@ public sealed class PlayerSnapshotBuilder : ISnapshotBuilder
         ref var baseStats = ref entity.Get<BaseStats>();
         ref var inventory = ref entity.Get<Inventory>();
         ref var equipment = ref entity.Get<Equipment>();
+        ref var irv = ref entity.Get<IRV>();
 
         // Optional components
         string? optionalJson = BuildOptionalJson(world, entity);
@@ -56,6 +57,9 @@ public sealed class PlayerSnapshotBuilder : ISnapshotBuilder
             LocationKey: location.Room.GetHashCode().ToString(),
             Position: position.Value.ToString(),
             Form: form.Value.ToString(),
+            Immunities: irv.Immunities,
+            Resistances: irv.Resistances,
+            Vulnerabilities: irv.Vulnerabilities,
             TotalXp: progression.Experience,
             AutoBehavior: (int)autoBehavior.Flags,
             OptionalJson: optionalJson,

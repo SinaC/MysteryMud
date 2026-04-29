@@ -153,6 +153,7 @@ var basePath = AppContext.BaseDirectory;
 
 var random = new SeededRandom();
 var formulaCompiler = new EffectFormulaCompiler(random);
+var resistanceService = new ResistanceService(logger);
 
 // load effect definitions
 var effectLoader = new JsonEffectLoader(formulaCompiler);
@@ -173,7 +174,7 @@ abilityOutcomeResolverRegistry.Register("berserk", new BerserkOutcomeResolver(ra
 var abilityLoader = new JsonAbilityLoader();
 var abilityDefinitions = abilityLoader.Load(Path.Combine(basePath, gamePaths.AbilitiesJson));
 var skillCommandDefinitions = abilityDefinitions.Where(x => x.Kind == AbilityKind.Skill && x.Command is not null).Select(x => x.Command!.Value).ToArray();
-var validationRuleFactory = new ValidationRuleFactory(random);
+var validationRuleFactory = new ValidationRuleFactory(resistanceService, random);
 var abilityRuntimeFactory = new AbilityRuntimeFactory(validationRuleFactory);
 var abilityRegistry = new AbilityRegistry(effectRegistry, abilityOutcomeResolverRegistry, abilityRuntimeFactory);
 abilityRegistry.Register(abilityDefinitions);
@@ -335,6 +336,7 @@ services.AddSingleton<IFollowService, FollowService>();
 services.AddSingleton<IGroupService, GroupService>();
 services.AddSingleton<ICastMessageService, CastMessageService>();
 services.AddSingleton<ICombatService, CombatService>();
+services.AddSingleton<IResistanceService>(resistanceService);
 
 // Command dispatcher
 services.AddSingleton<ICommandDispatcher, CommandDispatcher>();

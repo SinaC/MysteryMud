@@ -54,7 +54,7 @@ public class EffectiveCharacterStatsSystem
                 ref var itemEffects = ref equippedItem.Get<ItemEffects>();
                 ModifierPipeline.AccumulateModifiers<CharacterStatModifiers, CharacterStatModifier>(
                     itemEffects.Data.Effects,
-                    x => x.Stat,           // route modifier to correct stat bucket
+                    x => x.Stat,
                     x => x.Values,
                     x => x.Modifier,
                     x => x.Value,
@@ -73,11 +73,11 @@ public class EffectiveCharacterStatsSystem
             // now apply — one pass over stats, no modifier scanning
             foreach (var stat in _allStats)
             {
-                var i = (int)stat;
+                var statIndex = (int)stat;
                 var baseValue = baseStats.Values[stat];
-                var rawValue = hasOverriding[i]
-                    ? overriding[i]
-                    : ((baseValue + flat[i]) * (100 + percent[i]) * multiply[i] / 100);
+                var rawValue = hasOverriding[statIndex]
+                    ? overriding[statIndex]
+                    : ((baseValue + flat[statIndex]) * (100 + percent[statIndex]) * multiply[statIndex] / 100);
 
                 effectiveStats.Values[stat] = (int)Math.Round(rawValue, MidpointRounding.AwayFromZero);
             }
