@@ -88,7 +88,7 @@ public class AbilityValidationSystem
             if (abilityRuntime.Targeting.Selection == AbilityTargetSelection.Single ||
                 abilityRuntime.Targeting.ResolveAt == AbilityTargetResolveAt.CastStart)
             {
-                var result = _abilityTargetResolver.Resolve(source, targetKind, targetIndex, targetName, abilityRuntime.Targeting, state);
+                var result = _abilityTargetResolver.Resolve(source, targetKind, targetIndex, targetName, abilityRuntime.Targeting);
 
                 if (result.Status != TargetResolutionStatus.Ok)
                 {
@@ -165,7 +165,7 @@ public class AbilityValidationSystem
             // For instant AoE that deferred resolution, resolve now
             if (resolvedTargets is null)
             {
-                var result = _abilityTargetResolver.Resolve(source, targetKind, targetIndex, targetName, abilityRuntime.Targeting, state);
+                var result = _abilityTargetResolver.Resolve(source, targetKind, targetIndex, targetName, abilityRuntime.Targeting);
                 resolvedTargets = result.Status == TargetResolutionStatus.Ok
                     ? FilterTargets(abilityRuntime, result.Targets, source, abortOnFirst: false) ?? []
                     : [];

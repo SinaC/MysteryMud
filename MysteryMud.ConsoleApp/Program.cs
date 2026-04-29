@@ -135,6 +135,7 @@ market.Get<RoomContents>().Items.Add(chest);
 var gem = ItemFactory.CreateItemInContainer(world, "gem", "a %#FF0000>#FF00FFsparkling gem%x", chest);
 var trash = ItemFactory.CreateItemInRoom(world, "trash", "some trash", market);
 var collar = ItemFactory.CreateItemInInventory(world, "collar", "a nice collar", goblin);
+collar.Set(new Equipable { Slot = EquipmentSlotKind.Amulet });
 
 RoomFactory.StartingRoomEntity = market;
 RoomFactory.RespawnRoomEntity = temple;

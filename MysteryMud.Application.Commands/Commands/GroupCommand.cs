@@ -21,11 +21,13 @@ public sealed class GroupCommand : ICommand
 {
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.Target;
 
+    private readonly World _world;
     private readonly IGameMessageService _msg;
     private readonly IGroupService _groupService;
 
-    public GroupCommand(IGameMessageService msg, IGroupService groupService)
+    public GroupCommand(World world, IGameMessageService msg, IGroupService groupService)
     {
+        _world = world;
         _msg = msg;
         _groupService = groupService;
     }
@@ -71,7 +73,7 @@ public sealed class GroupCommand : ICommand
         // we are not in a group, create a group and add target
         if (!actor.Has<GroupMember>())
         {
-            var group = state.World.CreateEntity();
+            var group = _world.CreateEntity();
             group.Set(new GroupInstance
             {
                 Leader = actor, // already set as leader

@@ -1,5 +1,4 @@
 ﻿using DefaultEcs;
-using MysteryMud.Core;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
@@ -14,27 +13,32 @@ namespace MysteryMud.Domain.Ability.Services;
 
 public sealed class AbilityTargetResolver : IAbilityTargetResolver
 {
+    private World _world;
+
+    public AbilityTargetResolver(World world)
+    {
+        _world = world;
+    }
+
     public TargetResolutionResult Resolve(
         in Entity source,
         TargetKind targetKind,
         int targetIndex,
         string targetName,
-        AbilityTargetingDefinition targeting,
-        GameState state)
+        AbilityTargetingDefinition targeting)
     {
         return targeting.Selection switch
         {
-            AbilityTargetSelection.Single => ResolveSingle(source, targetKind, targetIndex, targetName, targeting, state.World),
-            AbilityTargetSelection.AoE => ResolveAoE(source, targeting, state.World),
+            AbilityTargetSelection.Single => ResolveSingle(source, targetKind, targetIndex, targetName, targeting),
+            AbilityTargetSelection.AoE => ResolveAoE(source, targeting),
             _ => TargetResolutionResult.Failure(TargetResolutionStatus.NoTarget)
         };
     }
 
     public TargetResolutionResult Resolve(
             in Entity source,
-            AbilityTargetingDefinition targeting,
-            GameState state)
-        => Resolve(in source, TargetKind.Self, 0, null!, targeting, state);
+            AbilityTargetingDefinition targeting)
+        => Resolve(in source, TargetKind.Self, 0, null!, targeting);
 
     // ---- Single ----------------------------------------------------------
 
@@ -43,8 +47,7 @@ public sealed class AbilityTargetResolver : IAbilityTargetResolver
         TargetKind targetKind,
         int targetIndex,
         string targetName,
-        AbilityTargetingDefinition targeting,
-        World world)
+        AbilityTargetingDefinition targeting)
     {
         // Requirement.None → always self
         if (targeting.Requirement == AbilityTargetRequirement.None)
@@ -62,7 +65,7 @@ public sealed class AbilityTargetResolver : IAbilityTargetResolver
             foreach (var ctx in targeting.Contexts)
             {
                 // TODO: don't generate a list of entities then search among the list a matching target -> apply name filter while iterating
-                var candidates = GetScopedEntities(world, source, ctx.Scope)
+                var candidates = GetScopedEntities(source, ctx.Scope)
                     .Where(x => PassesFilter(in x, ctx.Filter)).ToList();
                 var candidate = EntityFinder.SelectSingleTarget(source, targetKind, targetIndex, targetName, candidates);
 
@@ -103,8 +106,7 @@ public sealed class AbilityTargetResolver : IAbilityTargetResolver
 
     private TargetResolutionResult ResolveAoE(
         in Entity source,
-        AbilityTargetingDefinition targeting,
-        World world)
+        AbilityTargetingDefinition targeting)
     {
         // Union all contexts, deduplicate in case scopes overlap
         var seen = new HashSet<Entity>();
@@ -113,7 +115,7 @@ public sealed class AbilityTargetResolver : IAbilityTargetResolver
         foreach (var ctx in targeting.Contexts)
         {
             // TODO: don't generate a list of entities then search among the list a matching target -> apply filters while iterating
-            var candidates = GetScopedEntities(world, source, ctx.Scope);
+            var candidates = GetScopedEntities(source, ctx.Scope);
 
             foreach (var entity in candidates)
             {
@@ -130,12 +132,12 @@ public sealed class AbilityTargetResolver : IAbilityTargetResolver
 
     // ---- Helpers ---------------------------------------------------------
 
-    private static IEnumerable<Entity> GetScopedEntities(World world, in Entity source, AbilityTargetScope scope)
+    private static IEnumerable<Entity> GetScopedEntities(in Entity source, AbilityTargetScope scope)
         => scope switch
         {
             AbilityTargetScope.Self => [source],
             AbilityTargetScope.Room => GetEntitiesInSameRoom(source),
-            AbilityTargetScope.World => GetAllEntities(world),
+            AbilityTargetScope.World => GetAllEntities(),
             AbilityTargetScope.Inventory => GetInventoryEntities(source),
             _ => []
         };
@@ -146,9 +148,9 @@ public sealed class AbilityTargetResolver : IAbilityTargetResolver
         return [.. roomContents.Characters, .. roomContents.Items];
     }
 
-    private static IEnumerable<Entity> GetAllEntities(World world)
+    private static IEnumerable<Entity> GetAllEntities()
     {
-        // TODO
+        // TODO: use _world.GetEntities().AsEnumerable() once
         return [];
     }
 

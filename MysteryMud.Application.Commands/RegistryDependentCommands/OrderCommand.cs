@@ -13,6 +13,7 @@ using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
+using System.Runtime.CompilerServices;
 
 namespace MysteryMud.Application.Commands.RegistryDependentCommands;
 

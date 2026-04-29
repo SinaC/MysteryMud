@@ -1,5 +1,4 @@
 ﻿using DefaultEcs;
-using MysteryMud.Core;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 
@@ -12,11 +11,9 @@ public interface IAbilityTargetResolver
             TargetKind targetKind,
             int targetIndex,
             string targetName,
-            AbilityTargetingDefinition targeting,
-            GameState state);
+            AbilityTargetingDefinition targeting);
 
     TargetResolutionResult Resolve(
             in Entity source,
-            AbilityTargetingDefinition targeting,
-            GameState state);
+            AbilityTargetingDefinition targeting);
 }
