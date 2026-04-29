@@ -4,6 +4,7 @@ using MysteryMud.Core.Persistence.Snapshots;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
+using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.GameData.Enums;
 using System.Text.Json;
@@ -132,7 +133,27 @@ public sealed class PlayerSnapshotBuilder : ISnapshotBuilder
         };
 
         // Conditionally add Mana, Energy, Rage if components are present
-        // if (world.Has<Mana>(entity)) { ... list.Add(new("Mana", ...)); }
+        if (entity.Has<Mana>())
+        {
+            ref var mana = ref entity.Get<Mana>();
+            ref var baseMana = ref entity.Get<BaseMana>();
+            ref var manaRegen = ref entity.Get<ManaRegen>();
+            list.Add(new ("Mana", mana.Current, baseMana.Max, manaRegen.CurrentAmountPerSecond, manaRegen.BaseAmountPerSecond));
+        }
+        if (entity.Has<Energy>())
+        {
+            ref var energy = ref entity.Get<Energy>();
+            ref var baseEnergy = ref entity.Get<BaseEnergy>();
+            ref var energyRegen = ref entity.Get<EnergyRegen>();
+            list.Add(new("Energy", energy.Current, baseEnergy.Max, energyRegen.CurrentAmountPerSecond, energyRegen.BaseAmountPerSecond));
+        }
+        if (entity.Has<Rage>())
+        {
+            ref var rage = ref entity.Get<Rage>();
+            ref var baseRage = ref entity.Get<BaseRage>();
+            ref var rageDecay = ref entity.Get<RageDecay>();
+            list.Add(new("Rage", rage.Current, baseRage.Max, rageDecay.CurrentAmountPerSecond, rageDecay.BaseAmountPerSecond));
+        }
 
         return list.ToArray();
     }

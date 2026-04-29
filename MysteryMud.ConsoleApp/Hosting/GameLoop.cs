@@ -201,7 +201,6 @@ internal class GameLoop
         {
             var state = new GameState
             {
-                World = _world,
                 CurrentTick = currentTick,
                 CurrentTimeMs = currentTick * TimeRate.TicksInMilliseconds
             };

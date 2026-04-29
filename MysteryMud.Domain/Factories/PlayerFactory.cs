@@ -31,37 +31,37 @@ public static class PlayerFactory
         var player = world.CreateEntity();
         player.Set(new CharacterTag());
         player.Set(new PlayerTag());
-            player.Set(new CommandLevel { Value = CommandLevelKind.Player });
+        player.Set(new CommandLevel { Value = CommandLevelKind.Player });
         player.Set(new CommandBuffer());
         player.Set(commandThrottle);
         player.Set(new Name { Value = name });
         player.Set(new Level { Value = 1 });
         player.Set(new Progression { Experience = 0, ExperienceByLevel = 1000, ExperienceToNextLevel = 2000 });
         player.Set(new BaseStats
-            {
-                Values = CharacterStatValues.From(
-                    (CharacterStatKind.Strength, 15),
-                    (CharacterStatKind.Intelligence, 10),
-                    (CharacterStatKind.Wisdom, 15),
-                    (CharacterStatKind.Dexterity, 12),
-                    (CharacterStatKind.Constitution, 15),
-                    (CharacterStatKind.HitRoll, 0),
-                    (CharacterStatKind.DamRoll, 0),
-                    (CharacterStatKind.ArmorClass, 0))
-            });
+        {
+            Values = CharacterStatValues.From(
+                (CharacterStatKind.Strength, 15),
+                (CharacterStatKind.Intelligence, 10),
+                (CharacterStatKind.Wisdom, 15),
+                (CharacterStatKind.Dexterity, 12),
+                (CharacterStatKind.Constitution, 15),
+                (CharacterStatKind.SavingThrow, 0),
+                (CharacterStatKind.HitRoll, 0),
+                (CharacterStatKind.DamRoll, 0))
+        });
         player.Set(new EffectiveStats
         {
             Values = CharacterStatValues.From(
-                    (CharacterStatKind.Strength, 15),
-                    (CharacterStatKind.Intelligence, 10),
-                    (CharacterStatKind.Wisdom, 15),
-                    (CharacterStatKind.Dexterity, 12),
-                    (CharacterStatKind.Constitution, 15),
-                    (CharacterStatKind.HitRoll, 0),
-                    (CharacterStatKind.DamRoll, 0),
-                    (CharacterStatKind.ArmorClass, 0))
+                (CharacterStatKind.Strength, 15),
+                (CharacterStatKind.Intelligence, 10),
+                (CharacterStatKind.Wisdom, 15),
+                (CharacterStatKind.Dexterity, 12),
+                (CharacterStatKind.Constitution, 15),
+                (CharacterStatKind.SavingThrow, 0),
+                (CharacterStatKind.HitRoll, 0),
+                (CharacterStatKind.DamRoll, 0))
         });
-            player.Set(new Form { Value = FormType.Humanoid });
+        player.Set(new Form { Value = FormType.Humanoid });
         player.Set(new Inventory { Items = [] });
         player.Set(new Equipment { Slots = [] });
         player.Set(new CharacterEffects
@@ -119,9 +119,9 @@ public static class PlayerFactory
                 (CharacterStatKind.Wisdom, 15),
                 (CharacterStatKind.Dexterity, 12),
                 (CharacterStatKind.Constitution, 15),
+                (CharacterStatKind.SavingThrow, 0),
                 (CharacterStatKind.HitRoll, 0),
-                (CharacterStatKind.DamRoll, 0),
-                (CharacterStatKind.ArmorClass, 0))
+                (CharacterStatKind.DamRoll, 0))
         });
         player.Set(new EffectiveStats
         {
@@ -131,9 +131,9 @@ public static class PlayerFactory
                 (CharacterStatKind.Wisdom, 15),
                 (CharacterStatKind.Dexterity, 12),
                 (CharacterStatKind.Constitution, 15),
+                (CharacterStatKind.SavingThrow, 0),
                 (CharacterStatKind.HitRoll, 0),
-                (CharacterStatKind.DamRoll, 0),
-                (CharacterStatKind.ArmorClass, 0))
+                (CharacterStatKind.DamRoll, 0))
         });
         player.Set(new Form { Value = FormType.Humanoid });
         player.Set(new Inventory { Items = [] });
@@ -193,9 +193,9 @@ public static class PlayerFactory
                 (CharacterStatKind.Wisdom, 15),
                 (CharacterStatKind.Dexterity, 12),
                 (CharacterStatKind.Constitution, 15),
+                (CharacterStatKind.SavingThrow, 0),
                 (CharacterStatKind.HitRoll, 0),
-                (CharacterStatKind.DamRoll, 0),
-                (CharacterStatKind.ArmorClass, 0))
+                (CharacterStatKind.DamRoll, 0))
         });
         player.Set(new EffectiveStats
         {
@@ -205,9 +205,9 @@ public static class PlayerFactory
                 (CharacterStatKind.Wisdom, 15),
                 (CharacterStatKind.Dexterity, 12),
                 (CharacterStatKind.Constitution, 15),
+                (CharacterStatKind.SavingThrow, 0),
                 (CharacterStatKind.HitRoll, 0),
-                (CharacterStatKind.DamRoll, 0),
-                (CharacterStatKind.ArmorClass, 0))
+                (CharacterStatKind.DamRoll, 0))
         });
         player.Set(new Form { Value = FormType.Humanoid });
         player.Set(new Inventory { Items = [] });

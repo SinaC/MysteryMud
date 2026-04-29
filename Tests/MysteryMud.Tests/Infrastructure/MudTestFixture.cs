@@ -27,7 +27,7 @@ internal class MudTestFixture : IDisposable
     public MudTestFixture()
     {
         World = new World();
-        State = new GameState { World = World, CurrentTick = 0, CurrentTimeMs = 0 };
+        State = new GameState { CurrentTick = 0, CurrentTimeMs = 0 };
     }
 
     // fluent entity builders

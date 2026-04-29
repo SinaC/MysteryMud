@@ -17,14 +17,16 @@ namespace MysteryMud.Domain.Systems;
 
 public sealed class DeathSystem
 {
+    private readonly World _world;
     private readonly IFollowService _followService;
     private readonly ICombatService _combatService;
     private readonly IDirtyTracker _dirtyTracker;
     private readonly IIntentContainer _intents;
     private readonly IEventBuffer<DeathEvent> _deathEvents;
 
-    public DeathSystem(IFollowService followService, ICombatService combatService, IDirtyTracker dirtyTracker, IIntentContainer intents, IEventBuffer<DeathEvent> deathEvents)
+    public DeathSystem(World world, IFollowService followService, ICombatService combatService, IDirtyTracker dirtyTracker, IIntentContainer intents, IEventBuffer<DeathEvent> deathEvents)
     {
+        _world = world;
         _followService = followService;
         _combatService = combatService;
         _dirtyTracker = dirtyTracker;
@@ -63,11 +65,11 @@ public sealed class DeathSystem
         _followService.StopAllFollowers(victim);
 
         // corpse first — reads CombatInitiator to determine loot owner
-        CreateCorpse(state.World, victim, deathEvent.Killer);
+        CreateCorpse(_world, victim, deathEvent.Killer);
 
         _combatService.RemoveFromAllCombat(state, victim);
-        _combatService.ForfeitAllClaims(state.World, victim);
-        _combatService.RemoveFromAllThreatTable(state.World, victim);
+        _combatService.ForfeitAllClaims(_world, victim);
+        _combatService.RemoveFromAllThreatTable(_world, victim);
     }
 
     private void CreateCorpse(World world, Entity victim, Entity killer)

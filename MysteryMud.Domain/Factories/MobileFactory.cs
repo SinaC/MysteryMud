@@ -28,9 +28,9 @@ public static class MobileFactory
                     (CharacterStatKind.Wisdom, 15),
                     (CharacterStatKind.Dexterity, 12),
                     (CharacterStatKind.Constitution, 15),
+                    (CharacterStatKind.SavingThrow, 0),
                     (CharacterStatKind.HitRoll, 0),
-                    (CharacterStatKind.DamRoll, 0),
-                    (CharacterStatKind.ArmorClass, 0))
+                    (CharacterStatKind.DamRoll, 0))
         });
         mob.Set(new EffectiveStats
         {
@@ -40,9 +40,9 @@ public static class MobileFactory
                     (CharacterStatKind.Wisdom, 15),
                     (CharacterStatKind.Dexterity, 12),
                     (CharacterStatKind.Constitution, 15),
+                    (CharacterStatKind.SavingThrow, 0),
                     (CharacterStatKind.HitRoll, 0),
-                    (CharacterStatKind.DamRoll, 0),
-                    (CharacterStatKind.ArmorClass, 0))
+                    (CharacterStatKind.DamRoll, 0))
         });
         mob.Set(new Health { Current = 5, Max = 100 });
         mob.Set(new BaseHealth { Max = 100 });

@@ -77,7 +77,7 @@ public class AbilityCastingSystem
             else
             {
                 // AoE CastCompletion: resolve the room snapshot now
-                var result = _abilityTargetResolver.Resolve(casting.Source, abilityRuntime.Targeting, state);
+                var result = _abilityTargetResolver.Resolve(casting.Source, abilityRuntime.Targeting);
                 var filtered = FilterTargets(abilityRuntime, result.Targets, casting.Source);
                 targets = filtered;
             }

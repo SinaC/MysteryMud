@@ -20,6 +20,7 @@ namespace MysteryMud.Domain.Action.Effect;
 
 public partial class EffectApplicationManager : IEffectApplicationManager
 {
+    private readonly World _world;
     private readonly ILogger _logger;
     private readonly IGameMessageService _msg;
     private readonly IDirtyTracker _dirtyTracker;
@@ -27,8 +28,9 @@ public partial class EffectApplicationManager : IEffectApplicationManager
     private readonly IEffectExecutor _effectExecutor;
     private readonly IEffectLifecycleManager _effectLifecycleManager;
 
-    public EffectApplicationManager(ILogger logger, IGameMessageService msg, IDirtyTracker dirtyTracker, IIntentWriterContainer intent, IEffectExecutor effectExecutor, IEffectLifecycleManager effectLifecycleManager)
+    public EffectApplicationManager(World world, ILogger logger, IGameMessageService msg, IDirtyTracker dirtyTracker, IIntentWriterContainer intent, IEffectExecutor effectExecutor, IEffectLifecycleManager effectLifecycleManager)
     {
+        _world = world;
         _logger = logger;
         _msg = msg;
         _dirtyTracker = dirtyTracker;
@@ -96,7 +98,7 @@ public partial class EffectApplicationManager : IEffectApplicationManager
         snapshot.SourceStats = source.Get<EffectiveStats>().Values;
 
         // create effect with snapshotted values
-        var effect = state.World.CreateEntity();
+        var effect = _world.CreateEntity();
         effect.Set(new EffectInstance
         {
             Source = source,

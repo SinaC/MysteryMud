@@ -22,6 +22,7 @@ public class DeathSystemTests : IDisposable
         _combatService = new CombatService(_f.World);
         var dirtyTracker = new DirtyTracker();
         _sut = new DeathSystem(
+            _f.World,
             _followService,
             _combatService,
             dirtyTracker,

@@ -18,6 +18,7 @@ namespace MysteryMud.Domain.Systems;
 
 public class CleanupSystem
 {
+    private readonly World _world;
     private readonly ILogger _logger;
     private readonly IFollowService _followService;
     private readonly IGroupService _groupService;
@@ -31,6 +32,7 @@ public class CleanupSystem
 
     public CleanupSystem(World world, ILogger logger, IFollowService followService, IGroupService groupService, ICombatService combatService, IEffectLifecycleManager effectLifecycleManager)
     {
+        _world = world;
         _logger = logger;
         _followService = followService;
         _groupService = groupService;
@@ -118,8 +120,8 @@ public class CleanupSystem
                 _groupService.RemoveMember(state, groupMember.Group, player);
             }
             _combatService.RemoveFromAllCombat(state, player);
-            _combatService.RemoveFromAllThreatTable(state.World, player);
-            _combatService.ForfeitAllClaims(state.World, player);
+            _combatService.RemoveFromAllThreatTable(_world, player);
+            _combatService.ForfeitAllClaims(_world, player);
             RemoveFromRoomContents(player);
             CollectCharacterEffects(player, toDestroy);
 
@@ -142,7 +144,7 @@ public class CleanupSystem
             _followService.StopFollowing(npc);
             _followService.StopAllFollowers(npc);
             _combatService.RemoveFromAllCombat(state, npc);
-            _combatService.RemoveFromAllThreatTable(state.World, npc);
+            _combatService.RemoveFromAllThreatTable(_world, npc);
             RemoveFromRoomContents(npc);
             CollectCharacterEffects(npc, toDestroy);
 
@@ -228,7 +230,7 @@ public class CleanupSystem
         roomContents.Characters.Remove(victim);
     }
 
-    private void CollectCharacterEffects(Entity player, List<Entity> toDestroy)
+    private static void CollectCharacterEffects(Entity player, List<Entity> toDestroy)
     {
         ref var characterEffects = ref player.Get<CharacterEffects>();
         foreach (var effect in characterEffects.Data.Effects)
@@ -238,7 +240,7 @@ public class CleanupSystem
         }
     }
 
-    private void CollectItemEffects(Entity item, List<Entity> toDestroy)
+    private static void CollectItemEffects(Entity item, List<Entity> toDestroy)
     {
         ref var itemEffects = ref item.Get<ItemEffects>();
         foreach (var effect in itemEffects.Data.Effects)
