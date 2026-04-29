@@ -1,6 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Core;
+﻿using DefaultEcs;
 using MysteryMud.Core.Persistence;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
@@ -64,7 +62,7 @@ public class ItemEffectHost : IEffectHost
         {
             var tagIndex = (int)effectRuntime.Tag.ItemTag;
             // add EffectTag component to effect
-            effect.Add(new ItemEffectTag
+            effect.Set(new ItemEffectTag
             {
                 Id = effectRuntime.Tag.ItemTag
             });
@@ -79,20 +77,20 @@ public class ItemEffectHost : IEffectHost
         }
 
         // if item is worn, check character stat/resource/resource regen modifiers
-        ref var equipped = ref _target.TryGetRef<Equipped>(out var isEquipped);
-        if (isEquipped)
+        if (_target.Has<Equipped>())
         {
+            ref var equipped = ref _target.Get<Equipped>();
             var wearer = equipped.Wearer;
-            if (wearer.IsAlive() && wearer.Has<PlayerTag>())
+            if (wearer.IsAlive && wearer.Has<PlayerTag>())
             {
                 _dirtyTracker.MarkDirty(wearer, DirtyReason.Effects);
             }
         }
     }
 
-    public void UnregisterEffect(GameState state, Entity effect, EffectRuntime effectRuntime)
+    public void UnregisterEffect(Entity effect, EffectRuntime effectRuntime)
     {
-        if (!effect.IsAlive()) // don't use helpers, effect with ExpiredTag should be removable
+        if (!effect.IsAlive) // don't use helpers, effect with ExpiredTag should be removable
             return;
 
         // remove the effect from the target's ItemEffects
@@ -118,7 +116,7 @@ public class ItemEffectHost : IEffectHost
         MarkAsDirtyIfNeeded(effect);
 
         // destroy effect
-        state.World.Destroy(effect);
+        effect.Set<ExpiredTag>();
     }
 
     public void MarkAsDirtyIfNeeded(Entity effect)
@@ -129,38 +127,38 @@ public class ItemEffectHost : IEffectHost
         // ItemResourceRegenModifiers: for item with a dedicated resource
 
         // if item is worn, check character stat/resource/resource regen modifiers
-        ref var equipped = ref _target.TryGetRef<Equipped>(out var isEquipped);
-        if (isEquipped)
+        if (_target.Has<Equipped>())
         {
+            ref var equipped = ref _target.Get<Equipped>();
             var wearer = equipped.Wearer;
-            if (wearer.IsAlive())
+            if (wearer.IsAlive)
             {
                 // if effect has StatModifiers
                 // flag the wearer's stats as dirty so they will be recalculated without this effect
                 if (effect.Has<CharacterStatModifiers>() && !wearer.Has<DirtyStats>())
-                    wearer.Add<DirtyStats>();
+                    wearer.Set<DirtyStats>();
 
                 // if effect has ResourceModifiers
                 // flag the wearer's resources as dirty so they will be recalculated without this effect
                 if (effect.Has<CharacterResourceModifiers<HealthModifier>>() && !wearer.Has<DirtyHealth>())
-                    wearer.Add<DirtyHealth>();
+                    wearer.Set<DirtyHealth>();
                 if (effect.Has<CharacterResourceModifiers<ManaModifier>>() && !wearer.Has<DirtyMana>())
-                    wearer.Add<DirtyMana>();
+                    wearer.Set<DirtyMana>();
                 if (effect.Has<CharacterResourceModifiers<EnergyModifier>>() && !wearer.Has<DirtyEnergy>())
-                    wearer.Add<DirtyEnergy>();
+                    wearer.Set<DirtyEnergy>();
                 if (effect.Has<CharacterResourceModifiers<RageModifier>>() && !wearer.Has<DirtyRage>())
-                    wearer.Add<DirtyRage>();
+                    wearer.Set<DirtyRage>();
 
                 // if effect has ResourceRegebModifiers
                 // flag the wearer's resource regens as dirty so they will be recalculated without this effect
                 if (effect.Has<CharacterResourceRegenModifiers<HealthRegenModifier>>() && !wearer.Has<DirtyHealthRegen>())
-                    wearer.Add<DirtyHealthRegen>();
+                    wearer.Set<DirtyHealthRegen>();
                 if (effect.Has<CharacterResourceRegenModifiers<ManaRegenModifier>>() && !wearer.Has<DirtyManaRegen>())
-                    wearer.Add<DirtyManaRegen>();
+                    wearer.Set<DirtyManaRegen>();
                 if (effect.Has<CharacterResourceRegenModifiers<EnergyModifier>>() && !wearer.Has<DirtyEnergyRegen>())
-                    wearer.Add<DirtyEnergyRegen>();
+                    wearer.Set<DirtyEnergyRegen>();
                 if (effect.Has<CharacterResourceRegenModifiers<RageDecayModifier>>() && !wearer.Has<DirtyRageDecay>())
-                    wearer.Add<DirtyRageDecay>();
+                    wearer.Set<DirtyRageDecay>();
             }
 
             if (wearer.Has<PlayerTag>())

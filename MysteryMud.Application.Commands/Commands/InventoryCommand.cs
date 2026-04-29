@@ -1,10 +1,8 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
-using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Services;
 
 namespace MysteryMud.Application.Commands.Commands;
@@ -32,7 +30,7 @@ public sealed class InventoryCommand : ICommand
             foreach (var item in inventory.Items)
             {
                 if (!item.Has<Equipped>())
-                    _msg.To(actor).Send($"- {item.DisplayName}");
+                    _msg.To(actor).Act("- {0}").With(item);
             }
         }
     }

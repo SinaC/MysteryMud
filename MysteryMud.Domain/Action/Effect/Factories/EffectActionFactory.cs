@@ -1,6 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using MysteryMud.Core.Effects;
 using MysteryMud.Domain.Ability.Resources;
 using MysteryMud.Domain.Action.Effect.Definitions;
@@ -46,11 +44,10 @@ public class EffectActionFactory : IEffectActionFactory
         where TDirtyTag : struct
     {
         var target = effectContext.Target;
-        ref var equipped = ref target.TryGetRef<Equipped>(out var isEquipped);
-        if (isEquipped)
-            target = equipped.Wearer;
+        if (target.Has<Equipped>())
+            target = target.Get<Equipped>().Wearer;
         if (!target.Has<TDirtyTag>())
-            target.Add<TDirtyTag>();
+            target.Set<TDirtyTag>();
     }
 
     private Action<EffectExecutionContext> CreateCharacterStatModifier(CharacterStatModifierActionDefinition definition)
@@ -69,12 +66,14 @@ public class EffectActionFactory : IEffectActionFactory
                     Value = value
                 };
 
-                ref var statModifiers = ref effect.TryGetRef<CharacterStatModifiers>(out var hasStatModifiers);
-                if (hasStatModifiers)
+                if (effect.Has<CharacterStatModifiers>())
+                {
+                    ref var statModifiers = ref effect.Get<CharacterStatModifiers>();
                     statModifiers.Values.Add(modifier);
+                }
                 else
                 {
-                    effect.Add(new CharacterStatModifiers
+                    effect.Set(new CharacterStatModifiers
                     {
                         Values = [modifier]
                     });
@@ -103,12 +102,14 @@ public class EffectActionFactory : IEffectActionFactory
                     Value = value
                 };
 
-                ref var characterResourceModifiers = ref effect.TryGetRef<CharacterResourceModifiers<HealthModifier>>(out var hasCharacterResourceModifiers);
-                if (hasCharacterResourceModifiers)
+                if (effect.Has<CharacterResourceModifiers<HealthModifier>>())
+                {
+                    ref var characterResourceModifiers = ref effect.Get<CharacterResourceModifiers<HealthModifier>>();
                     characterResourceModifiers.Values.Add(modifier);
+                }
                 else
                 {
-                    effect.Add(new CharacterResourceModifiers<HealthModifier>
+                    effect.Set(new CharacterResourceModifiers<HealthModifier>
                     {
                         Values = [modifier]
                     });
@@ -137,12 +138,14 @@ public class EffectActionFactory : IEffectActionFactory
                     Value = value
                 };
 
-                ref var characterResourceModifiers = ref effect.TryGetRef<CharacterResourceRegenModifiers<HealthRegenModifier>>(out var hasCharacterResourceModifiers);
-                if (hasCharacterResourceModifiers)
+                if (effect.Has<CharacterResourceRegenModifiers<HealthRegenModifier>>())
+                {
+                    ref var characterResourceModifiers = ref effect.Get<CharacterResourceRegenModifiers<HealthRegenModifier>>();
                     characterResourceModifiers.Values.Add(modifier);
+                }
                 else
                 {
-                    effect.Add(new CharacterResourceRegenModifiers<HealthRegenModifier>
+                    effect.Set(new CharacterResourceRegenModifiers<HealthRegenModifier>
                     {
                         Values = [modifier]
                     });
@@ -177,12 +180,14 @@ public class EffectActionFactory : IEffectActionFactory
                 var value = formula.Compiled(ctx.Context); // TODO: multiply by stack count ?
                 var modifier = createModifierFunc(modifierKind, value);
 
-                ref var resourceModifiers = ref effect.TryGetRef<CharacterResourceModifiers<TModifier>>(out var hasResourceModifiers);
-                if (hasResourceModifiers)
+                if (effect.Has<CharacterResourceModifiers<TModifier>>())
+                {
+                    ref var resourceModifiers = ref effect.Get<CharacterResourceModifiers<TModifier>>();
                     resourceModifiers.Values.Add(modifier);
+                }
                 else
                 {
-                    effect.Add(new CharacterResourceModifiers<TModifier>
+                    effect.Set(new CharacterResourceModifiers<TModifier>
                     {
                         Values = [modifier]
                     });
@@ -217,12 +222,14 @@ public class EffectActionFactory : IEffectActionFactory
                 var value = formula.Compiled(ctx.Context); // TODO: multiply by stack count ?
                 var modifier = createRegenModifierFunc(modifierKind, value);
 
-                ref var resourceModifiers = ref effect.TryGetRef<CharacterResourceRegenModifiers<TRegenModifier>>(out var hasResourceModifiers);
-                if (hasResourceModifiers)
+                if (effect.Has<CharacterResourceRegenModifiers<TRegenModifier>>())
+                {
+                    ref var resourceModifiers = ref effect.Get<CharacterResourceRegenModifiers<TRegenModifier>>();
                     resourceModifiers.Values.Add(modifier);
+                }
                 else
                 {
-                    effect.Add(new CharacterResourceRegenModifiers<TRegenModifier>
+                    effect.Set(new CharacterResourceRegenModifiers<TRegenModifier>
                     {
                         Values = [modifier]
                     });

@@ -1,4 +1,4 @@
-﻿using Arch.Core;
+﻿using DefaultEcs;
 using MysteryMud.Core.Persistence.Snapshots;
 
 namespace MysteryMud.Domain.Persistence;

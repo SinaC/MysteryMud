@@ -1,4 +1,4 @@
-﻿using Arch.Core;
+﻿using DefaultEcs;
 using MysteryMud.Core;
 
 namespace MysteryMud.Domain.Systems;
@@ -11,27 +11,35 @@ public class ResourceRegenSystem<TResource, TResourceRegen>
     private readonly Func<TResource, int> _getMaxFunc;
     private readonly Func<TResourceRegen, int> _getRegenValueFunc;
     private readonly ResourceValueSetter<TResource> _setCurrentAction;
+    private readonly EntitySet _resourceRegenEntitySet;
 
-    public ResourceRegenSystem(Func<TResource, int> getCurrentFunc, Func<TResource, int> getMaxFunc, Func<TResourceRegen, int> getRegenValueFunc, ResourceValueSetter<TResource> setCurrentAction)
+    public ResourceRegenSystem(World world, Func<TResource, int> getCurrentFunc, Func<TResource, int> getMaxFunc, Func<TResourceRegen, int> getRegenValueFunc, ResourceValueSetter<TResource> setCurrentAction)
     {
         _getCurrentFunc = getCurrentFunc;
         _getMaxFunc = getMaxFunc;
         _getRegenValueFunc = getRegenValueFunc;
         _setCurrentAction = setCurrentAction;
+        _resourceRegenEntitySet = world
+            .GetEntities()
+            .With<TResource>()
+            .With<TResourceRegen>()
+            .AsSet();
     }
 
     public void Tick(GameState state)
     {
-        var query = new QueryDescription()
-            .WithAll<TResource, TResourceRegen>(); // don't check UsesResource, resource regen entity cannot use it for the moment
-        state.World.Query(query, (Entity entity, ref TResource resource, ref TResourceRegen regen) =>
+        foreach(var entity in _resourceRegenEntitySet.GetEntities())
         {
+            ref var resource = ref entity.Get<TResource>();
+            ref var regen = ref entity.Get<TResourceRegen>();
+        
             var current = _getCurrentFunc(resource);
             var max = _getMaxFunc(resource);
             var regenValue = _getRegenValueFunc(regen);
 
             current = Math.Clamp(current + regenValue, 0, max);
+
             _setCurrentAction(ref resource, current);
-        });
+        }
     }
 }

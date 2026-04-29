@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Contracts;
@@ -21,16 +20,18 @@ public sealed class FleeSystem
 
     private readonly IRandom _random;
     private readonly IGameMessageService _msg;
-    private readonly IIntentContainer _intents;
+    private readonly ICombatService _combatService;
     private readonly IExperienceService _experienceService;
+    private readonly IIntentContainer _intents;
     private readonly IEventBuffer<FleeBlockedEvent> _fleeBlockedEvents;
 
-    public FleeSystem(IRandom random, IGameMessageService msg, IIntentContainer intents, IExperienceService experienceService, IEventBuffer<FleeBlockedEvent> fleeBlockedEvents)
+    public FleeSystem(IRandom random, IGameMessageService msg, ICombatService combatService, IExperienceService experienceService, IIntentContainer intents, IEventBuffer<FleeBlockedEvent> fleeBlockedEvents)
     {
         _random = random;
         _msg = msg;
-        _intents = intents;
+        _combatService = combatService;
         _experienceService = experienceService;
+        _intents = intents;
         _fleeBlockedEvents = fleeBlockedEvents;
     }
 
@@ -117,13 +118,13 @@ public sealed class FleeSystem
     }
 
     // remove from combat and forfeit claim for player
-    private static void RemoveFromCombat(GameState state, Entity fleeingEntity)
+    private void RemoveFromCombat(GameState state, Entity fleeingEntity)
     {
         var previousTarget = fleeingEntity.Get<CombatState>().Target;
 
-        CombatHelpers.RemoveFromAllCombat(state, fleeingEntity);
+        _combatService.RemoveFromAllCombat(state, fleeingEntity);
 
         if (fleeingEntity.Has<PlayerTag>())
-            CombatHelpers.ForfeitClaim(previousTarget, fleeingEntity);
+            _combatService.ForfeitClaim(previousTarget, fleeingEntity);
     }
 }

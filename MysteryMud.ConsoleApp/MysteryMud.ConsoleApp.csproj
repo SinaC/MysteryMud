@@ -11,8 +11,6 @@
     <Content Include="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-
-    <PackageReference Include="Arch" Version="2.1.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.6" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.6" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.6" />

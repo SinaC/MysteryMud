@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Core;
 using MysteryMud.Core.Contracts;
 using MysteryMud.Domain.Components;
@@ -15,11 +14,21 @@ public class FollowSystem
 {
     private readonly IGameMessageService _msg;
     private readonly IIntentContainer _intents;
+    private readonly EntitySet _followingEntitySet;
+    private readonly EntitySet _charmedEntitySet;
 
-    public FollowSystem(IGameMessageService msg, IIntentContainer intents)
+    public FollowSystem(World world, IGameMessageService msg, IIntentContainer intents)
     {
         _msg = msg;
         _intents = intents;
+        _followingEntitySet = world
+            .GetEntities()
+            .With<Following>()
+            .AsSet();
+        _charmedEntitySet = world
+            .GetEntities()
+            .With<Charmed>()
+            .AsSet();
     }
 
     public void Tick(GameState state)
@@ -51,24 +60,26 @@ public class FollowSystem
     private Dictionary<Entity, List<Entity>> BuildFollowersByLeader(GameState state)
     {
         var map = new Dictionary<Entity, List<Entity>>();
-        state.World.Query(new QueryDescription().WithAll<Following>(), (Entity follower, ref Following f) =>
+        foreach(var follower in _followingEntitySet.GetEntities())
         {
-            if (!map.TryGetValue(f.Leader, out var list))
-                map[f.Leader] = list = [];
+            ref readonly var following = ref follower.Get<Following>();
+            if (!map.TryGetValue(following.Leader, out var list))
+                map[following.Leader] = list = [];
             list.Add(follower);
-        });
+        }
         return map;
     }
 
     private Dictionary<Entity, List<Entity>> BuildCharmiesByMaster(GameState state)
     {
         var map = new Dictionary<Entity, List<Entity>>();
-        state.World.Query(new QueryDescription().WithAll<Charmed>(), (Entity charmie, ref Charmed c) =>
+        foreach(var charmie in _charmedEntitySet.GetEntities())
         {
-            if (!map.TryGetValue(c.Master, out var list))
-                map[c.Master] = list = [];
+            ref readonly var charmed = ref charmie.Get<Charmed>();
+            if (!map.TryGetValue(charmed.Master, out var list))
+                map[charmed.Master] = list = [];
             list.Add(charmie);
-        });
+        }
         return map;
     }
 

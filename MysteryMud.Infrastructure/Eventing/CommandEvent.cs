@@ -1,4 +1,4 @@
-﻿using Arch.Core;
+﻿using DefaultEcs;
 
 namespace MysteryMud.Infrastructure.Eventing;
 

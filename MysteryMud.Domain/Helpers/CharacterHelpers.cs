@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 
@@ -9,7 +8,7 @@ public static class CharacterHelpers
 {
     public static bool IsAlive(params Entity[] entities)
     {
-        return entities.All(x => x.IsAlive() && !x.Has<Dead>());
+        return entities.All(x => x.IsAlive && !x.Has<DeadTag>());
     }
 
     public static bool SameRoom(Entity character1, Entity character2)

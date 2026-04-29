@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Logging;
@@ -79,7 +78,7 @@ internal class GameServer
 
         // mark as disconnected and let the cleanup system handle the actual destruction and cleanup of the entity, this allows us to still show the character in the room for a short time after disconnecting, and also allows us to handle any necessary cleanup in a more controlled way
         if (!entity.Has<DisconnectedTag>())
-            entity.Add<DisconnectedTag>();
+            entity.Set<DisconnectedTag>();
 
         // remove from connection service
         _connections.Remove(connectionId);

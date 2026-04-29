@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using Microsoft.Extensions.Logging.Abstractions;
 using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Components.Characters;
@@ -8,7 +7,6 @@ using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Components.Groups;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 using MysteryMud.Domain.Systems;
 using MysteryMud.Infrastructure.Persistence;
@@ -20,18 +18,22 @@ public class DisconnectedPlayerCleanupTests : IDisposable
 {
     private readonly MudTestFixture _f = new();
     private readonly CleanupSystem _sut;
+    private readonly CombatService _combatService;
 
     public DisconnectedPlayerCleanupTests()
     {
         FollowService followService = new(_f.GameMessage);
-        GroupService groupService = new(_f.GameMessage);
+        GroupService groupService = new(_f.World, _f.GameMessage);
+        _combatService = new CombatService(_f.World);
         DirtyTracker dirtyTracker = new();
         EffectLifecycleManager effectLifecycleManager = new(dirtyTracker);
 
         _sut = new CleanupSystem(
+            _f.World,
             NullLogger.Instance,
             followService,
             groupService,
+            _combatService,
             effectLifecycleManager);
     }
 
@@ -47,12 +49,12 @@ public class DisconnectedPlayerCleanupTests : IDisposable
         var bob = _f.Player("Bob").WithLocation(room)
                        .With(new Following { Leader = alice })
                        .Build();
-        alice.Add(new Followers { Entities = [bob] });
+        alice.Set(new Followers { Entities = [bob] });
 
-        bob.Add<DisconnectedTag>();
+        bob.Set<DisconnectedTag>();
         _sut.Tick(_f.State);
 
-        Assert.False(bob.IsAlive());
+        Assert.False(bob.IsAlive);
         Assert.DoesNotContain(bob, alice.Get<Followers>().Entities);
     }
 
@@ -71,10 +73,10 @@ public class DisconnectedPlayerCleanupTests : IDisposable
                       .Build();
         alice.Get<Followers>().Entities.AddRange([bob, carol]);
 
-        alice.Add<DisconnectedTag>();
+        alice.Set<DisconnectedTag>();
         _sut.Tick(_f.State);
 
-        Assert.False(alice.IsAlive());
+        Assert.False(alice.IsAlive);
         Assert.False(bob.Has<Following>());
         Assert.False(carol.Has<Following>());
     }
@@ -93,11 +95,11 @@ public class DisconnectedPlayerCleanupTests : IDisposable
         _f.AddGroupMembers(group, alice, bob);
         group.Get<GroupInstance>().Leader = alice;
 
-        bob.Add<DisconnectedTag>();
+        bob.Set<DisconnectedTag>();
         _sut.Tick(_f.State);
 
-        Assert.False(bob.IsAlive());
-        Assert.False(group.IsAlive());        // group disbanded — only alice remained
+        Assert.False(bob.IsAlive);
+        Assert.True(group.Has<DisbandedTag>()); // group disbanded — only alice remained
         Assert.False(alice.Has<GroupMember>()); // alice freed from group
     }
 
@@ -115,7 +117,7 @@ public class DisconnectedPlayerCleanupTests : IDisposable
         carol.Get<GroupMember>().JoinedAtTick = 10;
         group.Get<GroupInstance>().Leader = alice;
 
-        alice.Add<DisconnectedTag>();
+        alice.Set<DisconnectedTag>();
         _sut.Tick(_f.State);
 
         Assert.Equal(bob, group.Get<GroupInstance>().Leader); // oldest remaining
@@ -130,11 +132,11 @@ public class DisconnectedPlayerCleanupTests : IDisposable
         var bob = _f.Player("Bob").WithLocation(room).InGroup(group).Build();
         _f.AddGroupMembers(group, alice, bob);
 
-        alice.Add<DisconnectedTag>();
-        bob.Add<DisconnectedTag>();
+        alice.Set<DisconnectedTag>();
+        bob.Set<DisconnectedTag>();
         _sut.Tick(_f.State);
 
-        Assert.False(group.IsAlive());
+        Assert.True(group.Has<DisbandedTag>());
     }
 
     // -------------------------------------------------------------------------
@@ -147,13 +149,13 @@ public class DisconnectedPlayerCleanupTests : IDisposable
         var room = _f.Room().Build();
         var alice = _f.Player("Alice").WithLocation(room).Build();
         var orc = _f.Npc("Orc").WithLocation(room).Build();
-        alice.Add(new CombatState { Target = orc });
-        orc.Add(new CombatState { Target = alice });
+        alice.Set(new CombatState { Target = orc });
+        orc.Set(new CombatState { Target = alice });
 
-        alice.Add<DisconnectedTag>();
+        alice.Set<DisconnectedTag>();
         _sut.Tick(_f.State);
 
-        Assert.False(alice.IsAlive());
+        Assert.False(alice.IsAlive);
         Assert.False(orc.Has<CombatState>()); // orc no longer targeting disconnected player
     }
 
@@ -164,11 +166,11 @@ public class DisconnectedPlayerCleanupTests : IDisposable
         var alice = _f.Player("Alice").WithLocation(room).Build();
         var orc1 = _f.Npc("Orc1").WithLocation(room).Build();
         var orc2 = _f.Npc("Orc2").WithLocation(room).Build();
-        alice.Add(new CombatState { Target = orc1 });
-        orc1.Add(new CombatState { Target = alice });
-        orc2.Add(new CombatState { Target = alice });
+        alice.Set(new CombatState { Target = orc1 });
+        orc1.Set(new CombatState { Target = alice });
+        orc2.Set(new CombatState { Target = alice });
 
-        alice.Add<DisconnectedTag>();
+        alice.Set<DisconnectedTag>();
         _sut.Tick(_f.State);
 
         Assert.False(orc1.Has<CombatState>());
@@ -180,13 +182,13 @@ public class DisconnectedPlayerCleanupTests : IDisposable
     {
         var room = _f.Room().Build();
         var alice = _f.Player("Alice").WithLocation(room).Build();
-        alice.Add(new CombatState { Target = Entity.Null });
-        alice.Add<NewCombatantTag>();
+        alice.Set(new CombatState { Target = default });
+        alice.Set<NewCombatantTag>();
 
-        alice.Add<DisconnectedTag>();
+        alice.Set<DisconnectedTag>();
         _sut.Tick(_f.State);
 
-        Assert.False(alice.IsAlive()); // entity destroyed, tag implicitly gone
+        Assert.False(alice.IsAlive); // entity destroyed, tag implicitly gone
     }
 
     // -------------------------------------------------------------------------
@@ -201,9 +203,9 @@ public class DisconnectedPlayerCleanupTests : IDisposable
         var orc = _f.Npc("Orc").WithLocation(room)
                       .With(new ThreatTable { Threat = new Dictionary<Entity, long> { [alice] = 100 } })
                       .Build();
-        orc.Add<ActiveThreatTag>();
+        orc.Set<ActiveThreatTag>();
 
-        alice.Add<DisconnectedTag>();
+        alice.Set<DisconnectedTag>();
         _sut.Tick(_f.State);
 
         Assert.False(orc.Get<ThreatTable>().Threat.ContainsKey(alice));
@@ -220,10 +222,10 @@ public class DisconnectedPlayerCleanupTests : IDisposable
         var orc2 = _f.Npc("Orc2").WithLocation(room)
                       .With(new ThreatTable { Threat = new Dictionary<Entity, long> { [alice] = 50 } })
                       .Build();
-        orc1.Add<ActiveThreatTag>();
-        orc2.Add<ActiveThreatTag>();
+        orc1.Set<ActiveThreatTag>();
+        orc2.Set<ActiveThreatTag>();
 
-        alice.Add<DisconnectedTag>();
+        alice.Set<DisconnectedTag>();
         _sut.Tick(_f.State);
 
         Assert.False(orc1.Get<ThreatTable>().Threat.ContainsKey(alice));
@@ -240,7 +242,7 @@ public class DisconnectedPlayerCleanupTests : IDisposable
                       .Build();
         // no ActiveThreatTag — should not be scanned
 
-        alice.Add<DisconnectedTag>();
+        alice.Set<DisconnectedTag>();
         _sut.Tick(_f.State);
 
         // threat table untouched since orc has no ActiveThreatTag
@@ -257,7 +259,7 @@ public class DisconnectedPlayerCleanupTests : IDisposable
         var room = _f.Room().Build();
         var alice = _f.Player("Alice").WithLocation(room).Build();
 
-        alice.Add<DisconnectedTag>();
+        alice.Set<DisconnectedTag>();
         _sut.Tick(_f.State);
 
         Assert.DoesNotContain(alice, room.Get<RoomContents>().Characters);
@@ -273,9 +275,9 @@ public class DisconnectedPlayerCleanupTests : IDisposable
         var room = _f.Room().Build();
         var alice = _f.Player("Alice").WithLocation(room).Build();
         var orc = _f.Npc("Orc").WithLocation(room).Build();
-        CombatHelpers.AddCombatClaim(orc, alice, _f.State.CurrentTick);
+        _combatService.AddCombatClaim(orc, alice, _f.State.CurrentTick);
 
-        alice.Add<DisconnectedTag>();
+        alice.Set<DisconnectedTag>();
         _sut.Tick(_f.State);
 
         // orc still alive, claim forfeited
@@ -291,13 +293,14 @@ public class DisconnectedPlayerCleanupTests : IDisposable
     {
         var room = _f.Room().Build();
         var alice = _f.Player("Alice").WithLocation(room).Build();
-        var effect = _f.World.Create(new EffectInstance { Target = alice });
+        var effect = _f.World.CreateEntity();
+        effect.Set(new EffectInstance { Target = alice });
         alice.Get<CharacterEffects>().Data.Effects.Add(effect);
 
-        alice.Add<DisconnectedTag>();
+        alice.Set<DisconnectedTag>();
         _sut.Tick(_f.State);
 
-        Assert.False(effect.IsAlive());
+        Assert.False(effect.IsAlive);
     }
 
     // -------------------------------------------------------------------------
@@ -310,10 +313,10 @@ public class DisconnectedPlayerCleanupTests : IDisposable
         var room = _f.Room().Build();
         var alice = _f.Player("Alice").WithLocation(room).Build();
 
-        alice.Add<DisconnectedTag>();
+        alice.Set<DisconnectedTag>();
         _sut.Tick(_f.State);
 
-        Assert.False(alice.IsAlive());
+        Assert.False(alice.IsAlive);
     }
 
     public void Dispose() => _f.Dispose();

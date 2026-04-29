@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Extensions;
@@ -20,15 +19,15 @@ public class OutputService : IOutputService
 
     public void Send(Entity entity, string message)
     {
-        if (!entity.IsAlive())
+        if (!entity.IsAlive)
             return;
 
-        ref var connection = ref entity.TryGetRef<Connection>(out var hasConnection);
-        if (!hasConnection)
+        if (!entity.Has<Connection>())
         {
             _logger.LogInformation("[{entityName}]: {message}", entity.DebugName, message);
             return;
         }
+        ref var connection = ref entity.Get<Connection>();
 
         _logger.LogInformation("[{entityName}]: {message}", entity.DebugName, message);
         _telnet.Write(connection.ConnectionId, message);

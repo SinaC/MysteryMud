@@ -1,4 +1,4 @@
-﻿using Arch.Core;
+﻿using DefaultEcs;
 using MysteryMud.Core.Persistence;
 using System.Collections.Concurrent;
 
@@ -23,7 +23,7 @@ public sealed class DirtyTracker : IDirtyTracker
     public void MarkDirty(Entity entity, DirtyReason reason)
     {
         _dirty.AddOrUpdate(
-            entity.Id,
+            entity.GetHashCode(),
             _ => new DirtyEntry(entity, reason),
             (_, existing) => { existing.Accumulate(reason); return existing; });
     }
@@ -60,11 +60,11 @@ public sealed class DirtyTracker : IDirtyTracker
     /// </summary>
     public DirtyEntry? DrainEntity(Entity entity)
     {
-        _dirty.TryRemove(entity.Id, out var entry);
+        _dirty.TryRemove(entity.GetHashCode(), out var entry);
         return entry;
     }
 
-    public bool IsDirty(Entity entity) => _dirty.ContainsKey(entity.Id);
+    public bool IsDirty(Entity entity) => _dirty.ContainsKey(entity.GetHashCode());
 
     public bool HasCritical
         => _dirty.Values.Any(e => e.Has(DirtyReason.Critical));

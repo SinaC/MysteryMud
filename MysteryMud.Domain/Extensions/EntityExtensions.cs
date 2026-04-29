@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Domain.Components;
 
 namespace MysteryMud.Domain.Extensions;
@@ -16,25 +15,22 @@ public static class EntityExtensions
 
         private string BuildDisplayName()
         {
-            if (!entity.IsAlive())
-                return $"DEAD [{entity.Id}]";
-            ref var description = ref entity.TryGetRef<Description>(out var descriptionExists);
-            if (descriptionExists)
-                return description.Value;
-            ref var name = ref entity.TryGetRef<Name>(out var nameExists);
-            if (nameExists)
-                return name.Value;
-            return entity.Id.ToString();
+            if (!entity.IsAlive)
+                return $"DEAD [{entity.GetHashCode()}]";
+            if (entity.Has<Description>())
+                return entity.Get<Description>().Value;
+            if (entity.Has<Name>())
+                return entity.Get<Name>().Value;
+            return entity.GetHashCode().ToString();
         }
 
         private string BuildDebugName()
         {
-            if (!entity.IsAlive())
-                return $"DEAD ({entity.Id})";
-            ref var name = ref entity.TryGetRef<Name>(out var nameExists);
-            if (nameExists)
-                return $"{name.Value}[{entity.Id}]";
-            return $"[{entity.Id}]";
+            if (!entity.IsAlive)
+                return $"DEAD ({entity.GetHashCode()})";
+            if (entity.Has<Name>())
+                return $"{entity.Get<Name>().Value}[{entity.GetHashCode()}]";
+            return $"[{entity.GetHashCode()}]";
         }
     }
 }

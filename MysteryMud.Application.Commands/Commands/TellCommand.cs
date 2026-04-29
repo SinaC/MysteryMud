@@ -1,4 +1,4 @@
-﻿using Arch.Core;
+﻿using DefaultEcs;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
@@ -14,10 +14,16 @@ public sealed class TellCommand : ICommand
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.TargetAndText;
 
     private readonly IGameMessageService _msg;
+    private readonly EntitySet _playersEntitySet;
 
-    public TellCommand(IGameMessageService msg)
+    public TellCommand(World world, IGameMessageService msg)
     {
         _msg = msg;
+        _playersEntitySet = world
+            .GetEntities()
+            .With<Name>()
+            .With<PlayerTag>()
+            .AsSet();
     }
 
     public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
@@ -34,15 +40,14 @@ public sealed class TellCommand : ICommand
         var message = ctx.Text.ToString();
         var primaryName = ctx.Primary.Name.ToString();
 
-        var query = new QueryDescription().WithAll<Name, PlayerTag>();
-        state.World.Query(query, (Entity target, ref Name _, ref PlayerTag _) =>
+        foreach(var target in _playersEntitySet.GetEntities())
         {
             if (NameMatcher.Matches(target, primaryName))
             {
                 _msg.To([actor, target]).Act("{0} tell{0:v} {1}: {2}").With(actor, target, message);
                 found = true;
             }
-        });
+        }
 
         if (found)
             return;

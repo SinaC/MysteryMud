@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Core;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
@@ -22,8 +21,9 @@ public class EffectiveMaxResourceSystem<TBase, TResource, TDirty, TModifier>
     private readonly ResourceValueSetter<TResource> _setMaxAction;
     private readonly Func<TModifier, decimal> _getModifierValueFunc;
     private readonly Func<TModifier, ModifierKind> _getModifierKindFunc;
+    private readonly EntitySet _dirtyResourcesEntitySet;
 
-    public EffectiveMaxResourceSystem(Func<TBase, int> getBaseMaxValueFunc, Func<TResource, int> getCurrentFunc, ResourceValueSetter<TResource> setCurrentAction, ResourceValueSetter<TResource> setMaxAction, Func<TModifier, ModifierKind> getModifierKindFunc, Func<TModifier, decimal> getModifierValueFunc)
+    public EffectiveMaxResourceSystem(World world, Func<TBase, int> getBaseMaxValueFunc, Func<TResource, int> getCurrentFunc, ResourceValueSetter<TResource> setCurrentAction, ResourceValueSetter<TResource> setMaxAction, Func<TModifier, ModifierKind> getModifierKindFunc, Func<TModifier, decimal> getModifierValueFunc)
     {
         _getBaseMaxFunc = getBaseMaxValueFunc;
         _getCurrentFunc = getCurrentFunc;
@@ -31,18 +31,22 @@ public class EffectiveMaxResourceSystem<TBase, TResource, TDirty, TModifier>
         _setMaxAction = setMaxAction;
         _getModifierValueFunc = getModifierValueFunc;
         _getModifierKindFunc = getModifierKindFunc;
+        _dirtyResourcesEntitySet = world
+            .GetEntities()
+            .With<TBase>()
+            .With<TResource>()
+            .With<TDirty>()
+            .Without<DeadTag>()
+            .AsSet();
     }
 
     public void Tick(GameState state)
     {
-        var query = new QueryDescription()
-            .WithAll<TBase, TResource, TDirty>()
-            .WithNone<Dead>();
-        state.World.Query(query, (Entity entity,
-            ref TBase baseRes,
-            ref TResource effectiveRes,
-            ref TDirty dirty) =>
+        foreach(var entity in _dirtyResourcesEntitySet.GetEntities())
         {
+            ref var baseRes = ref entity.Get<TBase>();
+            ref var effectiveRes = ref entity.Get<TResource>();
+
             ref var characterEffects = ref entity.Get<CharacterEffects>(); // TODO: other kind of entity
 
             // get base max
@@ -70,6 +74,6 @@ public class EffectiveMaxResourceSystem<TBase, TResource, TDirty, TModifier>
 
             // remove dirty tag
             entity.Remove<TDirty>();
-        });
+        }
     }
 }

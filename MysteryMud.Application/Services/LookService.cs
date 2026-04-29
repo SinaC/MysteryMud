@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
@@ -50,13 +49,13 @@ public class LookService : ILookService
         foreach (var c in roomCharacters)
         {
             if (c.Equals(viewer)) continue; // skip self
-            _msg.To(viewer).Send($"- {c.DisplayName}");
+            _msg.To(viewer).Act("- {0}").With(c);
         }
 
         _msg.To(viewer).Send("Items here:");
         foreach (var item in roomItems)
         {
-            _msg.To(viewer).Send($"- {item.DisplayName}");
+            _msg.To(viewer).Act("- {0}").With(item);
         }
     }
 
@@ -64,7 +63,7 @@ public class LookService : ILookService
     {
         _msg.To(viewer).Send($"{target.DisplayName}");
 
-        ref var targetEquipment = ref target.TryGetRef<Equipment>(out var hasEquipment);
+        ref var targetEquipment = ref target.Get<Equipment>();
         foreach (var slot in Enum.GetValues<EquipmentSlotKind>())
         {
             if (targetEquipment.Slots.TryGetValue(slot, out var item))
@@ -72,13 +71,10 @@ public class LookService : ILookService
         }
 
         // only if peek skill is high enough
-        ref var targetInventory = ref target.TryGetRef<Inventory>(out var hasTargetInventory);
-        if (hasTargetInventory)
+        ref var targetInventory = ref target.Get<Inventory>();
+        foreach (var item in targetInventory.Items)
         {
-            foreach (var item in targetInventory.Items)
-            {
-                _msg.To(viewer).Act("{0} {0:b} carrying: {1}").With(target, item);
-            }
+            _msg.To(viewer).Act("{0} {0:b} carrying: {1}").With(target, item);
         }
     }
 
@@ -87,12 +83,12 @@ public class LookService : ILookService
         _msg.To(viewer).Send($"{item.DisplayName}");
 
         // TODO: remove, should be in ExamineCommand
-        ref var containerContents = ref item.TryGetRef<ContainerContents>(out var isContainerContents);
-        if (isContainerContents)
+        if (item.Has<ContainerContents>())
         {
+            ref var containerContents = ref item.Get<ContainerContents>();
             foreach (var containerItem in containerContents.Items)
             {
-                _msg.To(viewer).Send($"It contains: {containerItem.DisplayName}");
+                _msg.To(viewer).Act("It contains: {0}").With(containerItem);
             }
         }
     }

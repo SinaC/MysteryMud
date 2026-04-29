@@ -1,10 +1,8 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 
 namespace MysteryMud.Application.Commands.Commands.Admin;
@@ -12,10 +10,12 @@ namespace MysteryMud.Application.Commands.Commands.Admin;
 public sealed class PeaceCommand : ICommand
 {
     private readonly IGameMessageService _msg;
+    private readonly ICombatService _combatService;
 
-    public PeaceCommand(IGameMessageService msg)
+    public PeaceCommand(IGameMessageService msg, ICombatService combatService)
     {
         _msg = msg;
+        _combatService = combatService;
     }
 
     public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
@@ -23,7 +23,7 @@ public sealed class PeaceCommand : ICommand
         var people = actor.Get<Location>().Room.Get<RoomContents>().Characters.ToArray();
         foreach (var character in people)
         {
-            CombatHelpers.RemoveFromCombat(state, character);
+            _combatService.RemoveFromCombat(state, character);
         }
         _msg.To(actor).Send("Ok.");
     }

@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
@@ -28,14 +27,14 @@ public sealed class FollowCommand : ICommand
     {
         CommandParser.Parse(cmd, args, ParseOptions.ArgumentCount, ParseOptions.LastIsText, out var ctx);
 
-        // get existing Following if any
-        ref var following = ref actor.TryGetRef<Following>(out var isFollowing);
+        // get leader
+        var leader = GetLeader(actor);
 
         // no argument: display leader
         if (ctx.TargetCount == 0)
         {
-            if (isFollowing)
-                _msg.To(actor).Act("You are following {0:N}.").With(following.Leader);
+            if (leader is not null)
+                _msg.To(actor).Act("You are following {0:N}.").With(leader.Value);
             else
                 _msg.To(actor).Send("You are not following anyone.");
             return;
@@ -53,7 +52,7 @@ public sealed class FollowCommand : ICommand
         // follow ourself -> cancel follow
         if (target.Value == actor)
         {
-            if (!isFollowing)
+            if (leader is null)
             {
                 _msg.To(actor).Send("You already follow yourself.");
                 return;
@@ -62,7 +61,6 @@ public sealed class FollowCommand : ICommand
             return;
         }
 
-        var leader = GetLeader(actor);
         if (leader == target.Value)
         {
             _msg.To(actor).Act("You are already following {0:N}.").With(target.Value);
@@ -87,9 +85,9 @@ public sealed class FollowCommand : ICommand
 
     private static Entity? GetLeader(Entity entity)
     {
-        ref var following = ref entity.TryGetRef<Following>(out var isFollowing);
-        if (!isFollowing)
+        if (!entity.Has<Following>())
             return null;
+        ref var following = ref entity.Get<Following>();
         return following.Leader;
     }
 }

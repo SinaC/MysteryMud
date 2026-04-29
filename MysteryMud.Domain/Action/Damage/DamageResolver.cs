@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Effects;
@@ -8,7 +7,6 @@ using MysteryMud.Domain.Action.Calculators;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Factories;
-using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Events;
 
@@ -18,14 +16,16 @@ public class DamageResolver : IDamageResolver
 {
     private readonly IAggroResolver _aggroResolver;
     private readonly IGameMessageService _msg;
+    private readonly ICombatService _combatService;
     private readonly IEventBuffer<DamagedEvent> _damaged;
     private readonly IEventBuffer<DeathEvent> _deaths; // long-term events which will be used by other Systems outside ActionOrchestrator
     private readonly IEventBuffer<KillRewardEvent> _killRewardEvent; // short-term events only used inside ActionOrchestrator
 
-    public DamageResolver(IAggroResolver aggroResolver, IGameMessageService msg, IEventBuffer<DamagedEvent> damaged, IEventBuffer<DeathEvent> deaths, IEventBuffer<KillRewardEvent> killRewardEvent)
+    public DamageResolver(IAggroResolver aggroResolver, IGameMessageService msg, ICombatService combatService, IEventBuffer<DamagedEvent> damaged, IEventBuffer<DeathEvent> deaths, IEventBuffer<KillRewardEvent> killRewardEvent)
     {
         _aggroResolver = aggroResolver;
         _msg = msg;
+        _combatService = combatService;
         _damaged = damaged;
         _deaths = deaths;
         _killRewardEvent = killRewardEvent;
@@ -37,12 +37,12 @@ public class DamageResolver : IDamageResolver
         var target = dmg.Target;
         var amount = dmg.Amount;
         var kind = dmg.DamageKind;
-        if (!target.IsAlive() || target.Has<Dead>()) // already dead
+        if (!target.IsAlive || target.Has<DeadTag>()) // already dead
             return new DamageResult { IsSuccess = false };
 
-        ref var health = ref target.TryGetRef<Health>(out var hasHealth);
-        if (!hasHealth)
+        if (!target.Has<Health>())
             return new DamageResult { IsSuccess = false };
+        ref var health = ref target.Get<Health>();
 
         // apply damage type modifiers, resistances, vulnerabilities, etc.
         var modifiedDamage = DamageCalculator.ModifyDamage(target, amount, kind, source);
@@ -86,11 +86,11 @@ public class DamageResolver : IDamageResolver
             deathEvt.Victim = target;
             deathEvt.Killer = source;
 
-            if (CombatHelpers.TryDetermineLootOwner(target, source, out var rewardOwner))
+            if (_combatService.TryDetermineLootOwner(target, source, out var rewardOwner))
             {
                 var rewardOwnerGroup = rewardOwner.Has<GroupMember>()
                     ? rewardOwner.Get<GroupMember>().Group
-                    : Entity.Null;
+                    : default;
 
                 // add kill reward event
                 ref var killRewardEvt = ref _killRewardEvent.Add();
@@ -120,11 +120,11 @@ public class DamageResolver : IDamageResolver
 
     private static void AddDeadTags(Entity victim)
     {
-        if (!victim.Has<Dead>())
-            victim.Add<Dead>();
+        if (!victim.Has<DeadTag>())
+            victim.Set<DeadTag>();
         // player will respawn, NPCs will be cleaned up by CleanupSystem
         if (victim.Has<PlayerTag>() && !victim.Has<RespawnState>())
-            victim.Add(new RespawnState
+            victim.Set(new RespawnState
             {
                 RespawnRoom = RoomFactory.RespawnRoomEntity
             });

@@ -1,5 +1,5 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
+using DefaultEcs.Serialization;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
@@ -17,8 +17,6 @@ using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Time;
 using MysteryMud.Infrastructure.Eventing;
 using MysteryMud.Infrastructure.Services;
-using System.Net.Sockets;
-using static Dapper.SqlMapper;
 
 namespace MysteryMud.ConsoleApp.Hosting;
 
@@ -330,11 +328,20 @@ internal class GameLoop
     private void DumpWorld()
     {
         Console.WriteLine("Dumping world state:");
-        var query = new QueryDescription();
-        _world.Query(query, (Entity entity) =>
+        foreach(var entity in _world.GetEntities().AsEnumerable())
         {
-            Console.WriteLine($"Entity Id: {entity.Id} Alive: {entity.IsAlive()} DebugName: {entity.DebugName}");
-            Console.WriteLine($"  Components: {string.Join(", ", entity.GetAllComponents().Select(c => c?.GetType().Name))}");
-        });
+            Console.WriteLine($"Entity Id: {entity.GetHashCode()} Alive: {entity.IsAlive} DebugName: {entity.DebugName}");
+            //Console.WriteLine($"  Components: {string.Join(", ", entity.C().Select(c => c?.GetType().Name))}");
+            entity.ReadAllComponents(new ComponentReader());
+            Console.WriteLine();
+        }
+    }
+
+    private class ComponentReader : IComponentReader
+    {
+        public void OnRead<T>(in T component, in Entity componentOwner)
+        {
+            Console.Write(typeof(T).Name+"|");
+        }
     }
 }

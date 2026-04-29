@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Persistence;
 using MysteryMud.Domain.Components;
@@ -27,15 +26,13 @@ public class ExperienceService : IExperienceService
 
     public long CalculateCombatXp(Entity player, Entity victim)
     {
-        if (!player.IsAlive())
+        if (!player.IsAlive)
             return 0;
 
-        ref var playerLevel = ref player.TryGetRef<Level>(out var hasPlayerLevel);
-        if (!hasPlayerLevel)
+        if (!player.Has<Level>() || !victim.Has<Level>())
             return 0;
-        ref var victimLevel = ref victim.TryGetRef<Level>(out var hasVictimLevel);
-        if (!hasVictimLevel)
-            return 0;
+        ref var playerLevel = ref player.Get<Level>();
+        ref var victimLevel = ref victim.Get<Level>();
 
         // base XP formula
         long baseXp = 50 + victimLevel.Value * 10;
@@ -54,18 +51,16 @@ public class ExperienceService : IExperienceService
 
     public void GrantExperience(Entity player, long xpGained)
     {
-        if (!player.IsAlive())
+        if (!player.IsAlive)
             return;
 
         if (xpGained == 0)
             return;
 
-        ref var progression = ref player.TryGetRef<Progression>(out var hasProgression);
-        if (!hasProgression)
+        if (!player.Has<Progression>() || !player.Has<Level>())
             return;
-        ref var level = ref player.TryGetRef<Level>(out var hasLevel);
-        if (!hasLevel)
-            return;
+        ref var progression = ref player.Get<Progression>();
+        ref var level = ref player.Get<Level>();
 
         var currentLevelExperienceFloor = progression.ExperienceByLevel * (level.Value - 1);
         progression.Experience = Math.Max(currentLevelExperienceFloor, progression.Experience + xpGained); // don't go below current level
@@ -107,7 +102,7 @@ public class ExperienceService : IExperienceService
 
             // Recalculate derived stats
             if (!player.Has<DirtyStats>())
-                player.Add<DirtyStats>();
+                player.Set<DirtyStats>();
 
             // TODO: set dirty health, dirty mana, ... ?
 
@@ -134,9 +129,9 @@ public class ExperienceService : IExperienceService
     private void SetResourceToMax<TResource>(Entity player, Func<TResource, int> getMaxValueFunc, ResourceValueSetter<TResource> setResourceValueAction)
         where TResource : struct
     {
-        ref var resource = ref player.TryGetRef<TResource>(out var hasResource);
-        if (!hasResource)
+        if (!player.Has<TResource>())
             return;
+        ref var resource = ref player.Get<TResource>();
 
         var maxResource = getMaxValueFunc(resource);
         setResourceValueAction(ref resource, maxResource);

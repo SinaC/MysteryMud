@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
@@ -12,7 +11,7 @@ public static class ItemHelpers
 {
     public static bool IsAlive(params Entity[] entities)
     {
-        return entities.All(x => x.IsAlive() && !x.Has<DestroyedTag>());
+        return entities.All(x => x.IsAlive && !x.Has<DestroyedTag>());
     }
 
     // TODO: These methods are currently very basic and does not handle edge cases such as weight limits, item ownership, or other game mechanics. It should be expanded to include these features as needed.
@@ -36,7 +35,7 @@ public static class ItemHelpers
         roomContents.Items.Remove(item);
         inventory.Items.Add(item);
         item.Remove<Location>();
-        item.Add(new ContainedIn { Character = getter });
+        item.Set(new ContainedIn { Character = getter });
 
         reason = null;
         return true;
@@ -50,9 +49,7 @@ public static class ItemHelpers
             return false;
         }
 
-
-        ref var itemOwner = ref item.TryGetRef<ItemOwner>(out var hasOwner);
-        if (hasOwner && getter != itemOwner.Owner)
+        if (item.Has<ItemOwner>() && item.Get<ItemOwner>().Owner != getter)
         {
             reason = "not the owner";
             return false;
@@ -64,7 +61,7 @@ public static class ItemHelpers
 
         containerContents.Items.Remove(item);
         inventory.Items.Add(item);
-        containedIn.Container = Entity.Null;
+        containedIn.Container = default;
         containedIn.Character = getter;
 
         reason = null;
@@ -93,7 +90,7 @@ public static class ItemHelpers
         roomContents.Items.Add(item);
         inventory.Items.Remove(item);
 
-        item.Add(new Location { Room = room });
+        item.Set(new Location { Room = room });
         item.Remove<ContainedIn>();
 
         return true;
@@ -136,7 +133,7 @@ public static class ItemHelpers
 
         containerContents.Items.Add(item);
         inventory.Items.Remove(item);
-        containedIn.Character = Entity.Null;
+        containedIn.Character = default;
         containedIn.Container = container;
 
         return true;
@@ -168,14 +165,14 @@ public static class ItemHelpers
 
         equipment.Slots[slot] = item;
 
-        item.Add(new Equipped
+        item.Set(new Equipped
         {
             Wearer = actor,
             Slot = slot
         });
 
         if (!actor.Has<DirtyStats>())
-            actor.Add<DirtyStats>();
+            actor.Set<DirtyStats>();
 
         reason = null;
         return true;
@@ -203,7 +200,7 @@ public static class ItemHelpers
             item.Remove<Equipped>();
 
         if (!actor.Has<DirtyStats>())
-            actor.Add<DirtyStats>();
+            actor.Set<DirtyStats>();
 
         reason = null;
         return true;
@@ -215,7 +212,7 @@ public static class ItemHelpers
             return;
 
         if (!item.Has<DestroyedTag>())
-            item.Add<DestroyedTag>();
+            item.Set<DestroyedTag>();
 
         if (item.Has<Container>())
         {

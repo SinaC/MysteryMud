@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.GameData.Enums;
@@ -10,10 +9,9 @@ public static class FormHelpers
 {
     public static void SwitchForm(Entity e, FormType newForm)
     {
-        ref var form = ref e.TryGetRef<Form>(out var hasForm);
-        if (!hasForm)
+        if (!e.Has<Form>())
             return;
-
+        ref var form = ref e.Get<Form>();
         if (form.Value == newForm)
             return;
 
@@ -32,15 +30,15 @@ public static class FormHelpers
         switch (newForm)
         {
             case FormType.Humanoid:
-                e.Add<UsesMana>();
+                e.Set<UsesMana>();
                 break;
 
             case FormType.Bear:
-                e.Add<UsesRage>();
+                e.Set<UsesRage>();
                 break;
 
             case FormType.Cat:
-                e.Add<UsesEnergy>();
+                e.Set<UsesEnergy>();
                 break;
         }
     }

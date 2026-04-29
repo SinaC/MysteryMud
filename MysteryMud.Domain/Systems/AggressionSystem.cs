@@ -1,16 +1,18 @@
 ﻿using MysteryMud.Core;
 using MysteryMud.Core.Bus;
-using MysteryMud.Domain.Helpers;
+using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Events;
 
 namespace MysteryMud.Domain.Systems;
 
 public class AggressionSystem
 {
+    private readonly ICombatService _combatService;
     private readonly IEventBuffer<AggressedEvent> _aggressed;
 
-    public AggressionSystem(IEventBuffer<AggressedEvent> aggressed)
+    public AggressionSystem(ICombatService combatService, IEventBuffer<AggressedEvent> aggressed)
     {
+        _combatService = combatService;
         _aggressed = aggressed;
     }
 
@@ -19,7 +21,7 @@ public class AggressionSystem
     {
         foreach (ref var evt in _aggressed.GetAll())
         {
-            CombatHelpers.EnterCombat(state, evt.Source, evt.Target);
+            _combatService.EnterCombat(state, evt.Source, evt.Target);
         }
     }
 }

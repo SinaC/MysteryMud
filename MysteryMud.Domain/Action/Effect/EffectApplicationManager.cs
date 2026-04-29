@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Contracts;
@@ -15,6 +14,7 @@ using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
 using MysteryMud.GameData.Time;
+using System.Runtime.CompilerServices;
 
 namespace MysteryMud.Domain.Action.Effect;
 
@@ -96,13 +96,15 @@ public partial class EffectApplicationManager : IEffectApplicationManager
         snapshot.SourceStats = source.Get<EffectiveStats>().Values;
 
         // create effect with snapshotted values
-        var effect = state.World.Create(new EffectInstance
+        var effect = state.World.CreateEntity();
+        effect.Set(new EffectInstance
         {
             Source = source,
             Target = target,
             StackCount = 1,
             EffectRuntime = effectRuntime,
-        }, snapshot);
+        });
+        effect.Set(snapshot);
 
         // add effect to target effect cache
         host.RegisterEffect(effect, effectRuntime);
@@ -132,7 +134,7 @@ public partial class EffectApplicationManager : IEffectApplicationManager
             ? state.CurrentTick
             : state.CurrentTick + effectRuntime.TickRate; // 0: means pure duration
         var tickRate = effectRuntime.TickRate; // 0: means pure duration
-        effect.Add(new TimedEffect
+        effect.Set(new TimedEffect
         {
             StartTick = state.CurrentTick,
             ExpirationTick = expirationTick,
@@ -214,12 +216,15 @@ public partial class EffectApplicationManager : IEffectApplicationManager
 
     private StackingResult HandleStacking(GameState state, EffectRuntime effectRuntime, Entity source, Entity target, Entity existingEffect)
     {
-        ref var instance = ref state.World.Get<EffectInstance>(existingEffect);
+        ref var instance = ref existingEffect.Get<EffectInstance>();
         if (source != instance.Source)
             return StackingResult.DifferentSource;
 
         // now we can check stacking rules
-        ref var timedEffect = ref existingEffect.TryGetRef<TimedEffect>(out var isTimedEffect);
+        var isTimedEffect = existingEffect.Has<TimedEffect>();
+        ref var timedEffect = ref isTimedEffect
+            ? ref existingEffect.Get<TimedEffect>()
+            : ref Unsafe.NullRef<TimedEffect>();
 
         switch (effectRuntime.Stacking)
         {
@@ -303,7 +308,7 @@ public partial class EffectApplicationManager : IEffectApplicationManager
                     return StackingResult.Refreshed;
             case StackingRule.Replace:
                 _logger.LogInformation(LogEvents.Factory, "Replacing Effect {name} Source {source} Target {target}", effectRuntime.Name, source.DebugName, instance.Target.DebugName);
-                _effectLifecycleManager.RemoveEffect(state, existingEffect); // destroy current effect (no wear off message because it's a replacement)
+                _effectLifecycleManager.RemoveEffect(existingEffect); // destroy current effect (no wear off message because it's a replacement)
                 return StackingResult.Replaced;
         }
 

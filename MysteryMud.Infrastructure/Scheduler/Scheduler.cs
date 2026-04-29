@@ -1,4 +1,4 @@
-﻿using Arch.Core;
+﻿using DefaultEcs;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
@@ -42,11 +42,11 @@ public class Scheduler : IScheduler
         while (_queue.TryPeek(out var ev, out var priority) && priority.time <= state.CurrentTick)
         {
             _queue.Dequeue();
-            Execute(state, ref ev);
+            Execute(ref ev);
         }
     }
 
-    private void Execute(GameState state, ref ScheduledEvent ev)
+    private void Execute(ref ScheduledEvent ev)
     {
         _logger.LogDebug("[{system}]: execute {effectName} kind {kind} execute at {executeAt}", nameof(Scheduler), ev.Target.DebugName, ev.Kind, ev.ExecuteAt);
 

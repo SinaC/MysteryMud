@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Contracts;
@@ -47,11 +46,11 @@ public sealed class LootSystem
                 LootAll(lootOwner, corpse);
 
             // Phase 3: autoloot for rest of group
-            if (lootOwnerGroup != Entity.Null)
+            if (lootOwnerGroup != default && GroupHelpers.IsAlive(lootOwnerGroup))
             {
-                ref var group = ref lootOwnerGroup.TryGetRef<GroupInstance>(out var isInGroup);
-                if (isInGroup)
+                if (lootOwnerGroup.Has<GroupInstance>())
                 {
+                    ref var group = ref lootOwnerGroup.Get<GroupInstance>();
                     foreach (var member in group.Members)
                     {
                         if (member == lootOwner) continue;

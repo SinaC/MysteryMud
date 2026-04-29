@@ -1,6 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Core;
+﻿using DefaultEcs;
 using MysteryMud.Core.Persistence;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
@@ -16,13 +14,13 @@ public class EffectLifecycleManager : IEffectLifecycleManager
         _dirtyTracker = dirtyTracker;
     }
 
-    public void RemoveEffect(GameState state, Entity effect)
+    public void RemoveEffect(Entity effect)
     {
-        if (!effect.IsAlive()) // don't use helpers, effect with ExpiredTag should be removable
+        if (!effect.IsAlive) // don't use helpers, effect with ExpiredTag should be removable
             return;
 
-        ref var instance = ref state.World.Get<EffectInstance>(effect);
-        if (!instance.Target.IsAlive())
+        ref var instance = ref effect.Get<EffectInstance>();
+        if (!instance.Target.IsAlive)
             return;
 
         var target = instance.Target;
@@ -32,6 +30,6 @@ public class EffectLifecycleManager : IEffectLifecycleManager
             ? new CharacterEffectHost(_dirtyTracker, target)
             : new ItemEffectHost(_dirtyTracker, target);
 
-        host.UnregisterEffect(state, effect, instance.EffectRuntime);
+        host.UnregisterEffect(effect, instance.EffectRuntime);
     }
 }

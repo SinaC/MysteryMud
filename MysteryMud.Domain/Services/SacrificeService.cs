@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using MysteryMud.Domain.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Domain.Helpers;
 
 namespace MysteryMud.Domain.Services;
@@ -21,8 +20,9 @@ public class SacrificeService : ISacrificeService
         //_msg.To(actor).Send($"You sacrifice {item.DisplayName} and receive {gold} gold.");
         //_msg.ToRoom(actor).Send($"{actor.DisplayName} sacrifices {item.DisplayName}.");
 
-        _msg.To(actor).Send($"You sacrifice {item.DisplayName}.");
-        _msg.ToRoom(actor).Send($"{actor.DisplayName} sacrifices {item.DisplayName}.");
+        //_msg.To(actor).Act("You sacrifice {0}.").With(item);
+        //_msg.ToRoom(actor).Act("{0} sacrifices {1}.").With(actor, item);
+        _msg.ToAll(actor).Act("{0} sacrifice{0:v} {1}.").With(actor, item);
 
         ItemHelpers.DestroyItem(item);
     }

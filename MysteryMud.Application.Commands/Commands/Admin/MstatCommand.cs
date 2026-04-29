@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Application.Services;
@@ -47,11 +46,16 @@ public sealed class MstatCommand : ICommand
             return;
         }
 
-        var (name, location, baseStats, effectiveStats, inventory, equipment, characterEffects) = target.Value.Get<Name, Location, BaseStats, EffectiveStats, Inventory, Equipment, CharacterEffects>();
+        ref var name = ref target.Value.Get<Name>();
+        ref var location = ref target.Value.Get<Location>();
+        ref var baseStats = ref target.Value.Get<BaseStats>();
+        ref var effectiveStats = ref target.Value.Get<EffectiveStats>();
+        ref var inventory = ref target.Value.Get<Inventory>();
+        ref var equipment = ref target.Value.Get<Equipment>();
+        ref var characterEffects = ref target.Value.Get<CharacterEffects>();
         _msg.To(actor).Send($"Name: {name.Value}");
-        ref var description = ref target.Value.TryGetRef<Description>(out var hasDescription);
-        if (hasDescription)
-            _msg.To(actor).Send($"Description: {description.Value}");
+        if (target.Value.Has<Description>())
+            _msg.To(actor).Send($"Description: {target.Value.Get<Description>().Value}");
         _msg.To(actor).Send($"Location: {location.Room.DisplayName}");
         DisplayHealth(actor, target.Value);
         DisplayMove(actor, target.Value);
@@ -62,9 +66,11 @@ public sealed class MstatCommand : ICommand
         {
             _msg.To(actor).Send($"{stat}: {effectiveStats.Values[stat]}/{baseStats.Values[stat]}");
         }
-        ref var combatState = ref target.Value.TryGetRef<CombatState>(out var inCombat);
-        if (inCombat)
+        if (target.Value.Has<CombatState>())
+        {
+            ref var combatState = ref target.Value.Get<CombatState>();
             _msg.To(actor).Send($"Fighting: {combatState.Target.DisplayName} Delay: {combatState.RoundDelay}");
+        }
         _msg.To(actor).Send($"Inventory:");
         foreach (var item in inventory.Items)
             _msg.To(actor).Send($"- {item.DisplayName}");
@@ -83,26 +89,18 @@ public sealed class MstatCommand : ICommand
     private void DisplayHealth(Entity actor, Entity target)
     {
         var health = target.Get<Health>();
-        ref var healthRegen = ref target.TryGetRef<HealthRegen>(out var hasRegen);
-        var currentRegen = hasRegen
-            ? healthRegen.CurrentAmountPerSecond
-            : 0;
-        var baseRegen = hasRegen
-            ? healthRegen.BaseAmountPerSecond
-            : 0;
+        var (currentRegen, baseRegen) = target.Has<HealthRegen>()
+            ? (target.Get<HealthRegen>().CurrentAmountPerSecond, target.Get<HealthRegen>().BaseAmountPerSecond)
+            : (0,0);
         _msg.To(actor).Send($"Health: {health.Current}/{health.Max} Regen: {currentRegen}(base: {baseRegen})");
     }
 
     private void DisplayMove(Entity actor, Entity target)
     {
         var move = target.Get<Move>();
-        ref var moveRegen = ref target.TryGetRef<MoveRegen>(out var hasRegen);
-        var currentRegen = hasRegen
-            ? moveRegen.CurrentAmountPerSecond
-            : 0;
-        var baseRegen = hasRegen
-            ? moveRegen.BaseAmountPerSecond
-            : 0;
+        var (currentRegen, baseRegen) = target.Has<MoveRegen>()
+            ? (target.Get<MoveRegen>().CurrentAmountPerSecond, target.Get<MoveRegen>().BaseAmountPerSecond)
+            : (0, 0);
         _msg.To(actor).Send($"Move: {move.Current}/{move.Max} Regen: {currentRegen}(base: {baseRegen})");
     }
 
@@ -111,16 +109,16 @@ public sealed class MstatCommand : ICommand
         where TRegen : struct
         where TUses : struct
     {
-        ref var resource = ref target.TryGetRef<TResource>(out var hasResource);
-        if (hasResource)
+        if (target.Has<TResource>())
         {
+            ref var resource = ref target.Get<TResource>();
             var (current, max) = getCurrentMaxFunc(resource);
-            ref var resourceRegen = ref target.TryGetRef<TRegen>(out var hasRegen);
+            var hasRegen = target.Has<TRegen>();
             var currentRegen = hasRegen
-                ? getCurrentRegenFunc(resourceRegen)
+                ? getCurrentRegenFunc(target.Get<TRegen>())
                 : 0;
             var baseRegen = hasRegen
-                ? getBaseRegenFunc(resourceRegen)
+                ? getBaseRegenFunc(target.Get<TRegen>())
                 : 0;
             var uses = target.Has<TUses>();
             _msg.To(actor).Send($"{kind}: {current}/{max} Regen/Decay: {currentRegen}(base: {baseRegen}) CanUse: {uses}");

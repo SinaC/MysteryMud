@@ -1,4 +1,4 @@
-﻿using Arch.Core;
+﻿using DefaultEcs;
 using MysteryMud.Domain.Services;
 
 namespace MysteryMud.Tests.Infrastructure;

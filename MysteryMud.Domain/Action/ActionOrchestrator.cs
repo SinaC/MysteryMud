@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
@@ -163,19 +162,21 @@ public class ActionOrchestrator
 
     private void GrantReward(ref KillRewardEvent killRewardEvt)
     {
-        if (killRewardEvt.RewardOwner != killRewardEvt.Victim && killRewardEvt.RewardOwner.Has<Progression>())
-            GrantExperience(killRewardEvt.RewardOwner, killRewardEvt.Victim);
+        var rewardOwner = killRewardEvt.RewardOwner;
+        if (rewardOwner != killRewardEvt.Victim && rewardOwner.Has<Progression>())
+            GrantExperience(rewardOwner, killRewardEvt.Victim);
 
-        if (killRewardEvt.RewardOwnerGroup != Entity.Null)
+        var rewardOwnerGroup = killRewardEvt.RewardOwnerGroup;
+        if (rewardOwnerGroup != default && GroupHelpers.IsAlive(rewardOwnerGroup))
         {
-            ref var groupInstance = ref killRewardEvt.RewardOwnerGroup.TryGetRef<GroupInstance>(out var isInGroup);
-            if (isInGroup)
+            if (rewardOwnerGroup.Has<GroupInstance>())
             {
+                ref var groupInstance = ref rewardOwnerGroup.Get<GroupInstance>();
                 foreach (var member in groupInstance.Members)
                 {
-                    if (member == killRewardEvt.RewardOwner) continue;
+                    if (member == rewardOwner) continue;
                     if (!CharacterHelpers.IsAlive(member)) continue; // <- member died too
-                    if (!CharacterHelpers.SameRoom(killRewardEvt.RewardOwner, member)) continue; // <- member not anymore in same room
+                    if (!CharacterHelpers.SameRoom(rewardOwner, member)) continue; // <- member not anymore in same room
                     GrantExperience(member, killRewardEvt.Victim);
                 }
             }

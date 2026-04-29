@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Application.Services;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
@@ -26,7 +25,10 @@ public class ScoreCommand : ICommand
 
     public void Execute( GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
     {
-        var (name, baseStats, effectiveStats, characterEffects) = actor.Get<Name, BaseStats, EffectiveStats, CharacterEffects>();
+        ref var name = ref actor.Get<Name>();
+        ref var baseStats = ref actor.Get<BaseStats>();
+        ref var effectiveStats = ref actor.Get<EffectiveStats>();
+        ref var characterEffects = ref actor.Get<CharacterEffects>();
         _msg.To(actor).Send($"Name: {name.Value}");
         DisplayLevelAndExperience(actor);
         DisplayHealth(actor);
@@ -38,9 +40,11 @@ public class ScoreCommand : ICommand
         {
             _msg.To(actor).Send($"{stat}: {effectiveStats.Values[stat]}/{baseStats.Values[stat]}");
         }
-        ref var combatState = ref actor.TryGetRef<CombatState>(out var inCombat);
-        if (inCombat)
+        if (actor.Has<CombatState>())
+        {
+            ref var combatState = ref actor.Get<CombatState>();
             _msg.To(actor).Send($"Fighting: {combatState.Target.DisplayName} Delay: {combatState.RoundDelay}");
+        }
 
         _msg.To(actor).Send($"Active tags: {characterEffects.Data.ActiveTags}");
         _effectDisplayService.DisplayEffects(state, actor, characterEffects.Data.Effects);
@@ -48,13 +52,15 @@ public class ScoreCommand : ICommand
 
     private void DisplayLevelAndExperience(Entity actor)
     {
-        ref var level = ref actor.TryGetRef<Level>(out var hasLevel);
-        if (!hasLevel)
+        if (!actor.Has<Level>())
             return;
+        ref var level = ref actor.Get<Level>();
         _msg.To(actor).Send($"Level: {level.Value}");
-        ref var progression = ref actor.TryGetRef<Progression>(out var hasProgression);
-        if (hasProgression)
+        if (actor.Has<Progression>())
+        {
+            ref var progression = ref actor.Get<Progression>();
             _msg.To(actor).Send($"Experience: {progression.Experience} NextLevel: {progression.ExperienceToNextLevel - progression.Experience} XP");
+        }
     }
 
     private void DisplayHealth(Entity actor)
@@ -77,9 +83,9 @@ public class ScoreCommand : ICommand
         var uses = actor.Has<TUses>();
         if (!uses)
             return;
-        ref var resource = ref actor.TryGetRef<TResource>(out var hasResource);
-        if (hasResource)
+        if (actor.Has<TResource>())
         {
+            ref var resource = ref actor.Get<TResource>();
             var (current, max) = getCurrentMaxFunc(resource);
             _msg.To(actor).Send($"{kind}: {current}/{max} CanUse: {uses}");
         }

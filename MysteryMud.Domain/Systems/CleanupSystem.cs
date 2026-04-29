@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Logging;
@@ -9,10 +8,10 @@ using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Effects;
+using MysteryMud.Domain.Components.Groups;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Extensions;
-using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 
 namespace MysteryMud.Domain.Systems;
@@ -22,107 +21,168 @@ public class CleanupSystem
     private readonly ILogger _logger;
     private readonly IFollowService _followService;
     private readonly IGroupService _groupService;
+    private readonly ICombatService _combatService;
     private readonly IEffectLifecycleManager _effectLifecycleManager;
+    private readonly EntitySet _disbandedGroupEntitySet;
+    private readonly EntitySet _expiredEffectsSet;
+    private readonly EntitySet _disconnectedPlayersSet;
+    private readonly EntitySet _deadNpcsSet;
+    private readonly EntitySet _destroyedItemsSet;
 
-    public CleanupSystem(ILogger logger, IFollowService followService, IGroupService groupService, IEffectLifecycleManager effectLifecycleManager)
+    public CleanupSystem(World world, ILogger logger, IFollowService followService, IGroupService groupService, ICombatService combatService, IEffectLifecycleManager effectLifecycleManager)
     {
         _logger = logger;
         _followService = followService;
         _groupService = groupService;
+        _combatService = combatService;
         _effectLifecycleManager = effectLifecycleManager;
+
+        _disbandedGroupEntitySet = world
+            .GetEntities()
+            .With<DisbandedTag>()
+            .AsSet();
+        _expiredEffectsSet = world
+            .GetEntities()
+            .With<ExpiredTag>()
+            .AsSet();
+        _disconnectedPlayersSet = world
+            .GetEntities()
+            .With<DisconnectedTag>()
+            .AsSet();
+        _deadNpcsSet = world
+            .GetEntities()
+            .With<DeadTag>()
+            .With<NpcTag>()
+            .AsSet();
+        _destroyedItemsSet = world
+            .GetEntities()
+            .With<DestroyedTag>()
+            .AsSet();
     }
 
-    // check disconnected players and remove them from the world
-    // check Location for characters
-    // check Location for items
-    // check ContainedIn for items
-    // check Equipped for items
     public void Tick(GameState state)
     {
-        // destroy expired effects
-        var expiredEffectsQuery = new QueryDescription()
-            .WithAll<ExpiredTag>();
-        state.World.Query(expiredEffectsQuery, (Entity effect, ref ExpiredTag expiredTag) =>
+        CleanDisbandedGroups();
+        CleanExpiredEffects();
+        CleanDisconnectedPlayers(state);
+        CleanDeadNpcs(state);
+        CleanDestroyedItems(state);
+    }
+
+    private void CleanDisbandedGroups()
+    {
+        var toDestroy = new List<Entity>();
+        foreach (var group in _disbandedGroupEntitySet.GetEntities())
+        {
+            _logger.LogInformation(LogEvents.Cleanup, "Cleaning up disbanded group {groupName}", group.DebugName);
+
+            toDestroy.Add(group);
+        }
+
+        foreach(var toDestroyGroup in toDestroy.Where(x => x.IsAlive))
+        {
+            toDestroyGroup.Dispose();
+        }
+    }
+
+    private void CleanExpiredEffects()
+    {
+        var toDestroy = new List<Entity>();
+        foreach (var effect in _expiredEffectsSet.GetEntities())
         {
             _logger.LogInformation(LogEvents.Cleanup, "Cleaning up expired effect {effectName}", effect.DebugName);
 
             // remove the effect from the target's CharacterEffects
-            _effectLifecycleManager.RemoveEffect(state, effect);
-        });
+            _effectLifecycleManager.RemoveEffect(effect);
 
-        // destroy disconnected players
-        var disconnectedPlayersQuery = new QueryDescription()
-                .WithAll<DisconnectedTag>();
-        state.World.Query(disconnectedPlayersQuery, (Entity player, ref DisconnectedTag disconnectedTag) =>
+            toDestroy.Add(effect);
+        }
+        foreach (var toDestroyGroup in toDestroy.Where(x => x.IsAlive))
+        {
+            toDestroyGroup.Dispose();
+        }
+    }
+
+    private void CleanDisconnectedPlayers(GameState state)
+    {
+        var toDestroy = new List<Entity>();
+        foreach (var player in _disconnectedPlayersSet.GetEntities())
         {
             _logger.LogInformation(LogEvents.Cleanup, "Cleaning up disconnected player {characterName}", player.DebugName);
 
             _followService.StopFollowing(player);
             _followService.StopAllFollowers(player);
-            ref var groupMember = ref player.TryGetRef<GroupMember>(out var inGroup);
-            if (inGroup)
+            if (player.Has<GroupMember>())
+            {
+                ref var groupMember = ref player.Get<GroupMember>();
                 _groupService.RemoveMember(state, groupMember.Group, player);
-            CombatHelpers.RemoveFromAllCombat(state, player);
-            CombatHelpers.RemoveFromAllThreatTable(state.World, player);
-            CombatHelpers.ForfeitAllClaims(state.World, player);
+            }
+            _combatService.RemoveFromAllCombat(state, player);
+            _combatService.RemoveFromAllThreatTable(state.World, player);
+            _combatService.ForfeitAllClaims(state.World, player);
             RemoveFromRoomContents(player);
-            RemoveEffects(state.World, player);
+            CollectCharacterEffects(player, toDestroy);
 
-            // TODO: destroy any items the character is carrying or equipped with
-            // TODO: if the character is a pet, remove it from its owner's pet list
+            toDestroy.Add(player);
+        }
 
-            // TODO: call PersistenceSystem.SaveOnDisconnectAsync
-
-            state.World.Destroy(player);
-        });
-
-        // destroy NPCs
-        var destroyNpcsQuery = new QueryDescription()
-                .WithAll<Dead, Location, NpcTag>();
-        state.World.Query(destroyNpcsQuery, (Entity npc, ref Dead deadTag, ref Location location, ref NpcTag npcTag) =>
+        foreach (var toDestroyGroup in toDestroy.Where(x => x.IsAlive))
         {
-            _logger.LogInformation(LogEvents.Cleanup, "Cleaning up npc {characterName} from room {roomName}", npc.DebugName, location.Room.DebugName);
+            toDestroyGroup.Dispose();
+        }
+    }
+
+    private void CleanDeadNpcs(GameState state)
+    {
+        var toDestroy = new List<Entity>();
+        foreach(var npc in _deadNpcsSet.GetEntities())
+        {
+            _logger.LogInformation(LogEvents.Cleanup, "Cleaning up npc {characterName}", npc.DebugName);
 
             _followService.StopFollowing(npc);
-            CombatHelpers.RemoveFromAllCombat(state, npc);
-            CombatHelpers.RemoveFromAllThreatTable(state.World, npc);
+            _followService.StopAllFollowers(npc);
+            _combatService.RemoveFromAllCombat(state, npc);
+            _combatService.RemoveFromAllThreatTable(state.World, npc);
             RemoveFromRoomContents(npc);
-            RemoveEffects(state.World, npc);
+            CollectCharacterEffects(npc, toDestroy);
 
-            // TODO: destroy any items the character is carrying or equipped with
-            // TODO: if the character is a pet, remove it from its owner's pet list
-
-            state.World.Destroy(npc);
-        });
-
-        // destroy items
-        var destroyItemsQuery = new QueryDescription()
-                .WithAll<DestroyedTag>()
-                .WithAny<Location, ContainedIn, Equipped>();
-        //world.Query(destroyItemsQuery, (Entity item, ref DestroyedTag destroyedTag, ref Location location, ref ContainedIn containedIn, ref Equipped equipped) => // doesn't work
-        state.World.Query(destroyItemsQuery, (Entity item, ref DestroyedTag destroyedTag) =>
+            toDestroy.Add(npc);
+        }
+        foreach (var toDestroyGroup in toDestroy.Where(x => x.IsAlive))
         {
+            toDestroyGroup.Dispose();
+        }
+    }
+
+    private void CleanDestroyedItems(GameState state)
+    {
+        var toDestroy = new List<Entity>();
+        foreach (var item in _destroyedItemsSet.GetEntities())
+        {
+            _logger.LogInformation(LogEvents.Cleanup, "Cleaning up destroyed item {itemName}", item.DebugName);
+
             // check if the item is on the ground
-            ref var location = ref item.TryGetRef<Location>(out var hasLocation);
-            if (hasLocation)
+            if (item.Has<Location>())
             {
+                ref var location = ref item.Get<Location>();
+
                 _logger.LogInformation(LogEvents.Cleanup, "Cleaning up item {itemName} from location {locationName}", item.DebugName, location.Room.DebugName);
 
                 ref var roomContents = ref location.Room.Get<RoomContents>();
                 roomContents.Items.Remove(item);
             }
             // check if the item is in a container or inventory
-            ref var containedIn = ref item.TryGetRef<ContainedIn>(out var hasContainedIn);
-            if (hasContainedIn)
+            if (item.Has<ContainedIn>())
             {
-                if (containedIn.Character != Entity.Null)
+                ref var containedIn = ref item.Get<ContainedIn>();
+                if (containedIn.Character != default)
                 {
                     _logger.LogInformation(LogEvents.Cleanup, "Cleaning up item {itemName} from inventory of {inventoryOwnerName}", item.DebugName, containedIn.Character.DebugName);
 
                     ref var inventory = ref containedIn.Character.Get<Inventory>();
                     inventory.Items.Remove(item);
                 }
-                else if (containedIn.Container != Entity.Null)
+                else if (containedIn.Container != default)
                 {
                     _logger.LogInformation(LogEvents.Cleanup, "Cleaning up item {itemName} from container {containerName}", item.DebugName, containedIn.Container.DebugName);
 
@@ -131,9 +191,9 @@ public class CleanupSystem
                 }
             }
             // check if the item is equipped should never happen)
-            ref var equipped = ref item.TryGetRef<Equipped>(out var isEquipped);
-            if (isEquipped)
+            if (item.Has<Equipped>())
             {
+                ref var equipped = ref item.Get<Equipped>();
                 ref var equipment = ref equipped.Wearer.Get<Equipment>();
                 foreach (var slot in equipment.Slots.Keys.ToList())
                 {
@@ -141,73 +201,50 @@ public class CleanupSystem
                     {
                         _logger.LogInformation(LogEvents.Cleanup, "Cleaning up item {itemName} from equipment of {wearerName} in slot {slot}", item.DebugName, equipped.Wearer.DebugName, slot);
 
-                        equipment.Slots[slot] = Entity.Null;
+                        equipment.Slots[slot] = default;
                     }
                 }
             }
-            // finally, destroy the item
-            state.World.Destroy(item);
-        });
+
+            // TODO: if container: destroy content
+            //
+            CollectItemEffects(item, toDestroy);
+
+            toDestroy.Add(item);
+        }
+        foreach (var toDestroyGroup in toDestroy.Where(x => x.IsAlive))
+        {
+            toDestroyGroup.Dispose();
+        }
     }
+
 
     private static void RemoveFromRoomContents(Entity victim)
     {
-        ref var location = ref victim.TryGetRef<Location>(out var hasLocation);
-        if (!hasLocation)
-            return; // can't remove from room contents if we don't know where the victim is
+        if (!victim.Has<Location>())
+            return;
+        ref var location = ref victim.Get<Location>();
         ref var roomContents = ref location.Room.Get<RoomContents>();
         roomContents.Characters.Remove(victim);
     }
 
-    private static void RemoveEffects(World world, Entity victim)
+    private void CollectCharacterEffects(Entity player, List<Entity> toDestroy)
     {
-        // remove all effects on victim
-        ref var characterEffects = ref victim.Get<CharacterEffects>();
+        ref var characterEffects = ref player.Get<CharacterEffects>();
         foreach (var effect in characterEffects.Data.Effects)
-            world.Destroy(effect);
+        {
+            if (effect.IsAlive)
+                toDestroy.Add(effect);
+        }
     }
 
-    public static void FullCleanup(World world)
+    private void CollectItemEffects(Entity item, List<Entity> toDestroy)
     {
-        // destroy all entities with DeadTag or DestroyedTag in a single query
-        var destroyQuery = new QueryDescription()
-                .WithAny<Dead, DestroyedTag>();
-        world.Query(destroyQuery, world.Destroy);
-
-        // now remove all references to destroyed entities from inventories, rooms, and containers
-        var roomContentsQuery = new QueryDescription()
-            .WithAll<RoomContents>();
-        world.Query(roomContentsQuery, (Entity entity, ref RoomContents roomContents) =>
+        ref var itemEffects = ref item.Get<ItemEffects>();
+        foreach (var effect in itemEffects.Data.Effects)
         {
-            roomContents.Characters.RemoveAll(item => !world.IsAlive(item));
-            roomContents.Items.RemoveAll(item => !item.IsAlive());
-        });
-
-        var containerQuery = new QueryDescription()
-                .WithAll<ContainerContents>();
-        world.Query(containerQuery, (Entity entity, ref ContainerContents containerContents) =>
-        {
-            containerContents.Items.RemoveAll(item => !item.IsAlive());
-        });
-
-        var inventoryQuery = new QueryDescription()
-                .WithAll<Inventory>();
-        world.Query(inventoryQuery, (Entity entity, ref Inventory inventory) =>
-        {
-            inventory.Items.RemoveAll(item => !item.IsAlive());
-        });
-
-        var equipmentQuery = new QueryDescription()
-            .WithAll<Equipment>();
-        world.Query(inventoryQuery, (Entity entity, ref Equipment equipment) =>
-        {
-            foreach (var slot in equipment.Slots.Keys.ToList())
-            {
-                if (!world.IsAlive(equipment.Slots[slot]))
-                {
-                    equipment.Slots[slot] = Entity.Null;
-                }
-            }
-        });
+            if (effect.IsAlive)
+                toDestroy.Add(effect);
+        }
     }
 }

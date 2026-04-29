@@ -1,9 +1,8 @@
-﻿using Arch.Core;
-using MysteryMud.Core;
+﻿using DefaultEcs;
 
 namespace MysteryMud.Domain.Action.Effect;
 
 public interface IEffectLifecycleManager
 {
-    void RemoveEffect(GameState state, Entity effect);
+    void RemoveEffect(Entity effect);
 }

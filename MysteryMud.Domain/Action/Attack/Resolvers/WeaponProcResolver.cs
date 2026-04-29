@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Contracts;
@@ -40,14 +39,14 @@ public class WeaponProcResolver : IWeaponProcResolver
             return;
 
         // search weapon
-        ref var equipment = ref attack.Source.TryGetRef<Equipment>(out var hasEquipment);
-        if (!hasEquipment)
+        if (!attack.Source.Has<Equipment>())
             return;
-        if (!equipment.Slots.TryGetValue(EquipmentSlotKind.MainHand, out var weaponEntity) || weaponEntity == default || weaponEntity == Entity.Null)
+        ref var equipment = ref attack.Source.Get<Equipment>();
+        if (!equipment.Slots.TryGetValue(EquipmentSlotKind.MainHand, out var weaponEntity) || weaponEntity == default || weaponEntity == default)
             return;
-        ref var weapon = ref weaponEntity.TryGetRef<Weapon>(out var isWeapon);
-        if (!isWeapon)
+        if (!weaponEntity.Has<Weapon>())
             return;
+        ref var weapon = ref weaponEntity.Get<Weapon>();
 
         // has proc ?
         if (weapon.ProcIds == null || weapon.ProcIds.Count == 0)

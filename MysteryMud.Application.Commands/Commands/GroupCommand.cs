@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
@@ -63,30 +62,33 @@ public sealed class GroupCommand : ICommand
         }
 
         // is target following us
-        ref var targetFollowing = ref target.Value.TryGetRef<Following>(out var isTargetFollowing);
-        if (!isTargetFollowing || targetFollowing.Leader != actor)
+        if (!target.Value.Has<Following>() || target.Value.Get<Following>().Leader != actor)
         {
             _msg.To(actor).Act("{0} is not following you.").With(target.Value);
             return;
         }
 
-        ref var actorGroupMember = ref actor.TryGetRef<GroupMember>(out var isActorGrouped);
         // we are not in a group, create a group and add target
-        if (!isActorGrouped)
+        if (!actor.Has<GroupMember>())
         {
-            var group = state.World.Create(new GroupInstance
+            var group = state.World.CreateEntity();
+            group.Set(new GroupInstance
             {
                 Leader = actor, // already set as leader
                 LootRule = LootRule.FreeForAll,
                 Members = [], // use AddMember to add
-                MasterLooter = Entity.Null,
+                MasterLooter = default,
             });
             _groupService.AddMember(state, group, actor);
             _groupService.AddMember(state, group, target.Value);
             _msg.ToGroup(group).Act("{0} {0:b} the leader of the group.").With(actor);
             return;
         }
+
+        // TODO: what if group is not alive
+
         // we are in a group
+        ref var actorGroupMember = ref actor.Get<GroupMember>();
         ref var groupInstance = ref actorGroupMember.Group.Get<GroupInstance>();
         // target is in the gorup, remove target
         if (groupInstance.Members.Contains(target.Value))
@@ -100,23 +102,22 @@ public sealed class GroupCommand : ICommand
 
     private void DisplayGroup(Entity actor)
     {
-        ref var groupMember = ref actor.TryGetRef<GroupMember>(out var isInGroup);
-        ref var charmies = ref actor.TryGetRef<Charmies>(out var hasCharmies);
         // no group nor charmies -> nothing to display
-        if (!isInGroup && !hasCharmies)
+        if (!actor.Has<GroupMember>() && !actor.Has<Charmies>())
         {
             _msg.To(actor).Send("You aren't in a group.");
             return;
         }
         // if not in a group but charmies -> display charmies
-        if (!isInGroup)
+        if (!actor.Has<GroupMember>())
         {
             DisplayCharmies(actor, actor);
             return;
         }
+        ref var groupMember = ref actor.Get<GroupMember>();
         // in a group, display members and their charmies
         ref var groupInstance = ref groupMember.Group.Get<GroupInstance>();
-        _msg.To(actor).Send($"{groupInstance.Leader.DisplayName}'s group:");
+        _msg.To(actor).Act($"{groupInstance.Leader.DisplayName}'s group:");
         foreach (var member in groupInstance.Members)
         {
             DisplayMember(actor, member);
@@ -134,9 +135,9 @@ public sealed class GroupCommand : ICommand
 
     private void DisplayCharmies(Entity actor, Entity member)
     {
-        ref var charmies = ref member.TryGetRef<Charmies>(out var hasCharmies);
-        if (!hasCharmies)
+        if (!member.Has<Charmies>())
             return;
+        ref var charmies = ref member.Get<Charmies>();
         foreach (var charmie in charmies.Entities)
         {
             var health = charmie.Get<Health>();
@@ -164,9 +165,9 @@ public sealed class GroupCommand : ICommand
         var uses = target.Has<TUses>();
         if (!uses)
             return sb;
-        ref var resource = ref target.TryGetRef<TResource>(out var hasResource);
-        if (!hasResource)
+        if (!target.Has<TResource>())
             return sb;
+        ref var resource = ref target.Get<TResource>();
         var (current, max) = getCurrentMaxFunc(resource);
         sb.AppendFormat("{0:5}/{1:5} {2}", current, max, kind.ToString().ToLowerInvariant());
         return sb;

@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Domain.Action.Effect.Helpers;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
@@ -29,9 +28,9 @@ public static class ModifierPipeline
                 continue;
 
             // get modifiers
-            ref var modifiers = ref effect.TryGetRef<TModifiers>(out var hasModifiers);
-            if (!hasModifiers)
+            if (!effect.Has<TModifiers>())
                 continue;
+            ref var modifiers = ref effect.Get<TModifiers>();
 
             ref var effectInstance = ref effect.Get<EffectInstance>();
             var stackCount = effectInstance.StackCount;
@@ -82,9 +81,10 @@ public static class ModifierPipeline
             if (!EffectHelpers.IsAlive(effect))
                 continue;
 
-            ref var modifiers = ref effect.TryGetRef<TModifiers>(out var hasModifiers);
-            if (!hasModifiers)
+            // get modifiers
+            if (!effect.Has<TModifiers>())
                 continue;
+            ref var modifiers = ref effect.Get<TModifiers>();
 
             ref var effectInstance = ref effect.Get<EffectInstance>();
             var stackCount = effectInstance.StackCount;

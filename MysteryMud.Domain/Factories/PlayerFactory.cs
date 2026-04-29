@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
@@ -14,7 +13,8 @@ public static class PlayerFactory
 {
     public static Entity CreateConnectingPlayer(World world, int connectionId)
     {
-        var player = world.Create(new Connection
+        var player = world.CreateEntity();
+        player.Set(new Connection
         {
             ConnectionId = connectionId
         });
@@ -28,16 +28,16 @@ public static class PlayerFactory
     {
         var commandThrottle = new CommandThrottle();
         CommandThrottlingFactory.Initialize(ref commandThrottle);
-        var player = world.Create(
-            new CharacterTag(),
-            new PlayerTag(),
-            new CommandLevel { Value = CommandLevelKind.Player },
-            new CommandBuffer(),
-            commandThrottle,
-            new Name { Value = name },
-            new Level { Value = 1 },
-            new Progression { Experience = 0, ExperienceByLevel = 1000, ExperienceToNextLevel = 2000 },
-            new BaseStats
+        var player = world.CreateEntity();
+        player.Set(new CharacterTag());
+        player.Set(new PlayerTag());
+            player.Set(new CommandLevel { Value = CommandLevelKind.Player });
+        player.Set(new CommandBuffer());
+        player.Set(commandThrottle);
+        player.Set(new Name { Value = name });
+        player.Set(new Level { Value = 1 });
+        player.Set(new Progression { Experience = 0, ExperienceByLevel = 1000, ExperienceToNextLevel = 2000 });
+        player.Set(new BaseStats
             {
                 Values = CharacterStatValues.From(
                     (CharacterStatKind.Strength, 15),
@@ -48,10 +48,10 @@ public static class PlayerFactory
                     (CharacterStatKind.HitRoll, 0),
                     (CharacterStatKind.DamRoll, 0),
                     (CharacterStatKind.ArmorClass, 0))
-            },
-            new EffectiveStats
-            {
-                Values = CharacterStatValues.From(
+            });
+        player.Set(new EffectiveStats
+        {
+            Values = CharacterStatValues.From(
                     (CharacterStatKind.Strength, 15),
                     (CharacterStatKind.Intelligence, 10),
                     (CharacterStatKind.Wisdom, 15),
@@ -60,44 +60,38 @@ public static class PlayerFactory
                     (CharacterStatKind.HitRoll, 0),
                     (CharacterStatKind.DamRoll, 0),
                     (CharacterStatKind.ArmorClass, 0))
-            },
-            new Form { Value = FormType.Humanoid },
-            new Inventory { Items = [] },
-            new Equipment { Slots = [] },
-            new CharacterEffects
+        });
+            player.Set(new Form { Value = FormType.Humanoid });
+        player.Set(new Inventory { Items = [] });
+        player.Set(new Equipment { Slots = [] });
+        player.Set(new CharacterEffects
             {
                 Data = new EffectsCollection
                 {
                     Effects = [],
                     EffectsByTag = new List<Entity>?[32]
                 },
-            },
-            new Location { Room = room },
-            new Position { Value = PositionKind.Standing },
-            new AutoBehaviour { Flags = AutoFlags.Loot | AutoFlags.Sacrifice | AutoFlags.Assist },
-            new DirtyStats() // dirty by default
-        );
-        player.Add(
-            new Health { Current = 10, Max = 100 },
-            new BaseHealth { Max = 100 },
-            new HealthRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
-        player.Add(
-            new Move { Current = 100, Max = 100 },
-            new BaseMove { Max = 100 },
-            new MoveRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
-        player.Add(
-            new Mana { Current = 100, Max = 100 },
-            new BaseMana { Max = 100 },
-            new ManaRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
-            new UsesMana());
-        player.Add(
-            new Energy { Current = 100, Max = 100 },
-            new BaseEnergy { Max = 100 },
-            new EnergyRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
-        player.Add(
-            new Rage { Current = 0, Max = 100 },
-            new BaseRage { Max = 100 },
-            new RageDecay { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
+            });
+        player.Set(new Location { Room = room });
+        player.Set(new Position { Value = PositionKind.Standing });
+        player.Set(new AutoBehaviour { Flags = AutoFlags.Loot | AutoFlags.Sacrifice | AutoFlags.Assist });
+        player.Set(new DirtyStats()); // dirty by default
+        player.Set(new Health { Current = 10, Max = 100 });
+        player.Set(new BaseHealth { Max = 100 });
+        player.Set(new HealthRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
+        player.Set(new Move { Current = 100, Max = 100 });
+        player.Set(new BaseMove { Max = 100 });
+        player.Set(new MoveRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
+        player.Set(new Mana { Current = 100, Max = 100 });
+        player.Set(new BaseMana { Max = 100 });
+        player.Set(new ManaRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
+        player.Set(new UsesMana());
+        player.Set(new Energy { Current = 100, Max = 100 });
+        player.Set(new BaseEnergy { Max = 100 });
+        player.Set(new EnergyRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
+        player.Set(new Rage { Current = 0, Max = 100 });
+        player.Set(new BaseRage { Max = 100 });
+        player.Set(new RageDecay { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
 
         room.Get<RoomContents>().Characters.Add(player);
 
@@ -108,76 +102,70 @@ public static class PlayerFactory
     {
         var commandThrottle = new CommandThrottle();
         CommandThrottlingFactory.Initialize(ref commandThrottle);
-        var player = world.Create(
-            new CharacterTag(),
-            new PlayerTag(),
-            new CommandLevel { Value = CommandLevelKind.Admin },
-            new CommandBuffer(),
-            commandThrottle,
-            new Name { Value = name },
-            new Level { Value = 100 },
-            new Progression { Experience = 1000000, ExperienceByLevel = 1000, ExperienceToNextLevel = 0 },
-            new BaseStats
+        var player = world.CreateEntity();
+        player.Set(new CharacterTag());
+        player.Set(new PlayerTag());
+        player.Set(new CommandLevel { Value = CommandLevelKind.Admin });
+        player.Set(new CommandBuffer());
+        player.Set(commandThrottle);
+        player.Set(new Name { Value = name });
+        player.Set(new Level { Value = 100 });
+        player.Set(new Progression { Experience = 1000000, ExperienceByLevel = 1000, ExperienceToNextLevel = 0 });
+        player.Set(new BaseStats
+        {
+            Values = CharacterStatValues.From(
+                (CharacterStatKind.Strength, 15),
+                (CharacterStatKind.Intelligence, 10),
+                (CharacterStatKind.Wisdom, 15),
+                (CharacterStatKind.Dexterity, 12),
+                (CharacterStatKind.Constitution, 15),
+                (CharacterStatKind.HitRoll, 0),
+                (CharacterStatKind.DamRoll, 0),
+                (CharacterStatKind.ArmorClass, 0))
+        });
+        player.Set(new EffectiveStats
+        {
+            Values = CharacterStatValues.From(
+                (CharacterStatKind.Strength, 15),
+                (CharacterStatKind.Intelligence, 10),
+                (CharacterStatKind.Wisdom, 15),
+                (CharacterStatKind.Dexterity, 12),
+                (CharacterStatKind.Constitution, 15),
+                (CharacterStatKind.HitRoll, 0),
+                (CharacterStatKind.DamRoll, 0),
+                (CharacterStatKind.ArmorClass, 0))
+        });
+        player.Set(new Form { Value = FormType.Humanoid });
+        player.Set(new Inventory { Items = [] });
+        player.Set(new Equipment { Slots = [] });
+        player.Set(new CharacterEffects
+        {
+            Data = new EffectsCollection
             {
-                Values = CharacterStatValues.From(
-                    (CharacterStatKind.Strength, 15),
-                    (CharacterStatKind.Intelligence, 10),
-                    (CharacterStatKind.Wisdom, 15),
-                    (CharacterStatKind.Dexterity, 12),
-                    (CharacterStatKind.Constitution, 15),
-                    (CharacterStatKind.HitRoll, 0),
-                    (CharacterStatKind.DamRoll, 0),
-                    (CharacterStatKind.ArmorClass, 0))
+                Effects = [],
+                EffectsByTag = new List<Entity>?[32]
             },
-            new EffectiveStats
-            {
-                Values = CharacterStatValues.From(
-                    (CharacterStatKind.Strength, 15),
-                    (CharacterStatKind.Intelligence, 10),
-                    (CharacterStatKind.Wisdom, 15),
-                    (CharacterStatKind.Dexterity, 12),
-                    (CharacterStatKind.Constitution, 15),
-                    (CharacterStatKind.HitRoll, 0),
-                    (CharacterStatKind.DamRoll, 0),
-                    (CharacterStatKind.ArmorClass, 0))
-            },
-            new Form { Value = FormType.Humanoid },
-            new Inventory { Items = [] },
-            new Equipment { Slots = [] },
-            new CharacterEffects
-            {
-                Data = new EffectsCollection
-                {
-                    Effects = [],
-                    EffectsByTag = new List<Entity>?[32]
-                },
-            },
-            new Location { Room = room },
-            new Position { Value = PositionKind.Standing },
-            new AutoBehaviour { Flags = AutoFlags.Loot | AutoFlags.Sacrifice | AutoFlags.Assist },
-            new DirtyStats() // dirty by default
-        );
-        player.Add(
-            new Health { Current = 10000, Max = 10000 },
-            new BaseHealth { Max = 10000 },
-            new HealthRegen { BaseAmountPerSecond = 100, CurrentAmountPerSecond = 100 });
-        player.Add(
-            new Move { Current = 1000, Max = 1000 },
-            new BaseMove { Max = 1000 },
-            new MoveRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
-        player.Add(
-            new Mana { Current = 100, Max = 100 },
-            new BaseMana { Max = 100 },
-            new ManaRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
-            new UsesMana());
-        player.Add(
-            new Energy { Current = 100, Max = 100 },
-            new BaseEnergy { Max = 100 },
-            new EnergyRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
-        player.Add(
-            new Rage { Current = 0, Max = 100 },
-            new BaseRage { Max = 100 },
-            new RageDecay { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
+        });
+        player.Set(new Location { Room = room });
+        player.Set(new Position { Value = PositionKind.Standing });
+        player.Set(new AutoBehaviour { Flags = AutoFlags.Loot | AutoFlags.Sacrifice | AutoFlags.Assist });
+        player.Set(new DirtyStats()); // dirty by default
+        player.Set(new Health { Current = 10000, Max = 10000 });
+        player.Set(new BaseHealth { Max = 10000 });
+        player.Set(new HealthRegen { BaseAmountPerSecond = 100, CurrentAmountPerSecond = 100 });
+        player.Set(new Move { Current = 1000, Max = 1000 });
+        player.Set(new BaseMove { Max = 1000 });
+        player.Set(new MoveRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
+        player.Set(new Mana { Current = 100, Max = 100 });
+        player.Set(new BaseMana { Max = 100 });
+        player.Set(new ManaRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
+        player.Set(new UsesMana());
+        player.Set(new Energy { Current = 100, Max = 100 });
+        player.Set(new BaseEnergy { Max = 100 });
+        player.Set(new EnergyRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
+        player.Set(new Rage { Current = 0, Max = 100 });
+        player.Set(new BaseRage { Max = 100 });
+        player.Set(new RageDecay { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
 
         room.Get<RoomContents>().Characters.Add(player);
 
@@ -189,77 +177,70 @@ public static class PlayerFactory
         // TODO: read from pfile
         var commandThrottle = new CommandThrottle();
         CommandThrottlingFactory.Initialize(ref commandThrottle);
-        player.Add(
-            new CharacterTag(),
-            new PlayerTag(),
-            new CommandLevel { Value = CommandLevelKind.Admin },
-            new CommandBuffer(),
-            commandThrottle,
-            new Name { Value = "joel" }, // TODO: implement character creation and loading from file, for now just use a placeholder name
-            new Level { Value = 50 },
-            new Progression { Experience = 49950, ExperienceByLevel = 1000, ExperienceToNextLevel = 50000 },
-            new BaseStats
+        player.Set(new CharacterTag());
+        player.Set(new PlayerTag());
+        player.Set(new CommandLevel { Value = CommandLevelKind.Admin });
+        player.Set(new CommandBuffer());
+        player.Set(commandThrottle);
+        player.Set(new Name { Value = "joel" }); // TODO: implement character creation and loading from file, for now just use a placeholder name
+        player.Set(new Level { Value = 50 });
+        player.Set(new Progression { Experience = 49950, ExperienceByLevel = 1000, ExperienceToNextLevel = 50000 });
+        player.Set(new BaseStats
+        {
+            Values = CharacterStatValues.From(
+                (CharacterStatKind.Strength, 15),
+                (CharacterStatKind.Intelligence, 10),
+                (CharacterStatKind.Wisdom, 15),
+                (CharacterStatKind.Dexterity, 12),
+                (CharacterStatKind.Constitution, 15),
+                (CharacterStatKind.HitRoll, 0),
+                (CharacterStatKind.DamRoll, 0),
+                (CharacterStatKind.ArmorClass, 0))
+        });
+        player.Set(new EffectiveStats
+        {
+            Values = CharacterStatValues.From(
+                (CharacterStatKind.Strength, 15),
+                (CharacterStatKind.Intelligence, 10),
+                (CharacterStatKind.Wisdom, 15),
+                (CharacterStatKind.Dexterity, 12),
+                (CharacterStatKind.Constitution, 15),
+                (CharacterStatKind.HitRoll, 0),
+                (CharacterStatKind.DamRoll, 0),
+                (CharacterStatKind.ArmorClass, 0))
+        });
+        player.Set(new Form { Value = FormType.Humanoid });
+        player.Set(new Inventory { Items = [] });
+        player.Set(new Equipment { Slots = [] });
+        player.Set(new CharacterEffects
+        {
+            Data = new EffectsCollection
             {
-                Values = CharacterStatValues.From(
-                    (CharacterStatKind.Strength, 15),
-                    (CharacterStatKind.Intelligence, 10),
-                    (CharacterStatKind.Wisdom, 15),
-                    (CharacterStatKind.Dexterity, 12),
-                    (CharacterStatKind.Constitution, 15),
-                    (CharacterStatKind.HitRoll, 0),
-                    (CharacterStatKind.DamRoll, 0),
-                    (CharacterStatKind.ArmorClass, 0))
+                Effects = [],
+                EffectsByTag = new List<Entity>?[32]
             },
-            new EffectiveStats
-            {
-                Values = CharacterStatValues.From(
-                    (CharacterStatKind.Strength, 15),
-                    (CharacterStatKind.Intelligence, 10),
-                    (CharacterStatKind.Wisdom, 15),
-                    (CharacterStatKind.Dexterity, 12),
-                    (CharacterStatKind.Constitution, 15),
-                    (CharacterStatKind.HitRoll, 0),
-                    (CharacterStatKind.DamRoll, 0),
-                    (CharacterStatKind.ArmorClass, 0))
-            },
-            new Form { Value = FormType.Humanoid },
-            new Inventory { Items = [] },
-            new Equipment { Slots = [] },
-            new CharacterEffects
-            {
-                Data = new EffectsCollection
-                {
-                    Effects = [],
-                    EffectsByTag = new List<Entity>?[32]
-                },
-            },
-            new Location { Room = RoomFactory.StartingRoomEntity },
-            new Position { Value = PositionKind.Standing },
-            new AutoBehaviour { Flags = AutoFlags.Loot | AutoFlags.Sacrifice | AutoFlags.Assist },
-            new DirtyStats() // ensure stats are recomputed
-            );
+        });
+        player.Set(new Location { Room = RoomFactory.StartingRoomEntity });
+        player.Set(new Position { Value = PositionKind.Standing });
+        player.Set(new AutoBehaviour { Flags = AutoFlags.Loot | AutoFlags.Sacrifice | AutoFlags.Assist });
+        player.Set(new DirtyStats()); // ensure stats are recomputed
 
-        player.Add(
-            new Health { Current = 10000, Max = 10000 },
-            new BaseHealth { Max = 10000 },
-            new HealthRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
-        player.Add(
-            new Move { Current = 35, Max = 1000 },
-            new BaseMove { Max = 1000 },
-            new MoveRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
-        player.Add(
-            new Mana { Current = 100, Max = 1000 },
-            new BaseMana { Max = 100 },
-            new ManaRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
-            new UsesMana());
-        player.Add(
-            new Energy { Current = 100, Max = 100 },
-            new BaseEnergy { Max = 100 },
-            new EnergyRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 11 });
-        player.Add(
-            new Rage { Current = 0, Max = 100 },
-            new BaseRage { Max = 100 },
-            new RageDecay { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
+        player.Set(new Health { Current = 10000, Max = 10000 });
+        player.Set(new BaseHealth { Max = 10000 });
+        player.Set(new HealthRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
+        player.Set(new Move { Current = 35, Max = 1000 });
+        player.Set(new BaseMove { Max = 1000 });
+        player.Set(new MoveRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
+        player.Set(new Mana { Current = 100, Max = 1000 });
+        player.Set(new BaseMana { Max = 100 });
+        player.Set(new ManaRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
+        player.Set(new UsesMana());
+        player.Set(new Energy { Current = 100, Max = 100 });
+        player.Set(new BaseEnergy { Max = 100 });
+        player.Set(new EnergyRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 11 });
+        player.Set(new Rage { Current = 0, Max = 100 });
+        player.Set(new BaseRage { Max = 100 });
+        player.Set(new RageDecay { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
 
         RoomFactory.StartingRoomEntity.Get<RoomContents>().Characters.Add(player); // move to starting room
     }

@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Core;
 using MysteryMud.Core.Contracts;
 using MysteryMud.Domain.Components.Characters;
@@ -12,24 +11,32 @@ public class AutoAttackSystem
     private const int DefaultHits = 1; // e.g., base autoattack hits
 
     private readonly IIntentContainer _intentContainer;
+    private readonly EntitySet _inCombatEntitySet;
 
-    public AutoAttackSystem(IIntentContainer intentContainer)
+    public AutoAttackSystem(World world, IIntentContainer intentContainer)
     {
         _intentContainer = intentContainer;
+        _inCombatEntitySet = world
+            .GetEntities()
+            .With<CombatState>()
+            .With<NewCombatantTag>()
+            .Without<DeadTag>() // no autoattack if dead or casting
+            .Without<Casting>()
+            .AsSet();
     }
 
     public void Tick(GameState state)
     {
-        var query = new QueryDescription()
-            .WithAll<CombatState, EffectiveStats>()
-            .WithNone<Dead, Casting>(); // no autoattack if dead or casting
-        state.World.Query(query, (Entity actor, ref CombatState combat, ref EffectiveStats stats) =>
+        foreach(var entity in _inCombatEntitySet.GetEntities())
         {
+            ref var combat = ref entity.Get<CombatState>();
+            ref var stats = ref entity.Get<EffectiveStats>();
+
             var target = combat.Target;
-            if (target.Has<Dead>())
+            if (target.Has<DeadTag>())
             {
                 // Target is gone, exit combat
-                actor.Remove<CombatState>();
+                entity.Remove<CombatState>();
                 return;
                 // TODO: Alternatively, could try to select new target here instead of exiting combat
             }
@@ -48,7 +55,7 @@ public class AutoAttackSystem
             // Add attack intent
             ref var attackIntent = ref _intentContainer.Action.Add();
             attackIntent.Kind = ActionKind.Attack;
-            attackIntent.Attack.Source = actor;
+            attackIntent.Attack.Source = entity;
             attackIntent.Attack.Target = target;
             attackIntent.Attack.RemainingHits = hits;
             attackIntent.Attack.IsReaction = false; // autoattack, not a reaction
@@ -57,6 +64,6 @@ public class AutoAttackSystem
 
             // Apply lag before next attack
             combat.RoundDelay = 2; // example: 2 ticks
-        });
+        }
     }
 }

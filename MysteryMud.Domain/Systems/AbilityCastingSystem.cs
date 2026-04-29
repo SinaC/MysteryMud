@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Contracts;
@@ -21,8 +20,9 @@ public class AbilityCastingSystem
     private readonly IIntentContainer _intents;
     private readonly IAbilityRegistry _abilityRegistry;
     private readonly IAbilityTargetResolver _abilityTargetResolver;
+    private readonly EntitySet _castingEntitySet;
 
-    public AbilityCastingSystem(ILogger logger, IGameMessageService msg, ICastMessageService castMessageService, IIntentContainer intents, IAbilityRegistry abilityRegistry, IAbilityTargetResolver abilityTargetResolver)
+    public AbilityCastingSystem(World world, ILogger logger, IGameMessageService msg, ICastMessageService castMessageService, IIntentContainer intents, IAbilityRegistry abilityRegistry, IAbilityTargetResolver abilityTargetResolver)
     {
         _logger = logger;
         _msg = msg;
@@ -30,17 +30,20 @@ public class AbilityCastingSystem
         _intents = intents;
         _abilityRegistry = abilityRegistry;
         _abilityTargetResolver = abilityTargetResolver;
+        _castingEntitySet = world
+            .GetEntities()
+            .With<Casting>()
+            .Without<DeadTag>()
+            .AsSet();
     }
 
     public void Tick(GameState state)
     {
         // TODO: interrupt: Your concentration is broken! You fail to cast '{spellName}'.
         // TODO: use scheduler instead of looping each tick
-        var query = new QueryDescription()
-            .WithAll<Casting>()
-            .WithNone<Dead>();
-        state.World.Query(query, (Entity entity, ref Casting casting) =>
+        foreach(var entity in _castingEntitySet.GetEntities())
         {
+            ref var casting = ref entity.Get<Casting>();
             var abilityId = casting.AbilityId;
             var source = casting.Source;
 
@@ -87,7 +90,7 @@ public class AbilityCastingSystem
 
             // not casting anymore
             entity.Remove<Casting>();
-        });
+        }
     }
 
     private List<Entity> FilterTargets(
@@ -158,10 +161,14 @@ public class AbilityCastingSystem
     {
         if (affectedEntity.Has<CharacterTag>())
             return affectedEntity;
-        if (affectedEntity.TryGet<Equipped>(out var equipped))
-            return equipped.Wearer;
-        if (affectedEntity.TryGet<ContainedIn>(out var containedIn) && containedIn.Character.Has<CharacterTag>())
-            return containedIn.Character;
+        if (affectedEntity.Has<Equipped>())
+            return affectedEntity.Get<Equipped>().Wearer;
+        if (affectedEntity.Has<ContainedIn>())
+        {
+            ref var containedIn = ref affectedEntity.Get<ContainedIn>();
+            if (containedIn.Character.Has<CharacterTag>())
+                return containedIn.Character;
+        }
         return null;
     }
 }

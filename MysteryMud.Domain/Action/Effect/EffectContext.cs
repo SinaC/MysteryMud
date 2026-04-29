@@ -1,4 +1,4 @@
-﻿using Arch.Core;
+﻿using DefaultEcs;
 using MysteryMud.Core;
 
 namespace MysteryMud.Domain.Action.Effect;

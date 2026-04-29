@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Core;
 using MysteryMud.Domain.Commands;
 using MysteryMud.Domain.Components.Characters;
@@ -9,14 +8,26 @@ namespace MysteryMud.Domain.Systems;
 
 public class AISystem
 {
+    private readonly EntitySet _hasAutoCommandEntitySet;
+
+    public AISystem(World world)
+    {
+        _hasAutoCommandEntitySet = world
+            .GetEntities()
+            .With<CommandBuffer>()
+            .With<AutoCommand>()
+            .AsSet();
+    }
+
     public void Execute(GameState state)
     {
         long now = state.CurrentTimeMs;
 
-        var query = new QueryDescription()
-            .WithAll<CommandBuffer, AutoCommand>();
-        state.World.Query(query, (Entity entity, ref CommandBuffer buffer, ref AutoCommand autoCommand) =>
+        foreach(var entity in _hasAutoCommandEntitySet.GetEntities())
         {
+            ref var buffer = ref entity.Get<CommandBuffer>();
+            ref var autoCommand = ref entity.Get<AutoCommand>();
+
             // Skip if AI tick rate not reached
             if (now - autoCommand.LastCommandTick < autoCommand.CommandTickRate)
                 return;
@@ -38,11 +49,11 @@ public class AISystem
 
             // Mark entity for processing
             if (!entity.Has<HasCommandTag>())
-                entity.Add<HasCommandTag>();
+                entity.Set<HasCommandTag>();
 
             // Update last AI tick
             autoCommand.LastCommandTick = now;
-        });
+        }
     }
 
     private IEnumerable<CommandRequest> DecideNextCommands(Entity npc, AutoCommand autoCommand)

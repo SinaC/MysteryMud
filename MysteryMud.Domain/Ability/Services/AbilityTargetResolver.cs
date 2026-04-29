@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Core;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
@@ -155,17 +154,17 @@ public sealed class AbilityTargetResolver : IAbilityTargetResolver
 
     private static IEnumerable<Entity> GetInventoryEntities(Entity source)
     {
-        ref var inventory = ref source.TryGetRef<Inventory>(out var hasInventory);
-        if (!hasInventory)
+        if (!source.Has<Inventory>())
             return [];
+        ref var inventory = ref source.Get<Inventory>();
         return inventory.Items;
     }
 
     private static Entity? GetCurrentOpponent(Entity source)
     {
-        ref var combatState = ref source.TryGetRef<CombatState>(out var inCombat);
-        if (!inCombat)
+        if (!source.Has<CombatState>())
             return null;
+        ref var combatState = ref source.Get<CombatState>();
         return combatState.Target;
     }
 

@@ -1,4 +1,4 @@
-﻿using Arch.Core;
+﻿using DefaultEcs;
 using MysteryMud.Domain.Formatters;
 
 namespace MysteryMud.Domain.Services;

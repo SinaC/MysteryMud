@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.GameData.Enums;
@@ -45,7 +44,7 @@ public static class MovementValidator
         blockReason = default!;
 
         // 1. Destination room must exist
-        if (toRoom == Entity.Null || !toRoom.IsAlive())
+        if (toRoom == default || !toRoom.IsAlive)
         {
             blockReason = "There is no exit in that direction";
             return false;

@@ -1,6 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Domain.Components.Characters;
+﻿using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Systems;
@@ -17,7 +15,7 @@ public class AutoAssistSystemTests : IDisposable
 
     public AutoAssistSystemTests()
     {
-        _sut = new AutoAssistSystem(_f.RoomEnteredEvents);
+        _sut = new AutoAssistSystem(_f.World, _f.RoomEnteredEvents);
     }
 
     public void Dispose() => _f.Dispose();
@@ -35,8 +33,8 @@ public class AutoAssistSystemTests : IDisposable
         _f.AddGroupMembers(group, alice, bob);
 
         // orc attacks alice
-        alice.Add(new CombatState { Target = orc }); alice.Add<NewCombatantTag>();
-        orc.Add(new CombatState { Target = alice }); orc.Add<NewCombatantTag>();
+        alice.Set(new CombatState { Target = orc }); alice.Set<NewCombatantTag>();
+        orc.Set(new CombatState { Target = alice }); orc.Set<NewCombatantTag>();
 
         _sut.TickCombatInitiated(_f.State);
 
@@ -55,8 +53,8 @@ public class AutoAssistSystemTests : IDisposable
         var orc = _f.Npc("Orc").WithLocation(room).Build();
 
         _f.AddGroupMembers(group, alice, bob);
-        alice.Add(new CombatState { Target = orc }); alice.Add<NewCombatantTag>();
-        orc.Add(new CombatState { Target = alice }); orc.Add<NewCombatantTag>();
+        alice.Set(new CombatState { Target = orc }); alice.Set<NewCombatantTag>();
+        orc.Set(new CombatState { Target = alice }); orc.Set<NewCombatantTag>();
 
         _sut.TickCombatInitiated(_f.State);
 
@@ -75,8 +73,8 @@ public class AutoAssistSystemTests : IDisposable
         var orc = _f.Npc("Orc").WithLocation(room1).Build();
 
         _f.AddGroupMembers(group, alice, bob);
-        alice.Add(new CombatState { Target = orc }); alice.Add<NewCombatantTag>();
-        orc.Add(new CombatState { Target = alice }); orc.Add<NewCombatantTag>();
+        alice.Set(new CombatState { Target = orc }); alice.Set<NewCombatantTag>();
+        orc.Set(new CombatState { Target = alice }); orc.Set<NewCombatantTag>();
 
         _sut.TickCombatInitiated(_f.State);
 
@@ -91,11 +89,11 @@ public class AutoAssistSystemTests : IDisposable
         var bear = _f.Npc("Bear").WithLocation(room).Build();
         var orc = _f.Npc("Orc").WithLocation(room).Build();
 
-        alice.Add(new Charmies { Entities = [bear] });
-        bear.Add(new Charmed { Master = alice });
+        alice.Set(new Charmies { Entities = [bear] });
+        bear.Set(new Charmed { Master = alice });
 
-        alice.Add(new CombatState { Target = orc }); alice.Add<NewCombatantTag>();
-        orc.Add(new CombatState { Target = alice }); orc.Add<NewCombatantTag>();
+        alice.Set(new CombatState { Target = orc }); alice.Set<NewCombatantTag>();
+        orc.Set(new CombatState { Target = alice }); orc.Set<NewCombatantTag>();
 
         _sut.TickCombatInitiated(_f.State);
 
@@ -113,8 +111,8 @@ public class AutoAssistSystemTests : IDisposable
         var orc = _f.Npc("Orc").WithLocation(room).Build();
 
         // fight already in progress in the room
-        player.Add(new CombatState { Target = orc });
-        orc.Add(new CombatState { Target = player });
+        player.Set(new CombatState { Target = orc });
+        orc.Set(new CombatState { Target = player });
 
         // guard walks in
         _f.RoomEnteredEvents.Add(new RoomEnteredEvent { Entity = guard, ToRoom = room });

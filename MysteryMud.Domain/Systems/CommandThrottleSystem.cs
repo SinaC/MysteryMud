@@ -1,4 +1,4 @@
-﻿using Arch.Core;
+﻿using DefaultEcs;
 using MysteryMud.Core;
 using MysteryMud.Domain.Commands;
 using MysteryMud.Domain.Components.Characters;
@@ -17,115 +17,124 @@ public class CommandThrottleSystem
     private const int MAX_VIOLATIONS = 3;     // max spam violations before blocking
 
     private readonly IGameMessageService _msg;
+    private readonly EntitySet _pendingCommandEntitySet;
 
-    public CommandThrottleSystem(IGameMessageService msg)
+    public CommandThrottleSystem(World world, IGameMessageService msg)
     {
         _msg = msg;
+        _pendingCommandEntitySet = world
+            .GetEntities()
+            .With<CommandBuffer>()
+            .With<CommandThrottle>()
+            .With<PlayerTag>()
+            .With<HasCommandTag>()
+            .AsSet();
     }
 
     public void Execute(GameState state)
     {
         long now = state.CurrentTimeMs;
 
-        var query = new QueryDescription()
-            .WithAll<CommandBuffer, CommandThrottle, PlayerTag, HasCommandTag>();
-        state.World.Query(query, (Entity player, ref CommandBuffer buffer, ref CommandThrottle throttle, ref PlayerTag _, ref HasCommandTag _) =>
+        foreach (var player in _pendingCommandEntitySet.GetEntities())
+        {
+            ref var buffer = ref player.Get<CommandBuffer>();
+            ref var throttle = ref player.Get<CommandThrottle>();
+
+            // --- refill all category buckets ---
+            Refill(ref throttle.Movement, now);
+            Refill(ref throttle.Combat, now);
+            Refill(ref throttle.Social, now);
+            Refill(ref throttle.Utility, now);
+            Refill(ref throttle.Admin, now);
+
+            // --- reset violations if enough time passed ---
+            if (now - throttle.LastViolationTime > RESET_WINDOW)
             {
-                // --- refill all category buckets ---
-                Refill(ref throttle.Movement, now);
-                Refill(ref throttle.Combat, now);
-                Refill(ref throttle.Social, now);
-                Refill(ref throttle.Utility, now);
-                Refill(ref throttle.Admin, now);
+                throttle.Violations = 0;
+            }
 
-                // --- reset violations if enough time passed ---
-                if (now - throttle.LastViolationTime > RESET_WINDOW)
+            // --- prune history for SPAM_WINDOW ---
+            throttle.PruneHistory(now, SPAM_WINDOW);
+
+            bool notified = false;
+
+            for (int i = 0; i < buffer.Count; i++)
+            {
+                ref var request = ref buffer.Items[i];
+
+                if (request.Cancelled || request.Force)
+                    continue;
+
+                var def = request.Command.Definition;
+                var primaryCat = GetPrimaryCategory(def.ThrottlingCategories);
+                ref var bucket = ref GetBucket(ref throttle, primaryCat);
+
+                float cost = GetCommandCost(ref def);
+
+                // --- check global WAIT_STATE ---
+                if (now < throttle.NextAllowedTime)
                 {
-                    throttle.Violations = 0;
+                    request.Cancelled = true;
+                    if (!notified)
+                    {
+                        _msg.To(player).Send("You must wait before acting again.");
+                        notified = true;
+                    }
+                    continue;
                 }
 
-                // --- prune history for SPAM_WINDOW ---
-                throttle.PruneHistory(now, SPAM_WINDOW);
-
-                bool notified = false;
-
-                for (int i = 0; i < buffer.Count; i++)
+                // --- check token bucket ---
+                if (bucket.Tokens < cost)
                 {
-                    ref var request = ref buffer.Items[i];
-
-                    if (request.Cancelled || request.Force)
-                        continue;
-
-                    var def = request.Command.Definition;
-                    var primaryCat = GetPrimaryCategory(def.ThrottlingCategories);
-                    ref var bucket = ref GetBucket(ref throttle, primaryCat);
-
-                    float cost = GetCommandCost(ref def);
-
-                    // --- check global WAIT_STATE ---
-                    if (now < throttle.NextAllowedTime)
+                    request.Cancelled = true;
+                    if (!notified)
                     {
-                        request.Cancelled = true;
-                        if (!notified)
-                        {
-                            _msg.To(player).Send("You must wait before acting again.");
-                            notified = true;
-                        }
-                        continue;
+                        _msg.To(player).Send("You are acting too fast.");
+                        notified = true;
                     }
-
-                    // --- check token bucket ---
-                    if (bucket.Tokens < cost)
-                    {
-                        request.Cancelled = true;
-                        if (!notified)
-                        {
-                            _msg.To(player).Send("You are acting too fast.");
-                            notified = true;
-                        }
-                        continue;
-                    }
-
-/* SPAM removed
-                    // --- spam detection ---
-                    int identical = throttle.CountIdentical(request.CommandId);
-                    if (identical >= MAX_IDENTICAL)
-                    {
-                        throttle.Violations++;
-                        throttle.LastViolationTime = now;
-                        request.Cancelled = true;
-                        if (!notified)
-                        { 
-                            _msg.To(player).Send(GetSpamMessage(throttle.Violations));
-                            notified = true;
-                        }
-                        continue;
-                    }
-*/
-                    if (throttle.Violations >= MAX_VIOLATIONS)
-                    {
-                        request.Cancelled = true;
-                        if (!notified)
-                        { 
-                            _msg.To(player).Send("You are sending commands too fast.");
-                            notified = true;
-                        }
-                        continue;
-                    }
-
-                    // --- accept command ---
-                    request.ExecuteAt = now;
-
-                    // consume bucket tokens
-                    bucket.Tokens -= cost;
-
-                    // add to history
-                    throttle.AddHistory(request.CommandId, now);
-
-                    // optional WAIT_STATE lag (category-based)
-                    throttle.NextAllowedTime = now + GetCommandLag(ref def);
+                    continue;
                 }
-            });
+
+                /* SPAM removed
+                                    // --- spam detection ---
+                                    int identical = throttle.CountIdentical(request.CommandId);
+                                    if (identical >= MAX_IDENTICAL)
+                                    {
+                                        throttle.Violations++;
+                                        throttle.LastViolationTime = now;
+                                        request.Cancelled = true;
+                                        if (!notified)
+                                        { 
+                                            _msg.To(player).Send(GetSpamMessage(throttle.Violations));
+                                            notified = true;
+                                        }
+                                        continue;
+                                    }
+                */
+                if (throttle.Violations >= MAX_VIOLATIONS)
+                {
+                    request.Cancelled = true;
+                    if (!notified)
+                    {
+                        _msg.To(player).Send("You are sending commands too fast.");
+                        notified = true;
+                    }
+                    continue;
+                }
+
+                // --- accept command ---
+                request.ExecuteAt = now;
+
+                // consume bucket tokens
+                bucket.Tokens -= cost;
+
+                // add to history
+                throttle.AddHistory(request.CommandId, now);
+
+                // optional WAIT_STATE lag (category-based)
+                throttle.NextAllowedTime = now + GetCommandLag(ref def);
+            }
+        }
     }
 
     // --------------------

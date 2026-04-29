@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
@@ -7,6 +6,7 @@ using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.GameData.Enums;
+using System.Reflection;
 
 namespace MysteryMud.Tests.Infrastructure;
 
@@ -77,14 +77,14 @@ internal class EntityBuilder
 
     public Entity Build()
     {
-        var entity = _world.Create();
+        var entity = _world.CreateEntity();
 
         var isCharacter = _components.ContainsKey(typeof(CharacterTag));
         var isItem = _components.ContainsKey(typeof(ItemTag));
 
         foreach (var component in _components.Values)
         {
-            entity.Add(component);
+            AddComponent(entity, component);
 
             switch (component)
             {
@@ -107,7 +107,7 @@ internal class EntityBuilder
                         {
                             var newContainedIn = new ContainedIn();
                             SetContainedIn(ref newContainedIn, entity, isItem, isCharacter);
-                            item.Add(newContainedIn);
+                            item.Set(newContainedIn);
                         }
                     }
                     break;
@@ -117,17 +117,31 @@ internal class EntityBuilder
         return entity;
     }
 
+    private void AddComponent(Entity entity, object component)
+    {
+        var method = typeof(Entity)
+        .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+        .First(m =>
+            m.Name == "Set" &&
+            m.IsGenericMethodDefinition &&
+            m.GetParameters().Length == 1 &&
+            m.GetParameters()[0].ParameterType.IsByRef);
+        var genericMethod = method.MakeGenericMethod(component.GetType());
+
+        genericMethod.Invoke(entity, new object[] { component });
+    }
+
     private void SetContainedIn(ref ContainedIn containedIn, Entity container, bool isItem, bool isCharacter)
     {
         if (isItem)
         {
-            containedIn.Character = Entity.Null;
+            containedIn.Character = default;
             containedIn.Container = container;
         }
         else if (isCharacter)
         {
             containedIn.Character = container;
-            containedIn.Container = Entity.Null;
+            containedIn.Container = default;
         }
     }
 }

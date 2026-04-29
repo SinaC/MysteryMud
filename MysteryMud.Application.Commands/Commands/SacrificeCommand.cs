@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Core;
@@ -41,7 +40,7 @@ public sealed class SacrificeCommand : ICommand
         foreach (var item in CommandEntityFinder.SelectTargets(actor, ctx.Primary, roomContents.Items))
         {
             // intent to sacrifice item
-            ref var intent = ref _intents.DestroyItem.Add();
+            ref var intent = ref _intents.SacrificeItem.Add();
             intent.Entity = actor;
             intent.Item = item;
         }

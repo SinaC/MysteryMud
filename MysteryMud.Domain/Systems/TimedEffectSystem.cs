@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
@@ -56,12 +55,12 @@ public class TimedEffectSystem
                 continue;
             }
 
-            ref var timed = ref effect.TryGetRef<TimedEffect>(out var isTimedEffect);
-            if (!isTimedEffect)
+            if (!effect.Has<TimedEffect>())
             {
                 _logger.LogDebug("[{system}]: effect {effectName} without TimedEffect", nameof(TimedEffectSystem), effect.DebugName);
                 continue;
             }
+            ref var timed = ref effect.Get<TimedEffect>();
 
             // expire -> add expired tag if not rescheduled
             if (evt.Kind == ScheduledEventKind.Expire && !effect.Has<ExpiredTag>())
@@ -79,7 +78,7 @@ public class TimedEffectSystem
 
                 // flag as expired
                 if (!effect.Has<ExpiredTag>())
-                    effect.Add<ExpiredTag>();
+                    effect.Set<ExpiredTag>();
 
                 ref var instance = ref effect.Get<EffectInstance>();
                 ExpireEffect(state, effect, ref instance);

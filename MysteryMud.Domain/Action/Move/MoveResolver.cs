@@ -1,5 +1,4 @@
-﻿using Arch.Core.Extensions;
-using MysteryMud.Core;
+﻿using MysteryMud.Core;
 using MysteryMud.Core.Effects;
 using MysteryMud.Domain.Action.Calculators;
 using MysteryMud.Domain.Components.Characters;
@@ -21,12 +20,12 @@ public class MoveResolver : IMoveResolver
         var source = action.Source;
         var target = action.Target;
         var amount = action.Amount;
-        if (!target.IsAlive() || target.Has<Dead>()) // already dead
+        if (!target.IsAlive || target.Has<DeadTag>()) // already dead
             return new RestoreMoveResult { IsSuccess = false };
 
-        ref var move = ref target.TryGetRef<Components.Characters.Move>(out var hasMove);
-        if (!hasMove)
+        if (target.Has<Components.Characters.Move>())
             return new RestoreMoveResult { IsSuccess = false };
+        ref var move = ref target.Get<Components.Characters.Move>();
 
         if (move.Current >= move.Max) // already at max hp
             return new RestoreMoveResult
@@ -45,12 +44,12 @@ public class MoveResolver : IMoveResolver
 
         // we have to split sending to source and sending to room because source may not be in the same room
         if (source == target)
-            _msg.To(action.Source).Act("%gYou move yourself for {0} move.%x").With(moveToApply);
+            _msg.To(action.Source).Act("%gYou restore yourself for {0} move{0:x}.%x").With(moveToApply);
         else
         {
-            _msg.To(source).Act("%gYou move {0:n} for {1} move.%x").With(target, moveToApply);
-            _msg.To(target).Act("%g{0} move{0:v} you for {1} move.%x").With(source, moveToApply);
-            _msg.ToRoomExcept(target, source).Act("%y{0} move{0:v} {1} for {2} move.%x").With(source, target, moveToApply);
+            _msg.To(source).Act("%gYou restore {0:n} for {1} move{1:x}.%x").With(target, moveToApply);
+            _msg.To(target).Act("%g{0} restore{0:v} you for {1} move{1:x}.%x").With(source, moveToApply);
+            _msg.ToRoomExcept(target, source).Act("%y{0} restore{0:v} {1} for {2} move{2:x}.%x").With(source, target, moveToApply);
         }
 
         // apply move

@@ -1,8 +1,8 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Groups;
 using MysteryMud.Domain.Components.Rooms;
+using MysteryMud.Domain.Helpers;
 
 namespace MysteryMud.Domain.Formatters;
 
@@ -10,57 +10,53 @@ public static class ActTargetResolver
 {
     public static IEnumerable<Entity> GetGroupTargets(Entity group)
     {
-        ref var groupData = ref group.TryGetRef<GroupInstance>(out var isGroup);
-        if (!isGroup)
+        if (!GroupHelpers.IsAlive(group) || !group.Has<GroupInstance>())
             return [];
-        return groupData.Members;
+        ref var groupInstance = ref group.Get<GroupInstance>();
+        return groupInstance.Members;
     }
 
     public static IEnumerable<Entity> GetRoomTargets(Entity actor)
     {
-        ref var location = ref actor.TryGetRef<Location>(out var hasLocation);
-        if (!hasLocation)
+        if (!actor.Has<Location>())
             return [];
-        ref var roomContents = ref location.Room.TryGetRef<RoomContents>(out var hasRoomContents);
-        if (!hasRoomContents)
+        ref var location = ref actor.Get<Location>();
+        if (!location.Room.Has<RoomContents>())
             return [];
-
+        ref var roomContents = ref location.Room.Get<RoomContents>();
         return roomContents.Characters.Where(x => x != actor/* && x.Position >= minPosition*/); // TODO: add position check if needed, but it may not be needed for all cases, so maybe add it as an optional parameter to the method
     }
 
     public static IEnumerable<Entity> GetRoomTargetsExcept(Entity actor, Entity except)
     {
-        ref var location = ref actor.TryGetRef<Location>(out var hasLocation);
-        if (!hasLocation)
+        if (!actor.Has<Location>())
             return [];
-        ref var roomContents = ref location.Room.TryGetRef<RoomContents>(out var hasRoomContents);
-        if (!hasRoomContents)
+        ref var location = ref actor.Get<Location>();
+        if (!location.Room.Has<RoomContents>())
             return [];
-
+        ref var roomContents = ref location.Room.Get<RoomContents>();
         return roomContents.Characters.Where(x => x != actor && x != except/* && x.Position >= minPosition*/); // TODO: add position check if needed, but it may not be needed for all cases, so maybe add it as an optional parameter to the method
     }
 
     public static IEnumerable<Entity> GetAllTargets(Entity actor)
     {
-        ref var location = ref actor.TryGetRef<Location>(out var hasLocation);
-        if (!hasLocation)
+        if (!actor.Has<Location>())
             return [];
-        ref var roomContents = ref location.Room.TryGetRef<RoomContents>(out var hasRoomContents);
-        if (!hasRoomContents)
+        ref var location = ref actor.Get<Location>();
+        if (!location.Room.Has<RoomContents>())
             return [];
-
+        ref var roomContents = ref location.Room.Get<RoomContents>();
         return roomContents.Characters; // TODO: add position check if needed, but it may not be needed for all cases, so maybe add it as an optional parameter to the method
     }
 
     public static IEnumerable<Entity> GetAllTargetsExcept(Entity actor, Entity except)
     {
-        ref var location = ref actor.TryGetRef<Location>(out var hasLocation);
-        if (!hasLocation)
+        if (!actor.Has<Location>())
             return [];
-        ref var roomContents = ref location.Room.TryGetRef<RoomContents>(out var hasRoomContents);
-        if (!hasRoomContents)
+        ref var location = ref actor.Get<Location>();
+        if (!location.Room.Has<RoomContents>())
             return [];
-
+        ref var roomContents = ref location.Room.Get<RoomContents>();
         return roomContents.Characters.Where(x => x != except); // TODO: add position check if needed, but it may not be needed for all cases, so maybe add it as an optional parameter to the method
     }
 }

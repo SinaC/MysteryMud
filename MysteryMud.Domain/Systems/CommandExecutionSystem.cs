@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Domain.Components.Characters;
@@ -10,21 +9,27 @@ namespace MysteryMud.Domain.Systems;
 public class CommandExecutionSystem
 {
     private readonly ILogger _logger;
+    private readonly EntitySet _hasCommandEntitySet;
 
-    public CommandExecutionSystem(ILogger logger)
+    public CommandExecutionSystem(World world, ILogger logger)
     {
         _logger = logger;
+        _hasCommandEntitySet = world
+            .GetEntities()
+            .With<CommandBuffer>()
+            .With<HasCommandTag>()
+            .AsSet();
     }
 
     public void Execute(GameState state)
     {
         long now = state.CurrentTimeMs;
 
-        var query = new QueryDescription()
-            .WithAll<CommandBuffer, HasCommandTag>();
-        state.World.Query(query, (Entity entity, ref CommandBuffer buffer, ref HasCommandTag _) =>
+        foreach (var entity in _hasCommandEntitySet.GetEntities())
         {
-            if (!entity.IsAlive())
+            ref var buffer = ref entity.Get<CommandBuffer>();
+
+            if (!entity.IsAlive)
                 return;
 
             int writeIndex = 0; // keep commands not ready yet
@@ -59,6 +64,6 @@ public class CommandExecutionSystem
             buffer.Clear();
             // remove has active command tag
             entity.Remove<HasCommandTag>();
-        });
+        }
     }
 }

@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Domain.Components;
@@ -18,42 +17,47 @@ namespace MysteryMud.Domain.Systems;
 public class AutoAssistSystem
 {
     private readonly IEventBuffer<RoomEnteredEvent> _roomEnteredEvent;
+    private readonly EntitySet _inCombatEntitySet;
 
-    public AutoAssistSystem(IEventBuffer<RoomEnteredEvent> roomEnteredEvent)
+    public AutoAssistSystem(World world, IEventBuffer<RoomEnteredEvent> roomEnteredEvent)
     {
         _roomEnteredEvent = roomEnteredEvent;
+        _inCombatEntitySet = world
+            .GetEntities()
+            .With<CombatState>()
+            .With<NewCombatantTag>()
+            .Without<DeadTag>()
+            .AsSet();
     }
 
     public void TickCombatInitiated(GameState state)  // pass 1 and 3: tag-driven only
     {
-        ProcessNewCombatants(state);
+        ProcessNewCombatants();
     }
 
-    public void TickMovement(GameState state)          // pass 2: tag-driven + room entry
+    public void TickMovement(GameState state)         // pass 2: tag-driven + room entry
     {
-        ProcessNewCombatants(state);
-        ProcessRoomEntries(state);   // consumes and clears RoomEnteredEvents
+        ProcessNewCombatants();
+        ProcessRoomEntries();   // consumes and clears RoomEnteredEvents
     }
 
-    private void ProcessNewCombatants(GameState state)
+    private void ProcessNewCombatants()
     {
-        var query = new QueryDescription()
-            .WithAll<CombatState, NewCombatantTag>();
-        state.World.Query(query, (Entity entity, ref CombatState combat, ref NewCombatantTag tag) =>
+        foreach (var entity in _inCombatEntitySet.GetEntities())
         {
+            ref var combat = ref entity.Get<CombatState>();
             entity.Remove<NewCombatantTag>(); // consume immediately
-            PropagateAssist(state, entity, combat.Target);
-        });
-
+            PropagateAssist(entity, combat.Target);
+        }
     }
 
-    private void ProcessRoomEntries(GameState state)
+    private void ProcessRoomEntries()
     {
         foreach (ref var evt in _roomEnteredEvent.GetAll())
-            CheckAssistOnRoomEntry(state, ref evt);
+            CheckAssistOnRoomEntry(ref evt);
     }
 
-    private void CheckAssistOnRoomEntry(GameState state, ref RoomEnteredEvent evt)
+    private void CheckAssistOnRoomEntry(ref RoomEnteredEvent evt)
     {
         ref var roomContents = ref evt.ToRoom.Get<RoomContents>();
 
@@ -107,24 +111,27 @@ public class AutoAssistSystem
         return false;
     }
 
-    private void PropagateAssist(GameState state, Entity combatant, Entity aggressor)
+    private void PropagateAssist(Entity combatant, Entity aggressor)
     {
         // 1. group members with autoassist
         if (combatant.Has<GroupMember>())
         {
             var group = combatant.Get<GroupMember>().Group;
-            ref var groupData = ref group.Get<GroupInstance>();
-            foreach (var member in groupData.Members)
+            if (GroupHelpers.IsAlive(group))
             {
-                if (member == combatant) continue;
-                if (!CharacterHelpers.SameRoom(combatant, member)) continue;
-                if (!member.HasAutoAssist()) continue;
-                TryAssist(member, aggressor, AssistReason.Group);
-                // also pull in their charmies
-                if (member.Has<Charmies>())
-                    foreach (var charmie in member.Get<Charmies>().Entities)
-                        if (CharacterHelpers.SameRoom(combatant, charmie))
-                            TryAssist(charmie, aggressor, AssistReason.Charmed);
+                ref var groupData = ref group.Get<GroupInstance>();
+                foreach (var member in groupData.Members)
+                {
+                    if (member == combatant) continue;
+                    if (!CharacterHelpers.SameRoom(combatant, member)) continue;
+                    if (!member.HasAutoAssist()) continue;
+                    TryAssist(member, aggressor, AssistReason.Group);
+                    // also pull in their charmies
+                    if (member.Has<Charmies>())
+                        foreach (var charmie in member.Get<Charmies>().Entities)
+                            if (CharacterHelpers.SameRoom(combatant, charmie))
+                                TryAssist(charmie, aggressor, AssistReason.Charmed);
+                }
             }
         }
 
@@ -157,9 +164,9 @@ public class AutoAssistSystem
         if (assistant.Has<CombatState>()) return; // already fighting
         if (assistant == target) return;
 
-        assistant.Add(new CombatState { Target = target, RoundDelay = 1 });
+        assistant.Set(new CombatState { Target = target, RoundDelay = 1 });
         if (!assistant.Has<NewCombatantTag>())
-            assistant.Add<NewCombatantTag>(); // chain: this assist may trigger further assists
+            assistant.Set<NewCombatantTag>(); // chain: this assist may trigger further assists
                                               // will be picked up by the NEXT AutoAssistSystem pass
     }
 

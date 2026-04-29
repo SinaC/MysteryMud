@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -83,7 +82,7 @@ configuration.GetSection("GamePaths").Bind(gamePaths);
 
 // === Data bootstrap ===
 // create world
-var world = World.Create();
+var world = new World();
 
 //  temple
 //    |
@@ -111,27 +110,26 @@ trollEffectiveStats.Dodge = 0; // for testing, make sure all hits land so we can
 trollEffectiveStats.Parry = 0; // for testing, make sure all hits land so we can see the counterattack in action
 trollEffectiveStats.CounterAttack = 100; // for testing, make sure all we counterattack every time so we can see the counterattack in action
 var sword = ItemFactory.CreateItemInRoom(world, "sword", "a %#FFFFFF>#FFFF00shiny sword%x", market);
-sword.Add(new Equipable { Slot = EquipmentSlotKind.MainHand });
-sword.Add(new Weapon { Kind = WeaponKind.Sword, DiceCount = 5, DiceSides = 10, ProcIds = ["Flaming".ComputeUniqueId()] }); // add flaming
-var chest = world.Create(
-            new ItemTag(),
-            new Name { Value = "chest" },
-            new Description { Value = "a chest" },
-            new ItemEffects
-            {
-                Data = new EffectsCollection
-                {
-                    Effects = [],
-                    EffectsByTag = new List<Entity>?[32]
-                },
-            },
-            new Location { Room = market },
-            new Container { Capacity = 10 },
-            new ContainerContents { Items = [] }
-        );
+sword.Set(new Equipable { Slot = EquipmentSlotKind.MainHand });
+sword.Set(new Weapon { Kind = WeaponKind.Sword, DiceCount = 5, DiceSides = 10, ProcIds = ["Flaming".ComputeUniqueId()] }); // add flaming
+var chest = world.CreateEntity();
+chest.Set(new ItemTag());
+chest.Set(new Name { Value = "chest" });
+chest.Set(new Description { Value = "a chest" });
+chest.Set(new ItemEffects
+{
+    Data = new EffectsCollection
+    {
+        Effects = [],
+        EffectsByTag = new List<Entity>?[32]
+    },
+});
+chest.Set(new Location { Room = market });
+chest.Set(new Container { Capacity = 10 });
+chest.Set(new ContainerContents { Items = [] });
 var dagger = ItemFactory.CreateItemInRoom(world, "dagger", "a vampiric dagger", market);
-dagger.Add(new Equipable { Slot = EquipmentSlotKind.MainHand });
-dagger.Add(new Weapon { Kind = WeaponKind.Dagger, DiceCount = 5, DiceSides = 8, ProcIds = ["Vampiric".ComputeUniqueId()] }); // add vampiric
+dagger.Set(new Equipable { Slot = EquipmentSlotKind.MainHand });
+dagger.Set(new Weapon { Kind = WeaponKind.Dagger, DiceCount = 5, DiceSides = 8, ProcIds = ["Vampiric".ComputeUniqueId()] }); // add vampiric
 dagger.Get<Level>().Value = 20;
 market.Get<RoomContents>().Items.Add(chest);
 var gem = ItemFactory.CreateItemInContainer(world, "gem", "a %#FF0000>#FF00FFsparkling gem%x", chest);
@@ -335,6 +333,7 @@ services.AddSingleton<IEffectDisplayService, EffectDisplayService>();
 services.AddSingleton<IFollowService, FollowService>();
 services.AddSingleton<IGroupService, GroupService>();
 services.AddSingleton<ICastMessageService, CastMessageService>();
+services.AddSingleton<ICombatService, CombatService>();
 
 // Command dispatcher
 services.AddSingleton<ICommandDispatcher, CommandDispatcher>();
@@ -351,27 +350,27 @@ services.AddSingleton<MovementSystem>();
 services.AddSingleton<FollowSystem>();
 services.AddSingleton<ItemInteractionSystem>();
 services.AddSingleton<EffectiveCharacterStatsSystem>();
-services.AddSingleton(sp => new EffectiveMaxResourceSystem<BaseHealth, Health, DirtyHealth, HealthModifier>(x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value));
-services.AddSingleton(sp => new EffectiveMaxResourceSystem<BaseMove, Move, DirtyMove, MoveModifier>(x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value));
-services.AddSingleton(sp => new EffectiveMaxResourceSystem<BaseMana, Mana, DirtyMana, ManaModifier>(x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value));
-services.AddSingleton(sp => new EffectiveMaxResourceSystem<BaseEnergy, Energy, DirtyEnergy, EnergyModifier>(x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value));
-services.AddSingleton(sp => new EffectiveMaxResourceSystem<BaseRage, Rage, DirtyRage, RageModifier>(x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value));
-services.AddSingleton(sp => new EffectiveResourceRegenSystem<HealthRegen, DirtyHealthRegen, HealthRegenModifier>(x => x.BaseAmountPerSecond, (ref x, v) => x.CurrentAmountPerSecond = v, x => x.Modifier, x => x.Value));
-services.AddSingleton(sp => new EffectiveResourceRegenSystem<MoveRegen, DirtyMoveRegen, MoveRegenModifier>(x => x.BaseAmountPerSecond, (ref x, v) => x.CurrentAmountPerSecond = v, x => x.Modifier, x => x.Value));
-services.AddSingleton(sp => new EffectiveResourceRegenSystem<ManaRegen, DirtyManaRegen, ManaRegenModifier>(x => x.BaseAmountPerSecond, (ref x, v) => x.CurrentAmountPerSecond = v, x => x.Modifier, x => x.Value));
-services.AddSingleton(sp => new EffectiveResourceRegenSystem<EnergyRegen, DirtyEnergyRegen, EnergyRegenModifier>(x => x.BaseAmountPerSecond, (ref x, v) => x.CurrentAmountPerSecond = v, x => x.Modifier, x => x.Value));
-services.AddSingleton(sp => new EffectiveResourceRegenSystem<RageDecay, DirtyRageDecay, RageDecayModifier>(x => x.BaseAmountPerSecond, (ref x, v) => x.CurrentAmountPerSecond = v, x => x.Modifier, x => x.Value));
+services.AddSingleton(sp => new EffectiveMaxResourceSystem<BaseHealth, Health, DirtyHealth, HealthModifier>(world, x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value));
+services.AddSingleton(sp => new EffectiveMaxResourceSystem<BaseMove, Move, DirtyMove, MoveModifier>(world, x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value));
+services.AddSingleton(sp => new EffectiveMaxResourceSystem<BaseMana, Mana, DirtyMana, ManaModifier>(world, x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value));
+services.AddSingleton(sp => new EffectiveMaxResourceSystem<BaseEnergy, Energy, DirtyEnergy, EnergyModifier>(world, x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value));
+services.AddSingleton(sp => new EffectiveMaxResourceSystem<BaseRage, Rage, DirtyRage, RageModifier>(world, x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value));
+services.AddSingleton(sp => new EffectiveResourceRegenSystem<HealthRegen, DirtyHealthRegen, HealthRegenModifier>(world, x => x.BaseAmountPerSecond, (ref x, v) => x.CurrentAmountPerSecond = v, x => x.Modifier, x => x.Value));
+services.AddSingleton(sp => new EffectiveResourceRegenSystem<MoveRegen, DirtyMoveRegen, MoveRegenModifier>(world, x => x.BaseAmountPerSecond, (ref x, v) => x.CurrentAmountPerSecond = v, x => x.Modifier, x => x.Value));
+services.AddSingleton(sp => new EffectiveResourceRegenSystem<ManaRegen, DirtyManaRegen, ManaRegenModifier>(world, x => x.BaseAmountPerSecond, (ref x, v) => x.CurrentAmountPerSecond = v, x => x.Modifier, x => x.Value));
+services.AddSingleton(sp => new EffectiveResourceRegenSystem<EnergyRegen, DirtyEnergyRegen, EnergyRegenModifier>(world, x => x.BaseAmountPerSecond, (ref x, v) => x.CurrentAmountPerSecond = v, x => x.Modifier, x => x.Value));
+services.AddSingleton(sp => new EffectiveResourceRegenSystem<RageDecay, DirtyRageDecay, RageDecayModifier>(world, x => x.BaseAmountPerSecond, (ref x, v) => x.CurrentAmountPerSecond = v, x => x.Modifier, x => x.Value));
 services.AddSingleton<AbilityValidationSystem>();
 services.AddSingleton<AbilityCastingSystem>();
 services.AddSingleton<AbilityExecutionSystem>();
 services.AddSingleton<AggressionSystem>();
 services.AddSingleton<AutoAttackSystem>();
 services.AddSingleton<TimedEffectSystem>();
-services.AddSingleton(sp => new ResourceRegenSystem<Health, HealthRegen>(x => x.Current, x => x.Max, x => x.CurrentAmountPerSecond, (ref x, v) => x.Current = v));
-services.AddSingleton(sp => new ResourceRegenSystem<Move, MoveRegen>(x => x.Current, x => x.Max, x => x.CurrentAmountPerSecond, (ref x, v) => x.Current = v));
-services.AddSingleton(sp => new ResourceRegenSystem<Mana, ManaRegen>(x => x.Current, x => x.Max, x => x.CurrentAmountPerSecond, (ref x, v) => x.Current = v));
-services.AddSingleton(sp => new ResourceRegenSystem<Energy, EnergyRegen>(x => x.Current, x => x.Max, x => x.CurrentAmountPerSecond, (ref x, v) => x.Current = v));
-services.AddSingleton(sp => new ResourceRegenSystem<Rage, RageDecay>(x => x.Current, x => x.Max, x => -x.CurrentAmountPerSecond, (ref x, v) => x.Current = v));
+services.AddSingleton(sp => new ResourceRegenSystem<Health, HealthRegen>(world, x => x.Current, x => x.Max, x => x.CurrentAmountPerSecond, (ref x, v) => x.Current = v));
+services.AddSingleton(sp => new ResourceRegenSystem<Move, MoveRegen>(world, x => x.Current, x => x.Max, x => x.CurrentAmountPerSecond, (ref x, v) => x.Current = v));
+services.AddSingleton(sp => new ResourceRegenSystem<Mana, ManaRegen>(world, x => x.Current, x => x.Max, x => x.CurrentAmountPerSecond, (ref x, v) => x.Current = v));
+services.AddSingleton(sp => new ResourceRegenSystem<Energy, EnergyRegen>(world, x => x.Current, x => x.Max, x => x.CurrentAmountPerSecond, (ref x, v) => x.Current = v));
+services.AddSingleton(sp => new ResourceRegenSystem<Rage, RageDecay>(world, x => x.Current, x => x.Max, x => -x.CurrentAmountPerSecond, (ref x, v) => x.Current = v));
 services.AddSingleton<ThreatDecaySystem>();
 services.AddSingleton<ScheduleSystem>();
 services.AddSingleton<DeathSystem>();
