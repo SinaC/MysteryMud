@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Components;
@@ -41,13 +40,13 @@ public sealed class RestoreCommand : ICommand
 
     private delegate void ResourceValueSetter<TResource>(ref TResource resource, int value);
 
-    private void SetResourceToMax<TResource>(Entity player, Func<TResource, int> getMaxValueFunc, ResourceValueSetter<TResource> setResourceValueAction)
+    private void SetResourceToMax<TResource>(Entity character, Func<TResource, int> getMaxValueFunc, ResourceValueSetter<TResource> setResourceValueAction)
        where TResource : struct
     {
-        ref var resource = ref player.TryGetRef<TResource>(out var hasResource);
-        if (!hasResource)
+        if (!character.Has<TResource>())
             return;
 
+        ref var resource = ref character.Get<TResource>();
         var maxResource = getMaxValueFunc(resource);
         setResourceValueAction(ref resource, maxResource);
     }

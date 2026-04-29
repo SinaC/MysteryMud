@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Core;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
@@ -19,24 +18,28 @@ public class EffectiveResourceRegenSystem<TResourceRegen, TResourceDirtyRegen, T
     private readonly SetResourceRegenValueAction<TResourceRegen> _setCurrentAction;
     private readonly Func<TResourceRegenModifier, decimal> _getModifierValueFunc;
     private readonly Func<TResourceRegenModifier, ModifierKind> _getModifierKindFunc;
+    private readonly EntitySet _resourceRegenDirtyEntitySet;
 
-    public EffectiveResourceRegenSystem(Func<TResourceRegen, int> getBaseFunc, SetResourceRegenValueAction<TResourceRegen> setCurrentAction, Func<TResourceRegenModifier, ModifierKind> getModifierKindFunc, Func<TResourceRegenModifier, decimal> getModifierValueFunc)
+    public EffectiveResourceRegenSystem(World world, Func<TResourceRegen, int> getBaseFunc, SetResourceRegenValueAction<TResourceRegen> setCurrentAction, Func<TResourceRegenModifier, ModifierKind> getModifierKindFunc, Func<TResourceRegenModifier, decimal> getModifierValueFunc)
     {
         _getBaseFunc = getBaseFunc;
         _setCurrentAction = setCurrentAction;
         _getModifierValueFunc = getModifierValueFunc;
         _getModifierKindFunc = getModifierKindFunc;
+        _resourceRegenDirtyEntitySet = world
+            .GetEntities()
+            .With<TResourceRegen>()
+            .With<TResourceDirtyRegen>()
+            .Without<DeadTag>()
+            .AsSet();
     }
 
     public void Tick(GameState state)
     {
-        var query = new QueryDescription()
-            .WithAll<TResourceRegen, TResourceDirtyRegen>()
-            .WithNone<Dead>();
-        state.World.Query(query, (Entity entity,
-            ref TResourceRegen resourceRegen,
-            ref TResourceDirtyRegen resourceDirtyRegen) =>
+        foreach(var entity in _resourceRegenDirtyEntitySet.GetEntities() )
         {
+            ref var resourceRegen = ref entity.Get<TResourceRegen>();
+            ref var resourceDirtyRegen = ref entity.Get<TResourceDirtyRegen>();
             ref var characterEffects = ref entity.Get<CharacterEffects>(); // TODO: other kind of entity
 
             var baseRegen = _getBaseFunc(resourceRegen);
@@ -58,6 +61,6 @@ public class EffectiveResourceRegenSystem<TResourceRegen, TResourceDirtyRegen, T
 
             // remove dirty tag
             entity.Remove<TResourceDirtyRegen>();
-        });
+        }
     }
 }

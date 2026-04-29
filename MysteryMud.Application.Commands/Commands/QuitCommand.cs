@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Core.Contracts;
@@ -30,7 +29,7 @@ public sealed class QuitCommand : ICommand
         _dirtyTracker.MarkDirty(actor, DirtyReason.All);
         _msg.To(actor).Send("Goodbye. Come back soon.");
 
-        // intent to look at room
+        // intent to disconnect
         ref var disconnectIntent = ref _intents.Disconnect.Add();
         disconnectIntent.Player = actor;
     }

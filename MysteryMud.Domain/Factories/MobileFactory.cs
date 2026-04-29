@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
@@ -13,17 +12,17 @@ public static class MobileFactory
 {
     public static Entity CreateMob(World world, string name, string description, Entity room)
     {
-        var player = world.Create(
-            new CharacterTag(),
-            new NpcTag(),
-            new CommandLevel { Value = CommandLevelKind.Player },
-            new CommandBuffer(),
-            new Name { Value = name },
-            new Level { Value = 1 },
-            new Description { Value = description },
-            new BaseStats
-            {
-                Values = CharacterStatValues.From(
+        var mob = world.CreateEntity();
+        mob.Set(new CharacterTag());
+        mob.Set(new NpcTag());
+        mob.Set(new CommandLevel { Value = CommandLevelKind.Player });
+        mob.Set(new CommandBuffer());
+        mob.Set(new Name { Value = name });
+        mob.Set(new Level { Value = 1 });
+        mob.Set(new Description { Value = description });
+        mob.Set(new BaseStats
+        {
+            Values = CharacterStatValues.From(
                     (CharacterStatKind.Strength, 15),
                     (CharacterStatKind.Intelligence, 10),
                     (CharacterStatKind.Wisdom, 15),
@@ -32,10 +31,10 @@ public static class MobileFactory
                     (CharacterStatKind.HitRoll, 0),
                     (CharacterStatKind.DamRoll, 0),
                     (CharacterStatKind.ArmorClass, 0))
-            },
-            new EffectiveStats
-            {
-                Values = CharacterStatValues.From(
+        });
+        mob.Set(new EffectiveStats
+        {
+            Values = CharacterStatValues.From(
                     (CharacterStatKind.Strength, 15),
                     (CharacterStatKind.Intelligence, 10),
                     (CharacterStatKind.Wisdom, 15),
@@ -44,31 +43,30 @@ public static class MobileFactory
                     (CharacterStatKind.HitRoll, 0),
                     (CharacterStatKind.DamRoll, 0),
                     (CharacterStatKind.ArmorClass, 0))
-            },
-            new Health { Current = 5, Max = 100 },
-            new BaseHealth { Max = 100 },
-            new HealthRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
-            new Move { Current = 100, Max = 100 },
-            new BaseMove { Max = 100 },
-            new MoveRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 },
-            new Inventory { Items = [] },
-            new Equipment { Slots = [] },
-            new CharacterEffects
+        });
+        mob.Set(new Health { Current = 5, Max = 100 });
+        mob.Set(new BaseHealth { Max = 100 });
+        mob.Set(new HealthRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
+        mob.Set(new Move { Current = 100, Max = 100 });
+        mob.Set(new BaseMove { Max = 100 });
+        mob.Set(new MoveRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
+        mob.Set(new Inventory { Items = [] });
+        mob.Set(new Equipment { Slots = [] });
+        mob.Set(new CharacterEffects
+        {
+            Data = new EffectsCollection
             {
-                Data = new EffectsCollection
-                {
-                    Effects = [],
-                    EffectsByTag = new List<Entity>?[32]
-                },
+                Effects = [],
+                EffectsByTag = new List<Entity>?[32]
             },
-            new Location { Room = room },
-            new Position { Value = PositionKind.Standing },
-            new ThreatTable { Threat = [] },
-            new DirtyStats() // dirty by default
-        );
+        });
+        mob.Set(new Location { Room = room });
+        mob.Set(new Position { Value = PositionKind.Standing });
+        mob.Set(new ThreatTable { Threat = [] });
+        mob.Set(new DirtyStats()); // dirty by default
 
-        room.Get<RoomContents>().Characters.Add(player);
+        room.Get<RoomContents>().Characters.Add(mob);
 
-        return player;
+        return mob;
     }
 }

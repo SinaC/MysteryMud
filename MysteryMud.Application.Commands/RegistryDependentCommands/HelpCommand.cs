@@ -1,4 +1,4 @@
-﻿using Arch.Core;
+﻿using DefaultEcs;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Registry;
 using MysteryMud.Core;

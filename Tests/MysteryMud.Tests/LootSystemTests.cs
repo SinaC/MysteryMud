@@ -1,6 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Domain.Components.Characters;
+﻿using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Intents;
@@ -33,7 +31,7 @@ public class LootSystemTests : IDisposable
         {
             Corpse = corpse,
             LootOwner = killer,
-            LootOwnerGroup = Entity.Null
+            LootOwnerGroup = default
         });
 
         _sut.Tick(_f.State);

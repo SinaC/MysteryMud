@@ -1,6 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using CommunityToolkit.HighPerformance;
+﻿using DefaultEcs;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
@@ -68,10 +66,19 @@ public class AbilityValidationSystem
                 continue;
 
             // already casting a spell
-            ref var casting = ref source.TryGetRef<Casting>(out var isCasting);
-            if (isCasting)
+            if (source.Has<Casting>())
             {
-                _msg.To(source).Send($"You are already focused on {abilityRuntime.Name}");
+                ref var casting = ref source.Get<Casting>();
+
+                if (!_abilityRegistry.TryGetRuntime(casting.AbilityId, out var castingAbilityRuntime) || castingAbilityRuntime == null)
+                {
+                    _msg.To(source).Send($"You are already focused on spell");
+
+                    _logger.LogError("Ability {abilityId} not found", casting.AbilityId);
+                    continue;
+                }
+
+                _msg.To(source).Send($"You are already focused on {castingAbilityRuntime.Name}");
                 continue;
             }
 
@@ -141,7 +148,7 @@ public class AbilityValidationSystem
                 _msg.To(source).Act(_castMessageService.CasterStartMessage).With(abilityRuntime.Name);
                 _msg.ToRoom(source).Act(_castMessageService.RoomStartMessage).With(source);
 
-                source.Add(new Casting
+                source.Set(new Casting
                 {
                     AbilityId = abilityId,
                     Source = source,
@@ -312,10 +319,14 @@ public class AbilityValidationSystem
     {
         if (affectedEntity.Has<CharacterTag>())
             return affectedEntity;
-        if (affectedEntity.TryGet<Equipped>(out var equipped))
-            return equipped.Wearer;
-        if (affectedEntity.TryGet<ContainedIn>(out var containedIn) && containedIn.Character.Has<CharacterTag>())
-            return containedIn.Character;
+        if (affectedEntity.Has<Equipped>())
+            return affectedEntity.Get<Equipped>().Wearer;
+        if (affectedEntity.Has<ContainedIn>())
+        {
+            ref var containedIn = ref affectedEntity.Get<ContainedIn>();
+            if (containedIn.Character.Has<CharacterTag>())
+                return containedIn.Character;
+        }
         return null;
     }
 }

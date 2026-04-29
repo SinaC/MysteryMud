@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Application.Services;
@@ -43,11 +42,11 @@ public sealed class OstatCommand : ICommand
             return;
         }
 
-        var (name, itemEffects) = target.Value.Get<Name, ItemEffects>();
+        ref var name = ref target.Value.Get<Name>();
+        ref var itemEffects = ref target.Value.Get<ItemEffects>();
         _msg.To(actor).Send($"Name: {name.Value}");
-        ref var description = ref target.Value.TryGetRef<Description>(out var hasDescription);
-        if (hasDescription)
-            _msg.To(actor).Send($"Description: {description.Value}");
+        if (target.Value.Has<Description>())
+            _msg.To(actor).Send($"Description: {target.Value.Get<Description>().Value}");
         _msg.To(actor).Send($"Active tags: {itemEffects.Data.ActiveTags}");
         _effectDisplayService.DisplayEffects(state, actor, itemEffects.Data.Effects);
     }
@@ -55,9 +54,9 @@ public sealed class OstatCommand : ICommand
     private Entity? SearchTarget(Entity actor, ref TargetSpec targetSpec)
     {
         // 1) Try items in actor inventory
-        ref var inventory = ref actor.TryGetRef<Inventory>(out var hasInventory);
-        if (hasInventory)
+        if (actor.Has<Inventory>())
         {
+            ref var inventory = ref actor.Get<Inventory>();
             var inventoryItem = CommandEntityFinder.SelectSingleTarget(actor, targetSpec, inventory.Items);
             if (inventoryItem is not null)
                 return inventoryItem.Value;

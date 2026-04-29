@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Contracts;
@@ -81,13 +80,13 @@ public class ItemInteractionSystem
         {
             ItemHelpers.TryGetItemFromRoom(entity, source, item, out _);
 
-            _msg.To(entity).Send($"You get {item.DisplayName}.");
+            _msg.ToAll(entity).Act("{0} get{0:v} {1}.").With(entity, item);
         }
         else if (sourceKind == GetSourceKind.Container && source.Has<ContainerContents>())
         {
             ItemHelpers.TryGetItemFromContainer(entity, source, item, out _);
 
-            _msg.To(entity).Send($"You get {item.DisplayName} from {source.DisplayName}.");
+            _msg.ToAll(entity).Act("{0} get{0:v} {1} from {2}.").With(entity, item, source);
         }
         else
             return; // invalid source, should not happen if validation is done correctly
@@ -111,16 +110,16 @@ public class ItemInteractionSystem
         var room = dropItemIntent.Room;
 
         // Unequip if necessary
-        ref var equipped = ref item.TryGetRef<Equipped>(out var isEquipped);
-        if (isEquipped)
+        if (item.Has<Equipped>())
         {
+            ref var equipped = ref item.Get<Equipped>();
             ItemHelpers.TryUnequipItem(entity, equipped.Slot, out _);
         }
 
         // drop item from entity's inventory and put it in room
         ItemHelpers.TryDropItem(entity, room, item, out _);
 
-        _msg.To(entity).Send($"You drop {item.DisplayName}.");
+        _msg.ToAll(entity).Act("{0} drop{0:v} {1}.").With(entity, item);
 
         if (entity.Has<PlayerTag>())
             _dirtyTracker.MarkDirty(entity, DirtyReason.ItemLost);
@@ -140,9 +139,9 @@ public class ItemInteractionSystem
         var target = giveItemIntent.Target;
 
         // Unequip if necessary
-        ref var equipped = ref item.TryGetRef<Equipped>(out var isEquipped);
-        if (isEquipped)
+        if (item.Has<Equipped>())
         {
+            ref var equipped = ref item.Get<Equipped>();
             ItemHelpers.TryUnequipItem(entity, equipped.Slot, out _);
 
             if (entity.Has<PlayerTag>())
@@ -152,7 +151,7 @@ public class ItemInteractionSystem
         // give item from entity to target
         ItemHelpers.TryGiveItem(entity, target, item, out _);
 
-        _msg.To(entity).Send($"You give {item.DisplayName} to {target.DisplayName}.");
+        _msg.ToAll(entity).Act("{0} give{0:v} {1} to {2}.").With(entity, item, target);
 
         if (entity.Has<PlayerTag>())
         {
@@ -175,9 +174,9 @@ public class ItemInteractionSystem
         var container = putItemIntent.Container;
 
         // Unequip if necessary
-        ref var equipped = ref item.TryGetRef<Equipped>(out var isEquipped);
-        if (isEquipped)
+        if (item.Has<Equipped>())
         {
+            ref var equipped = ref item.Get<Equipped>();
             ItemHelpers.TryUnequipItem(entity, equipped.Slot, out _);
 
             if (entity.Has<PlayerTag>())
@@ -187,7 +186,7 @@ public class ItemInteractionSystem
         // put item from entity to container
         ItemHelpers.TryPutItem(entity, container, item, out _);
 
-        _msg.To(entity).Send($"You put {item.DisplayName} in {container.DisplayName}.");
+        _msg.ToAll(entity).Act("{0} put{0:v} {1} in {2}.").With(entity, item, container);
 
         if (entity.Has<PlayerTag>())
             _dirtyTracker.MarkDirty(entity, DirtyReason.ItemLost);
@@ -208,7 +207,7 @@ public class ItemInteractionSystem
 
         ItemHelpers.TryEquipItem(entity, item, out _);
 
-        _msg.To(entity).Send($"You wear {item.DisplayName}.");
+        _msg.ToAll(entity).Act("{0} wear{0:v} {1}.").With(entity, item);
 
         if (entity.Has<PlayerTag>())
             _dirtyTracker.MarkDirty(entity, DirtyReason.ItemEquipped);
@@ -229,7 +228,7 @@ public class ItemInteractionSystem
 
         ItemHelpers.TryUnequipItem(entity, slot, out _);
 
-        _msg.To(entity).Send($"You remove {item.DisplayName}.");
+        _msg.ToAll(entity).Act("{0} remove{0:v} {1}.").With(entity, item);
 
         if (entity.Has<PlayerTag>())
             _dirtyTracker.MarkDirty(entity, DirtyReason.ItemRemoved);
@@ -249,9 +248,9 @@ public class ItemInteractionSystem
 
 
         // Unequip if necessary
-        ref var equipped = ref item.TryGetRef<Equipped>(out var isEquipped);
-        if (isEquipped)
+        if (item.Has<Equipped>())
         {
+            ref var equipped = ref item.Get<Equipped>();
             ItemHelpers.TryUnequipItem(entity, equipped.Slot, out _);
 
             if (entity.Has<PlayerTag>())
@@ -260,7 +259,7 @@ public class ItemInteractionSystem
 
         DestroyItem(item);
 
-        _msg.To(entity).Send($"You destroy {item.DisplayName}.");
+        _msg.To(entity).Act("You destroy {0}.").With(item);
 
         // event
         ref var itemDestroyedEvt = ref _itemDestroyedEvents.Add();
@@ -292,6 +291,6 @@ public class ItemInteractionSystem
 
         // TODO: if container, check if everything within is flagged as destroyed
         if (!item.Has<DestroyedTag>())
-            item.Add<DestroyedTag>();
+            item.Set<DestroyedTag>();
     }
 }

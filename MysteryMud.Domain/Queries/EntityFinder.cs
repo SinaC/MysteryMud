@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
@@ -110,7 +109,7 @@ public static class EntityFinder
     // Simple prefix matching, case-insensitive
     public static bool Matches(Entity e, ReadOnlySpan<char> query, bool isAll = false)
     {
-        if (e.Has<Dead>() || e.Has<DestroyedTag>()) // don't consider dead/destroyed entities as valid targets
+        if (e.Has<DeadTag>() || e.Has<DestroyedTag>()) // don't consider dead/destroyed entities as valid targets
             return false;
         if (query.IsEmpty)
             return isAll;

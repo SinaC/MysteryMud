@@ -1,5 +1,5 @@
 ﻿
-using Arch.Core;
+using DefaultEcs;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Persistence;
@@ -140,7 +140,7 @@ public sealed class PersistenceSystem
             {
                 _log.LogError(ex,
                     "Persistence: failed to save entity {EntityId} (reasons: {Reasons})",
-                    entry.Entity.Id, entry.Reasons);
+                    entry.Entity.GetHashCode(), entry.Reasons);
                 // Re-mark dirty so we retry next cycle
                 _tracker.MarkDirty(entry.Entity, entry.Reasons);
             }
@@ -153,9 +153,9 @@ public sealed class PersistenceSystem
         // If this is called from Update() it's already on the game thread.
         // If called from SaveOnDisconnectAsync (async context) the caller must
         // ensure the entity is still alive and not being modified concurrently.
-        if (!_world.IsAlive(entity))
+        if (!entity.IsAlive)
         {
-            _log.LogWarning("Persistence: skipping dead entity {EntityId}", entity.Id);
+            _log.LogWarning("Persistence: skipping dead entity {EntityId}", entity.GetHashCode());
             return;
         }
 

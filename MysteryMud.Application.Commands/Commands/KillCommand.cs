@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Core;
@@ -7,7 +6,6 @@ using MysteryMud.Core.Commands;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 
 namespace MysteryMud.Application.Commands.Commands;
@@ -17,10 +15,12 @@ public sealed class KillCommand : ICommand
     private static CommandParseOptions ParseOptions { get; } = CommandParseOptions.Target;
 
     private readonly IGameMessageService _msg;
+    private readonly ICombatService _combatService;
 
-    public KillCommand(IGameMessageService msg)
+    public KillCommand(IGameMessageService msg, ICombatService combatService)
     {
         _msg = msg;
+        _combatService = combatService;
     }
 
     public void Execute(GameState state, Entity actor, ReadOnlySpan<char> cmd, ReadOnlySpan<char> args)
@@ -57,6 +57,6 @@ public sealed class KillCommand : ICommand
         // TODO: check if target already in combat, if so, maybe switch targets? Or maybe not allow switching targets?
 
         // flag both as in combat with each other, with the target striking back after a delay
-        CombatHelpers.EnterCombat(state, actor, target.Value);
+        _combatService.EnterCombat(state, actor, target.Value);
     }
 }

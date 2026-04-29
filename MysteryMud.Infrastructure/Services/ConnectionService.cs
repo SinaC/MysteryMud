@@ -1,4 +1,4 @@
-﻿using Arch.Core;
+﻿using DefaultEcs;
 using MysteryMud.Core.Services;
 using MysteryMud.Domain.Factories;
 using MysteryMud.Infrastructure.Network;

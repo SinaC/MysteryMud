@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Core;
 using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Action.Effect.Definitions;
@@ -39,7 +38,7 @@ public class EffectDisplayService : IEffectDisplayService
 
     private void DisplayEffect(GameState state, Entity viewer, Entity effect)
     {
-        if (!effect.IsAlive() || effect.Has<ExpiredTag>())
+        if (!effect.IsAlive || effect.Has<ExpiredTag>())
             return;
         ref var effectInstance = ref effect.Get<EffectInstance>();
         if (effectInstance.EffectRuntime != null)
@@ -55,9 +54,9 @@ public class EffectDisplayService : IEffectDisplayService
             _effectRegistry.TryGetDefinition(effectId, out var effectDefinition);
 
             // duration
-            ref var timedEffect = ref effect.TryGetRef<TimedEffect>(out var isTimedEffect);
-            if (isTimedEffect)
+            if (effect.Has<TimedEffect>())
             {
+                ref var timedEffect = ref effect.Get<TimedEffect>();
                 var remainingTicks = timedEffect.ExpirationTick - state.CurrentTick;
                 _msg.To(viewer).Send($"- {effectName} Source: {sourceName} Stacks: {stackCount} Remaining time: {TimeConversion.TicksToDisplay(remainingTicks)}");
             }
@@ -88,9 +87,9 @@ public class EffectDisplayService : IEffectDisplayService
             }
 
             // character stat modifiers
-            ref var characterStatModifiers = ref effect.TryGetRef<CharacterStatModifiers>(out var hasCharacterStatModifiers);
-            if (hasCharacterStatModifiers)
+            if (effect.Has<CharacterStatModifiers>())
             {
+                ref var characterStatModifiers = ref effect.Get<CharacterStatModifiers>();
                 foreach (var modifier in characterStatModifiers.Values)
                     _msg.To(viewer).Send($"  - {modifier.Modifier} {modifier.Value} {modifier.Stat}");
             }
@@ -116,9 +115,9 @@ public class EffectDisplayService : IEffectDisplayService
     private void DisplayResourceModifier<TResourceModifier>(Entity viewer, Entity effect, string resourceName, Func<TResourceModifier, ModifierKind> getModifierFunc, Func<TResourceModifier, decimal> getValueFunc)
         where TResourceModifier : struct
     {
-        ref var resourceModifiers = ref effect.TryGetRef<CharacterResourceModifiers<TResourceModifier>>(out var hasResourceModifiers);
-        if (hasResourceModifiers)
+        if (effect.Has<CharacterResourceModifiers<TResourceModifier>>())
         {
+            ref var resourceModifiers = ref effect.Get<CharacterResourceModifiers<TResourceModifier>>();
             foreach (var modifier in resourceModifiers.Values)
                 _msg.To(viewer).Send($"  - {getModifierFunc(modifier)} {getValueFunc(modifier)} {resourceName}");
         }
@@ -127,9 +126,9 @@ public class EffectDisplayService : IEffectDisplayService
     private void DisplayResourceRegenModifier<TResourceRegenModifier>(Entity viewer, Entity effect, string resourceName, Func<TResourceRegenModifier, ModifierKind> getModifierFunc, Func<TResourceRegenModifier, decimal> getValueFunc)
         where TResourceRegenModifier : struct
     {
-        ref var resourceRegenModifiers = ref effect.TryGetRef<CharacterResourceRegenModifiers<TResourceRegenModifier>>(out var hasResourceModifiers);
-        if (hasResourceModifiers)
+        if (effect.Has<CharacterResourceRegenModifiers<TResourceRegenModifier>>())
         {
+            ref var resourceRegenModifiers = ref effect.Get<CharacterResourceRegenModifiers<TResourceRegenModifier>>();
             foreach (var modifier in resourceRegenModifiers.Values)
                 _msg.To(viewer).Send($"  - {getModifierFunc(modifier)} {getValueFunc(modifier)} {resourceName} regen");
         }

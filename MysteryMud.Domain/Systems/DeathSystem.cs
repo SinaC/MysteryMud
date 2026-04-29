@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Contracts;
@@ -19,13 +18,15 @@ namespace MysteryMud.Domain.Systems;
 public sealed class DeathSystem
 {
     private readonly IFollowService _followService;
+    private readonly ICombatService _combatService;
     private readonly IDirtyTracker _dirtyTracker;
     private readonly IIntentContainer _intents;
     private readonly IEventBuffer<DeathEvent> _deathEvents;
 
-    public DeathSystem(IFollowService followService, IDirtyTracker dirtyTracker, IIntentContainer intents, IEventBuffer<DeathEvent> deathEvents)
+    public DeathSystem(IFollowService followService, ICombatService combatService, IDirtyTracker dirtyTracker, IIntentContainer intents, IEventBuffer<DeathEvent> deathEvents)
     {
         _followService = followService;
+        _combatService = combatService;
         _dirtyTracker = dirtyTracker;
         _intents = intents;
         _deathEvents = deathEvents;
@@ -52,7 +53,7 @@ public sealed class DeathSystem
             if (victim.Has<CombatState>())
             {
                 var target = victim.Get<CombatState>().Target;
-                CombatHelpers.ForfeitClaim(target, victim);
+                _combatService.ForfeitClaim(target, victim);
             }
 
             _dirtyTracker.MarkDirty(victim, DirtyReason.Death);
@@ -64,43 +65,43 @@ public sealed class DeathSystem
         // corpse first — reads CombatInitiator to determine loot owner
         CreateCorpse(state.World, victim, deathEvent.Killer);
 
-        CombatHelpers.RemoveFromAllCombat(state, victim);
-        CombatHelpers.ForfeitAllClaims(state.World, victim);
-        CombatHelpers.RemoveFromAllThreatTable(state.World, victim);
+        _combatService.RemoveFromAllCombat(state, victim);
+        _combatService.ForfeitAllClaims(state.World, victim);
+        _combatService.RemoveFromAllThreatTable(state.World, victim);
     }
 
     private void CreateCorpse(World world, Entity victim, Entity killer)
     {
-        if (!victim.Has<Location, Inventory>())
+        if (!victim.Has<Location>() || !victim.Has<Inventory>())
             return; // can't create a corpse if we don't know where the victim is
         ref var location = ref victim.Get<Location>();
         ref var inventory = ref victim.Get<Inventory>();
         // create corpse
         var corpse = ItemFactory.CreateItemInRoom(world, "corpse", $"the corpse of {victim.DisplayName}", location.Room);
-        corpse.Add(new Container { Capacity = 1000 });
+        corpse.Set(new Container { Capacity = 1000 });
         var containerContents = new ContainerContents { Items = [] };
         foreach (var item in inventory.Items.ToArray())
         {
             // Unequip if necessary
-            ref var equipped = ref item.TryGetRef<Equipped>(out var isEquipped);
-            if (isEquipped)
+            if (item.Has<Equipped>())
             {
+                ref var equipped = ref item.Get<Equipped>();
                 ItemHelpers.TryUnequipItem(victim, equipped.Slot, out _);
             }
 
             inventory.Items.Remove(item);
             ref var containedIn = ref item.Get<ContainedIn>();
-            containedIn.Character = Entity.Null;
+            containedIn.Character = default;
             containedIn.Container = corpse;
             containerContents.Items.Add(item);
         }
-        corpse.Add(containerContents);
+        corpse.Set(containerContents);
 
-        if (CombatHelpers.TryDetermineLootOwner(victim, killer, out var lootOwner))
+        if (_combatService.TryDetermineLootOwner(victim, killer, out var lootOwner))
         {
             var lootOwnerGroup = lootOwner.Has<GroupMember>()
                 ? lootOwner.Get<GroupMember>().Group
-                : Entity.Null;
+                : default;
 
             // autoloot for killer and group members
             ref var corpseLootIntent = ref _intents.CorpseLoot.Add();

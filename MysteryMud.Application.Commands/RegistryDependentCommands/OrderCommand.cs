@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
@@ -66,8 +65,7 @@ If your charmed creature engages in combat, that will break the charm.",
             return;
         }
 
-        ref var charmies = ref actor.TryGetRef<Charmies>(out var hasCharmies);
-        if (!hasCharmies)
+        if (!actor.Has<Charmies>())
         {
             _msg.To(actor).Send("You don't have followers.");
             return;
@@ -76,6 +74,7 @@ If your charmed creature engages in combat, that will break the charm.",
         // TODO: force all (see TellCommand)
 
         // search target
+        ref var charmies = ref actor.Get<Charmies>();
         var target = CommandEntityFinder.SelectSingleTarget(actor, ctx.Primary, charmies.Entities);
         if (target == null)
         {
@@ -132,6 +131,6 @@ If your charmed creature engages in combat, that will break the charm.",
             Order = true
         });
         if (!target.Value.Has<HasCommandTag>())
-            target.Value.Add<HasCommandTag>();
+            target.Value.Set<HasCommandTag>();
     }
 }

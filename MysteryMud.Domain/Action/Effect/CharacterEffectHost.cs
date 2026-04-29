@@ -1,6 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Core;
+﻿using DefaultEcs;
 using MysteryMud.Core.Persistence;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
@@ -63,7 +61,7 @@ public class CharacterEffectHost : IEffectHost
         {
             var tagIndex = (int)effectRuntime.Tag.CharacterTag;
             // add EffectTag component to effect
-            effect.Add(new CharacterEffectTag
+            effect.Set(new CharacterEffectTag
             {
                 Id = effectRuntime.Tag.CharacterTag
             });
@@ -82,9 +80,9 @@ public class CharacterEffectHost : IEffectHost
             _dirtyTracker.MarkDirty(_target, DirtyReason.Effects);
     }
 
-    public void UnregisterEffect(GameState state, Entity effect, EffectRuntime effectRuntime)
+    public void UnregisterEffect(Entity effect, EffectRuntime effectRuntime)
     {
-        if (!effect.IsAlive()) // don't use helpers, effect with ExpiredTag should be removable
+        if (!effect.IsAlive) // don't use helpers, effect with ExpiredTag should be removable
             return;
 
         // remove the effect from the target's CharacterEffects
@@ -110,7 +108,7 @@ public class CharacterEffectHost : IEffectHost
         MarkAsDirtyIfNeeded(effect);
 
         // destroy effect
-        state.World.Destroy(effect);
+        effect.Set<ExpiredTag>();
     }
 
     public void MarkAsDirtyIfNeeded(Entity effect)
@@ -118,29 +116,29 @@ public class CharacterEffectHost : IEffectHost
         // if effect has StatModifiers
         // flag the _target's stats as dirty so they will be recalculated without this effect
         if (effect.Has<CharacterStatModifiers>() && !_target.Has<DirtyStats>())
-            _target.Add<DirtyStats>();
+            _target.Set<DirtyStats>();
 
         // if effect has ResourceModifiers
         // flag the _target's resources as dirty so they will be recalculated without this effect
         if (effect.Has<CharacterResourceModifiers<HealthModifier>>() && !_target.Has<DirtyHealth>())
-            _target.Add<DirtyHealth>();
+            _target.Set<DirtyHealth>();
         if (effect.Has<CharacterResourceModifiers<ManaModifier>>() && !_target.Has<DirtyMana>())
-            _target.Add<DirtyMana>();
+            _target.Set<DirtyMana>();
         if (effect.Has<CharacterResourceModifiers<EnergyModifier>>() && !_target.Has<DirtyEnergy>())
-            _target.Add<DirtyEnergy>();
+            _target.Set<DirtyEnergy>();
         if (effect.Has<CharacterResourceModifiers<RageModifier>>() && !_target.Has<DirtyRage>())
-            _target.Add<DirtyRage>();
+            _target.Set<DirtyRage>();
 
         // if effect has ResourceRegebModifiers
         // flag the _target's resource regens as dirty so they will be recalculated without this effect
         if (effect.Has<CharacterResourceRegenModifiers<HealthRegenModifier>>() && !_target.Has<DirtyHealthRegen>())
-            _target.Add<DirtyHealthRegen>();
+            _target.Set<DirtyHealthRegen>();
         if (effect.Has<CharacterResourceRegenModifiers<ManaRegenModifier>>() && !_target.Has<DirtyManaRegen>())
-            _target.Add<DirtyManaRegen>();
+            _target.Set<DirtyManaRegen>();
         if (effect.Has<CharacterResourceRegenModifiers<EnergyModifier>>() && !_target.Has<DirtyEnergyRegen>())
-            _target.Add<DirtyEnergyRegen>();
+            _target.Set<DirtyEnergyRegen>();
         if (effect.Has<CharacterResourceRegenModifiers<RageDecayModifier>>() && !_target.Has<DirtyRageDecay>())
-            _target.Add<DirtyRageDecay>();
+            _target.Set<DirtyRageDecay>();
 
         //
         if (_target.Has<PlayerTag>())

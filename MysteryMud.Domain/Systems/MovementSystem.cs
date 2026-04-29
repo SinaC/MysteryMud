@@ -1,5 +1,4 @@
-﻿using Arch.Core.Extensions;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Contracts;
@@ -22,16 +21,18 @@ public class MovementSystem
     private readonly ILogger _logger;
     private readonly IGameMessageService _msg;
     private readonly ICastMessageService _castMessageService;
+    private readonly ICombatService _combatService;
     private readonly IDirtyTracker _dirtyTracker;
     private readonly IIntentContainer _intentContainer;
     private readonly IAbilityRegistry _abilityRegistry;
     private readonly IEventBuffer<RoomEnteredEvent> _roomEnteredEvent;
 
-    public MovementSystem(ILogger logger, IGameMessageService msg, ICastMessageService castMessageService, IDirtyTracker dirtyTracker, IIntentContainer intentContainer, IAbilityRegistry abilityRegistry, IEventBuffer<RoomEnteredEvent> roomEnteredEvent)
+    public MovementSystem(ILogger logger, IGameMessageService msg, ICastMessageService castMessageService, ICombatService combatService, IDirtyTracker dirtyTracker, IIntentContainer intentContainer, IAbilityRegistry abilityRegistry, IEventBuffer<RoomEnteredEvent> roomEnteredEvent)
     {
         _logger = logger;
         _msg = msg;
         _castMessageService = castMessageService;
+        _combatService = combatService;
         _dirtyTracker = dirtyTracker;
         _intentContainer = intentContainer;
         _abilityRegistry = abilityRegistry;
@@ -53,8 +54,7 @@ public class MovementSystem
         var toRoom = intent.ToRoom;
         var direction = intent.Direction;
 
-        ref var location = ref movingEntity.TryGetRef<Location>(out var hasLocation);
-        if (!hasLocation)
+        if (!movingEntity.Has<Location>())
             return;
 
         // validate move
@@ -90,6 +90,7 @@ public class MovementSystem
         newRoomContents.Characters.Add(movingEntity);
 
         // change location
+        ref var location = ref movingEntity.Get<Location>();
         location.Room = toRoom;
 
         // 'consume' move
@@ -97,9 +98,9 @@ public class MovementSystem
         move.Current = move.Current - 10; // TODO: calculate move cost
 
         // remove casting and display phrase
-        ref var casting = ref movingEntity.TryGetRef<Casting>(out var isCasting);
-        if (isCasting)
+        if (movingEntity.Has<Casting>())
         {
+            ref var casting = ref movingEntity.Get<Casting>();
             movingEntity.Remove<Casting>();
 
             var abilityId = casting.AbilityId;
@@ -138,7 +139,7 @@ public class MovementSystem
         {
             var target = movingEntity.Get<CombatState>().Target;
             if (movingEntity.Has<PlayerTag>())
-                CombatHelpers.ForfeitClaim(target, movingEntity);
+                _combatService.ForfeitClaim(target, movingEntity);
         }
     }
 }

@@ -1,5 +1,4 @@
-﻿using Arch.Core.Extensions;
-using MysteryMud.Core;
+﻿using MysteryMud.Core;
 using MysteryMud.Core.Bus;
 using MysteryMud.Core.Effects;
 using MysteryMud.Domain.Action.Attack.Resolvers;
@@ -28,12 +27,12 @@ public class HealResolver : IHealResolver
         var source = heal.Source;
         var target = heal.Target;
         var amount = heal.Amount;
-        if (!target.IsAlive() || target.Has<Dead>()) // already dead
+        if (!target.IsAlive || target.Has<DeadTag>()) // already dead
             return new HealResult { IsSuccess = false };
 
-        ref var health = ref target.TryGetRef<Health>(out var hasHealth);
-        if (!hasHealth)
+        if (!target.Has<Health>())
             return new HealResult { IsSuccess = false };
+        ref var health = ref target.Get<Health>();
 
         if (health.Current >= health.Max) // already at max hp
             return new HealResult

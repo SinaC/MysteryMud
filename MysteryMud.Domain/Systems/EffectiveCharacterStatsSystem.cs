@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Core;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Effects;
@@ -16,26 +15,37 @@ public class EffectiveCharacterStatsSystem
         .Take((int)CharacterStatKind.Count) // Count is used by to InlineArray attribute
         .ToArray();
 
+    private readonly EntitySet _hasDirtyStatsEntitySet;
+
+    public EffectiveCharacterStatsSystem(World world)
+    {
+        _hasDirtyStatsEntitySet = world
+            .GetEntities()
+            .With<BaseStats>()
+            .With<EffectiveStats>()
+            .With<DirtyStats>()
+            .Without<DeadTag>()
+            .AsSet();
+    }
+
     public void Tick(GameState state)
     {
-        var query = new QueryDescription()
-                .WithAll<BaseStats, EffectiveStats, DirtyStats>()
-                .WithNone<Dead>();
-        state.World.Query(query, (Entity character,
-                     ref BaseStats baseStats,
-                     ref EffectiveStats effectiveStats,
-                     ref DirtyStats dirty) =>
+        var statCount = _allStats.Length;
+        Span<decimal> flat = stackalloc decimal[statCount];
+        Span<decimal> percent = stackalloc decimal[statCount];
+        Span<decimal> multiply = stackalloc decimal[statCount];
+        Span<decimal> overriding = stackalloc decimal[statCount];
+        Span<bool> hasOverriding = stackalloc bool[statCount];
+
+        foreach (var character in _hasDirtyStatsEntitySet.GetEntities())
         {
+            ref var baseStats = ref character.Get<BaseStats>();
+            ref var effectiveStats = ref character.Get<EffectiveStats>();
+
             ref var characterEffects = ref character.Get<CharacterEffects>();
             ref var equipment = ref character.Get<Equipment>();
 
             // accumulators indexed by stat — stack alloc, no heap pressure
-            var statCount = _allStats.Length;
-            Span<decimal> flat = stackalloc decimal[statCount];
-            Span<decimal> percent = stackalloc decimal[statCount];
-            Span<decimal> multiply = stackalloc decimal[statCount];
-            Span<decimal> overriding = stackalloc decimal[statCount];
-            Span<bool> hasOverriding = stackalloc bool[statCount];
             multiply.Fill(1m);
 
             // single pass over equipment modifiers — O(slots × modifiers_per_item)
@@ -74,6 +84,6 @@ public class EffectiveCharacterStatsSystem
 
             // mark as clean
             character.Remove<DirtyStats>();
-        });
+        }
     }
 }

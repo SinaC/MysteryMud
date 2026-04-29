@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Core;
 using MysteryMud.Domain.Action.Calculators;
 using MysteryMud.Domain.Components.Characters.Mobiles;
@@ -23,16 +22,16 @@ public class AggroResolver : IAggroResolver
 
     private static void AddAggro(GameState state, Entity target, Entity source, int amount)
     {
-        if (!source.IsAlive())
+        if (!source.IsAlive)
             return;
-        ref var threatTable = ref target.TryGetRef<ThreatTable>(out var hasThreat);
-        if (!hasThreat)
+        if (!target.Has<ThreatTable>())
             return;
+        ref var threatTable = ref target.Get<ThreatTable>();
         if (!threatTable.Threat.TryAdd(source, amount))
             threatTable.Threat[source] += amount;
         threatTable.LastUpdateTick = state.CurrentTick;
 
         if (!target.Has<ActiveThreatTag>()) // indicate to threat decay system this is an entity to check
-            target.Add<ActiveThreatTag>();
+            target.Set<ActiveThreatTag>();
     }
 }

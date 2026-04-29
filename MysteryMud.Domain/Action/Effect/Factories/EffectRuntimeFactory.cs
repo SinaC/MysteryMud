@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Domain.Action.Effect.Definitions;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
@@ -132,10 +131,14 @@ public class EffectRuntimeFactory : IEffectRuntimeFactory
     {
         if (affectedEntity.Has<CharacterTag>())
             return affectedEntity;
-        if (affectedEntity.TryGet<Equipped>(out var equipped))
-            return equipped.Wearer;
-        if (affectedEntity.TryGet<ContainedIn>(out var containedIn) && containedIn.Character.Has<CharacterTag>())
-            return containedIn.Character;
+        if (affectedEntity.Has<Equipped>())
+            return affectedEntity.Get<Equipped>().Wearer;
+        if (affectedEntity.Has<ContainedIn>())
+        {
+            ref var containedIn = ref affectedEntity.Get<ContainedIn>();
+            if (containedIn.Character.Has<CharacterTag>())
+                return containedIn.Character;
+        }
         return null;
     }
 }

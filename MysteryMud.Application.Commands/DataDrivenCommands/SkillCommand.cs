@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Core;
@@ -64,9 +63,9 @@ public sealed class SkillCommand : IExplicitCommand
         // TODO: check arguments depending on skill
 
         // TODO: check resource/cooldown/position/...
-        ref var casting = ref actor.TryGetRef<Casting>(out var isCasting);
-        if (isCasting)
+        if (actor.Has<Casting>())
         {
+            ref var casting = ref actor.Get<Casting>();
             if (!_abilityRegistry.TryGetRuntime(casting.AbilityId, out var castingAbilityRuntime) || castingAbilityRuntime == null)
             {
                 _logger.LogError("{actorName} is focused on an unknown ability {abilityId}", actor.DebugName, casting.AbilityId);

@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Core.Persistence;
 using MysteryMud.Core.Persistence.Snapshots;
 using MysteryMud.Domain.Components;
@@ -50,10 +49,10 @@ public sealed class PlayerSnapshotBuilder : ISnapshotBuilder
             .ToArray();
 
         return new PlayerSnapshot(
-            Id: world.Has<PlayerDbId>(entity) ? world.Get<PlayerDbId>(entity).Value : 0,
+            Id: entity.Has<PlayerDbId>() ? entity.Get<PlayerDbId>().Value : 0,
             Name: name.Value,
             Level: level.Value,
-            LocationKey: location.Room.Id.ToString(),
+            LocationKey: location.Room.GetHashCode().ToString(),
             Position: position.Value.ToString(),
             Form: form.Value.ToString(),
             TotalXp: progression.Experience,
@@ -99,9 +98,9 @@ public sealed class PlayerSnapshotBuilder : ISnapshotBuilder
 
     private static AbilitySnapshot[] BuildAbilities(World world, Entity entity)
     {
-        ref var learnedAbilities = ref entity.TryGetRef<LearnedAbilities>(out var hasLearnedAbilities);
-        if (!hasLearnedAbilities)
+        if (!entity.Has<LearnedAbilities>())
             return [];
+        ref var learnedAbilities = ref entity.Get<LearnedAbilities>();
         // TODO
         return [];
         //var snapshots = new AbilitySnapshot[learnedAbilities.Entries.Count];
@@ -147,17 +146,17 @@ public sealed class PlayerSnapshotBuilder : ISnapshotBuilder
     {
         //TODO: var vnum = item.Get<ItemTemplate>(item).Vnum;
         var vnum = 0;
-        var slot = equippedSlots.GetValueOrDefault(item.Id);
+        var slot = equippedSlots.GetValueOrDefault(item.GetHashCode());
         var dbId = item.Has<ItemDbId>() ? item.Get<ItemDbId>().Value : 0L;
         //var paramsJson = item.Has<ItemParams>() ? item.Get<ItemParams>().Json : null;
         var paramsJson = (string)null!; // TODO
 
         long? containerId = null;
-        if (world.Has<ContainedIn>(item))
+        if (item.Has<ContainedIn>())
         {
-            var container = world.Get<ContainedIn>(item).Container;
-            if (world.Has<ItemDbId>(container))
-                containerId = world.Get<ItemDbId>(container).Value;
+            var container = item.Get<ContainedIn>().Container;
+            if (container.Has<ItemDbId>())
+                containerId = container.Get<ItemDbId>().Value;
         }
 
         var effects = BuildItemEffects(world, item);
@@ -169,8 +168,8 @@ public sealed class PlayerSnapshotBuilder : ISnapshotBuilder
     {
         var parts = new Dictionary<string, object?>();
 
-        if (world.Has<Gender>(entity))
-            parts["gender"] = world.Get<Gender>(entity).Value;
+        if (entity.Has<Gender>())
+            parts["gender"] = entity.Get<Gender>().Value;
 
         // Add RespawnState, CommandThrottle, etc. here
 

@@ -1,5 +1,4 @@
-﻿using CommunityToolkit.HighPerformance;
-using MysteryMud.Infrastructure.Buffers;
+﻿using MysteryMud.Infrastructure.Buffers;
 using System.Buffers;
 using System.Buffers.Binary;
 using System.IO.Compression;

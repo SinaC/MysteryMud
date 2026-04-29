@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Domain.Components.Characters;
 
 namespace MysteryMud.Domain.Services;
@@ -19,10 +18,10 @@ public class FollowService : IFollowService
         if (follower.Has<Following>())
             StopFollowing(follower);
 
-        follower.Add(new Following { Leader = leader });
+        follower.Set(new Following { Leader = leader });
 
         if (!leader.Has<Followers>())
-            leader.Add(new Followers { Entities = [] });
+            leader.Set(new Followers { Entities = [] });
 
         leader.Get<Followers>().Entities.Add(follower);
 
@@ -37,7 +36,7 @@ public class FollowService : IFollowService
         var leader = follower.Get<Following>().Leader;
         follower.Remove<Following>();
 
-        if (leader.IsAlive() && leader.Has<Followers>())
+        if (leader.IsAlive && leader.Has<Followers>())
             leader.Get<Followers>().Entities.Remove(follower);
 
         _msg.To(leader).Act("{0:N} stops following you.").With(follower);
@@ -51,7 +50,7 @@ public class FollowService : IFollowService
         ref var followers = ref leader.Get<Followers>();
         foreach (var follower in followers.Entities.ToArray())
         {
-            if (!follower.IsAlive()) continue;
+            if (!follower.IsAlive) continue;
             if (follower.Has<Following>())
                 follower.Remove<Following>();
             _msg.To(follower).Act("You stop following {0} as they have left.").With(leader);

@@ -1,9 +1,8 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Core;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Helpers;
+using MysteryMud.Domain.Services;
 using MysteryMud.Domain.Systems;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Intents;
@@ -15,11 +14,13 @@ public class CombatInitiatorTests : IDisposable
 {
     private readonly MudTestFixture _f = new();
     private readonly LootSystem _lootSystem;
+    private readonly CombatService _combatService;
 
     public CombatInitiatorTests()
     {
         // wire up systems with test doubles
         _lootSystem = new LootSystem(_f.GameMessage, _f.Intents, _f.ItemLootedEvents);
+        _combatService = new CombatService(_f.World);
     }
 
     public void Dispose() => _f.Dispose();
@@ -98,7 +99,7 @@ public class CombatInitiatorTests : IDisposable
         var bob = _f.Player("Bob").WithLocation(room).WithAutoLoot().Build();
 
         // alice initiated but died (forfeited), bob second
-        corpse.Add(new CombatInitiator
+        corpse.Set(new CombatInitiator
         {
             Claims =
             [
@@ -111,7 +112,7 @@ public class CombatInitiatorTests : IDisposable
         {
             Corpse = corpse,
             LootOwner = bob,
-            LootOwnerGroup = Entity.Null
+            LootOwnerGroup = default
         };
 
         _lootSystem.Tick(_f.State);
@@ -130,7 +131,7 @@ public class CombatInitiatorTests : IDisposable
         var bob = _f.Player("Bob").WithLocation(room).WithAutoLoot().Build();
 
         // alice initiated but died, no other claimants
-        corpse.Add(new CombatInitiator
+        corpse.Set(new CombatInitiator
         {
             Claims =
             [
@@ -142,7 +143,7 @@ public class CombatInitiatorTests : IDisposable
         {
             Corpse = corpse,
             LootOwner = bob,
-            LootOwnerGroup = Entity.Null
+            LootOwnerGroup = default
         };
 
         _lootSystem.Tick(_f.State);
@@ -182,7 +183,7 @@ public class CombatInitiatorTests : IDisposable
         var alice = _f.Player("Alice").WithLocation(room).WithAutoLoot().Build();
         var bob = _f.Player("Bob").WithLocation(room).WithAutoLoot().Build();
 
-        corpse.Add(new CombatInitiator
+        corpse.Set(new CombatInitiator
         {
             Claims =
             [
@@ -195,7 +196,7 @@ public class CombatInitiatorTests : IDisposable
         {
             Corpse = corpse,
             LootOwner = bob,
-            LootOwnerGroup = Entity.Null
+            LootOwnerGroup = default
         };
 
         _lootSystem.Tick(_f.State);
@@ -242,7 +243,7 @@ public class CombatInitiatorTests : IDisposable
         {
             Corpse = corpse,
             LootOwner = charlie,
-            LootOwnerGroup = Entity.Null
+            LootOwnerGroup = default
         };
 
         _lootSystem.Tick(_f.State);
@@ -270,7 +271,7 @@ public class CombatInitiatorTests : IDisposable
         // tick 10: NPC kills A -> alice forfeited
         // tick 12: C joins
         // tick 15: B kills NPC
-        corpse.Add(new CombatInitiator
+        corpse.Set(new CombatInitiator
         {
             Claims =
             [
@@ -284,7 +285,7 @@ public class CombatInitiatorTests : IDisposable
         {
             Corpse = corpse,
             LootOwner = bob,
-            LootOwnerGroup = Entity.Null
+            LootOwnerGroup = default
         };
 
         _lootSystem.Tick(_f.State);
@@ -311,7 +312,7 @@ public class CombatInitiatorTests : IDisposable
         {
             Corpse = corpse,
             LootOwner = bob,
-            LootOwnerGroup = Entity.Null
+            LootOwnerGroup = default
         };
 
         _lootSystem.Tick(_f.State);
@@ -323,25 +324,25 @@ public class CombatInitiatorTests : IDisposable
     // Helpers — mirror what the real systems would do
     // -------------------------------------------------------------------------
 
-    private static void SetInitiator(Entity npc, Entity claimant, int tick = 0)
+    private void SetInitiator(Entity npc, Entity claimant, int tick = 0)
     {
-        CombatHelpers.AddCombatClaim(npc, claimant, tick);
+        _combatService.AddCombatClaim(npc, claimant, tick);
     }
 
-    private static void AddClaim(Entity npc, Entity claimant, int tick)
+    private void AddClaim(Entity npc, Entity claimant, int tick)
         => SetInitiator(npc, claimant, tick); // same logic, named for readability
 
-    private static void ForfeitClaim(Entity npc, Entity claimant)
+    private void ForfeitClaim(Entity npc, Entity claimant)
     {
-        CombatHelpers.ForfeitClaim(npc, claimant);
+        _combatService.ForfeitClaim(npc, claimant);
     }
 
-    private static void PeaceRoom(GameState state, Entity room)
+    private void PeaceRoom(GameState state, Entity room)
     {
         ref var contents = ref room.Get<RoomContents>();
         foreach (var character in contents.Characters)
         {
-            CombatHelpers.RemoveFromCombat(state, character);
+            _combatService.RemoveFromCombat(state, character);
         }
     }
 }

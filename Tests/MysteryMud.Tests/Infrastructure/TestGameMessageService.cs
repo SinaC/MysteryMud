@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Groups;
 using MysteryMud.Domain.Components.Rooms;
@@ -29,9 +28,9 @@ internal class TestGameMessageService : IGameMessageService
     public IMessageTargetBuilder ToGroup(Entity group)
     {
         var msgTargetBuilder = new TestMessageTargetBuilder();
-        ref var groupInstance = ref group.TryGetRef<GroupInstance>(out var isGroup);
-        if (isGroup)
+        if (group.Has<GroupInstance>())
         {
+            ref var groupInstance = ref group.Get<GroupInstance>();
             foreach (var member in groupInstance.Members)
                 Messages.Add(new Message { Recipient = member, MsgTargetBuilder = msgTargetBuilder });
         }

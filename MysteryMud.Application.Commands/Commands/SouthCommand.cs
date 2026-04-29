@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Core;
 using MysteryMud.Core.Commands;
 using MysteryMud.Core.Contracts;
@@ -36,7 +35,7 @@ public sealed class SouthCommand : ICommand
         // Get south exit
         ref var roomGraph = ref room.Get<RoomGraph>();
         var southExit = roomGraph.Exits[DirectionKind.South];
-        if (southExit is null || southExit!.Value.TargetRoom == Entity.Null)
+        if (southExit is null || southExit!.Value.TargetRoom == default)
         {
             _msg.To(actor).Send("Alas, you cannot go that way.");
             return;

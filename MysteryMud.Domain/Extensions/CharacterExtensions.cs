@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
@@ -12,8 +11,8 @@ public static class CharacterExtensions
 {
     extension(Entity entity)
     {
-        public PositionKind Position => entity.TryGet<Position>(out var position) ? position.Value : PositionKind.Dead;
-        public int Level => entity.TryGet<Level>(out var level) ? level.Value : 1;
+        public PositionKind Position => entity.Has<Position>() ? entity.Get<Position>().Value : PositionKind.Dead;
+        public int Level => entity.Has<Level>() ? entity.Get<Level>().Value : 1;
     }
 
     public static bool HasAutoAssist(this Entity entity)
@@ -27,9 +26,9 @@ public static class CharacterExtensions
 
     public static bool HasAuto(this Entity entity, AutoFlags flag)
     {
-        ref var autoBehavior = ref entity.TryGetRef<AutoBehaviour>(out var hasAutoBehavior);
-        if (!hasAutoBehavior)
+        if (!entity.Has<AutoBehaviour>())
             return false;
+        ref var autoBehavior = ref entity.Get<AutoBehaviour>();
         return autoBehavior.Flags.HasFlag(flag);
     }
 
@@ -37,13 +36,14 @@ public static class CharacterExtensions
     {
         weapon = default;
         item = default;
-        ref var equipment = ref entity.TryGetRef<Equipment>(out var hasEquipment);
-        if (!hasEquipment)
+        if (!entity.Has<Equipment>())
             return false;
+        ref var equipment = ref entity.Get<Equipment>();
         if (!equipment.Slots.TryGetValue(EquipmentSlotKind.MainHand, out item) || item == default)
             return false;
-        if (!item.TryGet(out weapon))
+        if (!item.Has<Weapon>())
             return false;
+        weapon = item.Get<Weapon>();
         return true;
     }
 }

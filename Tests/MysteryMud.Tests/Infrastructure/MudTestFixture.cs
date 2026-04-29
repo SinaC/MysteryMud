@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Core;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
@@ -27,7 +26,7 @@ internal class MudTestFixture : IDisposable
 
     public MudTestFixture()
     {
-        World = World.Create();
+        World = new World();
         State = new GameState { World = World, CurrentTick = 0, CurrentTimeMs = 0 };
     }
 
@@ -132,5 +131,5 @@ internal class MudTestFixture : IDisposable
     }
 
     public void Dispose()
-        => World.Destroy(World);
+        => World.Dispose();
 }

@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
@@ -36,7 +35,7 @@ public class FollowSystemTests : IDisposable
         _f.Npc(name).WithLocation(room).Build();
 
     private FollowSystem MakeSystem() =>
-        new(_f.GameMessage, _f.Intents);
+        new(_f.World, _f.GameMessage, _f.Intents);
 
     private void QueueMove(Entity actor, Entity from, Entity to, DirectionKind dir)
     {
@@ -74,7 +73,7 @@ public class FollowSystemTests : IDisposable
         var roomB = MakeLinkedRoom(roomA, DirectionKind.North);
         var leader = MakePlayer(roomA, "Leader");
         var follower = MakePlayer(roomA, "Follower");
-        follower.Add(new Following { Leader = leader });
+        follower.Set(new Following { Leader = leader });
 
         QueueMove(leader, roomA, roomB, DirectionKind.North);
         MakeSystem().Tick(_f.State);
@@ -106,7 +105,7 @@ public class FollowSystemTests : IDisposable
         var roomB = MakeLinkedRoom(roomA, DirectionKind.East);
         var master = MakePlayer(roomA, "Master");
         var charmie = MakeNpc(roomA, "Pet");
-        charmie.Add(new Charmed { Master = master });
+        charmie.Set(new Charmed { Master = master });
 
         QueueMove(master, roomA, roomB, DirectionKind.East);
         MakeSystem().Tick(_f.State);
@@ -139,8 +138,8 @@ public class FollowSystemTests : IDisposable
         var a = MakePlayer(roomA, "A");
         var b = MakePlayer(roomA, "B");
         var c = MakePlayer(roomA, "C");
-        b.Add(new Following { Leader = a });
-        c.Add(new Following { Leader = b });
+        b.Set(new Following { Leader = a });
+        c.Set(new Following { Leader = b });
 
         QueueMove(a, roomA, roomB, DirectionKind.South);
         MakeSystem().Tick(_f.State);
@@ -157,9 +156,9 @@ public class FollowSystemTests : IDisposable
         var a = MakePlayer(roomA, "A");
         var b = MakePlayer(roomA, "B");
         var c = MakePlayer(roomA, "C");
-        b.Add(new Following { Leader = a });
-        c.Add(new Following { Leader = b });
-        b.Add(new CombatState());
+        b.Set(new Following { Leader = a });
+        c.Set(new Following { Leader = b });
+        b.Set(new CombatState());
 
         QueueMove(a, roomA, roomB, DirectionKind.South);
         MakeSystem().Tick(_f.State);
@@ -179,7 +178,7 @@ public class FollowSystemTests : IDisposable
         var roomC = MakeLinkedRoom(roomA, DirectionKind.West);
         var leader = MakePlayer(roomA, "Leader");
         var follower = MakePlayer(roomA, "Follower");
-        follower.Add(new Following { Leader = leader });
+        follower.Set(new Following { Leader = leader });
 
         QueueMove(leader, roomA, roomB, DirectionKind.North);
         QueueMove(follower, roomA, roomC, DirectionKind.West);  // own move queued before system runs
@@ -201,8 +200,8 @@ public class FollowSystemTests : IDisposable
         var roomB = MakeLinkedRoom(roomA, DirectionKind.North);
         var leader = MakePlayer(roomA, "Leader");
         var follower = MakePlayer(roomA, "Follower");
-        follower.Add(new Following { Leader = leader });
-        follower.Add(new CombatState());
+        follower.Set(new Following { Leader = leader });
+        follower.Set(new CombatState());
 
         QueueMove(leader, roomA, roomB, DirectionKind.North);
         MakeSystem().Tick(_f.State);
@@ -218,8 +217,8 @@ public class FollowSystemTests : IDisposable
     //    var roomB = MakeLinkedRoom(roomA, DirectionKind.North);
     //    var leader = MakePlayer(roomA, "Leader");
     //    var follower = MakePlayer(roomA, "Follower");
-    //    follower.Add(new Following { Leader = leader });
-    //    follower.Add(new Stunned());
+    //    follower.Set(new Following { Leader = leader });
+    //    follower.Set(new Stunned());
 
     //    QueueMove(leader, roomA, roomB, DirectionKind.North);
     //    MakeSystem().Tick(_f.State);
@@ -238,7 +237,7 @@ public class FollowSystemTests : IDisposable
         var roomC = MakeRoom();
         var leader = MakePlayer(roomA, "Leader");
         var follower = MakePlayer(roomC, "Follower");
-        follower.Add(new Following { Leader = leader });
+        follower.Set(new Following { Leader = leader });
 
         QueueMove(leader, roomA, roomB, DirectionKind.North);
         MakeSystem().Tick(_f.State);
@@ -259,7 +258,7 @@ public class FollowSystemTests : IDisposable
 
         var leader = MakePlayer(roomA, "Leader");
         var follower = MakePlayer(roomA, "Follower");
-        follower.Add(new Following { Leader = leader });
+        follower.Set(new Following { Leader = leader });
 
         QueueMove(leader, roomA, roomB, DirectionKind.North);
         MakeSystem().Tick(_f.State);
@@ -277,7 +276,7 @@ public class FollowSystemTests : IDisposable
         var roomA = MakeRoom();
         var leader = MakePlayer(roomA, "Leader");
         var follower = MakePlayer(roomA, "Follower");
-        follower.Add(new Following { Leader = leader });
+        follower.Set(new Following { Leader = leader });
 
         MakeSystem().Tick(_f.State);
 
@@ -294,8 +293,8 @@ public class FollowSystemTests : IDisposable
         var roomB = MakeLinkedRoom(roomA, DirectionKind.North);
         var a = MakePlayer(roomA, "A");
         var b = MakePlayer(roomA, "B");
-        a.Add(new Following { Leader = b });
-        b.Add(new Following { Leader = a });
+        a.Set(new Following { Leader = b });
+        b.Set(new Following { Leader = a });
 
         QueueMove(a, roomA, roomB, DirectionKind.North);
 
@@ -315,9 +314,9 @@ public class FollowSystemTests : IDisposable
         var followerA = MakePlayer(roomA, "FollowerA");
         var followerB = MakePlayer(roomA, "FollowerB");
         var charmie = MakeNpc(roomA, "Pet");
-        followerA.Add(new Following { Leader = leader });
-        followerB.Add(new Following { Leader = leader });
-        charmie.Add(new Charmed { Master = leader });
+        followerA.Set(new Following { Leader = leader });
+        followerB.Set(new Following { Leader = leader });
+        charmie.Set(new Charmed { Master = leader });
 
         QueueMove(leader, roomA, roomB, DirectionKind.East);
         MakeSystem().Tick(_f.State);

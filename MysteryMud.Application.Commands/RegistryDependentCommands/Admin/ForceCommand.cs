@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
@@ -135,7 +134,7 @@ This is typically used for 'force all save'.",
             Force = true
         });
         if (!target.Value.Has<HasCommandTag>())
-            target.Value.Add<HasCommandTag>();
+            target.Value.Set<HasCommandTag>();
 
         // if forced commands must be executed before other
         //Array.Copy(buffer.Items, 0, buffer.Items, 1, buffer.Count);

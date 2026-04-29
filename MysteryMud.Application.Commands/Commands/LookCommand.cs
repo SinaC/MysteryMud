@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Core;
@@ -41,12 +40,12 @@ public sealed class LookCommand : ICommand
         // No argument: show room/container overview
         if (ctx.TargetCount == 0)
         {
-            ref var location = ref actor.TryGetRef<Location>(out var hasLocation);
-            if (!hasLocation)
+            if (!actor.Has<Location>())
             {
                 _msg.To(actor).Send("You are floating in the void. You see nothing.");
                 return;
             }
+            ref var location = ref actor.Get<Location>();
 
             // intent to look at room
             ref var lookRoomIntent = ref _intents.Look.Add();
@@ -95,9 +94,9 @@ public sealed class LookCommand : ICommand
         }
         
         // 3️) Try items in actor inventory
-        ref var inventory = ref actor.TryGetRef<Inventory>(out var hasInventory);
-        if (hasInventory)
+        if (actor.Has<Inventory>())
         {
+            ref var inventory = ref actor.Get<Inventory>();
             var inventoryItem = CommandEntityFinder.SelectSingleTarget(actor, ctx.Primary, inventory.Items);
             if (inventoryItem != null)
             {

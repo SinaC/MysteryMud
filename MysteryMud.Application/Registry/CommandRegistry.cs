@@ -1,5 +1,4 @@
-﻿using CommunityToolkit.HighPerformance;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core.Commands;
 using MysteryMud.Core.Extensions;

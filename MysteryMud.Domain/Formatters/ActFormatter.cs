@@ -1,8 +1,8 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Core.Extensions;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Items;
+using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.GameData.Enums;
 using System.Diagnostics;
@@ -117,14 +117,14 @@ public static class ActFormatter
     //      ability name
     private static void FormatActOneArgument(Entity target, StringBuilder sb, int argumentIndex, ReadOnlySpan<char> argumentFormat, object? argument)
     {
-        if (argument is Entity entity && !entity.IsAlive())
+        if (argument is Entity entity && !entity.IsAlive)
             return;
 
         if (argument is Entity character && character.Has<CharacterTag>())
         {
             var letter = argumentFormat.Length > 0 ? argumentFormat[0] : (argumentIndex == 0 ? 'N' : 'n'); // default to 'N' or 'n' if no format specified
-            ref var gender = ref character.TryGetRef<Gender>(out var hasGender);
-            var genderKind = hasGender ? gender.Value : GenderKind.Neutral;
+            var hasGender = character.Has<Gender>();
+            var genderKind = hasGender ? character.Get<Gender>().Value : GenderKind.Neutral;
             switch (letter)
             {
                 case 'p':
@@ -271,6 +271,12 @@ public static class ActFormatter
             return;
         }
 
+        if (argument is Entity room && room.Has<Room>())
+        {
+            sb.Append(room.DisplayName);
+            return;
+        }
+
         // TODO
         //if (argument is IExit exit)
         //{
@@ -289,13 +295,32 @@ public static class ActFormatter
             sb.Append("nothing");
             return;
         }
-
         if (argumentFormat.IsEmpty)
+        {
             sb.Append(argument);
-        else if (argument is IFormattable formattable)
+            return;
+        }
+        if (IsNumber(argument))
+        {
+            var letter = argumentFormat.Length > 0 ? argumentFormat[0] : 'n';
+            switch (letter)
+            {
+                case 'n':
+                    sb.Append(argument);
+                    break;
+                case 'x':
+                    if (IsIntegralGreaterThanOne(argument))
+                        sb.PluralizeLastWord();
+                    break;
+            }
+            return;
+        }
+        if (argument is IFormattable formattable)
+        {
             sb.Append(formattable.ToString(argumentFormat.ToString(), null));
-        else
-            sb.Append(argument);
+            return;
+        }
+        sb.Append(argument);
     }
 
     private static string RelativeDisplayName(this Entity entity, Entity observer)
@@ -340,5 +365,44 @@ public static class ActFormatter
             sb.Append("es");
         else
             sb.Append('s');
+    }
+
+    public static bool IsNumber(object value)
+    {
+        if (value == null) return false;
+
+        switch (Type.GetTypeCode(value.GetType()))
+        {
+            case TypeCode.Byte:
+            case TypeCode.SByte:
+            case TypeCode.UInt16:
+            case TypeCode.UInt32:
+            case TypeCode.UInt64:
+            case TypeCode.Int16:
+            case TypeCode.Int32:
+            case TypeCode.Int64:
+            case TypeCode.Decimal:
+            case TypeCode.Double:
+            case TypeCode.Single:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public static bool IsIntegralGreaterThanOne(object value)
+    {
+        return value switch
+        {
+            byte b => b > 1,
+            sbyte sb => sb > 1,
+            short s => s > 1,
+            ushort us => us > 1,
+            int i => i > 1,
+            uint ui => ui > 1,
+            long l => l > 1,
+            ulong ul => ul > 1,
+            _ => false
+        };
     }
 }

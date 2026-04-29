@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Application.Parsing;
 using MysteryMud.Application.Queries;
 using MysteryMud.Core;
@@ -38,8 +37,7 @@ public sealed class WearCommand : ICommand
 
         foreach (var item in CommandEntityFinder.SelectTargets(actor, ctx.Primary, inventory.Items))
         {
-            ref var equipable = ref item.TryGetRef<Equipable>(out var isEquipable);
-            if (!isEquipable)
+            if (!item.Has<Equipable>())
             {
                 _msg.To(actor).Send("You can't wear that.");
                 return;
@@ -47,6 +45,7 @@ public sealed class WearCommand : ICommand
 
             ref var equipment = ref actor.Get<Equipment>();
 
+            ref var equipable = ref item.Get<Equipable>();
             var slot = equipable.Slot;
 
             if (equipment.Slots.ContainsKey(slot))

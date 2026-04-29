@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.GameData.Enums;
@@ -13,22 +12,22 @@ public static class RoomFactory
 
     public static Entity CreateRoom(World world, int id, string name, string description)
     {
-        return world.Create(
-            new Room { Id = id },
-            new Name { Value = name },
-            new Description { Value = description },
-            new RoomGraph { Exits = new RoomExitValues() },
-            new RoomContents
-            {
-                Characters = [],
-                Items = []
-            },
-            new RoomNeighborhood
-            {
-                Distance1 = [],
-                Distance2 = []
-            }
-        );
+        var room = world.CreateEntity();
+        room.Set(new Room { Id = id });
+        room.Set(new Name { Value = name });
+        room.Set(new Description { Value = description });
+        room.Set(new RoomGraph { Exits = new RoomExitValues() });
+        room.Set(new RoomContents
+        {
+            Characters = [],
+            Items = []
+        });
+        room.Set(new RoomNeighborhood
+        {
+            Distance1 = [],
+            Distance2 = []
+        });
+        return room;
     }
 
     public static bool LinkRoom(World world, Entity sourceRoom, Entity targetRoom, DirectionKind direction)

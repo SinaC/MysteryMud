@@ -1,9 +1,6 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
-using MysteryMud.Domain.Components.Characters;
+﻿using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Groups;
-using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 using MysteryMud.Tests.Infrastructure;
 
@@ -12,11 +9,13 @@ namespace MysteryMud.Tests;
 public class GroupTests : IDisposable
 {
     private readonly MudTestFixture _f = new();
+    private readonly CombatService _combatService;
     private readonly GroupService _groupService;
 
     public GroupTests()
     {
-        _groupService = new GroupService(_f.GameMessage);
+        _combatService = new CombatService(_f.World);
+        _groupService = new GroupService(_f.World, _f.GameMessage);
     }
 
     public void Dispose() => _f.Dispose();
@@ -31,8 +30,8 @@ public class GroupTests : IDisposable
 
         _groupService.RemoveMember(_f.State, group, alice);
 
-        Assert.False(group.IsAlive());        // group entity destroyed
-        Assert.False(bob.Has<GroupMember>()); // last member freed
+        Assert.True(group.Has<DisbandedTag>()); // group entity flagged as disbanded
+        Assert.False(bob.Has<GroupMember>());   // last member freed
     }
 
     [Fact]
@@ -68,7 +67,7 @@ public class GroupTests : IDisposable
         _groupService.RemoveMember(_f.State, group, alice);
 
         Assert.Equal(bob, group.Get<GroupInstance>().Leader); // first remaining member promoted
-        Assert.True(group.IsAlive());                 // group survives with 2 members
+        Assert.True(group.IsAlive);                 // group survives with 2 members
     }
 
     [Fact]
@@ -83,7 +82,7 @@ public class GroupTests : IDisposable
 
         Assert.False(alice.Has<GroupMember>());
         Assert.False(bob.Has<GroupMember>());
-        Assert.False(group.IsAlive());
+        Assert.True(group.Has<DisbandedTag>());
     }
 
     [Fact]
@@ -96,12 +95,12 @@ public class GroupTests : IDisposable
         var bob = _f.Player("Bob").WithLocation(room).InGroup(group).Build();
         _f.AddGroupMembers(group, alice, bob);
 
-        CombatHelpers.AddCombatClaim(npc, alice, 1);
+        _combatService.AddCombatClaim(npc, alice, 1);
         _groupService.Disband(_f.State, group);
 
         var claim = npc.Get<CombatInitiator>().Claims.Single();
-        Assert.Equal(Entity.Null, claim.ClaimantGroup); // cleared by disband
-        Assert.Equal(alice, claim.Claimant);            // personal claim preserved
+        Assert.Equal(default, claim.ClaimantGroup); // cleared by disband
+        Assert.Equal(alice, claim.Claimant);        // personal claim preserved
         Assert.False(claim.Forfeited);
     }
 }

@@ -1,5 +1,4 @@
-﻿using Arch.Core;
-using Arch.Core.Extensions;
+﻿using DefaultEcs;
 using MysteryMud.Core;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Players;
@@ -10,10 +9,16 @@ namespace MysteryMud.Domain.Services;
 public class GroupService : IGroupService
 {
     private readonly IGameMessageService _msg;
+    private readonly EntitySet _combatInitiatorSet;
 
-    public GroupService(IGameMessageService msg)
+    public GroupService(World world, IGameMessageService msg)
     {
         _msg = msg;
+
+        _combatInitiatorSet = world
+            .GetEntities()
+            .With<CombatInitiator>()
+            .AsSet();
     }
 
     public void AddMember(GameState state, Entity group, Entity member)
@@ -21,7 +26,7 @@ public class GroupService : IGroupService
         ref var groupInstance = ref group.Get<GroupInstance>();
 
         groupInstance.Members.Add(member);
-        member.Add(new GroupMember
+        member.Set(new GroupMember
         {
             Group = group,
             JoinedAtTick = state.CurrentTick
@@ -87,24 +92,25 @@ public class GroupService : IGroupService
         }
 
         groupInstance.Members.Clear();
-        state.World.Destroy(group); // group entity is gone
+        // 
+        group.Set<DisbandedTag>();
     }
 
 
     private void ClearGroupFromClaims(GameState state, Entity member, Entity group)
     {
-        var query = new QueryDescription().WithAll<CombatInitiator>();
-        state.World.Query(query, (ref CombatInitiator initiator) =>
+        foreach(var entity in _combatInitiatorSet.GetEntities())
         {
+            ref var initiator = ref entity.Get<CombatInitiator>();
             for (int i = 0; i < initiator.Claims.Count; i++)
             {
                 if (initiator.Claims[i].Claimant == member
                     && initiator.Claims[i].ClaimantGroup == group)
                 {
-                    initiator.Claims[i] = initiator.Claims[i] with { ClaimantGroup = Entity.Null };
+                    initiator.Claims[i] = initiator.Claims[i] with { ClaimantGroup = default };
                 }
             }
-        });
+        }
     }
 
     // TODO: in a future version we could store claims on player
