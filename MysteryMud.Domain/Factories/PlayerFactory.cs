@@ -72,10 +72,13 @@ public static class PlayerFactory
                     EffectsByTag = new List<Entity>?[32]
                 },
             });
+        player.Set(new BaseIRV { Immunities = 0, Resistances = 0, Vulnerabilities = 0 });
+        player.Set(new EffectiveIRV { Immunities = 0, Resistances = 0, Vulnerabilities = 0 });
         player.Set(new Location { Room = room });
         player.Set(new Position { Value = PositionKind.Standing });
         player.Set(new AutoBehaviour { Flags = AutoFlags.Loot | AutoFlags.Sacrifice | AutoFlags.Assist });
         player.Set(new DirtyStats()); // dirty by default
+        player.Set(new DirtyIRV()); // dirty by default
         player.Set(new Health { Current = 10, Max = 100 });
         player.Set(new BaseHealth { Max = 100 });
         player.Set(new HealthRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });
@@ -146,10 +149,13 @@ public static class PlayerFactory
                 EffectsByTag = new List<Entity>?[32]
             },
         });
+        player.Set(new BaseIRV { Immunities = 0, Resistances = 0, Vulnerabilities = 0 });
+        player.Set(new EffectiveIRV { Immunities = 0, Resistances = 0, Vulnerabilities = 0 });
         player.Set(new Location { Room = room });
         player.Set(new Position { Value = PositionKind.Standing });
         player.Set(new AutoBehaviour { Flags = AutoFlags.Loot | AutoFlags.Sacrifice | AutoFlags.Assist });
         player.Set(new DirtyStats()); // dirty by default
+        player.Set(new DirtyIRV()); // dirty by default
         player.Set(new Health { Current = 10000, Max = 10000 });
         player.Set(new BaseHealth { Max = 10000 });
         player.Set(new HealthRegen { BaseAmountPerSecond = 100, CurrentAmountPerSecond = 100 });
@@ -220,11 +226,13 @@ public static class PlayerFactory
                 EffectsByTag = new List<Entity>?[32]
             },
         });
+        player.Set(new BaseIRV { Immunities = 0, Resistances = 0, Vulnerabilities = 0 });
+        player.Set(new EffectiveIRV { Immunities = 0, Resistances = 0, Vulnerabilities = 0 });
         player.Set(new Location { Room = RoomFactory.StartingRoomEntity });
         player.Set(new Position { Value = PositionKind.Standing });
         player.Set(new AutoBehaviour { Flags = AutoFlags.Loot | AutoFlags.Sacrifice | AutoFlags.Assist });
         player.Set(new DirtyStats()); // ensure stats are recomputed
-
+        player.Set(new DirtyIRV()); // dirty by default
         player.Set(new Health { Current = 10000, Max = 10000 });
         player.Set(new BaseHealth { Max = 10000 });
         player.Set(new HealthRegen { BaseAmountPerSecond = 1, CurrentAmountPerSecond = 1 });

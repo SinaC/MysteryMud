@@ -11,7 +11,7 @@ internal record EffectDefinitionData
     string Stacking,
     int MaxStacks,
     string DurationFormula,
-    int TickRate, // in ticks (0: pure duration effect)
+    decimal TickRate, // in seconds (0: pure duration effect)
     bool TickOnApply, // true: tick immediately
     ContextualizedMessageData ApplyMessage,
     ContextualizedMessageData WearOffMessage,

@@ -16,7 +16,7 @@ public class EffectDefinition
     public StackingRule Stacking { get; init; }
     public int MaxStacks { get; init; } = 1;
     public bool TickOnApply { get; init; } = false; // if true, tick actions are triggered immediately
-    public int TickRate { get; init; } = 0; // in ticks (0: pure duration effect if DurationFunc is not null)
+    public long TickRate { get; init; } = 0; // in ticks (0: pure duration effect if DurationFunc is not null)
 
     //
     public ContextualizedMessage? ApplyMessage { get; init; } = default!;

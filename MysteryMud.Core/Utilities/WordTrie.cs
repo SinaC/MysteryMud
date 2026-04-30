@@ -51,61 +51,129 @@ public class WordTrie<T>
         node.Value = value;
     }
 
-    // TODO: return a result: found, ambiguous, not found
+    //// TODO: return a result: found, ambiguous, not found
+    //public StartsWithResult StartsWith(ReadOnlySpan<char> input, out T? value)
+    //{
+    //    var node = _root;
+    //    int index = 0;
+
+    //    while (TryReadNextToken(input, ref index, out var token))
+    //    {
+    //        var match = FindMatch(node, token, out bool ambiguous);
+
+    //        if (ambiguous)
+    //        {
+    //            value = default;
+    //            return StartsWithResult.Ambiguous;
+    //        }
+    //        if (match == null)
+    //        {
+    //            value = default;
+    //            return StartsWithResult.NotFound;
+    //        }
+
+    //        node = match;
+    //    }
+
+    //    value = node.FirstDescendantValue ?? node.Value;
+    //    return value != null
+    //        ? StartsWithResult.Found
+    //        : StartsWithResult.NotFound;
+    //}
+
+    //// match token against children using prefix
+    //private static WordTrieNode? FindMatch(WordTrieNode node, ReadOnlySpan<char> token, out bool ambiguous)
+    //{
+    //    ambiguous = false;
+
+    //    if (token.IsEmpty)
+    //        return null;
+
+    //    char key = ToLowerAscii(token[0]);
+
+    //    if (!node.Groups.TryGetValue(key, out var group))
+    //        return null;
+
+    //    WordTrieNode? found = null;
+
+    //    foreach (var (word, child) in group)
+    //    {
+    //        if (!StartsWithIgnoreCase(word, token))
+    //            continue;
+
+    //        if (found != null)
+    //        {
+    //            ambiguous = true;
+    //            return null;
+    //        }
+
+    //        found = child;
+    //    }
+
+    //    return found;
+    //}
+
     public StartsWithResult StartsWith(ReadOnlySpan<char> input, out T? value)
     {
-        var node = _root;
+        var candidates = new List<WordTrieNode> { _root };
         int index = 0;
 
         while (TryReadNextToken(input, ref index, out var token))
         {
-            var match = FindMatch(node, token, out bool ambiguous);
+            var next = new List<WordTrieNode>();
 
-            if (ambiguous || match == null)
+            foreach (var candidate in candidates)
+                CollectMatches(candidate, token, next);
+
+            if (next.Count == 0)
             {
                 value = default;
-                return StartsWithResult.Ambiguous;
+                return StartsWithResult.NotFound;
             }
 
-            node = match;
+            candidates = next;
         }
 
-        value = node.FirstDescendantValue ?? node.Value;
-        return value != null
-            ? StartsWithResult.Found
-            : StartsWithResult.NotFound;
+        // Collect distinct resolved values from surviving candidates
+        T? found = default;
+        bool hasValue = false;
+        bool ambiguous = false;
+
+        foreach (var candidate in candidates)
+        {
+            var v = candidate.FirstDescendantValue ?? candidate.Value;
+            if (v == null) continue;
+
+            if (!hasValue)
+            {
+                found = v;
+                hasValue = true;
+            }
+            else if (!EqualityComparer<T>.Default.Equals(found, v))
+            {
+                ambiguous = true;
+                break;
+            }
+        }
+
+        if (ambiguous) { value = default; return StartsWithResult.Ambiguous; }
+        if (hasValue) { value = found; return StartsWithResult.Found; }
+        value = default; return StartsWithResult.NotFound;
     }
 
-    // match token against children using prefix
-    private static WordTrieNode? FindMatch(WordTrieNode node, ReadOnlySpan<char> token, out bool ambiguous)
+    // No ambiguousInGroup — just collect all matching children
+    private static void CollectMatches(WordTrieNode node, ReadOnlySpan<char> token, List<WordTrieNode> matches)
     {
-        ambiguous = false;
-
-        if (token.IsEmpty)
-            return null;
+        if (token.IsEmpty) return;
 
         char key = ToLowerAscii(token[0]);
-
-        if (!node.Groups.TryGetValue(key, out var group))
-            return null;
-
-        WordTrieNode? found = null;
+        if (!node.Groups.TryGetValue(key, out var group)) return;
 
         foreach (var (word, child) in group)
         {
-            if (!StartsWithIgnoreCase(word, token))
-                continue;
-
-            if (found != null)
-            {
-                ambiguous = true;
-                return null;
-            }
-
-            found = child;
+            if (StartsWithIgnoreCase(word, token))
+                matches.Add(child);
         }
-
-        return found;
     }
 
     // helpers

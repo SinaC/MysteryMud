@@ -134,30 +134,33 @@ public class ActionOrchestrator
     private void ResolveEffect(GameState state, ref ActionIntent actionIntent)
     {
         ref var effectData = ref actionIntent.Effect;
+        var source = effectData.Source;
+        var target = effectData.Target;
+        var effectId = effectData.EffectId;
 
-        if (!CharacterHelpers.IsAlive(effectData.Source, effectData.Target))
+        if (!CharacterHelpers.IsAlive(source, target))
             return;
 
-        if (!_effectRegistry.TryGetRuntime(effectData.EffectId, out var effectRuntime) || effectRuntime == null)
+        if (!_effectRegistry.TryGetRuntime(effectId, out var effectRuntime) || effectRuntime == null)
         {
-            _logger.LogError("Effect id {effectId} not found in the effect registry", effectData.EffectId);
+            _logger.LogError("Effect id {effectId} not found in the effect registry", effectId);
             return;
         }
         _effectApplicationManager.CreateEffect(state, effectRuntime, ref effectData);
 
         // AGGRESSION: emit after CreateEffect, effect was attempted on a live target
-        if (effectData.IsHarmful)
+        if (effectData.IsHarmful && source != target)
         {
             ref var aggrEvt = ref _aggressed.Add();
-            aggrEvt.Source = effectData.Source;
-            aggrEvt.Target = effectData.Target;
+            aggrEvt.Source = source;
+            aggrEvt.Target = target;
         }
 
         // attack resolved event
         ref var effectResolvedEvt = ref _effectResolved.Add();
-        effectResolvedEvt.Source = effectData.Source;
-        effectResolvedEvt.Target = effectData.Target;
-        effectResolvedEvt.EffectId = effectData.EffectId;
+        effectResolvedEvt.Source = source;
+        effectResolvedEvt.Target = target;
+        effectResolvedEvt.EffectId = effectId;
     }
 
     private void GrantReward(ref KillRewardEvent killRewardEvt)

@@ -28,6 +28,7 @@ using MysteryMud.Domain.Action;
 using MysteryMud.Domain.Action.Attack;
 using MysteryMud.Domain.Action.Attack.Factories;
 using MysteryMud.Domain.Action.Attack.Resolvers;
+using MysteryMud.Domain.Action.Calculators;
 using MysteryMud.Domain.Action.Damage;
 using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Action.Effect.Factories;
@@ -38,6 +39,7 @@ using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
+using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Factories;
 using MysteryMud.Domain.Persistence;
 using MysteryMud.Domain.Services;
@@ -105,6 +107,8 @@ troll.Get<Level>().Value = 25;
 troll.Get<Health>().Current = 1000;
 troll.Get<Health>().Max = 1000;
 troll.Get<BaseHealth>().Max = 1000;
+ref var trollBaseIRV = ref troll.Get<BaseIRV>();
+trollBaseIRV.Immunities = trollBaseIRV.Immunities.Set(DamageKind.Poison);
 ref var trollEffectiveStats = ref troll.Get<EffectiveStats>();
 trollEffectiveStats.Dodge = 0; // for testing, make sure all hits land so we can see the counterattack in action
 trollEffectiveStats.Parry = 0; // for testing, make sure all hits land so we can see the counterattack in action
@@ -140,19 +144,11 @@ collar.Set(new Equipable { Slot = EquipmentSlotKind.Amulet });
 RoomFactory.StartingRoomEntity = market;
 RoomFactory.RespawnRoomEntity = temple;
 
-//var compiler = new FormulaCompiler();
-////var formula = "range(1, range( 5, 10)) + 5 * (caster.level + target.level)";
-////var formula = "max(1, 2, range(1,5), caster.level, if(caster.strength>caster.level && caster.level != target.level, caster.strength, caster.level))";
-//var formula = "max(1, 2, range(1,5), caster.level, if(caster.level >= target.level && sum(1,2,3) < 10 || dice(2,6) == 12, -caster.strength, caster.level))";
-////caster.level > target.level && sum(1,2,3) < 10 || dice(2,6) == 12
-//var func = compiler.Compile(formula);
-//int result = func(null!, troll, player); // result is random between 6 and 55
-//Console.WriteLine(result);
-
 var basePath = AppContext.BaseDirectory;
 
 var random = new SeededRandom();
 var formulaCompiler = new EffectFormulaCompiler(random);
+var resistanceService = new ResistanceService(logger);
 
 // load effect definitions
 var effectLoader = new JsonEffectLoader(formulaCompiler);
@@ -173,7 +169,7 @@ abilityOutcomeResolverRegistry.Register("berserk", new BerserkOutcomeResolver(ra
 var abilityLoader = new JsonAbilityLoader();
 var abilityDefinitions = abilityLoader.Load(Path.Combine(basePath, gamePaths.AbilitiesJson));
 var skillCommandDefinitions = abilityDefinitions.Where(x => x.Kind == AbilityKind.Skill && x.Command is not null).Select(x => x.Command!.Value).ToArray();
-var validationRuleFactory = new ValidationRuleFactory(random);
+var validationRuleFactory = new ValidationRuleFactory(resistanceService, random);
 var abilityRuntimeFactory = new AbilityRuntimeFactory(validationRuleFactory);
 var abilityRegistry = new AbilityRegistry(effectRegistry, abilityOutcomeResolverRegistry, abilityRuntimeFactory);
 abilityRegistry.Register(abilityDefinitions);
@@ -191,10 +187,6 @@ var socialDefinitions = socialLoader.Load(Path.Combine(basePath, gamePaths.Socia
 // load command definitions
 var commandLoader = new JsonCommandLoader();
 var commandDefinitions = commandLoader.Load(Path.Combine(basePath, gamePaths.CommandsJson));
-
-// run demo
-//Demo.Run(logger, world, commandDispatcher);
-//Demo2.Run(logger, world, commandDispatcher, effectRegistry);
 
 var dbPath = Path.Combine(basePath, gamePaths.Db);
 var connectionString = $"Data Source={dbPath};Pooling=True;";
@@ -335,6 +327,10 @@ services.AddSingleton<IFollowService, FollowService>();
 services.AddSingleton<IGroupService, GroupService>();
 services.AddSingleton<ICastMessageService, CastMessageService>();
 services.AddSingleton<ICombatService, CombatService>();
+services.AddSingleton<IResistanceService>(resistanceService);
+services.AddSingleton<IDamageCalculator, DamageCalculator>();
+services.AddSingleton<IHealCalculator, HealCalculator>();
+services.AddSingleton<IMoveCalculator, MoveCalculator>();
 
 // Command dispatcher
 services.AddSingleton<ICommandDispatcher, CommandDispatcher>();
@@ -350,6 +346,7 @@ services.AddSingleton<FleeSystem>();
 services.AddSingleton<MovementSystem>();
 services.AddSingleton<FollowSystem>();
 services.AddSingleton<ItemInteractionSystem>();
+services.AddSingleton<EffectiveIRVSystem>();
 services.AddSingleton<EffectiveCharacterStatsSystem>();
 services.AddSingleton(sp => new EffectiveMaxResourceSystem<BaseHealth, Health, DirtyHealth, HealthModifier>(world, x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value));
 services.AddSingleton(sp => new EffectiveMaxResourceSystem<BaseMove, Move, DirtyMove, MoveModifier>(world, x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value));

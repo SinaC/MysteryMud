@@ -94,6 +94,14 @@ public class EffectDisplayService : IEffectDisplayService
                     _msg.To(viewer).Send($"  - {modifier.Modifier} {modifier.Value} {modifier.Stat}");
             }
 
+            // character IRV modifiers
+            if (effect.Has<CharacterIRVModifiers>())
+            {
+                ref var characterIRVModifiers = ref effect.Get<CharacterIRVModifiers>();
+                foreach (var modifier in characterIRVModifiers.Values)
+                    _msg.To(viewer).Send($"  - {modifier.Modifier} {modifier.Location} {modifier.DamageKinds.ToDamageKindString()}");
+            }
+
             // resource modifiers
             DisplayResourceModifier<HealthModifier>(viewer, effect, "Health", x => x.Modifier, x => x.Value);
             DisplayResourceModifier<MoveModifier>(viewer, effect, "Move", x => x.Modifier, x => x.Value);
@@ -108,7 +116,7 @@ public class EffectDisplayService : IEffectDisplayService
             DisplayResourceRegenModifier<EnergyRegenModifier>(viewer, effect, "Energy", x => x.Modifier, x => x.Value);
             DisplayResourceRegenModifier<RageDecayModifier>(viewer, effect, "Rage", x => x.Modifier, x => x.Value);
 
-            // TODO: expire ?
+            // TODO: expire actions ?
         }
     }
 

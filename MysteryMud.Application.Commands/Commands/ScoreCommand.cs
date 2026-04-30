@@ -40,6 +40,7 @@ public class ScoreCommand : ICommand
         {
             _msg.To(actor).Send($"{stat}: {effectiveStats.Values[stat]}/{baseStats.Values[stat]}");
         }
+        DisplayIRV(actor);
         if (actor.Has<CombatState>())
         {
             ref var combatState = ref actor.Get<CombatState>();
@@ -89,5 +90,13 @@ public class ScoreCommand : ICommand
             var (current, max) = getCurrentMaxFunc(resource);
             _msg.To(actor).Send($"{kind}: {current}/{max} CanUse: {uses}");
         }
+    }
+
+    private void DisplayIRV(Entity actor)
+    {
+        if (!actor.Has<EffectiveIRV>())
+            return;
+        ref var effectiveIRV = ref actor.Get<EffectiveIRV>();
+        _msg.To(actor).Send($"Immunities: {effectiveIRV.Immunities.ToDamageKindString()} Resistances: {effectiveIRV.Resistances.ToDamageKindString()} Vulnerabilities: {effectiveIRV.Vulnerabilities.ToDamageKindString()}");
     }
 }

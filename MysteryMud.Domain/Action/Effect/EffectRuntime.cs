@@ -17,7 +17,7 @@ public class EffectRuntime
     public StackingRule Stacking = StackingRule.None;
     public int MaxStacks = 1;
     public bool TickOnApply = false; // if true, tick actions are triggered immediately
-    public int TickRate = 0; // in ticks (0: pure duration effect if DurationFunc is not null)
+    public long TickRate = 0; // in ticks (0: pure duration effect if DurationFunc is not null)
 
     // effect delegate
     public Action<EffectExecutionContext>[] OnApply = [];

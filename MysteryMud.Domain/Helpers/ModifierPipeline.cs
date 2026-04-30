@@ -64,7 +64,7 @@ public static class ModifierPipeline
 
     // Accumulates modifiers for ALL stats in one pass into pre-allocated span buffers.
     // Avoids the O(stats × modifiers) cost of calling CalculateModifiers per stat.
-    public static void AccumulateModifiers<TModifiers, TModifier>(
+    public static void AccumulateStatModifiers<TModifiers, TModifier>(
         IEnumerable<Entity> effects,
         Func<TModifier, CharacterStatKind> getStatFunc,
         Func<TModifiers, IEnumerable<TModifier>> getModifiersFunc,
@@ -91,17 +91,17 @@ public static class ModifierPipeline
 
             foreach (var modifier in getModifiersFunc(modifiers))
             {
-                var i = (int)getStatFunc(modifier);
+                var statIndex = (int)getStatFunc(modifier);
                 var value = getModifierValueFunc(modifier) * stackCount;
 
                 switch (getModifierKindFunc(modifier))
                 {
-                    case ModifierKind.Flat: flat[i] += value; break;
-                    case ModifierKind.AddPercent: percent[i] += value; break;
-                    case ModifierKind.Multiply: multiply[i] *= value; break;
+                    case ModifierKind.Flat: flat[statIndex] += value; break;
+                    case ModifierKind.AddPercent: percent[statIndex] += value; break;
+                    case ModifierKind.Multiply: multiply[statIndex] *= value; break;
                     case ModifierKind.Override:
-                        overriding[i] = value;
-                        hasOverriding[i] = true;
+                        overriding[statIndex] = value;
+                        hasOverriding[statIndex] = true;
                         break;
                 }
             }

@@ -16,6 +16,7 @@ internal class EffectActionDataConverter : JsonConverter<EffectActionData>
         return type switch
         {
             "StatModifier" => JsonSerializer.Deserialize<CharacterStatModifierData>(root.GetRawText(), options), // TODO: depends on character or item
+            "IRVModifier" => JsonSerializer.Deserialize<CharacterIRVModifierData>(root.GetRawText(), options),
             "ResourceModifier" => JsonSerializer.Deserialize<ResourceModifierData>(root.GetRawText(), options),
             "RegenModifier" => JsonSerializer.Deserialize<RegenModifierData>(root.GetRawText(), options),
             "PeriodicHeal" => JsonSerializer.Deserialize<PeriodicHealData>(root.GetRawText(), options),

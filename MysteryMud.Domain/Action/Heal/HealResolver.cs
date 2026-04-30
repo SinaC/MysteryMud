@@ -13,12 +13,14 @@ public class HealResolver : IHealResolver
 {
     private readonly IAggroResolver _aggroResolver;
     private readonly IGameMessageService _msg;
+    private readonly IHealCalculator _healCalculator;
     private readonly IEventBuffer<HealedEvent> _healed;
 
-    public HealResolver(IAggroResolver aggroResolver, IGameMessageService msg, IEventBuffer<HealedEvent> healed)
+    public HealResolver(IAggroResolver aggroResolver, IGameMessageService msg, IHealCalculator healCalculator, IEventBuffer<HealedEvent> healed)
     {
         _aggroResolver = aggroResolver;
         _msg = msg;
+        _healCalculator = healCalculator;
         _healed = healed;
     }
 
@@ -42,7 +44,7 @@ public class HealResolver : IHealResolver
             };
 
         // apply heal modifiers
-        decimal modifiedHeal = HealCalculator.ModifyHeal(target, amount, source);
+        decimal modifiedHeal = _healCalculator.ModifyHeal(target, amount, source);
         // cap to max health-current
         decimal maxPossibleHeal = health.Max - health.Current;
         decimal finalHeal = Math.Min(modifiedHeal, maxPossibleHeal);

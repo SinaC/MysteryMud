@@ -21,32 +21,33 @@ Tick pipeline
 10. MovementSystem                  // Process MoveIntents -> emits auto-look PostUpdate (Mode=PostUpdate)
 11. AutoAssistSystem (pass 2)       // Catches room-entry assists, consumes RoomEnteredEvent
 12. ItemInteractionSystem           // Process get/drop/put/give/... intents
-13. EffectiveStatSystem             // Recalculate stats from base stats and stat modifiers (only if DirtyStats tag is set)
-14. EffectiveMaxResourcesSystem     // Recalculate max health/mana/energy/rage from base max health/mana/energy/rage and resource modifiers (only if DirtyHealth/mana/energy/rage tag is set) (4 separate systems)
-15. EffectiveRespirceRegenSystem    // Recalculate current health/mana/energy/rage regen from base health/mana/energy/rage regen and resource regen modifiers (only if DirtyHealthRegen/mana/energy/rage tag is set) (4 separate systems)
-16. Scheduler                       // Generate triggered scheduled event (tick or expired)
-17. TimedEffectSystem               // Resolve triggered scheduled event and generates scheduleIntent, effectExpiredEvent (to inform), effectTickedEvent (to inform)
-18. ResourceRegenSystem             // Regen health/mana/energy decay rage (4 separate systems)
-19. ThreatDecaySystem               // Decay threat
-20. AbilityValidationSystem         // Process UseAbilityIntents -> set casting (if delayed casting) or generate ExecuteAbilityIntent (instant cast)
-21. AbilityCastingSystem            // Process delayed casting, once cast is effective generate ExecuteAbilityIntent + abilityUsedEvent
-22. AbilityExecutionSystem          // Process ExecuteAbilityIntents -> generate ActionIntent(kind:effect) for each effects in ability + abilityExecutedEvent
-23. NPCTargetSystem                 // Select highest threat targets
-24. GroupTacticsSystem              // Protect, Assist targeting, Group target coordination
-25. AutoAttackSystem                // Generate ActionIntent(kind:attack) for every entity in combat (CombatState component set)
-26. ActionOrchestrator              // Process ActionIntents. kind:attack -> resolve hit, perform damage, check weapon proc (effect), check reaction (counter attack)  kind: effect -> resolve effect
-27. AggressionSystem                // Process AggressedEvent -> set CombatState+NewCombatantTag
-28. AutoAssistSystem (pass 3)       // Catches mid-round combat triggers (checking NewCombatant tag)
-29. DeathSystem                     // Flag dead entities
-30. RespawnSystem                   // Auto-resurrect players
-31. LootSystem                      // Process CorpseLootIntents
-32. AutoSacrificeSystem             // Process AutoSacrificeIntents
-33. LookSystem(PostUpdate)          // Process LookIntents with Mode=PostUpdate -> reflects final world state after all updates
-34. ScheduleSystem                  // Process scheduleIntents (which can be generated from IA, TimedEffectSytem and ActionOrchestrator)
-35. PersistenceSystem               // Persist entities flags as to persist using DirtyTracker
-36. DisconnectSystem                // calls Disconnect(entity) → socket closes + GameServer.HandleDisconnected fires async + sets DisconnectedTag
-37. CleanupSystem                   // Remove destroyed items / dead NPCs / disconnected players
-38. Output -> MessageBus            // Send all messages to players
+13. EffectiveIRVSystem              // Recalculate immunities/resistances/vulnerabilities from base and modifiers (only if DirtyIRV tag is set)
+14. EffectiveStatSystem             // Recalculate stats from base stats and stat modifiers (only if DirtyStats tag is set)
+15. EffectiveMaxResourcesSystem     // Recalculate max health/mana/energy/rage from base max health/mana/energy/rage and resource modifiers (only if DirtyHealth/mana/energy/rage tag is set) (4 separate systems)
+16. EffectiveResourceRegenSystem    // Recalculate current health/mana/energy/rage regen from base health/mana/energy/rage regen and resource regen modifiers (only if DirtyHealthRegen/mana/energy/rage tag is set) (4 separate systems)
+17. Scheduler                       // Generate triggered scheduled event (tick or expired)
+18. TimedEffectSystem               // Resolve triggered scheduled event and generates scheduleIntent, effectExpiredEvent (to inform), effectTickedEvent (to inform)
+19. ResourceRegenSystem             // Regen health/mana/energy decay rage (4 separate systems)
+20. ThreatDecaySystem               // Decay threat
+21. AbilityValidationSystem         // Process UseAbilityIntents -> set casting (if delayed casting) or generate ExecuteAbilityIntent (instant cast)
+22. AbilityCastingSystem            // Process delayed casting, once cast is effective generate ExecuteAbilityIntent + abilityUsedEvent
+23. AbilityExecutionSystem          // Process ExecuteAbilityIntents -> generate ActionIntent(kind:effect) for each effects in ability + abilityExecutedEvent
+24. NPCTargetSystem                 // Select highest threat targets
+25. GroupTacticsSystem              // Protect, Assist targeting, Group target coordination
+26. AutoAttackSystem                // Generate ActionIntent(kind:attack) for every entity in combat (CombatState component set)
+27. ActionOrchestrator              // Process ActionIntents. kind:attack -> resolve hit, perform damage, check weapon proc (effect), check reaction (counter attack)  kind: effect -> resolve effect
+28. AggressionSystem                // Process AggressedEvent -> set CombatState+NewCombatantTag
+29. AutoAssistSystem (pass 3)       // Catches mid-round combat triggers (checking NewCombatant tag)
+30. DeathSystem                     // Flag dead entities
+31. RespawnSystem                   // Auto-resurrect players
+32. LootSystem                      // Process CorpseLootIntents
+33. AutoSacrificeSystem             // Process AutoSacrificeIntents
+34. LookSystem(PostUpdate)          // Process LookIntents with Mode=PostUpdate -> reflects final world state after all updates
+35. ScheduleSystem                  // Process scheduleIntents (which can be generated from IA, TimedEffectSytem and ActionOrchestrator)
+36. PersistenceSystem               // Persist entities flags as to persist using DirtyTracker
+37. DisconnectSystem                // calls Disconnect(entity) → socket closes + GameServer.HandleDisconnected fires async + sets DisconnectedTag
+38. CleanupSystem                   // Remove destroyed items / dead NPCs / disconnected players
+39. Output -> MessageBus            // Send all messages to players
 
 ActionOrchestrator (step 21) details
    loop on attack/effect intents

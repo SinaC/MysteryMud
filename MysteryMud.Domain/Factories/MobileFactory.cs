@@ -60,10 +60,13 @@ public static class MobileFactory
                 EffectsByTag = new List<Entity>?[32]
             },
         });
+        mob.Set(new BaseIRV { Immunities = 0, Resistances = 0, Vulnerabilities = 0 });
+        mob.Set(new EffectiveIRV { Immunities = 0, Resistances = 0, Vulnerabilities = 0 });
         mob.Set(new Location { Room = room });
         mob.Set(new Position { Value = PositionKind.Standing });
         mob.Set(new ThreatTable { Threat = [] });
         mob.Set(new DirtyStats()); // dirty by default
+        mob.Set(new DirtyIRV()); // dirty by default
 
         room.Get<RoomContents>().Characters.Add(mob);
 

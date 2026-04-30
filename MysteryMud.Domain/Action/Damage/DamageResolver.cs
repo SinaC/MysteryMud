@@ -17,15 +17,17 @@ public class DamageResolver : IDamageResolver
     private readonly IAggroResolver _aggroResolver;
     private readonly IGameMessageService _msg;
     private readonly ICombatService _combatService;
+    private readonly IDamageCalculator _damageCalculator;
     private readonly IEventBuffer<DamagedEvent> _damaged;
     private readonly IEventBuffer<DeathEvent> _deaths; // long-term events which will be used by other Systems outside ActionOrchestrator
     private readonly IEventBuffer<KillRewardEvent> _killRewardEvent; // short-term events only used inside ActionOrchestrator
 
-    public DamageResolver(IAggroResolver aggroResolver, IGameMessageService msg, ICombatService combatService, IEventBuffer<DamagedEvent> damaged, IEventBuffer<DeathEvent> deaths, IEventBuffer<KillRewardEvent> killRewardEvent)
+    public DamageResolver(IAggroResolver aggroResolver, IGameMessageService msg, ICombatService combatService, IDamageCalculator damageCalculator, IEventBuffer<DamagedEvent> damaged, IEventBuffer<DeathEvent> deaths, IEventBuffer<KillRewardEvent> killRewardEvent)
     {
         _aggroResolver = aggroResolver;
         _msg = msg;
         _combatService = combatService;
+        _damageCalculator = damageCalculator;
         _damaged = damaged;
         _deaths = deaths;
         _killRewardEvent = killRewardEvent;
@@ -45,7 +47,7 @@ public class DamageResolver : IDamageResolver
         ref var health = ref target.Get<Health>();
 
         // apply damage type modifiers, resistances, vulnerabilities, etc.
-        var modifiedDamage = DamageCalculator.ModifyDamage(target, amount, kind, source);
+        var modifiedDamage = _damageCalculator.ModifyDamage(target, amount, kind, source);
         // TODO: capping
         var finalDamage = modifiedDamage;
         // damage to apply, apply rounding

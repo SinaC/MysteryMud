@@ -1,9 +1,11 @@
 ﻿using MysteryMud.Core.Extensions;
 using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Action.Effect.Definitions;
+using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
+using MysteryMud.GameData.Time;
 using MysteryMud.Infrastructure.Persistence.Converters;
 using MysteryMud.Infrastructure.Persistence.Dto;
 using MysteryMud.Infrastructure.Persistence.Dto.Actions;
@@ -52,6 +54,7 @@ public class JsonEffectLoader
 
         var isHarmful = MapIsHarmful(data);
         var tag = MapTag(data, actions);
+        var tickRate = TimeConversion.SecondsToTicks(data.TickRate);
 
         return new EffectDefinition
         {
@@ -66,7 +69,7 @@ public class JsonEffectLoader
             Stacking = EnumParser.Parse(data.Stacking, StackingRule.None),
             MaxStacks = data.MaxStacks,
             TickOnApply = data.TickOnApply,
-            TickRate = data.TickRate,
+            TickRate = tickRate,
 
             WearOffMessage = MapContextualizedMessage(data.WearOffMessage),
             ApplyMessage = MapContextualizedMessage(data.ApplyMessage),
@@ -141,6 +144,21 @@ public class JsonEffectLoader
                         Stat = stat,
                         Modifier = modifier,
                         ValueCompiledFormula = valueFunc
+                    };
+                }
+
+            case CharacterIRVModifierData data:
+                {
+                    var modifier = Enum.Parse<FlagModifierKind>(data.Mode, ignoreCase: true);
+                    var location = Enum.Parse<IRVLocation>(data.Location, ignoreCase: true);
+                    var damageKinds = DamageKindBits.ParseDamageKinds(data.DamageKinds);
+
+                    return new CharacterIRVModifierActionDefinition
+                    {
+                        Trigger = trigger,
+                        Modifier = modifier,
+                        Location = location,
+                        DamageKinds = damageKinds
                     };
                 }
 

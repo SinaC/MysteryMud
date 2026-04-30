@@ -16,6 +16,14 @@ public record ResourceSnapshot(
     float BaseRegen,
     float CurrentRegen);
 
+public record IRVSnapshot(
+    ulong BaseImm,
+    ulong BaseRes,
+    ulong BaseVuln,
+    ulong EffImm,
+    ulong EffRes,
+    ulong EffVuln);
+
 /// <summary>
 /// All tick fields are stored as offsets relative to the tick counter
 /// at save time. On load they are rebased to the current tick.
@@ -64,6 +72,7 @@ public record PlayerSnapshot(
     long TotalXp,
     int AutoBehavior,   // bitmask
     string? OptionalJson,   // Gender, RespawnState, etc.
+    IRVSnapshot IRV,
     StatSnapshot[] Stats,
     ResourceSnapshot[] Resources,
     EffectSnapshot[] Effects,

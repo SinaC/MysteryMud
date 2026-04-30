@@ -45,6 +45,20 @@ CREATE TABLE IF NOT EXISTS player_resources (
 );
 
 -- ------------------------------------------------------------
+--  IRV  (Immunity / Resistance / Vulnerability)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS player_irv (
+    player_id       INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    base_imm        INTEGER NOT NULL,
+    base_res        INTEGER NOT NULL,
+    base_vuln       INTEGER NOT NULL,
+    eff_imm         INTEGER NOT NULL,
+    eff_res         INTEGER NOT NULL,
+    eff_vuln        INTEGER NOT NULL,
+    PRIMARY KEY (player_id)
+);
+
+-- ------------------------------------------------------------
 --  Effects  (tick values stored as remaining offsets)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS player_effects (

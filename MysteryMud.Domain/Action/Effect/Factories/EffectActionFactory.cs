@@ -23,6 +23,7 @@ public class EffectActionFactory : IEffectActionFactory
     public Action<EffectExecutionContext> Create(EffectActionDefinition actionDefinition) => actionDefinition switch
     {
         CharacterStatModifierActionDefinition definition => CreateCharacterStatModifier(definition),
+        CharacterIRVModifierActionDefinition definition => CreateCharacterIRVModifier(definition),
         ApplyCharacterTagActionDefinition definition => CreateApplyCharacterTag(definition),
         ApplyItemTagActionDefinition definition => CreateApplyItemTag(definition),
         HealthModifierActionDefinition definition => CreateResourceModifier<HealthModifier, DirtyHealth>(definition.Modifier, definition.ValueCompiledFormula, (modifier, value) => new HealthModifier { Modifier = modifier, Value = value }),
@@ -87,7 +88,7 @@ public class EffectActionFactory : IEffectActionFactory
         };
     }
 
-    private Action<EffectExecutionContext> CreateHealthModifier(HealthModifierActionDefinition definition)
+    private Action<EffectExecutionContext> CreateCharacterIRVModifier(CharacterIRVModifierActionDefinition definition)
     {
         return ctx =>
         {
@@ -95,67 +96,31 @@ public class EffectActionFactory : IEffectActionFactory
             if (effectContext.Effect is not null)
             {
                 var effect = effectContext.Effect.Value;
-                var value = definition.ValueCompiledFormula.Compiled(ctx.Context); // TODO: multiply by stack count ?
-                var modifier = new HealthModifier
+                var modifier = new CharacterIRVModifier
                 {
                     Modifier = definition.Modifier,
-                    Value = value
+                    Location = definition.Location,
+                    DamageKinds = definition.DamageKinds
                 };
 
-                if (effect.Has<CharacterResourceModifiers<HealthModifier>>())
+                if (effect.Has<CharacterIRVModifiers>())
                 {
-                    ref var characterResourceModifiers = ref effect.Get<CharacterResourceModifiers<HealthModifier>>();
-                    characterResourceModifiers.Values.Add(modifier);
+                    ref var irvModifiers = ref effect.Get<CharacterIRVModifiers>();
+                    irvModifiers.Values.Add(modifier);
                 }
                 else
                 {
-                    effect.Set(new CharacterResourceModifiers<HealthModifier>
+                    effect.Set(new CharacterIRVModifiers
                     {
                         Values = [modifier]
                     });
                 }
 
-                // add dirty flag to character (or wearer) resources so we will recalculate them with the new modifiers
-                AddDirtyTag<DirtyHealth>(effectContext);
+                // add dirty irv flag to character (or wearer) stats so we will recalculate them with the new modifiers
+                AddDirtyTag<DirtyIRV>(effectContext);
             }
             else
-                _logger.LogError("Trying to apply HealthModifier on a null-effect");
-        };
-    }
-
-    private Action<EffectExecutionContext> CreateHealthRegenModifier(HealthRegenModifierActionDefinition definition)
-    {
-        return ctx =>
-        {
-            var effectContext = ctx.Context;
-            if (effectContext.Effect is not null)
-            {
-                var effect = effectContext.Effect.Value;
-                var value = definition.ValueCompiledFormula.Compiled(ctx.Context); // TODO: multiply by stack count ?
-                var modifier = new HealthRegenModifier
-                {
-                    Modifier = definition.Modifier,
-                    Value = value
-                };
-
-                if (effect.Has<CharacterResourceRegenModifiers<HealthRegenModifier>>())
-                {
-                    ref var characterResourceModifiers = ref effect.Get<CharacterResourceRegenModifiers<HealthRegenModifier>>();
-                    characterResourceModifiers.Values.Add(modifier);
-                }
-                else
-                {
-                    effect.Set(new CharacterResourceRegenModifiers<HealthRegenModifier>
-                    {
-                        Values = [modifier]
-                    });
-                }
-
-                // add dirty flag to character (or wearer) resources so we will recalculate them with the new modifiers
-                AddDirtyTag<DirtyHealthRegen>(effectContext);
-            }
-            else
-                _logger.LogError("Trying to apply HealthRegenModifier on a null-effect");
+                _logger.LogError("Trying to apply IRVModifier on a null-effect");
         };
     }
 
