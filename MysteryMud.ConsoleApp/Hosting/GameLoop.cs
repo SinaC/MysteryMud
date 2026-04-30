@@ -41,6 +41,7 @@ internal class GameLoop
     private readonly MovementSystem _movementSystem;
     private readonly FollowSystem _followSystem;
     private readonly ItemInteractionSystem _itemInteractionSystem;
+    private readonly EffectiveIRVSystem _effectiveIRVSystem;
     private readonly EffectiveCharacterStatsSystem _effectiveCharacterStatsSystem;
     private readonly EffectiveMaxResourceSystem<BaseHealth, Health, DirtyHealth, HealthModifier> _effectiveMaxHealthSystem;
     private readonly EffectiveMaxResourceSystem<BaseMove, Move, DirtyMove, MoveModifier> _effectiveMaxMoveSystem;
@@ -92,6 +93,7 @@ internal class GameLoop
         MovementSystem movementSystem,
         FollowSystem followSystem,
         ItemInteractionSystem itemInteractionSystem,
+        EffectiveIRVSystem effectiveIRVSystem,
         EffectiveCharacterStatsSystem effectiveCharacterStatsSystem,
         EffectiveMaxResourceSystem<BaseHealth, Health, DirtyHealth, HealthModifier> effectiveMaxHealthSystem,
         EffectiveMaxResourceSystem<BaseMove, Move, DirtyMove, MoveModifier> effectiveMaxMoveSystem,
@@ -142,6 +144,7 @@ internal class GameLoop
         _movementSystem = movementSystem;
         _followSystem = followSystem;
         _itemInteractionSystem = itemInteractionSystem;
+        _effectiveIRVSystem = effectiveIRVSystem;
         _effectiveCharacterStatsSystem = effectiveCharacterStatsSystem;
         _effectiveMaxHealthSystem = effectiveMaxHealthSystem;
         _effectiveMaxMoveSystem = effectiveMaxMoveSystem;
@@ -227,6 +230,8 @@ internal class GameLoop
             _autoAssistSystem.TickMovement(state);
             // Process get/drop/put/give/...
             _itemInteractionSystem.Tick(state);
+            // Recalculate IRV with DirtyIRV
+            _effectiveIRVSystem.Tick(state);
             // Recalculate stats with DirtyStats
             _effectiveCharacterStatsSystem.Tick(state);
             // Recalculate resource with DirtyResource where resource can be Health, Move, Mana, Energy, Rage

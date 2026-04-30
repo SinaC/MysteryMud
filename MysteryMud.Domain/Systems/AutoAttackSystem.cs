@@ -19,7 +19,7 @@ public class AutoAttackSystem
         _inCombatEntitySet = world
             .GetEntities()
             .With<CombatState>()
-            .With<NewCombatantTag>()
+            .With<EffectiveStats>()
             .Without<DeadTag>() // no autoattack if dead or casting
             .Without<Casting>()
             .AsSet();

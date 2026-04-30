@@ -66,6 +66,7 @@ public sealed class MstatCommand : ICommand
         {
             _msg.To(actor).Send($"{stat}: {effectiveStats.Values[stat]}/{baseStats.Values[stat]}");
         }
+        DisplayIRV(actor, target.Value);
         if (target.Value.Has<CombatState>())
         {
             ref var combatState = ref target.Value.Get<CombatState>();
@@ -123,5 +124,13 @@ public sealed class MstatCommand : ICommand
             var uses = target.Has<TUses>();
             _msg.To(actor).Send($"{kind}: {current}/{max} Regen/Decay: {currentRegen}(base: {baseRegen}) CanUse: {uses}");
         }
+    }
+
+    private void DisplayIRV(Entity actor, Entity target)
+    {
+        if (!target.Has<EffectiveIRV>())
+            return;
+        ref var effectiveIRV = ref target.Get<EffectiveIRV>();
+        _msg.To(actor).Send($"Immunities: {effectiveIRV.Immunities.ToDamageKindString()} Resistances: {effectiveIRV.Resistances.ToDamageKindString()} Vulnerabilities: {effectiveIRV.Vulnerabilities.ToDamageKindString()}");
     }
 }

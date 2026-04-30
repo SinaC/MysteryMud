@@ -64,7 +64,7 @@ public static class ModifierPipeline
 
     // Accumulates modifiers for ALL stats in one pass into pre-allocated span buffers.
     // Avoids the O(stats × modifiers) cost of calling CalculateModifiers per stat.
-    public static void AccumulateModifiers<TModifiers, TModifier>(
+    public static void AccumulateStatModifiers<TModifiers, TModifier>(
         IEnumerable<Entity> effects,
         Func<TModifier, CharacterStatKind> getStatFunc,
         Func<TModifiers, IEnumerable<TModifier>> getModifiersFunc,

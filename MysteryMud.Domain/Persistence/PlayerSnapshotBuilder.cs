@@ -25,7 +25,6 @@ public sealed class PlayerSnapshotBuilder : ISnapshotBuilder
         ref var baseStats = ref entity.Get<BaseStats>();
         ref var inventory = ref entity.Get<Inventory>();
         ref var equipment = ref entity.Get<Equipment>();
-        ref var irv = ref entity.Get<IRV>();
 
         // Optional components
         string? optionalJson = BuildOptionalJson(world, entity);
@@ -35,6 +34,9 @@ public sealed class PlayerSnapshotBuilder : ISnapshotBuilder
 
         // Resources — build from Health (+ Mana/Energy/Rage if present)
         var resources = BuildResources(world, entity);
+
+        // IRV
+        var irvSnapshot = BuildIRV(world, entity);
 
         // Effects
         var effectSnapshots = BuildCharacterEffects(world, entity);
@@ -57,9 +59,7 @@ public sealed class PlayerSnapshotBuilder : ISnapshotBuilder
             LocationKey: location.Room.GetHashCode().ToString(),
             Position: position.Value.ToString(),
             Form: form.Value.ToString(),
-            Immunities: irv.Immunities,
-            Resistances: irv.Resistances,
-            Vulnerabilities: irv.Vulnerabilities,
+            IRV : irvSnapshot,
             TotalXp: progression.Experience,
             AutoBehavior: (int)autoBehavior.Flags,
             OptionalJson: optionalJson,
@@ -81,6 +81,19 @@ public sealed class PlayerSnapshotBuilder : ISnapshotBuilder
             snapshots[i] = new StatSnapshot(stat.ToString(), baseStats.Values[i], effectiveStats.Values[i]);
         }
         return snapshots;
+    }
+
+    private static IRVSnapshot BuildIRV(World world, Entity entity)
+    {
+        var baseIRV = entity.Get<BaseIRV>();
+        var effectiveIRV = entity.Get<EffectiveIRV>();
+        return new IRVSnapshot(
+            baseIRV.Immunities,
+            baseIRV.Resistances,
+            baseIRV.Vulnerabilities,
+            effectiveIRV.Immunities,
+            effectiveIRV.Resistances,
+            effectiveIRV.Vulnerabilities);
     }
 
     private static EffectSnapshot[] BuildCharacterEffects(World world, Entity entity)

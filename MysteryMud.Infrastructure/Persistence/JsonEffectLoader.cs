@@ -1,6 +1,7 @@
 ﻿using MysteryMud.Core.Extensions;
 using MysteryMud.Domain.Action.Effect;
 using MysteryMud.Domain.Action.Effect.Definitions;
+using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Definitions;
 using MysteryMud.GameData.Enums;
@@ -143,6 +144,21 @@ public class JsonEffectLoader
                         Stat = stat,
                         Modifier = modifier,
                         ValueCompiledFormula = valueFunc
+                    };
+                }
+
+            case CharacterIRVModifierData data:
+                {
+                    var modifier = Enum.Parse<FlagModifierKind>(data.Mode, ignoreCase: true);
+                    var location = Enum.Parse<IRVLocation>(data.Location, ignoreCase: true);
+                    var damageKinds = DamageKindBits.ParseDamageKinds(data.DamageKinds);
+
+                    return new CharacterIRVModifierActionDefinition
+                    {
+                        Trigger = trigger,
+                        Modifier = modifier,
+                        Location = location,
+                        DamageKinds = damageKinds
                     };
                 }
 

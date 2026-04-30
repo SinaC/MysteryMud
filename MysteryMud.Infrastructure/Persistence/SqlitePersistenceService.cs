@@ -39,6 +39,7 @@ public sealed class SqlitePersistenceService : IPersistenceService
             var playerId = await UpsertPlayerCoreAsync(conn, snap);
             await SaveStatsAsync(conn, playerId, snap.Stats);
             await SaveResourcesAsync(conn, playerId, snap.Resources);
+            await SaveIRVAsync(conn, playerId, snap.IRV);
             await SaveEffectsAsync(conn, playerId, snap.Effects);
             await SaveAbilitiesAsync(conn, playerId, snap.Abilities);
             await SaveItemsAsync(conn, playerId, snap.Items);
@@ -130,6 +131,30 @@ public sealed class SqlitePersistenceService : IPersistenceService
                 r.BaseRegen,
                 r.CurrentRegen
             }));
+    }
+
+    // IRV — full replace
+    private static async Task SaveIRVAsync(SqliteConnection conn, long playerId, IRVSnapshot irv)
+    {
+        await conn.ExecuteAsync(
+            "DELETE FROM player_irv WHERE player_id = @playerId",
+            new { playerId });
+
+        if (irv == null) return;
+
+        await conn.ExecuteAsync("""
+        INSERT INTO player_irv (player_id, base_imm, base_res, base_vuln, eff_imm, eff_res, eff_vuln)
+        VALUES (@PlayerId, @BaseImm, @BaseRes, @BaseVuln, @EffImm, @EffRes, @EffVuln)
+        """, new
+        {
+            PlayerId = playerId,
+            irv.BaseImm,
+            irv.BaseRes,
+            irv.BaseVuln,
+            irv.EffImm,
+            irv.EffRes,
+            irv.EffVuln
+        });
     }
 
     // Effects — full replace (effects list changes atomically)
@@ -310,6 +335,11 @@ public sealed class SqlitePersistenceService : IPersistenceService
         FROM player_resources WHERE player_id = @playerId
         """, new { playerId })).ToArray();
 
+        var irv = (await conn.QueryAsync<IRVSnapshot>("""
+        SELECT base_imm as BaseImm, base_res AS BaseRes, base_vuln AS BaseVuln, eff_imm AS EffImm, eff_res AS EffRes, eff_vuln AS EffVuln
+        FROM player_irv WHERE player_id = @playerId
+        """, new { playerId })).Single();
+
         var effects = await LoadEffectRowsAsync(conn, "player_effects", "player_id", playerId);
 
         var abilityRows = await conn.QueryAsync("""
@@ -336,12 +366,10 @@ public sealed class SqlitePersistenceService : IPersistenceService
             LocationKey: (string)row.location_key,
             Position: (string)row.position,
             Form: (string)row.form,
-            Immunities: (ulong)row.immunities,
-            Resistances: (ulong)row.resistances,
-            Vulnerabilities: (ulong)row.vulnerabilities,
             TotalXp: (long)row.total_xp,
             AutoBehavior: (int)row.auto_behavior,
             OptionalJson: (string?)row.optional_json,
+            IRV: irv,
             Stats: stats,
             Resources: resources,
             Effects: effects,
@@ -402,7 +430,7 @@ public sealed class SqlitePersistenceService : IPersistenceService
     public async Task DeletePlayerAsync(long playerId, CancellationToken ct = default)
     {
         var conn = await OpenConnectionAsync(ct);
-        // Cascades handle stats, resources, effects, abilities, items, item_effects
+        // Cascades handle stats, resources, irv, effects, abilities, items, item_effects
         await conn.ExecuteAsync(
             "DELETE FROM players WHERE id = @playerId",
             new { playerId });

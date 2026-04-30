@@ -129,7 +129,7 @@ public class CharacterEffectHost : IEffectHost
         if (effect.Has<CharacterResourceModifiers<RageModifier>>() && !_target.Has<DirtyRage>())
             _target.Set<DirtyRage>();
 
-        // if effect has ResourceRegebModifiers
+        // if effect has ResourceRegenModifiers
         // flag the _target's resource regens as dirty so they will be recalculated without this effect
         if (effect.Has<CharacterResourceRegenModifiers<HealthRegenModifier>>() && !_target.Has<DirtyHealthRegen>())
             _target.Set<DirtyHealthRegen>();
@@ -139,6 +139,10 @@ public class CharacterEffectHost : IEffectHost
             _target.Set<DirtyEnergyRegen>();
         if (effect.Has<CharacterResourceRegenModifiers<RageDecayModifier>>() && !_target.Has<DirtyRageDecay>())
             _target.Set<DirtyRageDecay>();
+
+        // if effect has IRVModifiers
+        if (effect.Has<CharacterIRVModifiers>() && !_target.Has<DirtyIRV>())
+            _target.Set<DirtyIRV>();
 
         //
         if (_target.Has<PlayerTag>())

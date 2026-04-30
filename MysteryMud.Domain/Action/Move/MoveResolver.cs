@@ -9,10 +9,12 @@ namespace MysteryMud.Domain.Action.Move;
 public class MoveResolver : IMoveResolver
 {
     private readonly IGameMessageService _msg;
+    private readonly IMoveCalculator _moveCalculator;
 
-    public MoveResolver(IGameMessageService msg)
+    public MoveResolver(IGameMessageService msg, IMoveCalculator moveCalculator)
     {
         _msg = msg;
+        _moveCalculator = moveCalculator;
     }
 
     public RestoreMoveResult Resolve(GameState state, RestoreMoveAction action) // to be used during combat process
@@ -35,7 +37,7 @@ public class MoveResolver : IMoveResolver
             };
 
         // apply move modifiers
-        decimal modifiedMove = MoveCalculator.ModifyRestoreMove(target, amount, source);
+        decimal modifiedMove = _moveCalculator.ModifyRestoreMove(target, amount, source);
         // cap to max move-current
         decimal maxPossibleMove = move.Max - move.Current;
         decimal finalMove = Math.Min(modifiedMove, maxPossibleMove);

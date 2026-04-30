@@ -352,5 +352,18 @@
       ]
     },
     "Effects": ["SeedsOfCorruption"]
+  },
+  {
+    "Name": "Fire and Ice Resistance",
+    "Kind": "Spell",
+    "Costs": [{ "Kind": "Mana", "Amount": 10 }],
+    "Targeting": {
+      "Requirement": "OptionalSelf",
+      "Selection": "Single",
+      "Contexts": [
+        { "Scope": "Room", "Filter": "Character" }
+      ]
+    },
+    "Effects": ["FireAndIceResist"]
   }
 ]

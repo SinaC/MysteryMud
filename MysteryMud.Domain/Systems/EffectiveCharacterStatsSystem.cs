@@ -52,7 +52,7 @@ public class EffectiveCharacterStatsSystem
             foreach (var (slot, equippedItem) in equipment.Slots)
             {
                 ref var itemEffects = ref equippedItem.Get<ItemEffects>();
-                ModifierPipeline.AccumulateModifiers<CharacterStatModifiers, CharacterStatModifier>(
+                ModifierPipeline.AccumulateStatModifiers<CharacterStatModifiers, CharacterStatModifier>(
                     itemEffects.Data.Effects,
                     x => x.Stat,
                     x => x.Values,
@@ -62,7 +62,7 @@ public class EffectiveCharacterStatsSystem
             }
 
             // single pass over all character effects
-            ModifierPipeline.AccumulateModifiers<CharacterStatModifiers, CharacterStatModifier>(
+            ModifierPipeline.AccumulateStatModifiers<CharacterStatModifiers, CharacterStatModifier>(
                 characterEffects.Data.Effects,
                 x => x.Stat,
                 x => x.Values,

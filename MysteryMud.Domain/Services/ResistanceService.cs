@@ -17,7 +17,7 @@ public class ResistanceService : IResistanceService
 
     public ResistanceLevels CheckResistance(Entity victim, DamageKind damageKind)
     {
-        ref var irv = ref victim.Get<IRV>();
+        ref var irv = ref victim.Get<EffectiveIRV>();
 
         // Generic resistance
         var defaultResistance = ResistanceLevels.Normal;

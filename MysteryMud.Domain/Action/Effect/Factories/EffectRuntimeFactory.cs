@@ -73,6 +73,9 @@ public class EffectRuntimeFactory : IEffectRuntimeFactory
         if (def.Actions.Any(x => x is CharacterStatModifierActionDefinition) && def.DurationCompiledFormula == null)
             throw new Exception($"DurationFormula must be specified if a StatModifierAction is defined in effect '{def.Name}'");
 
+        if (def.Actions.Any(x => x is CharacterIRVModifierActionDefinition) && def.DurationCompiledFormula == null)
+            throw new Exception($"DurationFormula must be specified if an IRVModifierAction is defined in effect '{def.Name}'");
+
         if (def.Actions.Any(x => x is HealthModifierActionDefinition or MoveModifierActionDefinition or ResourceModifierActionDefinition) && def.DurationCompiledFormula == null)
             throw new Exception($"DurationFormula must be specified if a ResourceModifierAction is defined in effect '{def.Name}'");
 

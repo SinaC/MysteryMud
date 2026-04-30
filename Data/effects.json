@@ -104,7 +104,7 @@
     "Stacking": "None",
     "MaxStacks": 1,
     "DurationFormula": "caster.Level / 4",
-  "ApplyMessage": "A wave of calm passes over you.",
+    "ApplyMessage": "A wave of calm passes over you.",
     "WearOffMessage": "You have lost your peace of mind.",
     "Actions": [
       {
@@ -442,6 +442,20 @@
         "Type": "InstantDamage",
         "DamageKind": "Negative",
         "DamageFormula": "caster.Level * 2"
+      }
+    ]
+  },
+  {
+    "Name": "FireAndIceResist",
+    "DurationFormula": "30",
+    "ApplyMessage": "TBD",
+    "WearOffMessage": "TBD",
+    "Actions": [
+      {
+        "Type": "IRVModifier",
+        "Mode": "Or",
+        "Location": "Resistances",
+        "DamageKinds": "Fire, Cold"
       }
     ]
   }
