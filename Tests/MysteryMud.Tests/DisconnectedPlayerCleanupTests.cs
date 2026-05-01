@@ -201,14 +201,14 @@ public class DisconnectedPlayerCleanupTests : IDisposable
         var room = _f.Room().Build();
         var alice = _f.Player("Alice").WithLocation(room).Build();
         var orc = _f.Npc("Orc").WithLocation(room)
-                      .With(new ThreatTable { Threat = new Dictionary<Entity, long> { [alice] = 100 } })
+                      .With(new ThreatTable { Entries = new Dictionary<Entity, decimal> { [alice] = 100 } })
                       .Build();
         orc.Set<ActiveThreatTag>();
 
         alice.Set<DisconnectedTag>();
         _sut.Tick(_f.State);
 
-        Assert.False(orc.Get<ThreatTable>().Threat.ContainsKey(alice));
+        Assert.False(orc.Get<ThreatTable>().Entries.ContainsKey(alice));
     }
 
     [Fact]
@@ -217,10 +217,10 @@ public class DisconnectedPlayerCleanupTests : IDisposable
         var room = _f.Room().Build();
         var alice = _f.Player("Alice").WithLocation(room).Build();
         var orc1 = _f.Npc("Orc1").WithLocation(room)
-                      .With(new ThreatTable { Threat = new Dictionary<Entity, long> { [alice] = 100 } })
+                      .With(new ThreatTable { Entries = new Dictionary<Entity, decimal> { [alice] = 100 } })
                       .Build();
         var orc2 = _f.Npc("Orc2").WithLocation(room)
-                      .With(new ThreatTable { Threat = new Dictionary<Entity, long> { [alice] = 50 } })
+                      .With(new ThreatTable { Entries = new Dictionary<Entity, decimal> { [alice] = 50 } })
                       .Build();
         orc1.Set<ActiveThreatTag>();
         orc2.Set<ActiveThreatTag>();
@@ -228,8 +228,8 @@ public class DisconnectedPlayerCleanupTests : IDisposable
         alice.Set<DisconnectedTag>();
         _sut.Tick(_f.State);
 
-        Assert.False(orc1.Get<ThreatTable>().Threat.ContainsKey(alice));
-        Assert.False(orc2.Get<ThreatTable>().Threat.ContainsKey(alice));
+        Assert.False(orc1.Get<ThreatTable>().Entries.ContainsKey(alice));
+        Assert.False(orc2.Get<ThreatTable>().Entries.ContainsKey(alice));
     }
 
     [Fact]
@@ -238,7 +238,7 @@ public class DisconnectedPlayerCleanupTests : IDisposable
         var room = _f.Room().Build();
         var alice = _f.Player("Alice").WithLocation(room).Build();
         var orc = _f.Npc("Orc").WithLocation(room)
-                      .With(new ThreatTable { Threat = new Dictionary<Entity, long> { [alice] = 100 } })
+                      .With(new ThreatTable { Entries = new Dictionary<Entity, decimal> { [alice] = 100 } })
                       .Build();
         // no ActiveThreatTag — should not be scanned
 
@@ -246,7 +246,7 @@ public class DisconnectedPlayerCleanupTests : IDisposable
         _sut.Tick(_f.State);
 
         // threat table untouched since orc has no ActiveThreatTag
-        Assert.True(orc.Get<ThreatTable>().Threat.ContainsKey(alice));
+        Assert.True(orc.Get<ThreatTable>().Entries.ContainsKey(alice));
     }
 
     // -------------------------------------------------------------------------

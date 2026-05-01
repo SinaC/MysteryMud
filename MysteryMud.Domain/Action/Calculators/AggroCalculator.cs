@@ -5,12 +5,12 @@ namespace MysteryMud.Domain.Action.Calculators;
 
 public static class AggroCalculator
 {
-    public static int CalculateDamageAggro(Entity target, Entity source, int damageAmount, DamageKind damageKind)
+    public static decimal CalculateDamageAggro(Entity target, Entity source, decimal damageAmount, DamageKind damageKind)
     {
         return damageAmount; // TODO
     }
 
-    public static int CalculateHealAggro(Entity target, Entity source, int healAmount)
+    public static decimal CalculateHealAggro(Entity target, Entity source, decimal healAmount)
     {
         return healAmount / 2; // TODO
     }

@@ -365,5 +365,26 @@
       ]
     },
     "Effects": ["FireAndIceResist"]
+  },
+  {
+    "Name": "Taunt",
+    "Kind": "Skill",
+    "Command": {
+      "Name": "taunt",
+      "RequiredLevel": "Player",
+      "MinimumPosition": "Fighting",
+      "Syntax": ["[cmd] <victim>"],
+      "HelpText": "TBD",
+      "Categories": ["ability", "combat"],
+      "ThrottlingCategories": ["combat"]
+    },
+    "Targeting": {
+      "Requirement": "Mandatory",
+      "Selection": "Single",
+      "Contexts": [
+        { "Scope": "Room", "Filter": "NPC" }
+      ]
+    },
+    "Effects": ["Taunt"]
   }
 ]

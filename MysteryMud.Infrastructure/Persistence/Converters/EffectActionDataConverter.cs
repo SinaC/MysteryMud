@@ -27,6 +27,7 @@ internal class EffectActionDataConverter : JsonConverter<EffectActionData>
             "InstantRestoreResource" => JsonSerializer.Deserialize<InstantRestoreResourceData>(root.GetRawText(), options),
             "ApplyTag" => JsonSerializer.Deserialize<ApplyCharacterTagActionData>(root.GetRawText(), options),
             "ApplyItemTag" => JsonSerializer.Deserialize<ApplyItemTagActionData>(root.GetRawText(), options),
+            "GenerateThreat" => JsonSerializer.Deserialize<GenerateThreatData>(root.GetRawText(), options),
             _ => throw new NotSupportedException($"Unknown action type: {type}")
         };
     }

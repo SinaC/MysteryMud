@@ -5,7 +5,7 @@
       {
         "Type": "InstantDamage",
         "DamageFormula": "weapon.Damage * 3 + caster.Level",
-    "DamageKind": "Pierce"
+        "DamageKind": "Pierce"
       }
     ]
   },
@@ -15,7 +15,7 @@
       {
         "Type": "InstantDamage",
         "DamageFormula": "weapon.Damage",
-    "DamageKind": "Pierce"
+        "DamageKind": "Pierce"
       }
     ]
   },
@@ -25,31 +25,31 @@
       {
         "Type": "InstantDamage",
         "DamageFormula": "10 + caster.Strength",
-    "DamageKind": "Bash"
+        "DamageKind": "Bash"
       }
     ]
   },
   {
     "Name": "BashStun",
     "DurationFormula": "2",
-  "Tag": "Stun",
-  "WearOffMessage": "You regain your equilibrium.",
+    "Tag": "Stun",
+    "WearOffMessage": "You regain your equilibrium.",
     "Actions": [
       {
         "Type": "ApplyTag",
-    "Tag": "Stun"
+        "Tag": "Stun"
       }
     ]
   },
   {
     "Name": "BashSelfStun",
     "DurationFormula": "1",
-  "Tag": "Stun",
-  "WearOffMessage": "You regain your equilibrium.",
+    "Tag": "Stun",
+    "WearOffMessage": "You regain your equilibrium.",
     "Actions": [
       {
         "Type": "ApplyTag",
-    "Tag": "Stun"
+        "Tag": "Stun"
       }
     ]
   },
@@ -456,6 +456,15 @@
         "Mode": "Or",
         "Location": "Resistances",
         "DamageKinds": "Fire, Cold"
+      }
+    ]
+  },
+  {
+    "Name": "Taunt",
+    "Actions": [
+      {
+        "Type": "GenerateThreat",
+        "AmountFormula": "1000"
       }
     ]
   }

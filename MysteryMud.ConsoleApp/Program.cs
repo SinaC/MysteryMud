@@ -361,6 +361,7 @@ services.AddSingleton(sp => new EffectiveResourceRegenSystem<RageDecay, DirtyRag
 services.AddSingleton<AbilityValidationSystem>();
 services.AddSingleton<AbilityCastingSystem>();
 services.AddSingleton<AbilityExecutionSystem>();
+services.AddSingleton<NPCTargetSystem>();
 services.AddSingleton<AggressionSystem>();
 services.AddSingleton<AutoAttackSystem>();
 services.AddSingleton<TimedEffectSystem>();

@@ -3,6 +3,7 @@ using MysteryMud.Core.Effects;
 using MysteryMud.Domain.Ability.Resources;
 using MysteryMud.Domain.Action.Effect.Definitions;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.Domain.Components.Characters.Resources;
 using MysteryMud.Domain.Components.Effects;
 using MysteryMud.Domain.Components.Items;
@@ -38,6 +39,7 @@ public class EffectActionFactory : IEffectActionFactory
         InstantDamageActionDefinition definition => CreateInstantDamage(definition),
         InstantRestoreMoveActionDefinition definition => CreateInstantRestoreMove(definition),
         InstantRestoreResourceActionDefinition definition => CreateInstantResourceResource(definition),
+        GenerateThreatActionDefinition definition => CreateGenerateThreat(definition),
         _ => throw new Exception($"Unknown EffectAction {actionDefinition.GetType()}"),
     };
 
@@ -310,6 +312,28 @@ public class EffectActionFactory : IEffectActionFactory
             var amount = definition.AmountCompiledFormula.Compiled(effectContext);
 
             ResourceHelpers.ModifyResource(effectContext.Target, definition.Resource, amount);
+        };
+    }
+
+    private Action<EffectExecutionContext> CreateGenerateThreat(GenerateThreatActionDefinition definition)
+    {
+        return ctx =>
+        {
+            var effectContext = ctx.Context;
+            var amount = definition.AmountCompiledFormula.Compiled(effectContext);
+            var state = effectContext.State;
+            var source = effectContext.Source;
+            var target = effectContext.Target;
+
+            if (!target.Has<ThreatTable>())
+                return;
+            ref var threatTable = ref target.Get<ThreatTable>();
+            if (!threatTable.Entries.TryAdd(source, amount))
+                threatTable.Entries[source] += amount;
+            threatTable.LastUpdateTick = state.CurrentTick;
+
+            if (!target.Has<ActiveThreatTag>()) // indicate to threat decay system this is an entity to check
+                target.Set<ActiveThreatTag>();
         };
     }
 
