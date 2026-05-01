@@ -75,7 +75,7 @@ internal class MudTestFixture : IDisposable
                 },
             })
             .With(new Position { Value = PositionKind.Standing })
-            .With(new ThreatTable { Threat = [] });
+            .With(new ThreatTable { Entries = [] });
 
     public EntityBuilder Room(string name = "room", string description = "a room")
         => new EntityBuilder(World)

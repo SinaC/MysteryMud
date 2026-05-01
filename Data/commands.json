@@ -347,5 +347,17 @@
         "Syntaxes": ["[cmd]"],
         "Categories": ["test"],
         "ThrottlingCategories": ["admin"]
+    },
+    {
+        "Name": "threat",
+        "CannotBeForced": true,
+        "RequiredLevel": "Admin",
+        "MinimumPosition": "Dead",
+        "Priority": 0,
+        "DisallowAbbreviation": true,
+        "HelpText": "",
+        "Syntaxes": ["[cmd]"],
+        "Categories": ["admin", "combat"],
+        "ThrottlingCategories": ["admin"]
     }
 ]

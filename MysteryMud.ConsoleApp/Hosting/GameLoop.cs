@@ -56,6 +56,7 @@ internal class GameLoop
     private readonly AbilityValidationSystem _abilityValidationSystem;
     private readonly AbilityCastingSystem _abilityCastingSystem;
     private readonly AbilityExecutionSystem _abilityExecutionSystem;
+    private readonly NPCTargetSystem _npcTargetSystem;
     private readonly AggressionSystem _aggressionSystem;
     private readonly AutoAttackSystem _autoAttackSystem;
     private readonly TimedEffectSystem _timedEffectSystem;
@@ -108,6 +109,7 @@ internal class GameLoop
         AbilityValidationSystem abilityValidationSystem,
         AbilityCastingSystem abilityCastingSystem,
         AbilityExecutionSystem abilityExecutionSystem,
+        NPCTargetSystem npcTargetSystem,
         AggressionSystem aggressionSystem,
         AutoAttackSystem autoAttackSystem,
         TimedEffectSystem timedEffectSystem,
@@ -159,6 +161,7 @@ internal class GameLoop
         _abilityValidationSystem = abilityValidationSystem;
         _abilityCastingSystem = abilityCastingSystem;
         _abilityExecutionSystem = abilityExecutionSystem;
+        _npcTargetSystem = npcTargetSystem;
         _aggressionSystem = aggressionSystem;
         _autoAttackSystem = autoAttackSystem;
         _timedEffectSystem = timedEffectSystem;
@@ -267,7 +270,8 @@ internal class GameLoop
             _abilityCastingSystem.Tick(state);
             // Process ExecuteAbilityIntents -> generate ActionIntent(kind:effect) for each effects in ability + abilityExecutedEvent
             _abilityExecutionSystem.Tick(state);
-            // TODO: NPCTargetSystem.AssignTargets   // Select highest threat targets
+            // Assign targets for NPCs based on threat
+            _npcTargetSystem.Tick(state);
             // TODO: GroupTacticsSystem.Resolve       // Handle assist/protect/own target attack intents
             // Generate AttackIntents for entities in combat
             _autoAttackSystem.Tick(state);

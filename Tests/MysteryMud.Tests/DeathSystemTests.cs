@@ -112,10 +112,10 @@ public class DeathSystemTests : IDisposable
         var room = _f.Room().Build();
         var alice = _f.Player("Alice").WithLocation(room).Build();
         var orc1 = _f.Npc("Orc1").WithLocation(room)
-                      .With(new ThreatTable { Threat = new Dictionary<Entity, long> { [alice] = 100 } })
+                      .With(new ThreatTable { Entries = new Dictionary<Entity, decimal> { [alice] = 100 } })
                       .Build();
         var orc2 = _f.Npc("Orc2").WithLocation(room)
-                      .With(new ThreatTable { Threat = new Dictionary<Entity, long> { [alice] = 50 } })
+                      .With(new ThreatTable { Entries = new Dictionary<Entity, decimal> { [alice] = 50 } })
                       .Build();
         orc1.Set<ActiveThreatTag>();
         orc2.Set<ActiveThreatTag>();
@@ -123,8 +123,8 @@ public class DeathSystemTests : IDisposable
         _f.DeathEvents.Add() = new DeathEvent { Victim = alice, Killer = orc1 };
         _sut.Tick(_f.State);
 
-        Assert.False(orc1.Get<ThreatTable>().Threat.ContainsKey(alice));
-        Assert.False(orc2.Get<ThreatTable>().Threat.ContainsKey(alice));
+        Assert.False(orc1.Get<ThreatTable>().Entries.ContainsKey(alice));
+        Assert.False(orc2.Get<ThreatTable>().Entries.ContainsKey(alice));
     }
 
     [Fact]
@@ -133,7 +133,7 @@ public class DeathSystemTests : IDisposable
         var room = _f.Room().Build();
         var alice = _f.Player("Alice").WithLocation(room).Build();
         var orc = _f.Npc("Orc").WithLocation(room)
-                      .With(new ThreatTable { Threat = new Dictionary<Entity, long> { [alice] = 100 } })
+                      .With(new ThreatTable { Entries = new Dictionary<Entity, decimal> { [alice] = 100 } })
                       .Build();
         orc.Set<ActiveThreatTag>();
 
@@ -141,7 +141,7 @@ public class DeathSystemTests : IDisposable
         _sut.Tick(_f.State);
 
         // orc's own threat table cleared by RemoveFromCombat
-        Assert.Empty(orc.Get<ThreatTable>().Threat);
+        Assert.Empty(orc.Get<ThreatTable>().Entries);
         Assert.False(orc.Has<ActiveThreatTag>());
     }
 
@@ -151,10 +151,10 @@ public class DeathSystemTests : IDisposable
         var room = _f.Room().Build();
         var alice = _f.Player("Alice").WithLocation(room).Build();
         var orc1 = _f.Npc("Orc1").WithLocation(room)
-                      .With(new ThreatTable { Threat = new Dictionary<Entity, long> { [alice] = 100 } })
+                      .With(new ThreatTable { Entries = new Dictionary<Entity, decimal> { [alice] = 100 } })
                       .Build();
         var orc2 = _f.Npc("Orc2").WithLocation(room)
-                      .With(new ThreatTable { Threat = new Dictionary<Entity, long> { [alice] = 50 } })
+                      .With(new ThreatTable { Entries = new Dictionary<Entity, decimal> { [alice] = 50 } })
                       .Build();
         orc1.Set<ActiveThreatTag>();
         orc2.Set<ActiveThreatTag>();
@@ -163,8 +163,8 @@ public class DeathSystemTests : IDisposable
         _sut.Tick(_f.State);
 
         // alice removed from other NPCs' threat tables by RemoveFromAllThreatTable
-        Assert.False(orc1.Get<ThreatTable>().Threat.ContainsKey(alice));
-        Assert.False(orc2.Get<ThreatTable>().Threat.ContainsKey(alice));
+        Assert.False(orc1.Get<ThreatTable>().Entries.ContainsKey(alice));
+        Assert.False(orc2.Get<ThreatTable>().Entries.ContainsKey(alice));
     }
 
     [Fact]
@@ -408,7 +408,7 @@ public class DeathSystemTests : IDisposable
         var orc = _f.Npc("Orc").WithLocation(room)
                       .With(new ThreatTable
                       {
-                          Threat = new Dictionary<Entity, long>
+                          Entries = new Dictionary<Entity, decimal>
                           {
                               [alice] = 100,
                               [bob] = 50   // orc also has threat on bob
@@ -422,8 +422,8 @@ public class DeathSystemTests : IDisposable
 
         // orc's threat on bob must survive — only alice's entry should be removed separately
         Assert.False(orc.Has<CombatState>());
-        Assert.True(orc.Get<ThreatTable>().Threat.ContainsKey(bob));  // bob's threat intact
-        Assert.Equal(50, orc.Get<ThreatTable>().Threat[bob]);
+        Assert.True(orc.Get<ThreatTable>().Entries.ContainsKey(bob));  // bob's threat intact
+        Assert.Equal(50, orc.Get<ThreatTable>().Entries[bob]);
     }
 }
 

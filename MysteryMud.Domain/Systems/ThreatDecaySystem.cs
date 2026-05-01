@@ -7,7 +7,7 @@ namespace MysteryMud.Domain.Systems;
 public class ThreatDecaySystem
 {
     private const int Timeout = 100; // 100 ticks
-    private const int DecayPercentagePerTick = 98; // exponential decay
+    private const decimal DecayMultiplier = 0.98m; // exponential decay
 
     private readonly EntitySet _hasThreatTableEntitySet;
 
@@ -30,7 +30,7 @@ public class ThreatDecaySystem
         {
             var table = entity.Get<ThreatTable>();
             DecayThreatTable(state, table);
-            if (table.Threat.Count == 0) // if no more entries, remove active threat tag
+            if (table.Entries.Count == 0) // if no more entries, remove active threat tag
                 entity.Remove<ActiveThreatTag>();
         }
     }
@@ -40,16 +40,16 @@ public class ThreatDecaySystem
         // no threat modification for a long time, clear
         if (state.CurrentTick - table.LastUpdateTick > Timeout)
         {
-            table.Threat.Clear();
+            table.Entries.Clear();
             return;
         }
-        foreach (var key in table.Threat.Keys.ToArray())
+        foreach (var key in table.Entries.Keys.ToArray())
         {
-            var decayed = (table.Threat[key] * DecayPercentagePerTick) / 100;
-            if (decayed == 0) // remove entry if threat reaches 0
-                table.Threat.Remove(key);
+            var decayed = Math.Floor(table.Entries[key] * DecayMultiplier);
+            if (decayed <= 0) // remove entry if threat decayed to 0 or below
+                table.Entries.Remove(key);
             else
-                table.Threat[key] = decayed;
+                table.Entries[key] = decayed;
         }
     }
 }

@@ -290,6 +290,16 @@ public class JsonEffectLoader
                     };
                 }
 
+                case GenerateThreatData data:
+                {
+                    var amountFunc = _formulaCompiler.Compile(data.AmountFormula);
+                    return new GenerateThreatActionDefinition
+                    {
+                        Trigger = trigger,
+                        AmountCompiledFormula = amountFunc
+                    };
+                }
+
             case ApplyCharacterTagActionData data:
                 {
                     var effectTagId = Enum.Parse<CharacterEffectTagId>(data.Tag);

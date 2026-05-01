@@ -21,7 +21,7 @@ public class ResistanceService : IResistanceService
 
         // Generic resistance
         var defaultResistance = ResistanceLevels.Normal;
-        if (damageKind <= DamageKind.Slash) // Physical
+        if (damageKind == DamageKind.Bash || damageKind == DamageKind.Pierce || damageKind == DamageKind.Slash) // Physical
         {
             if (irv.Immunities.IsSet(DamageKind.Physical))
                 defaultResistance = ResistanceLevels.Immune;

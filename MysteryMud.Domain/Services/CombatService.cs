@@ -68,7 +68,7 @@ public class CombatService : ICombatService
         if (character.Has<ThreatTable>())
         {
             ref var threatTable = ref character.Get<ThreatTable>();
-            threatTable.Threat.Clear();
+            threatTable.Entries.Clear();
             threatTable.LastUpdateTick = state.CurrentTick;
         }
     }
@@ -105,7 +105,7 @@ public class CombatService : ICombatService
         foreach(var entity in _activeThreatEntitySet.GetEntities())
         {
             ref var threatTable = ref entity.Get<ThreatTable>();
-            threatTable.Threat.Remove(character);
+            threatTable.Entries.Remove(character);
         }
     }
 
