@@ -1,37 +1,40 @@
 ﻿using DefaultEcs;
 using Microsoft.Extensions.Logging.Abstractions;
-using MysteryMud.Core;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.Domain.Systems;
+using MysteryMud.GameData.Events;
 using MysteryMud.Tests.Infrastructure;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace MysteryMud.Tests;
 
 public class NPCTargetSystemTests : IDisposable
 {
     private readonly MudTestFixture _f;
+    private readonly TestEventBuffer<AggressedEvent> _aggressedEvents;
     private readonly NPCTargetSystem _system;
 
     public NPCTargetSystemTests()
     {
         _f = new MudTestFixture();
-        _system = new NPCTargetSystem(_f.World, NullLogger.Instance);
+        _aggressedEvents = new TestEventBuffer<AggressedEvent>();
+        _system = new NPCTargetSystem(_f.World, NullLogger.Instance, _aggressedEvents);
     }
 
     public void Dispose() => _f.Dispose();
 
-    private Entity CreateNpcInCombat(Entity initialTarget)
-    {
-        var npc = _f.Npc()
+    private Entity CreateRoom() => _f.Room().Build();
+
+    private Entity CreateNpcInRoom(Entity room) =>
+        _f.Npc()
             .WithTag<ActiveThreatTag>()
-            .With(new CombatState { Target = initialTarget })
+            .WithLocation(room)
             .Build();
-        return npc;
-    }
+
+    private Entity CreatePlayerInRoom(Entity room, string name = "Player") =>
+        _f.Player(name)
+            .WithLocation(room)
+            .Build();
 
     private void SetThreat(Entity npc, Entity attacker, decimal value)
     {
@@ -39,120 +42,170 @@ public class NPCTargetSystemTests : IDisposable
         table.Entries[attacker] = value;
     }
 
-    // --- Target selection ---
+    // --- No valid targets ---
 
     [Fact]
-    public void Targeting_SelectsHighestThreatAsTarget()
+    public void Targeting_NoEntriesInThreatTable_NoCombatStarted()
     {
-        var lowThreat = _f.Player("Low").Build();
-        var highThreat = _f.Player("High").Build();
+        var room = CreateRoom();
+        var npc = CreateNpcInRoom(room);
 
-        var npc = CreateNpcInCombat(lowThreat);
+        _system.Tick(_f.State);
+
+        Assert.False(npc.Has<CombatState>());
+        Assert.Empty(_aggressedEvents);
+    }
+
+    [Fact]
+    public void Targeting_AttackerInDifferentRoom_NoCombatStarted()
+    {
+        var npcRoom = CreateRoom();
+        var otherRoom = CreateRoom();
+
+        var npc = CreateNpcInRoom(npcRoom);
+        var attacker = CreatePlayerInRoom(otherRoom);
+        SetThreat(npc, attacker, 50m);
+
+        _system.Tick(_f.State);
+
+        Assert.False(npc.Has<CombatState>());
+        Assert.Empty(_aggressedEvents);
+    }
+
+    [Fact]
+    public void Targeting_AttackerHasNoLocation_NoCombatStarted()
+    {
+        var room = CreateRoom();
+        var npc = CreateNpcInRoom(room);
+        var attacker = _f.Player().Build(); // no location
+        SetThreat(npc, attacker, 50m);
+
+        _system.Tick(_f.State);
+
+        Assert.False(npc.Has<CombatState>());
+        Assert.Empty(_aggressedEvents);
+    }
+
+    // --- Aggression (no CombatState yet) ---
+
+    [Fact]
+    public void Targeting_NotInCombat_FiresAggressedEventForHighestThreatInRoom()
+    {
+        var room = CreateRoom();
+        var npc = CreateNpcInRoom(room);
+        var attacker = CreatePlayerInRoom(room);
+        SetThreat(npc, attacker, 50m);
+
+        _system.Tick(_f.State);
+
+        Assert.False(npc.Has<CombatState>());
+        Assert.Single(_aggressedEvents);
+        Assert.Equal(npc, _aggressedEvents.Single().Source);
+        Assert.Equal(attacker, _aggressedEvents.Single().Target);
+    }
+
+    [Fact]
+    public void Targeting_NotInCombat_MultipleAttackers_AggressesHighestThreat()
+    {
+        var room = CreateRoom();
+        var npc = CreateNpcInRoom(room);
+        var lowThreat = CreatePlayerInRoom(room, "Low");
+        var highThreat = CreatePlayerInRoom(room, "High");
         SetThreat(npc, lowThreat, 10m);
         SetThreat(npc, highThreat, 50m);
 
         _system.Tick(_f.State);
 
-        Assert.Equal(highThreat, npc.Get<CombatState>().Target);
+        Assert.Single(_aggressedEvents);
+        Assert.Equal(highThreat, _aggressedEvents.Single().Target);
     }
 
     [Fact]
-    public void Targeting_CurrentTargetIsHighestThreat_TargetUnchanged()
+    public void Targeting_NotInCombat_HighestThreatInDifferentRoom_AggressesBestInSameRoom()
     {
-        var other = _f.Player("Other").Build();
-        var topdog = _f.Player("TopDog").Build();
+        var npcRoom = CreateRoom();
+        var otherRoom = CreateRoom();
+        var npc = CreateNpcInRoom(npcRoom);
 
-        var npc = CreateNpcInCombat(topdog);
+        var inRoom = CreatePlayerInRoom(npcRoom, "InRoom");
+        var elsewhere = CreatePlayerInRoom(otherRoom, "Elsewhere");
+        SetThreat(npc, inRoom, 30m);
+        SetThreat(npc, elsewhere, 99m); // higher threat but wrong room
+
+        _system.Tick(_f.State);
+
+        Assert.Single(_aggressedEvents);
+        Assert.Equal(inRoom, _aggressedEvents.Single().Target);
+    }
+
+    // --- Target switching (already in CombatState) ---
+
+    [Fact]
+    public void Targeting_InCombat_CurrentTargetIsStillHighest_TargetUnchanged()
+    {
+        var room = CreateRoom();
+        var npc = CreateNpcInRoom(room);
+        var current = CreatePlayerInRoom(room, "Current");
+        var other = CreatePlayerInRoom(room, "Other");
+        SetThreat(npc, current, 100m);
         SetThreat(npc, other, 10m);
-        SetThreat(npc, topdog, 100m);
+        npc.Set(new CombatState { Target = current });
 
         _system.Tick(_f.State);
 
-        Assert.Equal(topdog, npc.Get<CombatState>().Target);
+        Assert.Equal(current, npc.Get<CombatState>().Target);
+        Assert.Empty(_aggressedEvents);
     }
 
     [Fact]
-    public void Targeting_SingleEntry_TargetSetToThatEntry()
+    public void Targeting_InCombat_NewAttackerHasHigherThreat_SwitchesTarget()
     {
-        var attacker = _f.Player().Build();
-        var npc = CreateNpcInCombat(attacker);
-        SetThreat(npc, attacker, 50m);
+        var room = CreateRoom();
+        var npc = CreateNpcInRoom(room);
+        var current = CreatePlayerInRoom(room, "Current");
+        var newTop = CreatePlayerInRoom(room, "NewTop");
+        SetThreat(npc, current, 30m);
+        SetThreat(npc, newTop, 90m);
+        npc.Set(new CombatState { Target = current });
 
         _system.Tick(_f.State);
 
-        Assert.Equal(attacker, npc.Get<CombatState>().Target);
-    }
-
-    // --- No CombatState ---
-
-    [Fact]
-    public void Targeting_NpcWithNoActiveThreatTag_IsIgnored()
-    {
-        // NPC with threat table but no ActiveThreatTag — should not be processed
-        var attacker = _f.Player().Build();
-        var npc = _f.Npc().Build(); // no ActiveThreatTag
-        ref var table = ref npc.Get<ThreatTable>();
-        table.Entries[attacker] = 50m;
-
-        // should not throw and NPC should have no CombatState
-        _system.Tick(_f.State);
-
-        Assert.False(npc.Has<CombatState>());
+        Assert.Equal(newTop, npc.Get<CombatState>().Target);
+        Assert.Empty(_aggressedEvents); // switch, not a new aggression
     }
 
     [Fact]
-    public void Targeting_NpcHasThreatButNoCombatState_TargetNotForced()
+    public void Targeting_InCombat_HighestThreatLeavesRoom_KeepsCurrentTarget()
     {
-        // Active threat tag present but no CombatState — system should skip target switching
-        var attacker = _f.Player().Build();
-        var npc = _f.Npc()
-            .WithTag<ActiveThreatTag>()
-            .Build();
-        SetThreat(npc, attacker, 50m);
+        var npcRoom = CreateRoom();
+        var otherRoom = CreateRoom();
+        var npc = CreateNpcInRoom(npcRoom);
+        var current = CreatePlayerInRoom(npcRoom, "Current");
+        var fled = CreatePlayerInRoom(otherRoom, "Fled"); // was top threat, now gone
+        SetThreat(npc, current, 30m);
+        SetThreat(npc, fled, 90m);
+        npc.Set(new CombatState { Target = current });
 
         _system.Tick(_f.State);
 
-        Assert.False(npc.Has<CombatState>());
+        Assert.Equal(current, npc.Get<CombatState>().Target);
+        Assert.Empty(_aggressedEvents);
     }
 
-    // --- Target switching ---
-
     [Fact]
-    public void Targeting_WhenNewAttackerExceedsCurrentTarget_SwitchesTarget()
+    public void Targeting_InCombat_AllAttackersLeaveRoom_NoRetarget()
     {
-        var original = _f.Player("Original").Build();
-        var newThreat = _f.Player("NewThreat").Build();
-
-        var npc = CreateNpcInCombat(original);
-        SetThreat(npc, original, 30m);
-        SetThreat(npc, newThreat, 90m);
+        var npcRoom = CreateRoom();
+        var otherRoom = CreateRoom();
+        var npc = CreateNpcInRoom(npcRoom);
+        var fled = CreatePlayerInRoom(otherRoom, "Fled");
+        SetThreat(npc, fled, 50m);
+        npc.Set(new CombatState { Target = fled });
 
         _system.Tick(_f.State);
 
-        Assert.Equal(newThreat, npc.Get<CombatState>().Target);
-    }
-
-    [Fact]
-    public void Targeting_AfterDecay_HighestRemainingThreatBecomesTarget()
-    {
-        var decaySystem = new ThreatDecaySystem(_f.World);
-
-        var fadeAway = _f.Player("FadeAway").Build();
-        var persistent = _f.Player("Persistent").Build();
-
-        var npc = CreateNpcInCombat(fadeAway);
-        SetThreat(npc, fadeAway, 3m);   // gone after 3 ticks
-        SetThreat(npc, persistent, 100m);
-
-        // decay until fadeAway is gone
-        var currentTick = _f.State.CurrentTick;
-        for (int i = 1; i <= 3; i++)
-        {
-            var gameState = new GameState { CurrentTick = currentTick++, CurrentTimeMs = currentTick * 1000 };
-            decaySystem.Tick(gameState);
-        }
-        _system.Tick(new GameState { CurrentTick = currentTick, CurrentTimeMs = currentTick * 1000 });
-
-        Assert.Equal(persistent, npc.Get<CombatState>().Target);
+        // target unchanged, no new aggression — CombatState cleanup is another system's job
+        Assert.Equal(fled, npc.Get<CombatState>().Target);
+        Assert.Empty(_aggressedEvents);
     }
 }

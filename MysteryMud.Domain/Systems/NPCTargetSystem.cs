@@ -1,24 +1,26 @@
 ﻿using DefaultEcs;
 using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
+using MysteryMud.Core.Bus;
 using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Services;
+using MysteryMud.GameData.Events;
 
 namespace MysteryMud.Domain.Systems;
 
 public class NPCTargetSystem
 {
     private readonly ILogger _logger;
-    private readonly ICombatService _combatService;
+    private readonly IEventBuffer<AggressedEvent> _aggressed;
     private readonly EntitySet _activeThreatNpcsEntitySet;
 
-    public NPCTargetSystem(World world, ILogger logger, ICombatService combatService)
+    public NPCTargetSystem(World world, ILogger logger, IEventBuffer<AggressedEvent> aggressed)
     {
         _logger = logger;
-        _combatService = combatService;
+        _aggressed = aggressed;
         _activeThreatNpcsEntitySet = world
             .GetEntities()
             .With<ThreatTable>()
@@ -65,7 +67,10 @@ public class NPCTargetSystem
             else
             {
                 _logger.LogInformation("NPC {NpcId} is starting combat with {NewTarget} with threat value {ThreatValue}", npc.DebugName, bestTarget.DebugName, bestThreat);
-                _combatService.EnterCombat(state, npc, bestTarget);
+
+                ref var aggressedEvt = ref _aggressed.Add();
+                aggressedEvt.Source = npc;
+                aggressedEvt.Target = bestTarget;
             }
         }
     }
