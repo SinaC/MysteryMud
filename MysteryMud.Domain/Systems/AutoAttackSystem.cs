@@ -1,7 +1,9 @@
 ﻿using DefaultEcs;
+using Microsoft.Extensions.Logging;
 using MysteryMud.Core;
 using MysteryMud.Core.Contracts;
 using MysteryMud.Domain.Components.Characters;
+using MysteryMud.Domain.Helpers;
 using MysteryMud.GameData.Enums;
 
 namespace MysteryMud.Domain.Systems;
@@ -10,11 +12,13 @@ public class AutoAttackSystem
 {
     private const int DefaultHits = 1; // e.g., base autoattack hits
 
+    private readonly ILogger _logger;
     private readonly IIntentContainer _intentContainer;
     private readonly EntitySet _inCombatEntitySet;
 
-    public AutoAttackSystem(World world, IIntentContainer intentContainer)
+    public AutoAttackSystem(World world, ILogger logger, IIntentContainer intentContainer)
     {
+        _logger = logger;
         _intentContainer = intentContainer;
         _inCombatEntitySet = world
             .GetEntities()
@@ -42,6 +46,13 @@ public class AutoAttackSystem
             }
 
             // TODO: check target is in combat with actor, or if target is out of range, etc.
+
+            if (!CharacterHelpers.SameRoom(entity, target))
+            {
+                _logger.LogError("AutoAttackSystem: Target {Target} is not in the same room as attacker {Attacker}", target, entity);
+                entity.Remove<CombatState>();
+                return;
+            }
 
             if (combat.RoundDelay > 0)
             {

@@ -11,7 +11,7 @@ using System.Text.Json;
 
 namespace MysteryMud.Infrastructure.Persistence;
 
-public partial class JsonAbilityLoader
+public class JsonAbilityLoader
 {
     private static readonly JsonSerializerOptions _serializerOptions = new()
     {

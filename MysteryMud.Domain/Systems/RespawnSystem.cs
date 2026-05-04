@@ -70,8 +70,8 @@ public class RespawnSystem
             if (!player.Has<DirtyStats>())
                 player.Set<DirtyStats>();
 
-            // TODO: send to room
             _msg.To(player).Act("You have respawned at {0}!").With(location.Room);
+            _msg.ToRoom(player).Act("{0} have respawned!").With(player);
 
             _dirtyTracker.MarkDirty(player, DirtyReason.Respawn);
         }

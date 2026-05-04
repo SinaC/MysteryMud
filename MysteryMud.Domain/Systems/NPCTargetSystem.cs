@@ -6,7 +6,6 @@ using MysteryMud.Domain.Components;
 using MysteryMud.Domain.Components.Characters;
 using MysteryMud.Domain.Components.Characters.Mobiles;
 using MysteryMud.Domain.Extensions;
-using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Events;
 
 namespace MysteryMud.Domain.Systems;
@@ -39,6 +38,7 @@ public class NPCTargetSystem
             Entity bestTarget = default;
             decimal bestThreat = 0;
 
+            // find the target with the highest threat in the same room as the NPC.
             foreach (var (entity, threat) in threatTable.Entries)
             {
                 if (threat > bestThreat &&

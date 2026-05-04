@@ -1,6 +1,4 @@
-﻿using DefaultEcs;
-
-namespace MysteryMud.Core;
+﻿namespace MysteryMud.Core;
 
 public class GameState
 {

@@ -144,109 +144,121 @@ collar.Set(new Equipable { Slot = EquipmentSlotKind.Amulet });
 RoomFactory.StartingRoomEntity = market;
 RoomFactory.RespawnRoomEntity = temple;
 
+// BOOTSTRAP
 var basePath = AppContext.BaseDirectory;
-
-var random = new SeededRandom();
-var formulaCompiler = new EffectFormulaCompiler(random);
-var resistanceService = new ResistanceService(logger);
-
-// load effect definitions
-var effectLoader = new JsonEffectLoader(formulaCompiler);
-var effectDefinitions = effectLoader.Load(Path.Combine(basePath, gamePaths.EffectsJson));
-var effectActionFactory = new EffectActionFactory(logger);
-var effectRuntimeFactory = new EffectRuntimeFactory(effectActionFactory);
-var effectRegistry = new EffectRegistry(effectRuntimeFactory);
-effectRegistry.Register(effectDefinitions);
-
-// define ability outcome resolver registry
-// TODO: autodiscover with reflection
-var abilityOutcomeResolverRegistry = new AbilityOutcomeResolverRegistry();
-abilityOutcomeResolverRegistry.Register("default", new DefaultOutcomeResolver());
-abilityOutcomeResolverRegistry.Register("chancebased", new ChanceBasedOutcomeResolver(random));
-abilityOutcomeResolverRegistry.Register("berserk", new BerserkOutcomeResolver(random));
-
-// load ability definitions
-var abilityLoader = new JsonAbilityLoader();
-var abilityDefinitions = abilityLoader.Load(Path.Combine(basePath, gamePaths.AbilitiesJson));
-var skillCommandDefinitions = abilityDefinitions.Where(x => x.Kind == AbilityKind.Skill && x.Command is not null).Select(x => x.Command!.Value).ToArray();
-var validationRuleFactory = new ValidationRuleFactory(resistanceService, random);
-var abilityRuntimeFactory = new AbilityRuntimeFactory(validationRuleFactory);
-var abilityRegistry = new AbilityRegistry(effectRegistry, abilityOutcomeResolverRegistry, abilityRuntimeFactory);
-abilityRegistry.Register(abilityDefinitions);
-
-// load weapon proc definitions
-var weaponProcLoader = new JsonWeaponProcLoader();
-var weaponProcDefinitions = weaponProcLoader.Load(Path.Combine(basePath, gamePaths.WeaponProcsJson));
-var weaponProcRegistry = new WeaponProcRegistry(effectRegistry);
-weaponProcRegistry.Register(weaponProcDefinitions);
-
-// load social definitions
-var socialLoader = new JsonSocialLoader();
-var socialDefinitions = socialLoader.Load(Path.Combine(basePath, gamePaths.SocialsJson));
-
-// load command definitions
-var commandLoader = new JsonCommandLoader();
-var commandDefinitions = commandLoader.Load(Path.Combine(basePath, gamePaths.CommandsJson));
-
 var dbPath = Path.Combine(basePath, gamePaths.Db);
 var connectionString = $"Data Source={dbPath};Pooling=True;";
 
-// === DI container ===
 var services = new ServiceCollection();
 
-// Random
+// ── Config / primitives ───────────────────────────────────────────────
+services.AddSingleton(gamePaths);
+services.AddSingleton(world);
+services.AddSingleton(factory.CreateLogger("MysteryMud"));
+
+// ── Random ────────────────────────────────────────────────────────────
 services.AddSingleton<IRandom, SeededRandom>();
 
-// DB
-// Run migration scripts
-var migrationRunner = new MigrationRunner(connectionString, logger);
-await migrationRunner.RunAsync();
+// ── DB / persistence ──────────────────────────────────────────────────
+services.AddSingleton<MigrationRunner>(new MigrationRunner(connectionString, logger)); // ctor: (ConnectionString, ILogger)
+services.AddSingleton<IPersistenceService>(new SqlitePersistenceService(connectionString)); // ctor: (ConnectionString)
 
-// Wire persistence service
-services.AddSingleton<IPersistenceService>(new SqlitePersistenceService(connectionString));
-
-// Dirty tracker (singleton)
+// ── Dirty tracker / snapshot ──────────────────────────────────────────
 services.AddSingleton<IDirtyTracker, DirtyTracker>();
-
-// Snapshot builder
 services.AddSingleton<ISnapshotBuilder, PlayerSnapshotBuilder>();
 services.AddSingleton<ISnapshotRestorer, PlayerSnapshotRestorer>();
 
-// Infrastructure / primitives
-services.AddSingleton(world);
-services.AddSingleton(factory.CreateLogger("MysteryMud")); // ILogger
+// ── Effect pipeline ───────────────────────────────────────────────────
+services.AddSingleton<EffectFormulaCompiler>(); // ctor: (IRandom)
+services.AddSingleton<IEffectActionFactory, EffectActionFactory>();     // ctor: (ILogger)
+services.AddSingleton<IEffectRuntimeFactory, EffectRuntimeFactory>();   // ctor: (IEffectActionFactory)
+services.AddSingleton<IEffectRegistry>(sp =>
+{
+    var registry = new EffectRegistry(sp.GetRequiredService<IEffectRuntimeFactory>());
+    var loader = new JsonEffectLoader(sp.GetRequiredService<EffectFormulaCompiler>());
+    var defs = loader.Load(Path.Combine(basePath, gamePaths.EffectsJson));
+    registry.Register(defs);
+    return registry;
+});
 
-// Register all ICommand implementations for DI resolution
+// ── Resistance ────────────────────────────────────────────────────────
+services.AddSingleton<IResistanceService, ResistanceService>();         // ctor: (ILogger)
+
+// ── Ability outcome resolvers ─────────────────────────────────────────
+services.AddSingleton<IAbilityOutcomeResolverRegistry>(sp =>
+{
+    var reg = new AbilityOutcomeResolverRegistry();
+    reg.Register("default", new DefaultOutcomeResolver());
+    reg.Register("chancebased", new ChanceBasedOutcomeResolver(sp.GetRequiredService<IRandom>()));
+    reg.Register("berserk", new BerserkOutcomeResolver(sp.GetRequiredService<IRandom>()));
+    return reg;
+});
+
+// ── Ability pipeline ──────────────────────────────────────────────────
+services.AddSingleton<IValidationRuleFactory, ValidationRuleFactory>(); // ctor: (IResistanceService, IRandom)
+services.AddSingleton<IAbilityRuntimeFactory, AbilityRuntimeFactory>(); // ctor: (IValidationRuleFactory)
+services.AddSingleton<IAbilityRegistry>(sp =>
+{
+    var registry = new AbilityRegistry(
+        sp.GetRequiredService<IEffectRegistry>(),
+        sp.GetRequiredService<IAbilityOutcomeResolverRegistry>(),
+        sp.GetRequiredService<IAbilityRuntimeFactory>());
+    var loader = new JsonAbilityLoader();
+    var defs = loader.Load(Path.Combine(basePath, gamePaths.AbilitiesJson));
+    registry.Register(defs);
+    return registry;
+});
+
+// ── Weapon procs ──────────────────────────────────────────────────────
+services.AddSingleton<IWeaponProcRegistry>(sp =>
+{
+    var registry = new WeaponProcRegistry(sp.GetRequiredService<IEffectRegistry>());
+    var loader = new JsonWeaponProcLoader();
+    var defs = loader.Load(Path.Combine(basePath, gamePaths.WeaponProcsJson));
+    registry.Register(defs);
+    return registry;
+});
+
+// ── Data-driven commands (socials / skills) ───────────────────────────
+// Load definitions up front — these are pure data, not services
+var socialDefinitions = new JsonSocialLoader().Load(Path.Combine(basePath, gamePaths.SocialsJson));
+var commandDefinitions = new JsonCommandLoader().Load(Path.Combine(basePath, gamePaths.CommandsJson));
+
+var abilityDefinitions = new JsonAbilityLoader().Load(Path.Combine(basePath, gamePaths.AbilitiesJson));
+var skillCommandDefinitions = abilityDefinitions
+    .Where(x => x.Kind == AbilityKind.Skill && x.Command is not null)
+    .Select(x => x.Command!.Value)
+    .ToArray();
+
+foreach (var def in socialDefinitions)
+    services.AddSingleton<IExplicitCommand>(sp =>
+        new SocialCommand(logger,
+                          sp.GetRequiredService<IGameMessageService>(), def));
+
+foreach (var def in skillCommandDefinitions)
+    services.AddSingleton<IExplicitCommand>(sp =>
+        new SkillCommand(logger,
+                         sp.GetRequiredService<IAbilityRegistry>(),
+                         sp.GetRequiredService<IGameMessageService>(),
+                         sp.GetRequiredService<IIntentWriterContainer>(), def));
+
+// ── Reflection-discovered ICommand implementations ────────────────────
 var commandAssembly = typeof(MstatCommand).Assembly;
 foreach (var type in commandAssembly.GetTypes()
     .Where(t => typeof(ICommand).IsAssignableFrom(t)
-                && !typeof(IExplicitCommand).IsAssignableFrom(t) // exclude explicit commands
-                && !t.IsAbstract
-                && !t.IsInterface))
+             && !typeof(IExplicitCommand).IsAssignableFrom(t)
+             && !t.IsAbstract && !t.IsInterface))
 {
     services.AddSingleton(type);
 }
 
-// registry dependents and data-driven commands
-
-// Social commands - data-driven
-foreach (var socialDefinition in socialDefinitions)
-    services.AddSingleton<IExplicitCommand>(sp => new SocialCommand(logger, sp.GetRequiredService<IGameMessageService>(), socialDefinition));
-
-// Skill commands — data-driven
-foreach (var skillCommandDefinition in skillCommandDefinitions)
-    services.AddSingleton<IExplicitCommand>(sp => new SkillCommand(logger, sp.GetRequiredService<IAbilityRegistry>(), sp.GetRequiredService<IGameMessageService>(), sp.GetRequiredService<IIntentWriterContainer>(), skillCommandDefinition));
-
-
-// RegisterCommands resolves all IExplicitCommand registrations
+// ── Command registry ──────────────────────────────────────────────────
 services.AddSingleton<CommandRegistry>();
 services.AddSingleton<ICommandRegistry>(sp =>
 {
     var registry = sp.GetRequiredService<CommandRegistry>();
+    var explicitCommands  = sp.GetServices<IExplicitCommand>().ToList();
 
-    var explicitCommands = sp.GetServices<IExplicitCommand>().ToList(); // TestCommand, CastCommand, socials, skills
-
-    // Add the ones that depend on ICommandRegistry manually — can't go through container
     explicitCommands.Add(new HelpCommand(registry, sp.GetRequiredService<IGameMessageService>()));
     explicitCommands.Add(new SocialsCommand(registry, sp.GetRequiredService<IGameMessageService>()));
     explicitCommands.Add(new ForceCommand(logger, registry, sp.GetRequiredService<IGameMessageService>()));
@@ -256,15 +268,8 @@ services.AddSingleton<ICommandRegistry>(sp =>
     return registry;
 });
 
-// Pre-built registries (instances, not types — already constructed above)
-services.AddSingleton<IEffectRegistry>(effectRegistry);
-services.AddSingleton<IAbilityRegistry>(abilityRegistry);
-services.AddSingleton<IAbilityOutcomeResolverRegistry>(abilityOutcomeResolverRegistry);
-services.AddSingleton<IWeaponProcRegistry>(weaponProcRegistry);
-
-// Event buffers
+// ── Event buffers ─────────────────────────────────────────────────────
 services.AddSingleton<EventBufferRegistry>();
-// Each IEventBuffer<T> resolves to its slot in the registry
 services.AddSingleton<IEventBuffer<FleeBlockedEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().FleeBlocked);
 services.AddSingleton<IEventBuffer<RoomEnteredEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().RoomEntered);
 services.AddSingleton<IEventBuffer<ItemGotEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().ItemGot);
@@ -292,19 +297,17 @@ services.AddSingleton<IEventBuffer<LevelIncreasedEvent>>(sp => sp.GetRequiredSer
 services.AddSingleton<IEventBuffer<KillRewardEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().KillReward);
 services.AddSingleton<IEventBuffer<AggressedEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().Aggressed);
 
-// Core services
+// ── Core / infrastructure services ───────────────────────────────────
 services.AddSingleton<ICommandBus, CommandBus>();
 services.AddSingleton<IMessageBus, MessageBus>();
 services.AddSingleton<IScheduler, Scheduler>();
-
-// Infrastructure services
 services.AddSingleton<IOutputService, OutputService>();
 services.AddSingleton<IntentBusContainer>();
 services.AddSingleton<IIntentContainer>(sp => sp.GetRequiredService<IntentBusContainer>());
 services.AddSingleton<IIntentWriterContainer>(sp => sp.GetRequiredService<IntentBusContainer>());
 services.AddSingleton<IConnectionService, ConnectionService>();
 
-// Resolvers & factories & services (domain)
+// ── Domain resolvers / calculators ────────────────────────────────────
 services.AddSingleton<IAbilityTargetResolver, AbilityTargetResolver>();
 services.AddSingleton<IAggroResolver, AggroResolver>();
 services.AddSingleton<IDamageResolver, DamageResolver>();
@@ -327,18 +330,13 @@ services.AddSingleton<IFollowService, FollowService>();
 services.AddSingleton<IGroupService, GroupService>();
 services.AddSingleton<ICastMessageService, CastMessageService>();
 services.AddSingleton<ICombatService, CombatService>();
-services.AddSingleton<IResistanceService>(resistanceService);
 services.AddSingleton<IDamageCalculator, DamageCalculator>();
 services.AddSingleton<IHealCalculator, HealCalculator>();
 services.AddSingleton<IMoveCalculator, MoveCalculator>();
 
-// Command dispatcher
+// ── Systems ───────────────────────────────────────────────────────────
 services.AddSingleton<ICommandDispatcher, CommandDispatcher>();
-
-// Orchestrator
 services.AddSingleton<ActionOrchestrator>();
-
-// Systems
 services.AddSingleton<CommandExecutionSystem>();
 services.AddSingleton<CommandThrottleSystem>();
 services.AddSingleton<AutoAssistSystem>();
@@ -378,14 +376,261 @@ services.AddSingleton<LootSystem>();
 services.AddSingleton<AutoSacrificeSystem>();
 services.AddSingleton<LookSystem>();
 services.AddSingleton<DisconnectSystem>();
-services.AddSingleton<PersistenceSystem>(); // TODO: use options for change AutosaveInternal and ImmediateFlushThreshold
+services.AddSingleton<PersistenceSystem>();
 services.AddSingleton<CleanupSystem>();
 
-// Top-level
+// ── Top-level ─────────────────────────────────────────────────────────
 services.AddSingleton(new TelnetServer(port: 4000));
 services.AddSingleton<GameLoop>();
 services.AddSingleton<GameServer>();
 
-// start game server
+// ── Bootstrap ─────────────────────────────────────────────────────────
 var sp = services.BuildServiceProvider();
+await sp.GetRequiredService<MigrationRunner>().RunAsync();
 sp.GetRequiredService<GameServer>().Start();
+
+//var basePath = AppContext.BaseDirectory;
+
+//var random = new SeededRandom();
+//var formulaCompiler = new EffectFormulaCompiler(random);
+//var resistanceService = new ResistanceService(logger);
+
+//// load effect definitions
+//var effectLoader = new JsonEffectLoader(formulaCompiler);
+//var effectDefinitions = effectLoader.Load(Path.Combine(basePath, gamePaths.EffectsJson));
+//var effectActionFactory = new EffectActionFactory(logger);
+//var effectRuntimeFactory = new EffectRuntimeFactory(effectActionFactory);
+//var effectRegistry = new EffectRegistry(effectRuntimeFactory);
+//effectRegistry.Register(effectDefinitions);
+
+//// define ability outcome resolver registry
+//// TODO: autodiscover with reflection
+//var abilityOutcomeResolverRegistry = new AbilityOutcomeResolverRegistry();
+//abilityOutcomeResolverRegistry.Register("default", new DefaultOutcomeResolver());
+//abilityOutcomeResolverRegistry.Register("chancebased", new ChanceBasedOutcomeResolver(random));
+//abilityOutcomeResolverRegistry.Register("berserk", new BerserkOutcomeResolver(random));
+
+//// load ability definitions
+//var abilityLoader = new JsonAbilityLoader();
+//var abilityDefinitions = abilityLoader.Load(Path.Combine(basePath, gamePaths.AbilitiesJson));
+//var skillCommandDefinitions = abilityDefinitions.Where(x => x.Kind == AbilityKind.Skill && x.Command is not null).Select(x => x.Command!.Value).ToArray();
+//var validationRuleFactory = new ValidationRuleFactory(resistanceService, random);
+//var abilityRuntimeFactory = new AbilityRuntimeFactory(validationRuleFactory);
+//var abilityRegistry = new AbilityRegistry(effectRegistry, abilityOutcomeResolverRegistry, abilityRuntimeFactory);
+//abilityRegistry.Register(abilityDefinitions);
+
+//// load weapon proc definitions
+//var weaponProcLoader = new JsonWeaponProcLoader();
+//var weaponProcDefinitions = weaponProcLoader.Load(Path.Combine(basePath, gamePaths.WeaponProcsJson));
+//var weaponProcRegistry = new WeaponProcRegistry(effectRegistry);
+//weaponProcRegistry.Register(weaponProcDefinitions);
+
+//// load social definitions
+//var socialLoader = new JsonSocialLoader();
+//var socialDefinitions = socialLoader.Load(Path.Combine(basePath, gamePaths.SocialsJson));
+
+//// load command definitions
+//var commandLoader = new JsonCommandLoader();
+//var commandDefinitions = commandLoader.Load(Path.Combine(basePath, gamePaths.CommandsJson));
+
+//var dbPath = Path.Combine(basePath, gamePaths.Db);
+//var connectionString = $"Data Source={dbPath};Pooling=True;";
+
+//// === DI container ===
+//var services = new ServiceCollection();
+
+//// Random
+//services.AddSingleton<IRandom, SeededRandom>();
+
+//// DB
+//// Run migration scripts
+//var migrationRunner = new MigrationRunner(connectionString, logger);
+//await migrationRunner.RunAsync();
+
+//// Wire persistence service
+//services.AddSingleton<IPersistenceService>(new SqlitePersistenceService(connectionString));
+
+//// Dirty tracker (singleton)
+//services.AddSingleton<IDirtyTracker, DirtyTracker>();
+
+//// Snapshot builder
+//services.AddSingleton<ISnapshotBuilder, PlayerSnapshotBuilder>();
+//services.AddSingleton<ISnapshotRestorer, PlayerSnapshotRestorer>();
+
+//// Infrastructure / primitives
+//services.AddSingleton(world);
+//services.AddSingleton(factory.CreateLogger("MysteryMud")); // ILogger
+
+//// Register all ICommand implementations for DI resolution
+//var commandAssembly = typeof(MstatCommand).Assembly;
+//foreach (var type in commandAssembly.GetTypes()
+//    .Where(t => typeof(ICommand).IsAssignableFrom(t)
+//                && !typeof(IExplicitCommand).IsAssignableFrom(t) // exclude explicit commands
+//                && !t.IsAbstract
+//                && !t.IsInterface))
+//{
+//    services.AddSingleton(type);
+//}
+
+//// registry dependents and data-driven commands
+
+//// Social commands - data-driven
+//foreach (var socialDefinition in socialDefinitions)
+//    services.AddSingleton<IExplicitCommand>(sp => new SocialCommand(logger, sp.GetRequiredService<IGameMessageService>(), socialDefinition));
+
+//// Skill commands — data-driven
+//foreach (var skillCommandDefinition in skillCommandDefinitions)
+//    services.AddSingleton<IExplicitCommand>(sp => new SkillCommand(logger, sp.GetRequiredService<IAbilityRegistry>(), sp.GetRequiredService<IGameMessageService>(), sp.GetRequiredService<IIntentWriterContainer>(), skillCommandDefinition));
+
+
+//// RegisterCommands resolves all IExplicitCommand registrations
+//services.AddSingleton<CommandRegistry>();
+//services.AddSingleton<ICommandRegistry>(sp =>
+//{
+//    var registry = sp.GetRequiredService<CommandRegistry>();
+
+//    var explicitCommands = sp.GetServices<IExplicitCommand>().ToList(); // TestCommand, CastCommand, socials, skills
+
+//    // Add the ones that depend on ICommandRegistry manually — can't go through container
+//    explicitCommands.Add(new HelpCommand(registry, sp.GetRequiredService<IGameMessageService>()));
+//    explicitCommands.Add(new SocialsCommand(registry, sp.GetRequiredService<IGameMessageService>()));
+//    explicitCommands.Add(new ForceCommand(logger, registry, sp.GetRequiredService<IGameMessageService>()));
+//    explicitCommands.Add(new OrderCommand(logger, registry, sp.GetRequiredService<IGameMessageService>()));
+
+//    registry.RegisterCommands(commandDefinitions, [typeof(MstatCommand).Assembly], explicitCommands);
+//    return registry;
+//});
+
+//// Pre-built registries (instances, not types — already constructed above)
+//services.AddSingleton<IEffectRegistry>(effectRegistry);
+//services.AddSingleton<IAbilityRegistry>(abilityRegistry);
+//services.AddSingleton<IAbilityOutcomeResolverRegistry>(abilityOutcomeResolverRegistry);
+//services.AddSingleton<IWeaponProcRegistry>(weaponProcRegistry);
+
+//// Event buffers
+//services.AddSingleton<EventBufferRegistry>();
+//// Each IEventBuffer<T> resolves to its slot in the registry
+//services.AddSingleton<IEventBuffer<FleeBlockedEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().FleeBlocked);
+//services.AddSingleton<IEventBuffer<RoomEnteredEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().RoomEntered);
+//services.AddSingleton<IEventBuffer<ItemGotEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().ItemGot);
+//services.AddSingleton<IEventBuffer<ItemDroppedEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().ItemDropped);
+//services.AddSingleton<IEventBuffer<ItemGivenEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().ItemGiven);
+//services.AddSingleton<IEventBuffer<ItemPutEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().ItemPut);
+//services.AddSingleton<IEventBuffer<ItemWornEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().ItemWorn);
+//services.AddSingleton<IEventBuffer<ItemRemovedEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().ItemRemoved);
+//services.AddSingleton<IEventBuffer<ItemDestroyedEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().ItemDestroyed);
+//services.AddSingleton<IEventBuffer<ItemSacrificiedEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().ItemSacrificed);
+//services.AddSingleton<IEventBuffer<DamagedEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().Damaged);
+//services.AddSingleton<IEventBuffer<HealedEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().Healed);
+//services.AddSingleton<IEventBuffer<DeathEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().Death);
+//services.AddSingleton<IEventBuffer<ItemLootedEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().ItemLooted);
+//services.AddSingleton<IEventBuffer<LookedEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().Looked);
+//services.AddSingleton<IEventBuffer<TriggeredScheduledEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().TriggeredScheduled);
+//services.AddSingleton<IEventBuffer<EffectExpiredEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().EffectExpired);
+//services.AddSingleton<IEventBuffer<EffectTickedEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().EffectTicked);
+//services.AddSingleton<IEventBuffer<AttackResolvedEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().AttackResolved);
+//services.AddSingleton<IEventBuffer<EffectResolvedEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().EffectResolved);
+//services.AddSingleton<IEventBuffer<AbilityUsedEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().AbilityUsed);
+//services.AddSingleton<IEventBuffer<AbilityExecutedEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().AbilityExecuted);
+//services.AddSingleton<IEventBuffer<ExperienceGrantedEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().ExperienceGranted);
+//services.AddSingleton<IEventBuffer<LevelIncreasedEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().LevelIncreased);
+//services.AddSingleton<IEventBuffer<KillRewardEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().KillReward);
+//services.AddSingleton<IEventBuffer<AggressedEvent>>(sp => sp.GetRequiredService<EventBufferRegistry>().Aggressed);
+
+//// Core services
+//services.AddSingleton<ICommandBus, CommandBus>();
+//services.AddSingleton<IMessageBus, MessageBus>();
+//services.AddSingleton<IScheduler, Scheduler>();
+
+//// Infrastructure services
+//services.AddSingleton<IOutputService, OutputService>();
+//services.AddSingleton<IntentBusContainer>();
+//services.AddSingleton<IIntentContainer>(sp => sp.GetRequiredService<IntentBusContainer>());
+//services.AddSingleton<IIntentWriterContainer>(sp => sp.GetRequiredService<IntentBusContainer>());
+//services.AddSingleton<IConnectionService, ConnectionService>();
+
+//// Resolvers & factories & services (domain)
+//services.AddSingleton<IAbilityTargetResolver, AbilityTargetResolver>();
+//services.AddSingleton<IAggroResolver, AggroResolver>();
+//services.AddSingleton<IDamageResolver, DamageResolver>();
+//services.AddSingleton<IHealResolver, HealResolver>();
+//services.AddSingleton<IMoveResolver, MoveResolver>();
+//services.AddSingleton<IHitResolver, HitResolver>();
+//services.AddSingleton<IHitDamageFactory, HitDamageFactory>();
+//services.AddSingleton<IWeaponProcResolver, WeaponProcResolver>();
+//services.AddSingleton<IReactionResolver, ReactionResolver>();
+//services.AddSingleton<IEffectExecutor, EffectExecutor>();
+//services.AddSingleton<IEffectLifecycleManager, EffectLifecycleManager>();
+//services.AddSingleton<IEffectApplicationManager, EffectApplicationManager>();
+//services.AddSingleton<IExperienceService, ExperienceService>();
+//services.AddSingleton<IActService, ActService>();
+//services.AddSingleton<IGameMessageService, GameMessageService>();
+//services.AddSingleton<ILookService, LookService>();
+//services.AddSingleton<ISacrificeService, SacrificeService>();
+//services.AddSingleton<IEffectDisplayService, EffectDisplayService>();
+//services.AddSingleton<IFollowService, FollowService>();
+//services.AddSingleton<IGroupService, GroupService>();
+//services.AddSingleton<ICastMessageService, CastMessageService>();
+//services.AddSingleton<ICombatService, CombatService>();
+//services.AddSingleton<IResistanceService>(resistanceService);
+//services.AddSingleton<IDamageCalculator, DamageCalculator>();
+//services.AddSingleton<IHealCalculator, HealCalculator>();
+//services.AddSingleton<IMoveCalculator, MoveCalculator>();
+
+//// Command dispatcher
+//services.AddSingleton<ICommandDispatcher, CommandDispatcher>();
+
+//// Orchestrator
+//services.AddSingleton<ActionOrchestrator>();
+
+//// Systems
+//services.AddSingleton<CommandExecutionSystem>();
+//services.AddSingleton<CommandThrottleSystem>();
+//services.AddSingleton<AutoAssistSystem>();
+//services.AddSingleton<FleeSystem>();
+//services.AddSingleton<MovementSystem>();
+//services.AddSingleton<FollowSystem>();
+//services.AddSingleton<ItemInteractionSystem>();
+//services.AddSingleton<EffectiveIRVSystem>();
+//services.AddSingleton<EffectiveCharacterStatsSystem>();
+//services.AddSingleton(sp => new EffectiveMaxResourceSystem<BaseHealth, Health, DirtyHealth, HealthModifier>(world, x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value));
+//services.AddSingleton(sp => new EffectiveMaxResourceSystem<BaseMove, Move, DirtyMove, MoveModifier>(world, x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value));
+//services.AddSingleton(sp => new EffectiveMaxResourceSystem<BaseMana, Mana, DirtyMana, ManaModifier>(world, x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value));
+//services.AddSingleton(sp => new EffectiveMaxResourceSystem<BaseEnergy, Energy, DirtyEnergy, EnergyModifier>(world, x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value));
+//services.AddSingleton(sp => new EffectiveMaxResourceSystem<BaseRage, Rage, DirtyRage, RageModifier>(world, x => x.Max, x => x.Current, (ref x, v) => x.Current = v, (ref x, v) => x.Max = v, x => x.Modifier, x => x.Value));
+//services.AddSingleton(sp => new EffectiveResourceRegenSystem<HealthRegen, DirtyHealthRegen, HealthRegenModifier>(world, x => x.BaseAmountPerSecond, (ref x, v) => x.CurrentAmountPerSecond = v, x => x.Modifier, x => x.Value));
+//services.AddSingleton(sp => new EffectiveResourceRegenSystem<MoveRegen, DirtyMoveRegen, MoveRegenModifier>(world, x => x.BaseAmountPerSecond, (ref x, v) => x.CurrentAmountPerSecond = v, x => x.Modifier, x => x.Value));
+//services.AddSingleton(sp => new EffectiveResourceRegenSystem<ManaRegen, DirtyManaRegen, ManaRegenModifier>(world, x => x.BaseAmountPerSecond, (ref x, v) => x.CurrentAmountPerSecond = v, x => x.Modifier, x => x.Value));
+//services.AddSingleton(sp => new EffectiveResourceRegenSystem<EnergyRegen, DirtyEnergyRegen, EnergyRegenModifier>(world, x => x.BaseAmountPerSecond, (ref x, v) => x.CurrentAmountPerSecond = v, x => x.Modifier, x => x.Value));
+//services.AddSingleton(sp => new EffectiveResourceRegenSystem<RageDecay, DirtyRageDecay, RageDecayModifier>(world, x => x.BaseAmountPerSecond, (ref x, v) => x.CurrentAmountPerSecond = v, x => x.Modifier, x => x.Value));
+//services.AddSingleton<AbilityValidationSystem>();
+//services.AddSingleton<AbilityCastingSystem>();
+//services.AddSingleton<AbilityExecutionSystem>();
+//services.AddSingleton<NPCTargetSystem>();
+//services.AddSingleton<AggressionSystem>();
+//services.AddSingleton<AutoAttackSystem>();
+//services.AddSingleton<TimedEffectSystem>();
+//services.AddSingleton(sp => new ResourceRegenSystem<Health, HealthRegen>(world, x => x.Current, x => x.Max, x => x.CurrentAmountPerSecond, (ref x, v) => x.Current = v));
+//services.AddSingleton(sp => new ResourceRegenSystem<Move, MoveRegen>(world, x => x.Current, x => x.Max, x => x.CurrentAmountPerSecond, (ref x, v) => x.Current = v));
+//services.AddSingleton(sp => new ResourceRegenSystem<Mana, ManaRegen>(world, x => x.Current, x => x.Max, x => x.CurrentAmountPerSecond, (ref x, v) => x.Current = v));
+//services.AddSingleton(sp => new ResourceRegenSystem<Energy, EnergyRegen>(world, x => x.Current, x => x.Max, x => x.CurrentAmountPerSecond, (ref x, v) => x.Current = v));
+//services.AddSingleton(sp => new ResourceRegenSystem<Rage, RageDecay>(world, x => x.Current, x => x.Max, x => -x.CurrentAmountPerSecond, (ref x, v) => x.Current = v));
+//services.AddSingleton<ThreatDecaySystem>();
+//services.AddSingleton<ScheduleSystem>();
+//services.AddSingleton<DeathSystem>();
+//services.AddSingleton<RespawnSystem>();
+//services.AddSingleton<LootSystem>();
+//services.AddSingleton<AutoSacrificeSystem>();
+//services.AddSingleton<LookSystem>();
+//services.AddSingleton<DisconnectSystem>();
+//services.AddSingleton<PersistenceSystem>(); // TODO: use options for change AutosaveInternal and ImmediateFlushThreshold
+//services.AddSingleton<CleanupSystem>();
+
+//// Top-level
+//services.AddSingleton(new TelnetServer(port: 4000));
+//services.AddSingleton<GameLoop>();
+//services.AddSingleton<GameServer>();
+
+//// start game server
+//var sp = services.BuildServiceProvider();
+//sp.GetRequiredService<GameServer>().Start();

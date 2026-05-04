@@ -18,7 +18,7 @@ using System.Runtime.CompilerServices;
 
 namespace MysteryMud.Domain.Action.Effect;
 
-public partial class EffectApplicationManager : IEffectApplicationManager
+public class EffectApplicationManager : IEffectApplicationManager
 {
     private readonly World _world;
     private readonly ILogger _logger;

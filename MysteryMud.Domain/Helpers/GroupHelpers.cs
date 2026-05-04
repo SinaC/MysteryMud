@@ -6,7 +6,5 @@ namespace MysteryMud.Domain.Helpers;
 public static class GroupHelpers
 {
     public static bool IsAlive(params Entity[] entities)
-    {
-        return entities.All(x => x.IsAlive && !x.Has<DisbandedTag>());
-    }
+        => entities.All(x => x.IsAlive && !x.Has<DisbandedTag>());
 }

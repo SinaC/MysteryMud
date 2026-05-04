@@ -61,7 +61,7 @@ public class LookService : ILookService
 
     public void DescribeCharacter(Entity viewer, Entity target)
     {
-        _msg.To(viewer).Send($"{target.DisplayName}");
+        _msg.To(viewer).Act("{0}").With(target);
 
         ref var targetEquipment = ref target.Get<Equipment>();
         foreach (var slot in Enum.GetValues<EquipmentSlotKind>())
