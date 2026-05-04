@@ -6,7 +6,6 @@ using MysteryMud.Core.Persistence;
 using MysteryMud.Domain.Components.Characters.Players;
 using MysteryMud.Domain.Components.Items;
 using MysteryMud.Domain.Components.Rooms;
-using MysteryMud.Domain.Extensions;
 using MysteryMud.Domain.Helpers;
 using MysteryMud.Domain.Services;
 using MysteryMud.GameData.Enums;

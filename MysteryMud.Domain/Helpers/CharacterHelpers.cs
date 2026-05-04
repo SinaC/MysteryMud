@@ -7,9 +7,7 @@ namespace MysteryMud.Domain.Helpers;
 public static class CharacterHelpers
 {
     public static bool IsAlive(params Entity[] entities)
-    {
-        return entities.All(x => x.IsAlive && !x.Has<DeadTag>());
-    }
+        => entities.All(x => x.IsAlive && !x.Has<DeadTag>());
 
     public static bool SameRoom(Entity character1, Entity character2)
         => character1.Get<Location>().Room == character2.Get<Location>().Room;

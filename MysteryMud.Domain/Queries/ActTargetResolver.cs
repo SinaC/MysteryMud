@@ -4,7 +4,7 @@ using MysteryMud.Domain.Components.Groups;
 using MysteryMud.Domain.Components.Rooms;
 using MysteryMud.Domain.Helpers;
 
-namespace MysteryMud.Domain.Formatters;
+namespace MysteryMud.Domain.Queries;
 
 public static class ActTargetResolver
 {

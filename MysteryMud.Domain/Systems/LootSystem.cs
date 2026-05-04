@@ -108,7 +108,7 @@ public sealed class LootSystem
             // get item, add to inventory, remove from corpse
             if (ItemHelpers.TryGetItemFromContainer(looter, corpse, content, out var reason))
             {
-                _msg.To(looter).Send($"You loot {content.DisplayName} from {corpse.DisplayName}.");
+                _msg.To(looter).Act("You loot {0} from {1}.").With(content, corpse);
 
                 // item looted event
                 ref var itemLootedEvt = ref _itemLootedEvents.Add();

@@ -10,9 +10,7 @@ namespace MysteryMud.Domain.Helpers;
 public static class ItemHelpers
 {
     public static bool IsAlive(params Entity[] entities)
-    {
-        return entities.All(x => x.IsAlive && !x.Has<DestroyedTag>());
-    }
+        => entities.All(x => x.IsAlive && !x.Has<DestroyedTag>());
 
     // TODO: These methods are currently very basic and does not handle edge cases such as weight limits, item ownership, or other game mechanics. It should be expanded to include these features as needed.
     public static bool TryGetItemFromRoom(Entity getter, Entity room, Entity item, out string? reason)

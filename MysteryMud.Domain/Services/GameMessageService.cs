@@ -1,6 +1,6 @@
 ﻿using DefaultEcs;
 using MysteryMud.Core.Bus;
-using MysteryMud.Domain.Formatters;
+using MysteryMud.Domain.Queries;
 
 namespace MysteryMud.Domain.Services;
 
